@@ -2,13 +2,13 @@
 
 ``layout._SENTENCE_END_RE`` is built on the same ``_ZERO_WIDTH_CLASS`` single source
 as the splitter, so the bidi-control addition propagates here: a line ending in
-"sentence.\u200F" ends a sentence, so the newline after it is a boundary the author
+"sentence.\u200f" ends a sentence, so the newline after it is a boundary the author
 chose rather than a soft wrap to be gathered into the surrounding block.
 
 MEASURED before the class gained the bidi controls:
 
-    blocks("First sentence.\u200F\nSecond paragraph here.\n")
-        ->  ONE block ("First sentence.\u200F\nSecond paragraph here.")
+    blocks("First sentence.\u200f\nSecond paragraph here.\n")
+        ->  ONE block ("First sentence.\u200f\nSecond paragraph here.")
 
 ...and after: two blocks, exactly like the plain "First sentence.\n" case.
 """
@@ -20,8 +20,12 @@ import pytest
 from untell.layout import blocks
 
 CARRIERS = [
-    ("LRM", "\u200E"), ("RLM", "\u200F"), ("RLE", "\u202B"), ("RLI", "\u2067"),
-    ("PDI", "\u2069"), ("ALM", "\u061C"),
+    ("LRM", "\u200e"),
+    ("RLM", "\u200f"),
+    ("RLE", "\u202b"),
+    ("RLI", "\u2067"),
+    ("PDI", "\u2069"),
+    ("ALM", "\u061c"),
 ]
 
 

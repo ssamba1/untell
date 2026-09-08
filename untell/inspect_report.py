@@ -135,7 +135,9 @@ def render_inspect_report(
                     vetoes = ev.get("vetoes", [])
                     if len(vetoes) > 1:
                         others = ", ".join(vetoes[1:])
-                        lines.append(f"  draw {draw_n}: REJECTED  {gate}{sim_str}  (also: {others})")
+                        lines.append(
+                            f"  draw {draw_n}: REJECTED  {gate}{sim_str}  (also: {others})"
+                        )
                     else:
                         lines.append(f"  draw {draw_n}: REJECTED  {gate}{sim_str}")
                 elif t == "candidate_accepted":

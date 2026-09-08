@@ -61,9 +61,7 @@ def measure_corpus(det, corpus: str, n: int = 30) -> dict | None:
         "human_ge_0_99": sum(1 for h in hs if h >= 0.99),
         "cut_for_fpr_le_0_20": fpr20,
         "tpr_at_fpr20_cut": tpr_at[fpr20] if fpr20 is not None else None,
-        "curve": [
-            {"cut": c, "fpr": round(fpr_at[c], 4), "tpr": round(tpr_at[c], 4)} for c in cuts
-        ],
+        "curve": [{"cut": c, "fpr": round(fpr_at[c], 4), "tpr": round(tpr_at[c], 4)} for c in cuts],
     }
 
 
@@ -104,8 +102,11 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--corpus", default="hc3,raid,mage", help="comma-separated corpora")
     ap.add_argument("--pairs", type=int, default=30)
-    ap.add_argument("--domains", action="store_true",
-                    help="also print domain/title of each RAID human doc (re-selects pairs)")
+    ap.add_argument(
+        "--domains",
+        action="store_true",
+        help="also print domain/title of each RAID human doc (re-selects pairs)",
+    )
     args = ap.parse_args()
 
     det = MageDetector()

@@ -1,11 +1,14 @@
 """Probe 2: cancel a genuinely slow call; verify cancellation + health after."""
+
 import asyncio
 import json
 import time
 
 from untell.mcp_server import _server
 
-BIG = ("Furthermore, the system leverages robust methodologies to optimize outcomes. ") * 6000  # ~312KB
+BIG = (
+    "Furthermore, the system leverages robust methodologies to optimize outcomes. "
+) * 6000  # ~312KB
 
 
 async def main():

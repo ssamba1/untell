@@ -45,7 +45,14 @@ def _run(module: str, *args: str, stdin: str = "") -> tuple[int, str, str]:
     env = {**os.environ, "UNTELL_LITE_NO_TORCH": "1", "PYTHONIOENCODING": "utf-8"}
     proc = subprocess.run(
         [sys.executable, "-m", f"untell.scripts.{module}", *args],
-        input=stdin, capture_output=True, text=True, encoding="utf-8", errors="replace", env=env, cwd=str(_ROOT), timeout=300,
+        input=stdin,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        env=env,
+        cwd=str(_ROOT),
+        timeout=300,
     )
     return proc.returncode, proc.stdout or "", proc.stderr or ""
 
@@ -90,9 +97,7 @@ def test_no_input_under_json_answers_json(module: str, monkeypatch, capsys) -> N
 
 
 def test_a_bad_detector_thresholds_value_answers_json() -> None:
-    code, out, _err = _run(
-        "run", "--json", "--detector-thresholds", "not-json", "some text here"
-    )
+    code, out, _err = _run("run", "--json", "--detector-thresholds", "not-json", "some text here")
     assert code == 2
     payload = json.loads(out)
     assert "detector-thresholds" in payload["error"]

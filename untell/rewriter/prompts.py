@@ -71,10 +71,10 @@ _RUBRIC = (
     "Ultimately, In conclusion) — use plain but/and/so/though, or nothing;\n"
     "- AI vocabulary (delve, leverage, utilize, robust, seamless, tapestry, testament, realm, "
     "landscape, pivotal, underscore, foster, harness, multifaceted, meticulous, nuanced) — plain word;\n"
-    "- tricolons / rule-of-three, negated contrast (\"not X, it's Y\"; \"not only X but also Y\"), "
-    "participial trailers that restate the sentence (\"…, underscoring its importance\");\n"
+    '- tricolons / rule-of-three, negated contrast ("not X, it\'s Y"; "not only X but also Y"), '
+    'participial trailers that restate the sentence ("…, underscoring its importance");\n'
     "- inflated copula (serves as, marks, boasts, represents) for plain is/has; significance "
-    "inflation; aphoristic closers; vague attribution (\"studies show\"); chatbot preambles/sign-offs.\n"
+    'inflation; aphoristic closers; vague attribution ("studies show"); chatbot preambles/sign-offs.\n'
     "Match the source's format, register, and language exactly — add no headings, bullets, bold, or "
     "emoji it did not have. If a plainer phrasing reads more human but scores marginally higher, pick "
     "the plainer phrasing.\n"
@@ -232,7 +232,9 @@ def _detected_signals(text: str, score_result: dict) -> list[tuple[str, int]]:
 
 def _worst_detectors(score_result: dict, k: int = 3) -> list[tuple[str, float]]:
     dets = score_result.get("detectors", {})
-    numeric = [(n, v) for n, v in dets.items() if isinstance(v, (int, float)) and "__error" not in n]
+    numeric = [
+        (n, v) for n, v in dets.items() if isinstance(v, (int, float)) and "__error" not in n
+    ]
     return sorted(numeric, key=lambda kv: kv[1], reverse=True)[:k]
 
 
@@ -277,8 +279,6 @@ def build_rewrite_prompt(text: str, score_result: dict, threshold: float = 0.30)
             f"  - {_CATEGORY_ADVICE[name]} (found {count} time{'s' if count != 1 else ''})"
             for name, count in signals
         )
-        feedback += (
-            "\n\nThis specific text contains these AI signals — address each:\n" + lines
-        )
+        feedback += "\n\nThis specific text contains these AI signals — address each:\n" + lines
 
     return f"{_RUBRIC}\n\n{feedback}\n\n--- TEXT ---\n{text}"

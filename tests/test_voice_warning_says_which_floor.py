@@ -69,8 +69,11 @@ def test_the_message_matches_what_the_tie_break_actually_did() -> None:
     output" means. Above it they must not, or the second branch is describing a tie-break that is
     equally absent.
     """
-    candidates = ["It works.", "The present analysis demonstrates substantive improvements.",
-                  "I think this one is fine, honestly, though I'd tweak the ending."]
+    candidates = [
+        "It works.",
+        "The present analysis demonstrates substantive improvements.",
+        "I think this one is fine, honestly, though I'd tweak the ending.",
+    ]
     thin = "word " * 5
     ok = "I write in short sentences. " * 15
 

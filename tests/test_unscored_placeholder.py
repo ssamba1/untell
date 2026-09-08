@@ -46,8 +46,10 @@ def test_ceiling_does_not_report_a_zero_flagged_rate_on_a_dead_stack():
     """A 0% post-flagged rate is the headline "we beat every detector" number."""
     import eval.ceiling as ceiling
 
-    with patch.object(ceiling, "score_text", return_value=dict(_UNSCORED)), \
-         patch.object(ceiling, "untell_text", return_value={"post": dict(_UNSCORED), "final": "x"}):
+    with (
+        patch.object(ceiling, "score_text", return_value=dict(_UNSCORED)),
+        patch.object(ceiling, "untell_text", return_value={"post": dict(_UNSCORED), "final": "x"}),
+    ):
         r = ceiling.measure_ceiling(texts=["a b c", "d e f"], tier="lite")
 
     assert r["post_flagged_rate"] is None  # not 0.0
@@ -59,9 +61,13 @@ def test_ceiling_does_not_report_a_zero_flagged_rate_on_a_dead_stack():
 def test_compare_humanizers_reports_na_not_perfect_evasion_on_a_dead_stack():
     import eval.compare_humanizers as ch
 
-    with patch.object(ch, "score_text", return_value=dict(_UNSCORED)), \
-         patch.object(ch, "_techniques", return_value={"none (raw AI)": lambda t: t}):
-        r = ch.compare(texts=["Furthermore, the system leverages robust methodologies."], tier="lite")
+    with (
+        patch.object(ch, "score_text", return_value=dict(_UNSCORED)),
+        patch.object(ch, "_techniques", return_value={"none (raw AI)": lambda t: t}),
+    ):
+        r = ch.compare(
+            texts=["Furthermore, the system leverages robust methodologies."], tier="lite"
+        )
 
     row = r["techniques"]["none (raw AI)"]
     assert row["ai_max_mean"] is None
@@ -130,8 +136,10 @@ _EXEMPT = {
 
 def _callers_of_score_text() -> list[str]:
     hits = []
-    for path in list(_ROOT.glob("untell/**/*.py")) + list(_ROOT.glob("eval/*.py")) + list(
-        _ROOT.glob("training/*.py")
+    for path in (
+        list(_ROOT.glob("untell/**/*.py"))
+        + list(_ROOT.glob("eval/*.py"))
+        + list(_ROOT.glob("training/*.py"))
     ):
         text = path.read_text(encoding="utf-8", errors="replace")
         if re.search(r"\bscore_text\s*\(", text):
@@ -168,8 +176,7 @@ def test_the_protocol_exemption_is_true():
     """
     body = (_ROOT / "untell" / "rewriter" / "base.py").read_text(encoding="utf-8")
     code = "\n".join(
-        line for line in body.splitlines()
-        if not line.lstrip().startswith(("#", '"""', "'''"))
+        line for line in body.splitlines() if not line.lstrip().startswith(("#", '"""', "'''"))
     )
     assert "import score_text" not in code
     assert "score_text(" not in code.replace("``score_text(text)``", "")

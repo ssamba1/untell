@@ -62,9 +62,18 @@ _COMMANDS: dict[str, str] = {
 # means the user read the documentation, so treating it as prose to humanize is never what they
 # wanted — see the note in `main`. Derived by hand rather than from pyproject because the point is
 # the user-facing name, and a missing entry only costs the old behaviour rather than breaking one.
-_STANDALONE_ONLY = frozenset({
-    "voice", "latex", "audit", "mcp", "server", "distill", "surrogate", "eval-policy",
-})
+_STANDALONE_ONLY = frozenset(
+    {
+        "voice",
+        "latex",
+        "audit",
+        "mcp",
+        "server",
+        "distill",
+        "surrogate",
+        "eval-policy",
+    }
+)
 
 _ONE_LINER = {
     "humanize": "run the closed detector-feedback loop (alias: loop)",
@@ -92,7 +101,7 @@ def _usage() -> str:
         "",
         "Usage:",
         "  untell <command> [options]     run a specific command",
-        "  untell \"your text\"            shortcut — score + tells + humanize in one step",
+        '  untell "your text"            shortcut — score + tells + humanize in one step',
         "  untell --demo                  run the guided demo",
         "  untell --check                 verify installation",
         "",
@@ -129,6 +138,7 @@ def _run_demo(text: str | None = None) -> int:
     import sys as _s
 
     from untell.scripts.io_utils import configure_utf8_io
+
     configure_utf8_io()
 
     if os.environ.get("UNTELL_LITE_NO_TORCH") != "1":
@@ -175,10 +185,12 @@ def _run_demo(text: str | None = None) -> int:
 
     print("\n[1/3] Scoring with local detector ensemble...\n")
     from untell.scripts.score import score_text
+
     pre = score_text(sample_text, tier=demo_tier)
     try:
         from untell.humanness import classification, humanness
         from untell.rich_output import print_humanness
+
         h = humanness(sample_text, tier=demo_tier)
         print_humanness(h, classification(h))
     except Exception:
@@ -191,9 +203,11 @@ def _run_demo(text: str | None = None) -> int:
     # Step 2: Tells (instant)
     print("[2/3] Counting AI writing tells...\n")
     from untell.scripts.tells import score_tells
+
     tells = score_tells(sample_text)
     try:
         from untell.rich_output import print_tells_result
+
         print_tells_result(tells)
     except Exception:
         print(f"  Tells: {tells['tells']} ({tells['tells_per_100w']}/100w)")
@@ -220,7 +234,7 @@ def _run_demo(text: str | None = None) -> int:
     print(
         "[3/3] Ready to humanize!\n"
         f"\n"
-        f"  untell humanize \"{sample_text[:60]}...\" --rewriter composite --tier {demo_tier}\n"
+        f'  untell humanize "{sample_text[:60]}..." --rewriter composite --tier {demo_tier}\n'
         f"\n"
         f"The closed loop will:\n"
         f"  1. Score your text against the {ran} detector{'' if ran == 1 else 's'} this install "
@@ -229,13 +243,13 @@ def _run_demo(text: str | None = None) -> int:
         f"  3. Re-score and repeat until the hardest detector passes\n"
         f"\n"
         f"Try it with different voice styles:\n"
-        f"  untell humanize \"your text\" --style casual\n"
-        f"  untell humanize \"your text\" --style academic\n"
-        f"  untell humanize \"your text\" --style blunt\n"
+        f'  untell humanize "your text" --style casual\n'
+        f'  untell humanize "your text" --style academic\n'
+        f'  untell humanize "your text" --style blunt\n'
         f"\n"
         f"Quick score without humanizing:\n"
-        f"  untell score \"your text\" --tier full\n"
-        f"  untell tells \"your text\"\n"
+        f'  untell score "your text" --tier full\n'
+        f'  untell tells "your text"\n'
     )
 
     return 0
@@ -244,13 +258,16 @@ def _run_demo(text: str | None = None) -> int:
 def _run_check() -> int:
     """Verify installation: show versions, available detectors, rewriters."""
     from untell.scripts.io_utils import configure_utf8_io
+
     configure_utf8_io()
 
     import untell
+
     print(f"\nuntell v{untell.__version__}\n")
 
     # Detectors
     from untell.detectors.base import all_detectors
+
     dets = all_detectors()
     available = [d for d in dets if d.available()]
     print(f"Detectors: {len(dets)} registered, {len(available)} available")
@@ -260,9 +277,20 @@ def _run_check() -> int:
 
     # Rewriters
     from untell.rewriter import get_rewriter
+
     print("\nRewriters:")
-    for name in ["composite", "structural", "surgical", "targeted", "neural", "ensemble",
-                 "t5_paraphrase", "mt_pivot", "anthropic", "openai"]:
+    for name in [
+        "composite",
+        "structural",
+        "surgical",
+        "targeted",
+        "neural",
+        "ensemble",
+        "t5_paraphrase",
+        "mt_pivot",
+        "anthropic",
+        "openai",
+    ]:
         rw = get_rewriter(prefer=name)
         status = "✓" if rw and rw.available() else "✗"
         print(f"  {status} {name}")
@@ -270,14 +298,18 @@ def _run_check() -> int:
     # REASON, not just a check mark: the adapter dir may be set while peft/torch/transformers are
     # missing, and the reason names the extra that installs them (issue #34).
     from untell.rewriter.local_policy import LocalPolicyRewriter
+
     _lp = LocalPolicyRewriter()
     _lp_reason = _lp.unavailable_reason()
-    print(f"  {'✓' if _lp_reason is None else '✗'} local (trained policy)"
-          + ("" if _lp_reason is None else f" — {_lp_reason}"))
+    print(
+        f"  {'✓' if _lp_reason is None else '✗'} local (trained policy)"
+        + ("" if _lp_reason is None else f" — {_lp_reason}")
+    )
 
     # API server
     try:
         from untell.api_server import app
+
         print(f"\nAPI Server: ✓ (v{app.version})")
     except Exception:
         print("\nAPI Server: ✗ (install: pip install untell[server])")
@@ -377,8 +409,12 @@ def _build_parser() -> argparse.ArgumentParser:
     import argparse
 
     parser = argparse.ArgumentParser(prog="untell", add_help=False, description="AI-text humanizer")
-    parser.add_argument("subcommand", nargs="?", choices=list(_COMMANDS) + ["--check", "--demo"],
-                        help="subcommand to run")
+    parser.add_argument(
+        "subcommand",
+        nargs="?",
+        choices=list(_COMMANDS) + ["--check", "--demo"],
+        help="subcommand to run",
+    )
     return parser
 
 

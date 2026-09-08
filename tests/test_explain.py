@@ -222,9 +222,7 @@ def test_cli_empty_input_exit_2(capsys, tmp_path) -> None:
 def test_cli_no_input_exit_2(capsys, monkeypatch) -> None:
     # main() imports read_stdin_or_none from io_utils at call time, so the patch
     # must land on io_utils, not on this module's namespace.
-    monkeypatch.setattr(
-        "untell.scripts.io_utils.read_stdin_or_none", lambda: None
-    )
+    monkeypatch.setattr("untell.scripts.io_utils.read_stdin_or_none", lambda: None)
     rc = explain_main([])
     assert rc == 2
     assert "error" in json.loads(capsys.readouterr().out)

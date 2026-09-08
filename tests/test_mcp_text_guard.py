@@ -15,6 +15,7 @@ constant" comment in api_server.py.
 The helper lives at module level (like `_bad_args`) so the checks run on machines without the
 optional `mcp` package; the real-engine tests below prove the tools actually call it.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -96,7 +97,9 @@ def test_an_oversized_text_is_refused_instead_of_processing(tool, args):
 def test_an_oversized_voice_sample_is_refused():
     async def _go():
         srv = _real_server()
-        result = await srv.call_tool("untell", {"text": "short", "tier": "lite", "voice_sample": OVER})
+        result = await srv.call_tool(
+            "untell", {"text": "short", "tier": "lite", "voice_sample": OVER}
+        )
         return json.loads(result[0].text)
 
     payload = _run(_go())
@@ -109,7 +112,9 @@ def test_a_text_at_the_limit_still_runs():
 
     async def _go():
         srv = _real_server()
-        text = ("Furthermore, the system leverages robust methodologies. ") * (MAX_INPUT_CHARS // 56)
+        text = ("Furthermore, the system leverages robust methodologies. ") * (
+            MAX_INPUT_CHARS // 56
+        )
         result = await srv.call_tool("scrub", {"text": text})
         return json.loads(result[0].text)
 

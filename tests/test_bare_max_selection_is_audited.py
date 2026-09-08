@@ -27,16 +27,16 @@ from untell.scripts.audit import (
     check_selection_does_not_read_a_bare_max,
 )
 
-OFFENDER = '''
+OFFENDER = """
 def pick_best(candidates, baseline):
     best = baseline
     for cand, score in candidates:
         if score["max"] < best["max"]:
             best = score
     return best
-'''
+"""
 
-INNOCENT = '''
+INNOCENT = """
 from untell.rewriter.base import selection_key
 
 
@@ -46,7 +46,7 @@ def pick_best(candidates, baseline):
         if selection_key(score) < selection_key(best):
             best = score
     return best
-'''
+"""
 
 
 @pytest.fixture(autouse=True)

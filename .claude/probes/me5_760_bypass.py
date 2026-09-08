@@ -2,6 +2,7 @@
 (untell/scripts/score.py _score_with_detectors). Pass 760 assignment.
 Run: PYTHONPATH= UNTELL_LITE_NO_TORCH=1 .venv/Scripts/python.exe .claude/probes/me5_760_bypass.py
 """
+
 import io
 import json
 import re
@@ -86,9 +87,7 @@ class FakeDet:
 TXT = "this is a perfectly ordinary English sentence about nothing in particular."
 
 # 2a. ALL detectors return None -> scored=False, flagged=False, abstention warning
-res_all = _score_with_detectors(
-    [FakeDet("a", None), FakeDet("b", None), FakeDet("c", None)], TXT
-)
+res_all = _score_with_detectors([FakeDet("a", None), FakeDet("b", None), FakeDet("c", None)], TXT)
 out["2a_all_none"] = {
     "scored": res_all.get("scored"),
     "flagged": res_all.get("flagged"),
@@ -99,9 +98,7 @@ out["2a_all_none"] = {
 }
 
 # 2b. SOME detectors None -> scores from survivors + ensemble warning
-res_part = _score_with_detectors(
-    [FakeDet("a", 0.1), FakeDet("b", None), FakeDet("c", 0.9)], TXT
-)
+res_part = _score_with_detectors([FakeDet("a", 0.1), FakeDet("b", None), FakeDet("c", 0.9)], TXT)
 w = res_part.get("warning") or ""
 out["2b_partial"] = {
     "scored_key_present": "scored" in res_part,

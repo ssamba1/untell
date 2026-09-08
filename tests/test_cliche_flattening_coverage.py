@@ -72,7 +72,7 @@ def test_flattening_does_not_break_the_sentence(text: str, _phrase: str) -> None
 
 
 def test_number_agreement_is_out_of_scope_and_stays_out() -> None:
-    """"one of the most important rules" -> "a key rules" is why that entry is not in the table.
+    """ "one of the most important rules" -> "a key rules" is why that entry is not in the table.
 
     A substitution table matches a string and cannot inflect what follows it. Asserted so the
     tempting entry is not added back by someone reading the coverage number as a target.

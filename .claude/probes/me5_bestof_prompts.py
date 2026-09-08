@@ -5,6 +5,7 @@ Probe 1: untell_text best_of=3 -> up to 3 drafts/iter, one final, no crash;
 Probe 2: prompts.STYLES casual/academic/blunt templates + build_rewrite_prompt
          system prompt + style validation behavior.
 """
+
 import os
 import sys
 
@@ -60,8 +61,10 @@ for style in ("casual", "academic", "blunt"):
     score_result = {
         "detectors": {"mage": 0.93, "perplexity_burstiness": 0.41},
         "style": style,
-        "flagged_sentences": ["Moreover, researchers believe that machine learning algorithms "
-                              "can identify diseases earlier than traditional methods."],
+        "flagged_sentences": [
+            "Moreover, researchers believe that machine learning algorithms "
+            "can identify diseases earlier than traditional methods."
+        ],
     }
     prompt = build_rewrite_prompt(TEXT, score_result, threshold=0.30)
     out.setdefault("prompts", {})[style] = {
@@ -82,4 +85,5 @@ out["style_validation"] = {
 
 print("PROBE RESULT")
 import json
+
 print(json.dumps(out, indent=2, default=str))

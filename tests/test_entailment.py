@@ -3,6 +3,7 @@
 Logic is tested with fakes so the suite stays fast; the real-model behaviour is pinned by one
 torch-gated test, because the whole point of this module is a property of the actual model.
 """
+
 from __future__ import annotations
 
 import json
@@ -50,7 +51,9 @@ def test_takes_max_across_both_directions(monkeypatch):
     """Contradiction is not symmetric in the model output; either direction is disqualifying."""
     monkeypatch.setattr(entailment, "available", lambda: True)
     monkeypatch.setattr(entailment._NLI, "dead", False)
-    monkeypatch.setattr(entailment._NLI, "label_idx", {"contradiction": 0, "entailment": 1, "neutral": 2})
+    monkeypatch.setattr(
+        entailment._NLI, "label_idx", {"contradiction": 0, "entailment": 1, "neutral": 2}
+    )
 
     calls = {"n": 0}
 
@@ -111,7 +114,9 @@ def test_entailment_takes_min_of_both_directions(monkeypatch):
     entails its source in one direction only."""
     monkeypatch.setattr(entailment, "available", lambda: True)
     monkeypatch.setattr(entailment._NLI, "dead", False)
-    monkeypatch.setattr(entailment._NLI, "label_idx", {"contradiction": 0, "entailment": 1, "neutral": 2})
+    monkeypatch.setattr(
+        entailment._NLI, "label_idx", {"contradiction": 0, "entailment": 1, "neutral": 2}
+    )
     monkeypatch.setattr(entailment, "_load", lambda: (None, None))
 
     calls = {"n": 0}
@@ -183,20 +188,29 @@ def test_real_model_gate_beats_similarity_alone_on_both_axes():
     from untell.scripts.quality import similarity
 
     good = [
-        ("Organizations use these tools to improve operational efficiency.",
-         "Companies rely on this stuff to run things better."),
-        ("Furthermore, adoption rates continue to increase steadily.",
-         "Also, more people keep signing up."),
+        (
+            "Organizations use these tools to improve operational efficiency.",
+            "Companies rely on this stuff to run things better.",
+        ),
+        (
+            "Furthermore, adoption rates continue to increase steadily.",
+            "Also, more people keep signing up.",
+        ),
     ]
     bad = [
-        ("The build runs significantly faster after the change.",
-         "The build runs significantly slower after the change."),
-        ("The cat sat on the mat and watched the rain fall outside.",
-         "The cat sat somewhere."),
+        (
+            "The build runs significantly faster after the change.",
+            "The build runs significantly slower after the change.",
+        ),
+        ("The cat sat on the mat and watched the rain fall outside.", "The cat sat somewhere."),
     ]
     try:
-        new_good = sum(1 for a, b in good if entailment.meaning_preserved(a, b, similarity(a, b), 0.76))
-        new_bad = sum(1 for a, b in bad if entailment.meaning_preserved(a, b, similarity(a, b), 0.76))
+        new_good = sum(
+            1 for a, b in good if entailment.meaning_preserved(a, b, similarity(a, b), 0.76)
+        )
+        new_bad = sum(
+            1 for a, b in bad if entailment.meaning_preserved(a, b, similarity(a, b), 0.76)
+        )
     except Exception:
         pytest.skip("NLI model failed to load")
 
@@ -264,9 +278,17 @@ class TestModelFreeChecksRunWithoutNLI:
     @pytest.mark.parametrize(
         ("source", "candidate", "label"),
         [
-            ("Only 7 of the 19 tests passed.", "Only a few of the 19 tests passed.", "drops a number"),
+            (
+                "Only 7 of the 19 tests passed.",
+                "Only a few of the 19 tests passed.",
+                "drops a number",
+            ),
             ("The drug may cause drowsiness.", "The drug causes drowsiness.", "drops a hedge"),
-            ("Screen time is correlated with poor sleep.", "Screen time causes poor sleep.", "causal upgrade"),
+            (
+                "Screen time is correlated with poor sleep.",
+                "Screen time causes poor sleep.",
+                "causal upgrade",
+            ),
             ("The study found an effect.", "The study found a large effect.", "intensifier added"),
         ],
     )
@@ -322,10 +344,14 @@ class TestLongInputIsActuallyScored:
     @pytest.mark.parametrize(
         "before,after",
         [
-            ("The treatment improved outcomes in the trial.",
-             "The treatment did not improve outcomes in the trial."),
-            ("The revision improved the clarity of the argument.",
-             "The revision worsened the clarity of the argument."),
+            (
+                "The treatment improved outcomes in the trial.",
+                "The treatment did not improve outcomes in the trial.",
+            ),
+            (
+                "The revision improved the clarity of the argument.",
+                "The revision worsened the clarity of the argument.",
+            ),
         ],
     )
     def test_an_inversion_late_in_a_long_document_is_still_vetoed(self, before, after):

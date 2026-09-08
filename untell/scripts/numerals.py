@@ -50,12 +50,30 @@ _NUMBER_RE = re.compile(r"(?<![\w.])-?\d[\d,]*(?:\.\d+)?")
 # integers matter: nobody rewrites "1,234" as words, and if they do, the numeral is still gone in a
 # way worth flagging.
 _WORDS = {
-    "0": ("zero", "no", "none"), "1": ("one", "a single"), "2": ("two", "both", "a pair"),
-    "3": ("three",), "4": ("four",), "5": ("five",), "6": ("six",), "7": ("seven",),
-    "8": ("eight",), "9": ("nine",), "10": ("ten",), "11": ("eleven",), "12": ("twelve", "a dozen"),
-    "13": ("thirteen",), "14": ("fourteen",), "15": ("fifteen",), "16": ("sixteen",),
-    "17": ("seventeen",), "18": ("eighteen",), "19": ("nineteen",), "20": ("twenty",),
-    "30": ("thirty",), "40": ("forty",), "50": ("fifty",),
+    "0": ("zero", "no", "none"),
+    "1": ("one", "a single"),
+    "2": ("two", "both", "a pair"),
+    "3": ("three",),
+    "4": ("four",),
+    "5": ("five",),
+    "6": ("six",),
+    "7": ("seven",),
+    "8": ("eight",),
+    "9": ("nine",),
+    "10": ("ten",),
+    "11": ("eleven",),
+    "12": ("twelve", "a dozen"),
+    "13": ("thirteen",),
+    "14": ("fourteen",),
+    "15": ("fifteen",),
+    "16": ("sixteen",),
+    "17": ("seventeen",),
+    "18": ("eighteen",),
+    "19": ("nineteen",),
+    "20": ("twenty",),
+    "30": ("thirty",),
+    "40": ("forty",),
+    "50": ("fifty",),
 }
 
 
@@ -86,12 +104,26 @@ _LIST_MARKER_RE = re.compile(r"(?m)^[ \t]*\d{1,2}[.)](?=\s)")
 # of a compound ("twenty-one").
 _UNITS = {"two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9}
 _TEENS = {
-    "ten": 10, "eleven": 11, "twelve": 12, "thirteen": 13, "fourteen": 14, "fifteen": 15,
-    "sixteen": 16, "seventeen": 17, "eighteen": 18, "nineteen": 19,
+    "ten": 10,
+    "eleven": 11,
+    "twelve": 12,
+    "thirteen": 13,
+    "fourteen": 14,
+    "fifteen": 15,
+    "sixteen": 16,
+    "seventeen": 17,
+    "eighteen": 18,
+    "nineteen": 19,
 }
 _TENS = {
-    "twenty": 20, "thirty": 30, "forty": 40, "fifty": 50, "sixty": 60, "seventy": 70,
-    "eighty": 80, "ninety": 90,
+    "twenty": 20,
+    "thirty": 30,
+    "forty": 40,
+    "fifty": 50,
+    "sixty": 60,
+    "seventy": 70,
+    "eighty": 80,
+    "ninety": 90,
 }
 # Magnitude words, and the reason they are shared by both extraction paths below.
 #
@@ -142,8 +174,15 @@ _DIGIT_MAGNITUDE_RE = re.compile(
 _DECIMAL_DIGIT = r"(?:zero|one|" + "|".join(_UNITS) + r")"
 _SPELLED_DECIMAL_RE = re.compile(
     r"(?<![\w-])"
-    r"(?:zero|one|" + "|".join(_UNITS) + r"|" + "|".join(_TEENS)
-    + r"|(?:" + "|".join(_TENS) + r")(?:[-\s]+(?:one|" + "|".join(_UNITS) + r"))?)"
+    r"(?:zero|one|"
+    + "|".join(_UNITS)
+    + r"|"
+    + "|".join(_TEENS)
+    + r"|(?:"
+    + "|".join(_TENS)
+    + r")(?:[-\s]+(?:one|"
+    + "|".join(_UNITS)
+    + r"))?)"
     r"[-\s]+point[-\s]+" + _DECIMAL_DIGIT + r"(?:[-\s]+" + _DECIMAL_DIGIT + r")*"
     r"(?![\w-])",
     re.IGNORECASE,
@@ -201,14 +240,14 @@ _SMALL_TAIL = (
 # ["1"] to []. A quantity change stopped being reported.
 #
 # The lookahead keeps the MATCH to "one" alone, so the extracted value is still 1.
-_DENOMINATOR = (
-    r"half|halves|third|quarter|fourth|fifth|sixth|seventh|eighth|ninth|tenth"
-)
+_DENOMINATOR = r"half|halves|third|quarter|fourth|fifth|sixth|seventh|eighth|ninth|tenth"
 _SMALL_TAIL_NO_ONE = (
     r"(?:(?:" + "|".join(_TENS) + r")(?:[\-\s]+(?:one|" + "|".join(_UNITS) + r"))?"
     r"|(?:" + "|".join(_TEENS) + r")|(?:" + "|".join(_UNITS) + r"))"
 )
-_GROUP_HEAD = r"(?:a|one|" + "|".join(_UNITS) + r"|" + "|".join(_TEENS) + r"|" + "|".join(_TENS) + r")"
+_GROUP_HEAD = (
+    r"(?:a|one|" + "|".join(_UNITS) + r"|" + "|".join(_TEENS) + r"|" + "|".join(_TENS) + r")"
+)
 # One scale group: "two hundred", "three thousand", "two hundred thousand", "fifteen hundred".
 _GROUP = (
     r"(?:" + _GROUP_HEAD + r")[\-\s]+"
@@ -300,7 +339,9 @@ def _spelled_value(match: str) -> str:
             total += (chunk or 1) * _SCALES[part]
             chunk = 0
             continue
-        value = _TENS.get(part) or _TEENS.get(part) or _UNITS.get(part) or (1 if part == "one" else 0)
+        value = (
+            _TENS.get(part) or _TEENS.get(part) or _UNITS.get(part) or (1 if part == "one" else 0)
+        )
         chunk += value
     return str(total + chunk)
 
@@ -317,7 +358,7 @@ def _decimal_fold(match: re.Match) -> str:
     idx = words.index("point")
     int_value = _spelled_value(" ".join(words[:idx]))
     digit = {"zero": "0", "one": "1", **{w: str(v) for w, v in _UNITS.items()}}
-    frac = "".join(digit[w] for w in words[idx + 1:])
+    frac = "".join(digit[w] for w in words[idx + 1 :])
     return f" {int_value}.{frac} "
 
 
@@ -432,7 +473,9 @@ def main(argv: list[str] | None = None) -> int:
     # wrong answer exactly when the caller believed they had asked for machine output.
     bad = [a for a in args if a.startswith("-") and a not in ("-h", "--help")]
     if bad:
-        logger.error('unrecognized argument %s (usage: untell-numbers "<original>" "<rewrite>")', bad[0])
+        logger.error(
+            'unrecognized argument %s (usage: untell-numbers "<original>" "<rewrite>")', bad[0]
+        )
         return 2
     if len(args) < 2:
         logger.error('usage: untell-numbers "<original>" "<rewrite>"')

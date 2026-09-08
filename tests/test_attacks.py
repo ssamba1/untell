@@ -47,7 +47,9 @@ def _mt_ready() -> bool:
 
 
 @pytest.mark.slow  # downloads and runs MarianMT for back-translation (16s measured)
-@pytest.mark.skipif(not _mt_ready(), reason="MarianMT stack (torch/transformers/sentencepiece) unavailable")
+@pytest.mark.skipif(
+    not _mt_ready(), reason="MarianMT stack (torch/transformers/sentencepiece) unavailable"
+)
 def test_roundtrip_changes_text_but_keeps_gist():
     src = "The committee approved the new policy after a lengthy and contentious debate."
     out = back_translate(src, pivots=("fr",))
@@ -170,14 +172,14 @@ def test_chunking_never_returns_empty():
 # INVARIANT instead: for carriers that are removed (as opposed to homoglyphs, which are replaced
 # in place), the count must equal the number of characters scrubbing actually removes.
 SYNC_CASES = [
-    "a\u0001b",              # C0 control
-    "a\u001fb\u200cc",       # C1 control + zero-width non-joiner
-    "a\u200bb",              # zero-width space
-    "a\u2062b",              # invisible times
-    "hel\u200dlo",           # orphan ZWJ
+    "a\u0001b",  # C0 control
+    "a\u001fb\u200cc",  # C1 control + zero-width non-joiner
+    "a\u200bb",  # zero-width space
+    "a\u2062b",  # invisible times
+    "hel\u200dlo",  # orphan ZWJ
     "a\u0007\u200b\u2061b",  # bell + ZWSP + function application
-    "plain text",            # nothing to remove
-    "",                      # degenerate
+    "plain text",  # nothing to remove
+    "",  # degenerate
 ]
 
 
@@ -303,8 +305,17 @@ class TestSurgicalIsInertOnTheStdlibPath:
         from untell.attacks import synonyms
 
         for word in (
-            "leverage", "robust", "seamless", "delve", "multifaceted", "tapestry",
-            "groundbreaking", "paradigm", "underscores", "pivotal", "landscape",
+            "leverage",
+            "robust",
+            "seamless",
+            "delve",
+            "multifaceted",
+            "tapestry",
+            "groundbreaking",
+            "paradigm",
+            "underscores",
+            "pivotal",
+            "landscape",
         ):
             assert synonyms(word), f"{word} has no synonym — the map really would be the problem"
 
@@ -387,7 +398,9 @@ class TestPreferTellsObjective:
         before = score_tells(self.TELL_HEAVY)["tells"]
         off = surgical_substitute(self.TELL_HEAVY, tier="lite", max_subs=12, prefer_tells=False)
         on = surgical_substitute(self.TELL_HEAVY, tier="lite", max_subs=12, prefer_tells=True)
-        assert score_tells(off["text"])["tells"] == before, "the score-only rule adopts nothing here"
+        assert score_tells(off["text"])["tells"] == before, (
+            "the score-only rule adopts nothing here"
+        )
         assert score_tells(on["text"])["tells"] < before, "prefer_tells should remove tells"
 
     def test_the_noise_budget_is_total_not_per_swap(self, monkeypatch):
@@ -423,7 +436,7 @@ class TestPreferTellsObjective:
 
 
 class TestAConnectiveThatCannotOpenASentence:
-    """"however -> though" is the single most common substitution this module makes.
+    """ "however -> though" is the single most common substitution this module makes.
 
     MEASURED across 240 real HC3 texts: 31 of 47 substitutions, and every sentence-initial one
     reads as broken, because subordinating "though" cannot introduce an independent clause:
@@ -488,11 +501,17 @@ class TestACoordinatorDoesNotInheritTheCommaItReplaced:
         ("text", "word", "expected"),
         [
             ("Moreover, the budget is approved.", "Moreover", "And the budget is approved."),
-            ("The plan is set. Moreover, the budget holds.",
-             "Moreover", "The plan is set. And the budget holds."),
+            (
+                "The plan is set. Moreover, the budget holds.",
+                "Moreover",
+                "The plan is set. And the budget holds.",
+            ),
             ("It is cheap; moreover, it is fast.", "moreover", "It is cheap; and it is fast."),
-            ("The costs rose, moreover, the delays grew.",
-             "moreover", "The costs rose, and the delays grew."),
+            (
+                "The costs rose, moreover, the delays grew.",
+                "moreover",
+                "The costs rose, and the delays grew.",
+            ),
             ("> Moreover, stakeholders must act.", "Moreover", "> And stakeholders must act."),
         ],
     )
@@ -502,7 +521,7 @@ class TestACoordinatorDoesNotInheritTheCommaItReplaced:
         assert substitute_once(text, word, "and") == expected
 
     def test_a_replacement_that_wants_the_comma_keeps_it(self):
-        """"Also" is a conjunctive adverb like the word it replaces — it takes the comma."""
+        """ "Also" is a conjunctive adverb like the word it replaces — it takes the comma."""
         from untell.attacks.word_importance import substitute_once
 
         assert substitute_once("Moreover, the budget is approved.", "Moreover", "also") == (
@@ -510,7 +529,7 @@ class TestACoordinatorDoesNotInheritTheCommaItReplaced:
         )
 
     def test_idiomatic_openers_are_not_in_the_set(self):
-        """"So," and "Yet," open sentences perfectly well and must not be stripped."""
+        """ "So," and "Yet," open sentences perfectly well and must not be stripped."""
         from untell.attacks.word_importance import _COMMA_LESS_OPENERS
 
         assert not _COMMA_LESS_OPENERS & {"so", "yet", "also", "plus", "still"}
@@ -536,8 +555,19 @@ class TestBoilerplateSynonyms:
         # 20% of all candidates — every hedge veto in a 150-candidate sample — against 0%, 0% and
         # 2% for similarity, numerals and roles. See TestIntentionVerbsAreNotSubstituted, which
         # guards the overlap directly.
-        ["novel", "approach", "method", "framework", "effectiveness",
-         "outperforms", "present", "introduce", "achieve", "strengths", "benchmark"],
+        [
+            "novel",
+            "approach",
+            "method",
+            "framework",
+            "effectiveness",
+            "outperforms",
+            "present",
+            "introduce",
+            "achieve",
+            "strengths",
+            "benchmark",
+        ],
     )
     def test_boilerplate_has_a_substitute(self, word):
         from untell.attacks import synonyms
@@ -633,20 +663,23 @@ class TestInflectedKeysAgreeWithTheirSubstitutes:
             offenders = [v for v in values if not v.split()[0].endswith("ing")]
             if offenders:
                 bad[key] = offenders
-        assert not bad, f"an -ing verb key with non--ing substitutes produces 'is use robust': {bad}"
+        assert not bad, (
+            f"an -ing verb key with non--ing substitutes produces 'is use robust': {bad}"
+        )
 
     def test_the_scoping_is_not_vacuous(self):
         """If nothing is classed as a verb inflection the test above proves nothing."""
         from untell.attacks.word_importance import _SYN
 
         verbs = [
-            k for k in _SYN
+            k
+            for k in _SYN
             if k.endswith("ing") and " " not in k and self._is_inflection_of_another_key(k, _SYN)
         ]
         assert len(verbs) >= 4, f"only {verbs} classed as verb inflections"
 
     def test_an_s_key_has_s_substitutes(self):
-        """"the system leverages X" -> "the system use X" is the failure this prevents."""
+        """ "the system leverages X" -> "the system use X" is the failure this prevents."""
         from untell.attacks.word_importance import _SYN
 
         bad = {}
@@ -665,8 +698,16 @@ class TestInflectedKeysAgreeWithTheirSubstitutes:
         from untell.attacks.word_importance import _SYN
 
         for word in (
-            "leverages", "leveraging", "utilizes", "demonstrating", "achieving",
-            "required", "requiring", "evaluated", "introducing", "outperforming",
+            "leverages",
+            "leveraging",
+            "utilizes",
+            "demonstrating",
+            "achieving",
+            "required",
+            "requiring",
+            "evaluated",
+            "introducing",
+            "outperforming",
         ):
             assert word in _SYN, f"{word} lost its entry; it occurs in real AI text"
 
@@ -675,9 +716,7 @@ class TestInflectedKeysAgreeWithTheirSubstitutes:
         from untell.attacks.word_importance import _SYN
         from untell.scripts.tells import _AI_VOCAB_RE
 
-        offenders = {
-            k: [v for v in vs if _AI_VOCAB_RE.search(v)] for k, vs in _SYN.items()
-        }
+        offenders = {k: [v for v in vs if _AI_VOCAB_RE.search(v)] for k, vs in _SYN.items()}
         offenders = {k: v for k, v in offenders.items() if v}
         assert not offenders, f"substitutes that are themselves tells: {offenders}"
 
@@ -698,8 +737,17 @@ class TestNoSubstituteChangesHowStronglySomethingIsClaimed:
 
     # Words that assert more (or less) than a hedged or neutral original.
     UPGRADES = {
-        "prove", "proves", "proving", "proven", "guarantee", "guarantees",
-        "always", "never", "definitely", "certainly", "must",
+        "prove",
+        "proves",
+        "proving",
+        "proven",
+        "guarantee",
+        "guarantees",
+        "always",
+        "never",
+        "definitely",
+        "certainly",
+        "must",
     }
     DOWNGRADES = {"possibly", "maybe", "perhaps", "sometimes", "might"}
 
@@ -707,10 +755,7 @@ class TestNoSubstituteChangesHowStronglySomethingIsClaimed:
         from untell.attacks.word_importance import _SYN
 
         offenders = [
-            (key, alt)
-            for key, alts in _SYN.items()
-            for alt in alts
-            if alt.lower() in self.UPGRADES
+            (key, alt) for key, alts in _SYN.items() for alt in alts if alt.lower() in self.UPGRADES
         ]
         assert not offenders, (
             f"these substitutions assert more than the word they replace, and entailment cannot "

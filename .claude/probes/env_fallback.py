@@ -1,5 +1,7 @@
 """_env fallback parser: comments, quotes, CRLF, unicode, malformed lines."""
+
 import json, os, tempfile
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
 
 content = """# comment line
@@ -18,5 +20,6 @@ with tempfile.NamedTemporaryFile(mode="w", suffix=".env", delete=False, encoding
     path = f.name
 
 from untell._env import load_env
+
 loaded = load_env(path)
 print(json.dumps(loaded, indent=1))

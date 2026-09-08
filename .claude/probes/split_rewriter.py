@@ -1,5 +1,7 @@
 """Rewriter on the quoted-period text: no dangling fragments in output."""
+
 import json, os
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
 from untell.rewriter.structural import StructuralRewriter
 from untell.text_split import split_sentences

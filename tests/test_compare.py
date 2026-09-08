@@ -43,9 +43,13 @@ def test_compare_aggregates_with_stub_techniques(monkeypatch):
 
     monkeypatch.setattr(C, "_techniques", fake_techniques)
     # Also stub score_text so we don't load detector models in a unit test.
-    monkeypatch.setattr(C, "score_text", lambda text, tier="full": {"max": 0.4 if "leverage" in text else 0.1})
+    monkeypatch.setattr(
+        C, "score_text", lambda text, tier="full": {"max": 0.4 if "leverage" in text else 0.1}
+    )
 
-    texts = ["Furthermore, we leverage robust tools. Moreover, studies show it is pivotal and seamless."]
+    texts = [
+        "Furthermore, we leverage robust tools. Moreover, studies show it is pivotal and seamless."
+    ]
     r = compare(texts, tier="lite", threshold=0.3)
     assert r["n"] == 1
     t = r["techniques"]
@@ -87,10 +91,11 @@ def test_silent_noop_technique_is_not_published_as_a_measurement(monkeypatch):
 
     monkeypatch.setattr(c, "_ai_max", lambda out, tier: 0.5)
     monkeypatch.setattr(
-        c, "_techniques",
+        c,
+        "_techniques",
         lambda tier, threshold: {
             "none (raw AI)": lambda t: t,
-            "noop_technique": lambda t: t,          # the missing-dep case
+            "noop_technique": lambda t: t,  # the missing-dep case
             "real_technique": lambda t: t.replace("AI", "stuff"),
         },
     )
@@ -145,8 +150,9 @@ class TestTheHeadToHeadCanRunOnAPublicCorpus:
     def test_the_renderer_shows_the_corpus(self):
         from eval.compare_humanizers import _render
 
-        line = _render({"corpus": "hc3 n=6", "tier": "full", "n": 6, "threshold": 0.3,
-                        "techniques": {}}).splitlines()[0]
+        line = _render(
+            {"corpus": "hc3 n=6", "tier": "full", "n": 6, "threshold": 0.3, "techniques": {}}
+        ).splitlines()[0]
         assert "hc3 n=6" in line, f"the corpus is not in the header: {line}"
 
     def test_an_unnamed_corpus_does_not_crash_the_renderer(self):

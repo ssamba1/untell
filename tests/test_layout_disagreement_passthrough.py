@@ -14,8 +14,8 @@ from untell.layout import restore_layout_lines
 
 
 def test_aligned_restores_code_fence() -> None:
-    orig = "```\ncode line\n```\nplain"   # mask [F,F,F,T] == 4 slots == src 4
-    out = "AAA\nBBB\nCCC\nDDD"            # aligned, 4 lines
+    orig = "```\ncode line\n```\nplain"  # mask [F,F,F,T] == 4 slots == src 4
+    out = "AAA\nBBB\nCCC\nDDD"  # aligned, 4 lines
     result = restore_layout_lines(orig, out)
     # The fence must be restored from the original, prose line takes the rewrite.
     assert result == "```\ncode line\n```\nDDD"

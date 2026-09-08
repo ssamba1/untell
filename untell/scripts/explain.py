@@ -219,9 +219,7 @@ def _merge_labeled(
     # corrupts the merged interval when processing order is not non-decreasing in
     # start — FOUND by the lock-consistency test, which is exactly why it exists.
     spans = sorted(set(spans), key=lambda t: (t[1], t[2], t[0]))
-    merged: list[tuple[int, int, set[str]]] = [
-        (spans[0][1], spans[0][2], {spans[0][0]})
-    ]
+    merged: list[tuple[int, int, set[str]]] = [(spans[0][1], spans[0][2], {spans[0][0]})]
     for label, start, end in spans[1:]:
         last_start, last_end, labels = merged[-1]
         if start <= last_end:  # overlap or touch — same rule as preserve._merge
@@ -316,8 +314,10 @@ def main(argv: list[str] | None = None) -> int:
         if row["rationale"]:
             print(f"    why: {row['rationale']}")
         print()
-    print(f"{len(rows)} span(s) locked — each will survive a rewrite verbatim. "
-          "Run with --json for the machine-readable list.")
+    print(
+        f"{len(rows)} span(s) locked — each will survive a rewrite verbatim. "
+        "Run with --json for the machine-readable list."
+    )
     return 0
 
 

@@ -33,9 +33,7 @@ def test_extras_are_never_appended_to_an_unexpanded_glob() -> None:
         for ln in _DOCKERFILE.splitlines()
         if not ln.lstrip().startswith("#") and re.search(r"\*[^\s]*\.whl\[", ln)
     ]
-    assert not offenders, (
-        f"a shell glob with extras appended never expands: {offenders}"
-    )
+    assert not offenders, f"a shell glob with extras appended never expands: {offenders}"
 
 
 def test_the_wheel_is_installed_with_the_server_extra() -> None:
@@ -45,7 +43,7 @@ def test_the_wheel_is_installed_with_the_server_extra() -> None:
 
 def test_the_install_uses_an_expanded_path() -> None:
     """Whatever form it takes, the path pip receives must be a real filename."""
-    assert re.search(r'\$\(ls /tmp/untell-\*\.whl\)|WHEEL=', _DOCKERFILE), (
+    assert re.search(r"\$\(ls /tmp/untell-\*\.whl\)|WHEEL=", _DOCKERFILE), (
         "the wheel path is no longer expanded before use"
     )
 
@@ -139,7 +137,11 @@ def test_dockerignore_keeps_readme_and_package_data() -> None:
     assert not _ignored_by_dockerignore("README.md"), (
         "README.md is pyproject's `readme`; dropping it empties the wheel's long description"
     )
-    for rel in ("untell/SKILL.md", "untell/references/ai-tells.md", "untell/references/thresholds.md"):
+    for rel in (
+        "untell/SKILL.md",
+        "untell/references/ai-tells.md",
+        "untell/references/thresholds.md",
+    ):
         assert not _ignored_by_dockerignore(rel), (
             f"{rel} is package data; dropping it breaks what the docs promise in the wheel"
         )

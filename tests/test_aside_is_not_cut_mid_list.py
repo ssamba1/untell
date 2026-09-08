@@ -75,7 +75,7 @@ def test_the_guard_reads_what_follows_not_the_body() -> None:
         match = _ASIDE_RE.search(text)
         assert match, text
         assert bool(_LIST_CONTINUES_RE.match(text, match.end())) is expected, (
-            f"{text[match.end():match.end() + 30]!r} judged wrongly"
+            f"{text[match.end() : match.end() + 30]!r} judged wrongly"
         )
 
 

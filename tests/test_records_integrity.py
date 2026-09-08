@@ -61,9 +61,8 @@ class TestMeasurementsJsonlValidity:
                 json.loads(line)
             except json.JSONDecodeError as exc:
                 bad.append((i, str(exc)))
-        assert not bad, (
-            f"measurements.jsonl has {len(bad)} invalid JSON line(s):\n"
-            + "\n".join(f"  line {n}: {e}" for n, e in bad)
+        assert not bad, f"measurements.jsonl has {len(bad)} invalid JSON line(s):\n" + "\n".join(
+            f"  line {n}: {e}" for n, e in bad
         )
 
     def test_invalid_json_is_detected(self, tmp_path, monkeypatch) -> None:
@@ -178,9 +177,7 @@ class TestInstrumentsJson:
             pytest.skip("instruments.json not present in this checkout")
         instruments = json.loads(INSTRUMENTS.read_text(encoding="utf-8"))
         unknown = sorted(set(instruments) - set(R.RECIPES))
-        assert not unknown, (
-            f"instruments.json names recipes research.py does not know: {unknown}"
-        )
+        assert not unknown, f"instruments.json names recipes research.py does not know: {unknown}"
 
     def test_every_instrument_has_required_fields(self) -> None:
         """Live guard: every entry must carry deterministic/run_to_run/reported_spread."""
@@ -192,9 +189,8 @@ class TestInstrumentsJson:
             absent = sorted(INSTRUMENT_REQUIRED - set(entry))
             if absent:
                 bad.append((name, absent))
-        assert not bad, (
-            "instruments.json entries missing required fields:\n"
-            + "\n".join(f"  {n}: missing {f}" for n, f in bad)
+        assert not bad, "instruments.json entries missing required fields:\n" + "\n".join(
+            f"  {n}: missing {f}" for n, f in bad
         )
 
     def test_missing_instrument_field_is_detected(self, tmp_path) -> None:
@@ -260,14 +256,21 @@ class TestLiveTakenNumbers:
         monkeypatch.setattr(A, "assign", lambda history, offset=0: (5, "L1", "T01"))
 
         import sys
+
         monkeypatch.setattr(
-            sys, "argv",
+            sys,
+            "argv",
             [
-                "audit_next", "record",
-                "--verdict", "clean",
-                "--tests-before", "3",
-                "--tests-after", "3",
-                "--note", "probed Z, guard steps over n=5 to n=6",
+                "audit_next",
+                "record",
+                "--verdict",
+                "clean",
+                "--tests-before",
+                "3",
+                "--tests-after",
+                "3",
+                "--note",
+                "probed Z, guard steps over n=5 to n=6",
             ],
         )
         A.main()  # should NOT raise, should step to n=6

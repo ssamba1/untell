@@ -265,7 +265,9 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps({"dataset": args.dataset, "categories": rows}, indent=2))
         else:
             print(f"per-category precision — {args.dataset}, {len(pairs)} pairs\n")
-            print(f"{'category':26} {'human':>6} {'ai':>4} {'n':>4} {'prec':>6}  {'95% CI':>14}  note")
+            print(
+                f"{'category':26} {'human':>6} {'ai':>4} {'n':>4} {'prec':>6}  {'95% CI':>14}  note"
+            )
             for r in rows:
                 note = "" if r["informative"] else "too few firings to read"
                 if not r["informative"] and r["p_direction"] and r["p_direction"] <= 0.05:
@@ -277,7 +279,11 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     m = measure(pairs)
-    print(json.dumps({"dataset": args.dataset, **m}, indent=2) if args.json else render(args.dataset, m))
+    print(
+        json.dumps({"dataset": args.dataset, **m}, indent=2)
+        if args.json
+        else render(args.dataset, m)
+    )
     return 0
 
 

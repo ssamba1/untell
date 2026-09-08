@@ -1,4 +1,5 @@
 """me5 pass probe: _duplicate_sentence_starts + NLI scores. Real functions, real numbers."""
+
 import sys
 
 import untell.scripts.tells as T
@@ -11,8 +12,10 @@ from untell.scripts.entailment import (
 print("NLI available:", available())
 
 # ---- PROBE 1: _duplicate_sentence_starts ----
-S_LONG = ("The committee reviewed the annual budget report and then approved the "
-          "revised spending plan for the coming fiscal year without further discussion. ")
+S_LONG = (
+    "The committee reviewed the annual budget report and then approved the "
+    "revised spending plan for the coming fiscal year without further discussion. "
+)
 S_SHORT = "The plan was approved. "
 
 cases = {
@@ -24,9 +27,8 @@ cases = {
     "two_the_only": (S_LONG * 2, 0),
     # 6 sentences, 2 start 'The' -> dupes=1, share 16.7% < 40% -> 0
     "two_of_six_the": (
-        S_LONG * 2
-        + "This report covers the quarterly results and the outlook for the "
-          "remaining months of the current calendar year. "
+        S_LONG * 2 + "This report covers the quarterly results and the outlook for the "
+        "remaining months of the current calendar year. "
         + "These figures include revenue growth and operating margin data. "
         + "Our team prepared the analysis over several weeks. "
         + "Management reviewed every assumption carefully. ",
@@ -34,9 +36,8 @@ cases = {
     ),
     # 5 sentences: The,The,This,This,This -> dupes=3, share 60% -> returns 3
     "mixed_count_check": (
-        S_LONG + S_LONG
-        + "This report covers the quarterly results and the outlook for the "
-          "remaining months of the current calendar year. "
+        S_LONG + S_LONG + "This report covers the quarterly results and the outlook for the "
+        "remaining months of the current calendar year. "
         + "These figures include revenue growth and operating margin data. "
         + "This analysis was prepared over several weeks. ",
         3,
@@ -65,6 +66,8 @@ print(f"entailment_score(faster, slower)    = {e_flip!r}")
 
 # float-in-[0,1] checks on the model-backed pair
 for label, v in [("contra_flip", c_flip), ("entail_flip", e_flip)]:
-    print(f"type[{label}] = {type(v).__name__}, in[0,1] = {isinstance(v, float) and 0.0 <= v <= 1.0}")
+    print(
+        f"type[{label}] = {type(v).__name__}, in[0,1] = {isinstance(v, float) and 0.0 <= v <= 1.0}"
+    )
 
 print("DONE")

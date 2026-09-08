@@ -33,10 +33,17 @@ _JITTER = random.Random()
 # realistic message (`anthropic.APIStatusError: 529 overloaded`) against the classifier rather than
 # by reading the set, which looks complete until you ask it about a specific provider.
 _RETRYABLE_HTTP = frozenset({408, 429, 500, 502, 503, 504, 529})
-_RETRYABLE_ERRS = frozenset({
-    "ConnectionError", "Timeout", "RateLimitError", "InternalServerError",
-    "ServiceUnavailableError", "APITimeoutError", "APIConnectionError",
-})
+_RETRYABLE_ERRS = frozenset(
+    {
+        "ConnectionError",
+        "Timeout",
+        "RateLimitError",
+        "InternalServerError",
+        "ServiceUnavailableError",
+        "APITimeoutError",
+        "APIConnectionError",
+    }
+)
 
 
 # Read the status codes out of the message and test them against `_RETRYABLE_HTTP`, rather than
@@ -72,8 +79,14 @@ _STATUS_RE = re.compile(
 
 # `timeout` on its own matched "timeout must be a positive number" — a parameter being named, not a
 # request timing out. These are the shapes an actual timeout takes.
-_TIMEOUT_PHRASES = ("timed out", "read timeout", "connection timeout", "request timeout",
-                    "timeout exceeded", "timeout after")
+_TIMEOUT_PHRASES = (
+    "timed out",
+    "read timeout",
+    "connection timeout",
+    "request timeout",
+    "timeout exceeded",
+    "timeout after",
+)
 
 
 # Builtins, matched by TYPE rather than by name. The name set below misses every subclass, and the
@@ -104,9 +117,16 @@ def _is_retryable(exc: Exception) -> bool:
     msg = str(exc).lower()
     if any(int(code) in _RETRYABLE_HTTP for code in _STATUS_RE.findall(msg)):
         return True
-    for keyword in ("rate limit", "too many requests", "try again", "temporarily",
-                    "service unavailable",
-                    "connection reset", "connection refused", "broken pipe"):
+    for keyword in (
+        "rate limit",
+        "too many requests",
+        "try again",
+        "temporarily",
+        "service unavailable",
+        "connection reset",
+        "connection refused",
+        "broken pipe",
+    ):
         if keyword in msg:
             return True
     return any(phrase in msg for phrase in _TIMEOUT_PHRASES)

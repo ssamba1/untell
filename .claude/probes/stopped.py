@@ -1,5 +1,7 @@
 """stopped semantics: below-threshold text -> passed; above -> max_iters; empty -> early."""
+
 import json, os
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
 from untell.scripts.run import untell_text
 
@@ -10,8 +12,10 @@ r = untell_text(clean, tier="lite", max_iters=3, seed=1)
 out["clean_stopped"] = r.get("stopped")
 out["clean_flagged"] = r.get("flagged")
 # 2. AI text with max_iters=1 -> max_iters (or passed if 1 iter cleared it)
-ai = ("Moreover, the framework leverages robust solutions to deliver outcomes at scale. "
-      "It is important to note that the results demonstrate significant improvement.")
+ai = (
+    "Moreover, the framework leverages robust solutions to deliver outcomes at scale. "
+    "It is important to note that the results demonstrate significant improvement."
+)
 r2 = untell_text(ai, tier="lite", max_iters=1, seed=1)
 out["ai_iters1_stopped"] = r2.get("stopped")
 out["ai_iters1_final_changed"] = r2["final"] != ai

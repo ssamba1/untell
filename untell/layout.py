@@ -51,9 +51,7 @@ _SENTENCE_END_RE = re.compile(r"[.!?。！？؟۔][\"')\]”’" + _ZERO_WIDTH_C
 # table row. The SETEXT underline gets the same treatment as the ATX marker: the heading
 # text above it is still prose; the underline itself is layout. Guarded by the fence/
 # math/blank branch above, so a `---` inside fenced code stays code.
-_HR_RE = re.compile(
-    r'^\s*(?:(?:-{3,}|={3,}|\*{3,}|_{3,})|(?:[-*]\s+){2,}[-*])\s*$'
-)
+_HR_RE = re.compile(r"^\s*(?:(?:-{3,}|={3,}|\*{3,}|_{3,})|(?:[-*]\s+){2,}[-*])\s*$")
 
 
 def _is_table_row(line: str) -> bool:
@@ -304,9 +302,7 @@ def _segments(text: str):
         # between. That is prose the author wrapped, not code. The indent is carried as a
         # prefix and re-attached, exactly as a list marker is, so the transform sees only the
         # words.
-        if after_list_item and not buffer and (
-            line.startswith("    ") or line.startswith("\t")
-        ):
+        if after_list_item and not buffer and (line.startswith("    ") or line.startswith("\t")):
             stripped = line.lstrip(" \t")
             yield ("prose", line[: len(line) - len(stripped)], stripped)
             continue

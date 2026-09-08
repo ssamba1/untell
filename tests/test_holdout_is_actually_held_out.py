@@ -66,15 +66,24 @@ def test_the_conviction_split_is_computed_from_the_pre_rewrite_belief(monkeypatc
     after; it is unsure about the second and drops. Both move the same amount in-sample, so an
     aggregate would call them equal — the split is what tells them apart.
     """
-    detector = _FakeDetector({
-        "ai-certain": 0.99, "out-certain": 0.98, "human-a": 0.05,
-        "ai-unsure": 0.60, "out-unsure": 0.10, "human-b": 0.04,
-    })
+    detector = _FakeDetector(
+        {
+            "ai-certain": 0.99,
+            "out-certain": 0.98,
+            "human-a": 0.05,
+            "ai-unsure": 0.60,
+            "out-unsure": 0.10,
+            "human-b": 0.04,
+        }
+    )
     _wire(
-        monkeypatch, detector,
+        monkeypatch,
+        detector,
         pairs=[("human-a", "ai-certain"), ("human-b", "ai-unsure")],
-        rewritten={"ai-certain": (0.99, 0.20, "out-certain"),
-                   "ai-unsure": (0.99, 0.20, "out-unsure")},
+        rewritten={
+            "ai-certain": (0.99, 0.20, "out-certain"),
+            "ai-unsure": (0.99, 0.20, "out-unsure"),
+        },
     )
 
     result = holdout.run(n=2)
@@ -93,8 +102,7 @@ def test_the_conviction_split_is_computed_from_the_pre_rewrite_belief(monkeypatc
 def test_the_holdout_never_scores_a_candidate_the_loop_could_still_change(monkeypatch):
     """Scoring inside the loop would leak the control into selection through an ordering slip."""
     detector = _FakeDetector({"ai": 0.9, "out": 0.2, "human": 0.05})
-    _wire(monkeypatch, detector, pairs=[("human", "ai")],
-          rewritten={"ai": (0.9, 0.2, "out")})
+    _wire(monkeypatch, detector, pairs=[("human", "ai")], rewritten={"ai": (0.9, 0.2, "out")})
 
     holdout.run(n=1)
 
@@ -130,8 +138,7 @@ def test_the_gate_is_open_while_scoring_and_shut_again_afterwards(monkeypatch):
 def test_a_control_that_cannot_separate_says_so(monkeypatch):
     """A dead control makes every number uninterpretable rather than merely bad."""
     detector = _FakeDetector({"ai": 0.10, "out": 0.09, "human": 0.90})
-    _wire(monkeypatch, detector, pairs=[("human", "ai")],
-          rewritten={"ai": (0.9, 0.2, "out")})
+    _wire(monkeypatch, detector, pairs=[("human", "ai")], rewritten={"ai": (0.9, 0.2, "out")})
 
     result = holdout.run(n=1)
 
@@ -142,8 +149,9 @@ def test_a_control_that_cannot_separate_says_so(monkeypatch):
 def test_a_pinned_in_sample_column_is_named_rather_than_printed_straight(monkeypatch):
     """MEASURED: with `mage` in the tier every document reads 1.0000 -> 1.0000 and nothing cleared."""
     detector = _FakeDetector({"ai": 0.9, "out": 0.5, "human": 0.05})
-    _wire(monkeypatch, detector, pairs=[("human", "ai")],
-          rewritten={"ai": (0.99999, 0.99999, "out")})
+    _wire(
+        monkeypatch, detector, pairs=[("human", "ai")], rewritten={"ai": (0.99999, 0.99999, "out")}
+    )
 
     result = holdout.run(n=1)
 
@@ -154,8 +162,7 @@ def test_a_pinned_in_sample_column_is_named_rather_than_printed_straight(monkeyp
 def test_the_pinned_caveat_stays_silent_on_a_tier_that_moved(monkeypatch):
     """A caveat that fires on every run says nothing."""
     detector = _FakeDetector({"ai": 0.9, "out": 0.5, "human": 0.05})
-    _wire(monkeypatch, detector, pairs=[("human", "ai")],
-          rewritten={"ai": (0.99, 0.20, "out")})
+    _wire(monkeypatch, detector, pairs=[("human", "ai")], rewritten={"ai": (0.99, 0.20, "out")})
 
     assert holdout.run(n=1)["in_sample"]["pinned"] is False
 
@@ -194,8 +201,7 @@ def test_a_dead_control_does_not_print_transfer_numbers_as_findings(monkeypatch)
     """
     # Inverted scores: AI scores lower than human — control is dead on this corpus.
     detector = _FakeDetector({"ai": 0.12, "out": 0.11, "human": 0.85})
-    _wire(monkeypatch, detector, pairs=[("human", "ai")],
-          rewritten={"ai": (0.90, 0.20, "out")})
+    _wire(monkeypatch, detector, pairs=[("human", "ai")], rewritten={"ai": (0.90, 0.20, "out")})
 
     result = holdout.run(dataset="hc3", n=1)
 

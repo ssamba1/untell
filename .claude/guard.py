@@ -187,7 +187,9 @@ def main() -> int:
         )
         return 2
     if amber:
-        print(f"\n{len(amber)} amber item(s) - allowed, provided the queue entry is in this commit.")
+        print(
+            f"\n{len(amber)} amber item(s) - allowed, provided the queue entry is in this commit."
+        )
         return 1
     print("clean: nothing staged crosses the envelope")
     return 0

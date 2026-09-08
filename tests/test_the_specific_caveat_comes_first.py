@@ -42,7 +42,11 @@ PROSE = (
     "The grit itself does a second job once the ice has gone soft, which matters more on a hill "
     "than it does on the flat, and councils plan their routes around exactly that difference."
 )
-CODE = "```python\n" + "\n".join(f"def f{i}(a, b):\n    return a + b * {i}" for i in range(20)) + "\n```"
+CODE = (
+    "```python\n"
+    + "\n".join(f"def f{i}(a, b):\n    return a + b * {i}" for i in range(20))
+    + "\n```"
+)
 TIER_MARK = "lite tier on the stdlib path"
 
 
@@ -104,11 +108,12 @@ def test_no_caveat_repeats_another() -> None:
     assert len(parts) >= 5, "too few caveats fired to test for repetition"
     for i, first in enumerate(parts):
         words = first.lower().split()
-        for second in parts[i + 1:]:
+        for second in parts[i + 1 :]:
             haystack = " ".join(second.lower().split())
             repeated = [
-                " ".join(words[k:k + 6]) for k in range(len(words) - 5)
-                if " ".join(words[k:k + 6]) in haystack
+                " ".join(words[k : k + 6])
+                for k in range(len(words) - 5)
+                if " ".join(words[k : k + 6]) in haystack
             ]
             assert not repeated, repeated[:2]
 

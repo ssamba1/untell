@@ -22,7 +22,9 @@ class TestFaithfulness:
 
     def test_identical_candidate_rejected(self) -> None:
         rw = LocalPolicyRewriter()
-        assert rw._sentence_is_faithful("The cat sat on the mat.", "The cat sat on the mat.") is False
+        assert (
+            rw._sentence_is_faithful("The cat sat on the mat.", "The cat sat on the mat.") is False
+        )
 
     def test_out_of_band_length_rejected(self) -> None:
         rw = LocalPolicyRewriter()

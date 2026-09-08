@@ -104,9 +104,8 @@ def assert_passes(name: str) -> None:
     """
     report = run_check(name)
     assert not report.failures, [f"{f.name}: {f.detail}" for f in report.failures]
-    assert not report.count_drifts, (
-        "already drifting before the mutation: "
-        + str([f"{f.name}: {f.detail}" for f in report.count_drifts])
+    assert not report.count_drifts, "already drifting before the mutation: " + str(
+        [f"{f.name}: {f.detail}" for f in report.count_drifts]
     )
 
 
@@ -182,7 +181,9 @@ def test_version_consistency(repo) -> None:
     victim = repo / "pyproject.toml"
     original = victim.read_bytes()
     try:
-        mutate(victim, lambda t: re.sub(r'(?m)^version = "[^"]+"', 'version = "99.99.99"', t, count=1))
+        mutate(
+            victim, lambda t: re.sub(r'(?m)^version = "[^"]+"', 'version = "99.99.99"', t, count=1)
+        )
         assert_fails("check_version_consistency", "changing the version in pyproject.toml only")
     finally:
         _restore(victim, original)

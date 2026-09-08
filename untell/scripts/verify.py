@@ -132,10 +132,16 @@ def verify(
         try:
             raw = d.score(text)
             if raw is None:
-                results[d.name] = {"ai": None, "passes": False, "error": "no signal (empty/unavailable for this text)"}
+                results[d.name] = {
+                    "ai": None,
+                    "passes": False,
+                    "error": "no signal (empty/unavailable for this text)",
+                }
                 continue
             ai = clamp01(float(raw))
-            if ai != ai:  # NaN: a broken detector must not read as a score (json.dumps would emit bare NaN)
+            if (
+                ai != ai
+            ):  # NaN: a broken detector must not read as a score (json.dumps would emit bare NaN)
                 results[d.name] = {"ai": None, "passes": False, "error": "detector returned NaN"}
                 continue
             # Judged at the caller's `threshold`, NOT at `verdict_cut`. That cut is swept for the
@@ -289,7 +295,10 @@ def build_parser() -> argparse.ArgumentParser:
     commercial-only — can be read without running the CLI. POST /verify restates it, and a test
     pins the two together rather than trusting them to stay in step.
     """
-    parser = argparse.ArgumentParser(prog="untell-verify", description="Verify text against AI detectors (local ensemble + commercial checkers).")
+    parser = argparse.ArgumentParser(
+        prog="untell-verify",
+        description="Verify text against AI detectors (local ensemble + commercial checkers).",
+    )
     parser.add_argument("text", nargs="?", help="text to verify (or --file / stdin)")
     parser.add_argument("--file", "-f", help="read text from this file")
     # Range-checked, not a bare float. `--threshold 5` was accepted, and since detector scores live

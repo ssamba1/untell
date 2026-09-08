@@ -50,19 +50,18 @@ def _torch_path(monkeypatch: pytest.MonkeyPatch) -> None:
     """
     monkeypatch.delenv("UNTELL_LITE_NO_TORCH", raising=False)
 
+
 SWAPPED = [
-    ("If the sensor fails, the system shuts down.",
-     "If the system shuts down, the sensor fails."),
-    ("If the server restarts, the data is lost.",
-     "If the data is lost, the server restarts."),
-    ("If the patient improves, the dose is reduced.",
-     "If the dose is reduced, the patient improves."),
+    ("If the sensor fails, the system shuts down.", "If the system shuts down, the sensor fails."),
+    ("If the server restarts, the data is lost.", "If the data is lost, the server restarts."),
+    (
+        "If the patient improves, the dose is reduced.",
+        "If the dose is reduced, the patient improves.",
+    ),
 ]
 FAITHFUL = [
-    ("If the sensor fails, the system shuts down.",
-     "The system shuts down if the sensor fails."),
-    ("If the server restarts, the data is lost.",
-     "The data is lost if the server restarts."),
+    ("If the sensor fails, the system shuts down.", "The system shuts down if the sensor fails."),
+    ("If the server restarts, the data is lost.", "The data is lost if the server restarts."),
 ]
 
 

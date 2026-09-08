@@ -40,12 +40,21 @@ def _client():
         ("/score", b'{"text": "hello world", "tier": "lite", "threshold": Infinity}'),
         ("/score", b'{"text": "hello world", "tier": "lite", "threshold": 1e999}'),
         ("/score", b'{"text": "hello world", "tier": "lite", "max_iters": NaN}'),
-        ("/score", b'{"text": "hello world", "tier": "lite", "detector_thresholds": {"mage": NaN}}'),
+        (
+            "/score",
+            b'{"text": "hello world", "tier": "lite", "detector_thresholds": {"mage": NaN}}',
+        ),
         ("/tells", b'{"text": "hello world", "threshold": NaN}'),
         ("/verify", b'{"text": "hello world", "threshold": Infinity}'),
         ("/sentences", b'{"text": "hello world", "tier": "lite", "threshold": NaN}'),
-        ("/humanize", b'{"text": "hello world", "tier": "lite", "rewriter": "surgical", "threshold": NaN}'),
-        ("/humanize", b'{"text": "hello world", "tier": "lite", "rewriter": "surgical", "max_iters": 1e999}'),
+        (
+            "/humanize",
+            b'{"text": "hello world", "tier": "lite", "rewriter": "surgical", "threshold": NaN}',
+        ),
+        (
+            "/humanize",
+            b'{"text": "hello world", "tier": "lite", "rewriter": "surgical", "max_iters": 1e999}',
+        ),
     ],
 )
 def test_nonfinite_payload_is_422_not_500(endpoint, body):

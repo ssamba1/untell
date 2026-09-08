@@ -1,4 +1,5 @@
 """Compare benchmark results against the previous baseline from gh-pages."""
+
 from __future__ import annotations
 
 import json

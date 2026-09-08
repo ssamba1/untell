@@ -174,7 +174,8 @@ def test_the_ensemble_agrees_on_the_corpus(stdlib_lite) -> None:
         pytest.skip(f"hc3 unavailable: {exc}")
     texts = [h for h, _ in pairs][:10]
     lowered = [
-        t for t in texts
+        t
+        for t in texts
         if score_text(inject(t, 8), tier="lite")["max"] < score_text(t, tier="lite")["max"] - 0.01
     ]
     assert not lowered, f"{len(lowered)} of {len(texts)} documents scored LOWER with tells added"

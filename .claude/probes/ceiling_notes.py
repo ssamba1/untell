@@ -1,5 +1,7 @@
 """_code_state stamps the commit; _pinned_note names the pinned detector."""
+
 import json, os
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
 from eval.ceiling import _code_state, _pinned_note
 

@@ -44,6 +44,7 @@ def _torch_path(monkeypatch):
     """
     monkeypatch.delenv("UNTELL_LITE_NO_TORCH", raising=False)
 
+
 FAITHFUL = (
     "The framework improves efficiency by 47% across the corpus.",
     "The setup improves efficiency by 47% across the corpus.",

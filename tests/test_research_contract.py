@@ -40,8 +40,10 @@ class TestLoad:
     def test_load_returns_list_of_dicts(self, tmp_path, monkeypatch) -> None:
         path = tmp_path / "measurements.jsonl"
         path.write_text(
-            json.dumps({"recipe": "x", "seconds": 10.0}) + "\n"
-            + json.dumps({"recipe": "y", "seconds": 20.0}) + "\n",
+            json.dumps({"recipe": "x", "seconds": 10.0})
+            + "\n"
+            + json.dumps({"recipe": "y", "seconds": 20.0})
+            + "\n",
             encoding="utf-8",
         )
         monkeypatch.setattr(R, "LEDGER", path)
@@ -65,27 +67,47 @@ class TestCompare:
         assert any("first run" in ln for ln in lines), lines
 
     def test_matching_value_is_noise(self, tmp_path, monkeypatch) -> None:
-        self._ledger(tmp_path, monkeypatch, [{
-            "recipe": "lite-builtin",
-            "raw": {"post_mean_max_stdev": 0.01},
-            "metrics": {"pre_flagged_rate": 0.5, "post_flagged_rate": 0.1},
-        }])
-        lines = R.compare("lite-builtin", {
-            "pre_flagged_rate": 0.5, "post_flagged_rate": 0.1,
-            "post_mean_max_stdev": 0.01,
-        })
+        self._ledger(
+            tmp_path,
+            monkeypatch,
+            [
+                {
+                    "recipe": "lite-builtin",
+                    "raw": {"post_mean_max_stdev": 0.01},
+                    "metrics": {"pre_flagged_rate": 0.5, "post_flagged_rate": 0.1},
+                }
+            ],
+        )
+        lines = R.compare(
+            "lite-builtin",
+            {
+                "pre_flagged_rate": 0.5,
+                "post_flagged_rate": 0.1,
+                "post_mean_max_stdev": 0.01,
+            },
+        )
         assert all("noise" in ln for ln in lines if "->" in ln), lines
 
     def test_big_delta_is_moved(self, tmp_path, monkeypatch) -> None:
-        self._ledger(tmp_path, monkeypatch, [{
-            "recipe": "lite-builtin",
-            "raw": {"post_mean_max_stdev": 0.01},
-            "metrics": {"pre_flagged_rate": 0.9, "post_flagged_rate": 0.9},
-        }])
-        lines = R.compare("lite-builtin", {
-            "pre_flagged_rate": 0.1, "post_flagged_rate": 0.1,
-            "post_mean_max_stdev": 0.01,
-        })
+        self._ledger(
+            tmp_path,
+            monkeypatch,
+            [
+                {
+                    "recipe": "lite-builtin",
+                    "raw": {"post_mean_max_stdev": 0.01},
+                    "metrics": {"pre_flagged_rate": 0.9, "post_flagged_rate": 0.9},
+                }
+            ],
+        )
+        lines = R.compare(
+            "lite-builtin",
+            {
+                "pre_flagged_rate": 0.1,
+                "post_flagged_rate": 0.1,
+                "post_mean_max_stdev": 0.01,
+            },
+        )
         assert any("MOVED" in ln for ln in lines), lines
 
     def test_delta_within_two_x_spread_is_noise(self, tmp_path, monkeypatch) -> None:
@@ -96,15 +118,25 @@ class TestCompare:
         delta 0.02 < band -> noise too... need delta BETWEEN 2x and 3x:
         spread 0.01 -> band 0.02 (orig) vs 0.03 (mut); delta 0.025 is MOVED
         under the 2x band but noise under the 3x band."""
-        self._ledger(tmp_path, monkeypatch, [{
-            "recipe": "lite-builtin",
-            "raw": {"post_mean_max_stdev": 0.01},
-            "metrics": {"pre_flagged_rate": 0.5, "post_flagged_rate": 0.5},
-        }])
-        lines = R.compare("lite-builtin", {
-            "pre_flagged_rate": 0.525, "post_flagged_rate": 0.525,
-            "post_mean_max_stdev": 0.01,
-        })
+        self._ledger(
+            tmp_path,
+            monkeypatch,
+            [
+                {
+                    "recipe": "lite-builtin",
+                    "raw": {"post_mean_max_stdev": 0.01},
+                    "metrics": {"pre_flagged_rate": 0.5, "post_flagged_rate": 0.5},
+                }
+            ],
+        )
+        lines = R.compare(
+            "lite-builtin",
+            {
+                "pre_flagged_rate": 0.525,
+                "post_flagged_rate": 0.525,
+                "post_mean_max_stdev": 0.01,
+            },
+        )
         assert any("MOVED" in ln for ln in lines), lines
 
     def test_missing_metric_skipped(self, tmp_path, monkeypatch) -> None:
@@ -113,15 +145,25 @@ class TestCompare:
         A metric missing from EITHER side is skipped (not compared). The
         mutation (`and`) only skips when BOTH are None, comparing a present
         value against a missing one as a huge MOVED delta."""
-        self._ledger(tmp_path, monkeypatch, [{
-            "recipe": "lite-builtin",
-            "raw": {"post_mean_max_stdev": 0.01},
-            "metrics": {"pre_flagged_rate": 0.5},  # post_flagged_rate missing
-        }])
-        lines = R.compare("lite-builtin", {
-            "pre_flagged_rate": 0.5, "post_flagged_rate": 0.1,
-            "post_mean_max_stdev": 0.01,
-        })
+        self._ledger(
+            tmp_path,
+            monkeypatch,
+            [
+                {
+                    "recipe": "lite-builtin",
+                    "raw": {"post_mean_max_stdev": 0.01},
+                    "metrics": {"pre_flagged_rate": 0.5},  # post_flagged_rate missing
+                }
+            ],
+        )
+        lines = R.compare(
+            "lite-builtin",
+            {
+                "pre_flagged_rate": 0.5,
+                "post_flagged_rate": 0.1,
+                "post_mean_max_stdev": 0.01,
+            },
+        )
         # post_flagged_rate is missing on the prev side -> skipped, not compared
         assert not any("post_flagged_rate" in ln and "->" in ln for ln in lines), lines
 
@@ -169,7 +211,6 @@ class TestDuplicateRows:
             if ln in seen:
                 dupes.append(ln)
             seen.add(ln)
-        assert not dupes, (
-            "measurements.jsonl holds byte-identical duplicate rows: "
-            + repr([d[:60] for d in dupes])
+        assert not dupes, "measurements.jsonl holds byte-identical duplicate rows: " + repr(
+            [d[:60] for d in dupes]
         )

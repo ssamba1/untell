@@ -117,7 +117,12 @@ def _score_one(args: tuple) -> tuple:
     rw = get_rewriter(prefer=rewriter_name) if rewriter_name else None
     pre = score_text(text, tier=tier, threshold=threshold)
     res = untell_text(
-        text, tier=tier, threshold=threshold, max_iters=max_iters, rewriter=rw, best_of=best_of,
+        text,
+        tier=tier,
+        threshold=threshold,
+        max_iters=max_iters,
+        rewriter=rw,
+        best_of=best_of,
         seed=seed,
     )
     return text, pre, res
@@ -158,14 +163,20 @@ def _each_text(texts, tier, threshold, max_iters, rewriter, best_of, workers, se
         except Exception as exc:  # noqa: BLE001 — any pool failure must degrade, never abort a run
             logger.warning(
                 "parallel ceiling run failed (%s: %s); falling back to serial",
-                type(exc).__name__, str(exc)[:80],
+                type(exc).__name__,
+                str(exc)[:80],
             )
 
     for t in texts:
         pre = score_text(t, tier=tier, threshold=threshold)
         res = untell_text(
-            t, tier=tier, threshold=threshold, max_iters=max_iters, rewriter=rewriter,
-            best_of=best_of, seed=seed,
+            t,
+            tier=tier,
+            threshold=threshold,
+            max_iters=max_iters,
+            rewriter=rewriter,
+            best_of=best_of,
+            seed=seed,
         )
         yield t, pre, res
 
@@ -271,7 +282,9 @@ def measure_ceiling(
         # record of which one produced it, so two very different numbers were indistinguishable
         # once written down.
         "corpus": corpus,
-        "corpus_mean_words": round(sum(len(t.split()) for t in texts) / len(texts), 1) if texts else None,
+        "corpus_mean_words": round(sum(len(t.split()) for t in texts) / len(texts), 1)
+        if texts
+        else None,
         # WHICH rewriter, for exactly the same reason as `corpus` above, and the omission cost the
         # same kind of mistake. The repo's headline real-text figure — "0.999 -> 0.860, flagged
         # 1.00, hc3_roberta barely moves" — was recorded without naming the rewriter that produced
@@ -282,7 +295,8 @@ def measure_ceiling(
         # `rewriter_available` below records only THAT one ran, never which. Prefer the object's
         # own `name` over the caller's string so an alias is recorded as what actually ran: "max"
         # and "ensemble" both build the same EnsembleRewriter.
-        "rewriter": getattr(rewriter, "name", None) or (rewriter if isinstance(rewriter, str) else None),
+        "rewriter": getattr(rewriter, "name", None)
+        or (rewriter if isinstance(rewriter, str) else None),
         "tier": tier,
         "threshold": threshold,
         "max_iters": max_iters,
@@ -379,13 +393,21 @@ def _code_state() -> str:
         out = subprocess.run(
             ["git", "rev-parse", "--short", "HEAD"],
             cwd=Path(__file__).resolve().parent.parent,
-            capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=10,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=10,
         )
         if out.returncode == 0 and out.stdout.strip():
             dirty = subprocess.run(
                 ["git", "status", "--porcelain"],
                 cwd=Path(__file__).resolve().parent.parent,
-                capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=10,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                timeout=10,
             )
             suffix = "+dirty" if dirty.returncode == 0 and dirty.stdout.strip() else ""
             return out.stdout.strip() + suffix
@@ -416,7 +438,9 @@ def _render(r: dict) -> str:
     if r.get("unscored"):
         # Say which samples produced no signal at all. Silently excluding them would leave a
         # confident-looking ceiling computed from a fraction of the corpus.
-        lines.insert(1, f"  WARNING: {r['unscored']}/{r['n']} samples scored by NO detector — excluded")
+        lines.insert(
+            1, f"  WARNING: {r['unscored']}/{r['n']} samples scored by NO detector — excluded"
+        )
     if r["rewriter_available"]:
         # Denominator is n * repeats, i.e. the number of ATTEMPTS. `rewrote` accumulates across
         # every repeat while `n` is one run's corpus size, so `rewrote/n` printed "(rewrote 9/3)"
@@ -500,8 +524,16 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--rewriter",
         choices=[
-            "auto", "surgical", "structural", "composite", "targeted", "neural", "ensemble",
-            "max", "t5_paraphrase", "mt_pivot",
+            "auto",
+            "surgical",
+            "structural",
+            "composite",
+            "targeted",
+            "neural",
+            "ensemble",
+            "max",
+            "t5_paraphrase",
+            "mt_pivot",
         ],
         default="auto",
         help="'auto' uses a hosted-LLM rewriter if a key is set (else baseline only); every other "
@@ -533,7 +565,9 @@ def _validate(ns: argparse.Namespace, parser: argparse.ArgumentParser) -> argpar
     if ns.n <= 0:
         parser.error(f"--n must be >= 1, got {ns.n}")
     if ns.repeats <= 0:
-        parser.error(f"--repeats must be >= 1 (the help says use >=3 before quoting a number), got {ns.repeats}")
+        parser.error(
+            f"--repeats must be >= 1 (the help says use >=3 before quoting a number), got {ns.repeats}"
+        )
     if ns.max_iters <= 0:
         parser.error(f"--max-iters must be >= 1, got {ns.max_iters}")
     if ns.best_of <= 0:

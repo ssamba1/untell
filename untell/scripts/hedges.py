@@ -51,23 +51,73 @@ logger = logging.getLogger(__name__)
 _CLASSES: dict[str, tuple[str, ...]] = {
     # "it may happen" vs "it happens"
     "modality": (
-        "may", "might", "could", "can", "would", "possibly", "perhaps", "potentially",
-        "conceivably", "arguably", "presumably", "likely", "unlikely", "probably", "maybe",
-        "in principle", "in theory", "if", "unless", "assuming",
+        "may",
+        "might",
+        "could",
+        "can",
+        "would",
+        "possibly",
+        "perhaps",
+        "potentially",
+        "conceivably",
+        "arguably",
+        "presumably",
+        "likely",
+        "unlikely",
+        "probably",
+        "maybe",
+        "in principle",
+        "in theory",
+        "if",
+        "unless",
+        "assuming",
     ),
     # who says so, and how firmly
     "evidential": (
-        "suggests", "suggest", "suggested", "indicates", "indicate", "indicated", "appears",
-        "appear", "appeared", "seems", "seem", "seemed", "reportedly", "allegedly", "alleged",
+        "suggests",
+        "suggest",
+        "suggested",
+        "indicates",
+        "indicate",
+        "indicated",
+        "appears",
+        "appear",
+        "appeared",
+        "seems",
+        "seem",
+        "seemed",
+        "reportedly",
+        "allegedly",
+        "alleged",
         # Base and -ing forms of the attribution verbs, not only the past/adverbial ones: the class
         # held "alleged" and "allegedly" but not "allege", so "Critics allege the firm misled
         # investors." -> "The firm misled investors." dropped the attribution and cleared the whole
         # gate — quantities, roles, NLI and similarity all pass, because removing "critics allege"
         # does not contradict the source, it just asserts more.
-        "allege", "alleges", "alleging", "accuse", "accuses", "accusing",
-        "accused", "claims", "claim", "claimed", "argues", "argue", "argued", "estimates",
-        "estimated", "believed", "thought", "considered", "according to", "evidence",
-        "suspected", "purported", "supposedly", "said to",
+        "allege",
+        "alleges",
+        "alleging",
+        "accuse",
+        "accuses",
+        "accusing",
+        "accused",
+        "claims",
+        "claim",
+        "claimed",
+        "argues",
+        "argue",
+        "argued",
+        "estimates",
+        "estimated",
+        "believed",
+        "thought",
+        "considered",
+        "according to",
+        "evidence",
+        "suspected",
+        "purported",
+        "supposedly",
+        "said to",
         # The same hole as `allege` above, in four more verbs. The class held only the PAST forms
         # of believe/think/consider and only the -s/-ed forms of estimate, so the present tense —
         # which is how attribution is usually written — went undetected. MEASURED, each of these
@@ -79,31 +129,77 @@ _CLASSES: dict[str, tuple[str, ...]] = {
         #     "We estimate the loss at 40%."           -> "The loss is 40%."
         # Removing an attribution does not contradict the source, so NLI, roles, quantities and
         # similarity all pass it — this class is the only gate that can see it.
-        "believe", "believes", "believing", "think", "thinks", "thinking",
-        "consider", "considers", "considering", "estimate", "estimating",
+        "believe",
+        "believes",
+        "believing",
+        "think",
+        "thinks",
+        "thinking",
+        "consider",
+        "considers",
+        "considering",
+        "estimate",
+        "estimating",
         # `suspected` and `purported` had the same hole, and it bit in the OTHER direction —
         # the false-veto one. "We believe the effect is real." -> "We suspect the effect is real."
         # keeps an attribution and merely moves sideways between two weak hedges, but with only
         # the past form listed the rewrite read as having dropped the class entirely. That is the
         # same failure the `hint` note above records, found while checking that widening this
         # class did not cost anything.
-        "suspect", "suspects", "suspecting", "purport", "purports", "purporting",
+        "suspect",
+        "suspects",
+        "suspecting",
+        "purport",
+        "purports",
+        "purporting",
         # "hint" is an evidential hedge — weaker than "suggests", not stronger. Its absence made
         # "the results suggest ..." -> "the results hint ..." read as a dropped class, which is the
         # documented 1-of-13 false veto in the README: the check could not tell a lateral move
         # between two weak hedges from a genuine upgrade. "suggests" -> "proves" still drops it.
-        "hint", "hints", "hinted", "hinting",
+        "hint",
+        "hints",
+        "hinted",
+        "hinting",
     ),
     # how often, as opposed to always
     "frequency": (
-        "usually", "often", "sometimes", "typically", "generally", "frequently", "occasionally",
-        "rarely", "seldom", "mostly", "commonly", "in most cases", "as a rule", "tends", "tend",
-        "tended", "can be",
+        "usually",
+        "often",
+        "sometimes",
+        "typically",
+        "generally",
+        "frequently",
+        "occasionally",
+        "rarely",
+        "seldom",
+        "mostly",
+        "commonly",
+        "in most cases",
+        "as a rule",
+        "tends",
+        "tend",
+        "tended",
+        "can be",
     ),
     # how many, as opposed to all
     "quantifier": (
-        "some", "several", "many", "most", "a few", "few", "certain", "various", "a number of",
-        "a handful", "part of", "portion", "subset", "minority", "majority", "not all", "much",
+        "some",
+        "several",
+        "many",
+        "most",
+        "a few",
+        "few",
+        "certain",
+        "various",
+        "a number of",
+        "a handful",
+        "part of",
+        "portion",
+        "subset",
+        "minority",
+        "majority",
+        "not all",
+        "much",
     ),
     # how much — "fell slightly" is a hedge on magnitude, and dropping it inflates the claim
     # ("Revenue fell slightly." -> "Revenue collapsed." cleared every other gate). Verbs that carry
@@ -119,11 +215,40 @@ _CLASSES: dict[str, tuple[str, ...]] = {
     # intensifier, which the separate intensifier check fired on. Dropping the hedge on its own —
     # the more natural rewrite — was invisible.
     "degree": (
-        "slightly", "marginally", "modestly", "somewhat", "a bit", "a little", "moderately",
-        "mildly", "partially", "partly", "slight", "small", "minor", "narrowly", "fractionally",
-        "fraction", "a touch", "a tad", "tad", "minimally", "negligibly", "marginal",
-        "modest", "moderate", "minimal", "partial", "limited", "slim",
-        "edged", "ticked", "inched", "dipped", "nudged", "crept",
+        "slightly",
+        "marginally",
+        "modestly",
+        "somewhat",
+        "a bit",
+        "a little",
+        "moderately",
+        "mildly",
+        "partially",
+        "partly",
+        "slight",
+        "small",
+        "minor",
+        "narrowly",
+        "fractionally",
+        "fraction",
+        "a touch",
+        "a tad",
+        "tad",
+        "minimally",
+        "negligibly",
+        "marginal",
+        "modest",
+        "moderate",
+        "minimal",
+        "partial",
+        "limited",
+        "slim",
+        "edged",
+        "ticked",
+        "inched",
+        "dipped",
+        "nudged",
+        "crept",
     ),
     # intended vs done
     #
@@ -138,14 +263,37 @@ _CLASSES: dict[str, tuple[str, ...]] = {
     # The real intent verbs below still carry the class, so "The company plans to expand." ->
     # "The company is expanding." is caught exactly as before.
     "intention": (
-        "plans", "plan", "planned", "aims", "aim", "aimed", "intends", "intend", "intended",
-        "expects", "expect", "expected", "hopes", "hope", "hoped", "proposes", "proposed",
-        "seeks", "seek", "sought", "plans to",
+        "plans",
+        "plan",
+        "planned",
+        "aims",
+        "aim",
+        "aimed",
+        "intends",
+        "intend",
+        "intended",
+        "expects",
+        "expect",
+        "expected",
+        "hopes",
+        "hope",
+        "hoped",
+        "proposes",
+        "proposed",
+        "seeks",
+        "seek",
+        "sought",
+        "plans to",
     ),
 }
 
 _CLASS_RES: dict[str, re.Pattern[str]] = {
-    name: re.compile(r"(?<!\w)(?:" + "|".join(re.escape(t) for t in sorted(terms, key=len, reverse=True)) + r")(?!\w)", re.IGNORECASE)
+    name: re.compile(
+        r"(?<!\w)(?:"
+        + "|".join(re.escape(t) for t in sorted(terms, key=len, reverse=True))
+        + r")(?!\w)",
+        re.IGNORECASE,
+    )
     for name, terms in _CLASSES.items()
 }
 
@@ -202,7 +350,7 @@ def _asserts_causation(text: str) -> bool:
         start = 0
         for b in _SENT_START_RE.finditer(text, 0, m.start()):
             start = b.end()
-        if not _NEGATOR_RE.search(text[start:m.start()]):
+        if not _NEGATOR_RE.search(text[start : m.start()]):
             return True
     return False
 
@@ -326,7 +474,9 @@ def main(argv: list[str] | None = None) -> int:
     # "--bogus" against "a" and exited 0 — a silent wrong answer.
     bad = [a for a in args if a.startswith("-") and a not in ("-h", "--help")]
     if bad:
-        logger.error('unrecognized argument %s (usage: untell-hedges "<original>" "<rewrite>")', bad[0])
+        logger.error(
+            'unrecognized argument %s (usage: untell-hedges "<original>" "<rewrite>")', bad[0]
+        )
         return 2
     if len(args) < 2:
         logger.error('usage: untell-hedges "<original>" "<rewrite>"')

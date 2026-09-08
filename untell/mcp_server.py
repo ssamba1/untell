@@ -17,8 +17,17 @@ import logging
 # Free, no-key rewriter backends selectable via the ``rewriter`` arg; anything else (e.g. "auto")
 # routes to a hosted/local-policy backend via prefer=None.
 _FREE_REWRITERS = frozenset(
-    {"surgical", "structural", "composite", "targeted", "neural", "ensemble", "max",
-     "t5_paraphrase", "mt_pivot"}
+    {
+        "surgical",
+        "structural",
+        "composite",
+        "targeted",
+        "neural",
+        "ensemble",
+        "max",
+        "t5_paraphrase",
+        "mt_pivot",
+    }
 )
 
 
@@ -28,8 +37,16 @@ _TIERS = ("lite", "full", "heavy", "commercial")
 # needs the optional `mcp` package, and `--help` must work on an install that does not have it.
 # tests/test_mcp_server.py asserts this matches what the server actually registers, so the two
 # cannot drift apart silently.
-_TOOL_NAMES = ("score", "sentences", "tells", "untell", "verify_commercial",
-               "ceiling", "compare", "scrub")
+_TOOL_NAMES = (
+    "score",
+    "sentences",
+    "tells",
+    "untell",
+    "verify_commercial",
+    "ceiling",
+    "compare",
+    "scrub",
+)
 
 
 # Module level, not nested in `_server`, so the checks are testable without the optional `mcp`
@@ -50,8 +67,10 @@ def _bad_args(**checks) -> dict | None:
     """
     for name, (value, kind) in checks.items():
         if kind == "tier" and value not in _TIERS:
-            return {"error": f"unknown tier {value!r} — valid: {', '.join(_TIERS)}. "
-                             "It would have silently fallen back to the lite heuristic."}
+            return {
+                "error": f"unknown tier {value!r} — valid: {', '.join(_TIERS)}. "
+                "It would have silently fallen back to the lite heuristic."
+            }
         if kind in ("probability", "count", "count_or_zero", "top", "seed"):
             # A non-numeric string crashes the conversions below, and the whole point of this
             # guard is that an MCP client can send ANYTHING (the docstring above says so). The
@@ -83,11 +102,15 @@ def _bad_args(**checks) -> dict | None:
                 # OverflowError is real: int(float('inf')) raises it, and a JSON client can
                 # send 1e999, which Python's json parses as inf. The three exceptions are the
                 # full set int()/float() can raise on a non-whole argument.
-                return {"error": f"{name}={value!r} is not a number; expected a "
-                                 f"{'probability in [0, 1]' if kind == 'probability' else 'whole number'}."}
+                return {
+                    "error": f"{name}={value!r} is not a number; expected a "
+                    f"{'probability in [0, 1]' if kind == 'probability' else 'whole number'}."
+                }
         if kind == "probability" and not (0.0 <= float(value) <= 1.0):
-            return {"error": f"{name}={value!r} is outside [0, 1]. Detector scores are "
-                             "probabilities, so a value above 1 can never be reached."}
+            return {
+                "error": f"{name}={value!r} is outside [0, 1]. Detector scores are "
+                "probabilities, so a value above 1 can never be reached."
+            }
         if kind == "count" and not (1 <= int(value) <= 100):
             return {"error": f"{name}={value!r} is outside 1..100."}
         # Zero is a MEANING for some counts, not an out-of-range value. `confirm=0` is the default
@@ -99,16 +122,20 @@ def _bad_args(**checks) -> dict | None:
             return {"error": f"{name}={value!r} is outside 0..32."}
         # Optional, and 0 is a meaning ("flag none") rather than an out-of-range value.
         if kind == "top" and value is not None and not (0 <= int(value) <= 10_000):
-            return {"error": f"{name}={value!r} is outside 0..10000. A negative value is not "
-                             "'fewer' — it slices from the end, so -1 flags all but one."}
+            return {
+                "error": f"{name}={value!r} is outside 0..10000. A negative value is not "
+                "'fewer' — it slices from the end, so -1 flags all but one."
+            }
         # A seed names a stream, so two seeds that differ must name different streams. CPython's
         # `random.seed()` takes the ABSOLUTE value of an int, so -1 and 1 are one stream: measured
         # byte-identical output for both where 0, 2, 7 and 12345 each differed. `None` is the
         # default and means "derive it from the text", so it is not out of range.
         if kind == "seed" and value is not None and not (0 <= int(value) <= 2**64 - 1):
-            return {"error": f"{name}={value!r} is outside 0..2**64-1. A negative seed is not a "
-                             "different stream — random.seed() reads its absolute value, so -1 "
-                             "and 1 give byte-identical output."}
+            return {
+                "error": f"{name}={value!r} is outside 0..2**64-1. A negative seed is not a "
+                "different stream — random.seed() reads its absolute value, so -1 "
+                "and 1 give byte-identical output."
+            }
     return None
 
 
@@ -133,8 +160,8 @@ def _text_too_long(text: str, name: str = "text") -> dict | None:
     if len(text) > MAX_INPUT_CHARS:
         return {
             "error": f"{name} is {len(text)} characters; the maximum is {MAX_INPUT_CHARS}. "
-                     "The REST API rejects the same input with 422 — an unbounded text ties "
-                     "up the worker (measured: 230 s for a 1 MB tells call)."
+            "The REST API rejects the same input with 422 — an unbounded text ties "
+            "up the worker (measured: 230 s for a 1 MB tells call)."
         }
     return None
 
@@ -185,10 +212,12 @@ def _server():
 
         `top` caps how many come back flagged; unset means the worst ~third.
         """
-        bad = _bad_args(
-            tier=(tier, "tier"), threshold=(threshold, "probability"), top=(top, "top")
+        bad = _bad_args(tier=(tier, "tier"), threshold=(threshold, "probability"), top=(top, "top"))
+        return (
+            bad
+            or _text_too_long(text)
+            or score_sentences(text, tier=tier, threshold=threshold, top=top)
         )
-        return bad or _text_too_long(text) or score_sentences(text, tier=tier, threshold=threshold, top=top)
 
     @server.tool()
     def tells(text: str, include_matches: bool = False) -> dict:
@@ -320,13 +349,13 @@ def _server():
                 except (TypeError, ValueError):
                     return {
                         "error": f"detector_thresholds[{_dt_name!r}]={_dt_val!r} is not a number; "
-                                 "expected a probability in [0, 1]."
+                        "expected a probability in [0, 1]."
                     }
                 if not (0.0 <= _dt_f <= 1.0):
                     return {
                         "error": f"detector_thresholds[{_dt_name!r}]={_dt_val!r} is outside [0, 1]. "
-                                 "Detector scores are probabilities; a value above 1 can never be "
-                                 "reached, so this per-detector gate would never fire."
+                        "Detector scores are probabilities; a value above 1 can never be "
+                        "reached, so this per-detector gate would never fire."
                     }
 
         # An unknown style is looked up in the STYLES dict, missed, and silently ignored — so a
@@ -363,22 +392,24 @@ def _server():
                 }
         # `pre` and `post` are score dicts of their own, so they carry the same `name__error`
         # sidecars — two per response, on the surface a client is most likely to read numerically.
-        result = split_detector_errors(untell_text(
-            text,
-            tier=tier,
-            threshold=threshold,
-            style=style,
-            max_iters=max_iters,
-            rewriter=rw,
-            best_of=best_of,
-            margin=margin,
-            polish=polish,
-            voice_sample=voice_sample,
-            seed=seed,
-            confirm=confirm,
-            detector_thresholds=detector_thresholds,
-            inspect=inspect,
-        ))
+        result = split_detector_errors(
+            untell_text(
+                text,
+                tier=tier,
+                threshold=threshold,
+                style=style,
+                max_iters=max_iters,
+                rewriter=rw,
+                best_of=best_of,
+                margin=margin,
+                polish=polish,
+                voice_sample=voice_sample,
+                seed=seed,
+                confirm=confirm,
+                detector_thresholds=detector_thresholds,
+                inspect=inspect,
+            )
+        )
         # untell_text answers an unknown/unavailable rewriter with {"error": ..., "final":
         # <original UNCHANGED>, "seed": ...} (run.py returns that dict before the loop runs).
         # Nothing was rewritten, but the shape reads as a successful humanization to a client
@@ -429,8 +460,8 @@ def _server():
         if tier not in _TIERS and tier != "":
             return {
                 "error": f"unknown tier {tier!r} — valid: {', '.join(_TIERS)} (or '' for "
-                         "commercial-only, which skips the local ensemble). It would have silently "
-                         "fallen back to the lite heuristic."
+                "commercial-only, which skips the local ensemble). It would have silently "
+                "fallen back to the lite heuristic."
             }
         bad = _bad_args(threshold=(threshold, "probability"))
         bad = bad or _text_too_long(text)
@@ -438,7 +469,10 @@ def _server():
             return bad
         browser_list = [s.strip() for s in browser.split(",")] if browser else None
         tier_arg: str | None = None if (tier or "").lower() in ("commercial", "") else tier
-        return verify(text, threshold=threshold, sandbox=sandbox, browser=browser_list, tier=tier_arg)
+        return verify(
+            text, threshold=threshold, sandbox=sandbox, browser=browser_list, tier=tier_arg
+        )
+
     @server.tool()
     def ceiling(
         tier: str = "full",
@@ -493,9 +527,9 @@ def _server():
             # 422 "unknown rewriter {name}"; this was the hole.
             return {
                 "error": f"unknown rewriter {rewriter!r} — it would have run a full measurement "
-                         "that reports a rewriter by that name while nothing by that name ran "
-                         f"(per-text refusals are dropped in the aggregation). Valid: "
-                         f"{', '.join(sorted(_FREE_REWRITERS))}, auto."
+                "that reports a rewriter by that name while nothing by that name ran "
+                f"(per-text refusals are dropped in the aggregation). Valid: "
+                f"{', '.join(sorted(_FREE_REWRITERS))}, auto."
             }
 
         rw = None
@@ -549,7 +583,8 @@ def _server():
         """Strip hidden watermark / zero-width / homoglyph characters from text, returning
         the cleaned text and the count of characters removed."""
         return _text_too_long(text) or {
-            "clean": scrub_hidden(text), "hidden_chars_removed": count_hidden(text)
+            "clean": scrub_hidden(text),
+            "hidden_chars_removed": count_hidden(text),
         }
 
     return server
@@ -572,7 +607,7 @@ def build_parser() -> argparse.ArgumentParser:
             "from a terminal it will simply wait for input. Register it in your client's config "
             "instead. Tools exposed: " + ", ".join(_TOOL_NAMES) + "."
         ),
-        epilog="Requires the optional dependency: pip install -e \".[mcp]\"",
+        epilog='Requires the optional dependency: pip install -e ".[mcp]"',
     )
     p.add_argument(
         "--list-tools",

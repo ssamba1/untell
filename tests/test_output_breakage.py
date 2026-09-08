@@ -42,17 +42,29 @@ SAMPLES = [
 ]
 
 SIGNATURES = [
-    ("stranded conjunction", re.compile(
-        r"\b(and|or|but|nor|yet|while|because|since|although|though|whereas|unless|until)\s*[.!?]",
-        re.I)),
-    ("stacked openers", re.compile(
-        r"^(Actually|In practice|Broadly|In short|Looking at this|As it turns out|Put simply|"
-        r"Realistically),\s+(However|Moreover|Furthermore|Also|Hence|Therefore|Thus|Additionally|"
-        r"And|But|Plus|Then|Besides)\b", re.I)),
+    (
+        "stranded conjunction",
+        re.compile(
+            r"\b(and|or|but|nor|yet|while|because|since|although|though|whereas|unless|until)\s*[.!?]",
+            re.I,
+        ),
+    ),
+    (
+        "stacked openers",
+        re.compile(
+            r"^(Actually|In practice|Broadly|In short|Looking at this|As it turns out|Put simply|"
+            r"Realistically),\s+(However|Moreover|Furthermore|Also|Hence|Therefore|Thus|Additionally|"
+            r"And|But|Plus|Then|Besides)\b",
+            re.I,
+        ),
+    ),
     ("comma before terminator", re.compile(r",\s*[.!?]")),
     ("doubled punctuation", re.compile(r"[,;:]{2,}")),
     ("doubled word", re.compile(r"\b(\w+)\s+\1\b", re.I)),
-    ("comma after a preposition", re.compile(r"\b(of|to|in|on|at|by|with)\s*,\s*(that|this|the|it)\b", re.I)),
+    (
+        "comma after a preposition",
+        re.compile(r"\b(of|to|in|on|at|by|with)\s*,\s*(that|this|the|it)\b", re.I),
+    ),
     ("space before punctuation", re.compile(r"\S\s+[,.;:](?:\s|$)")),
 ]
 
@@ -109,7 +121,10 @@ def test_the_surgical_rewriter_emits_no_breakage_signatures(text):
     out = surgical_substitute(text, tier="lite", threshold=0.30)["text"]
 
     extra = [
-        ("sentence-initial subordinator", re.compile(r"(?:^|[.!?]\s+)(Though|Although|Whereas)\s*,", re.I)),
+        (
+            "sentence-initial subordinator",
+            re.compile(r"(?:^|[.!?]\s+)(Though|Although|Whereas)\s*,", re.I),
+        ),
         ("coordinator with a comma", re.compile(r"\b(and|but|or|nor)\s*,\s", re.I)),
     ]
     for label, pattern in SIGNATURES + extra:

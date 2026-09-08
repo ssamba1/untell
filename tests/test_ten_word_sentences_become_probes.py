@@ -7,6 +7,7 @@ sentences collapses to zero and the audit falls back to the 6 packaged
 sentence probes, losing the measured signal the --pairs mode exists to add.
 Pinned via the audit_detector spy (same pattern as the existing suite test).
 """
+
 from unittest.mock import patch
 
 import eval.detector_audit as audit

@@ -124,8 +124,13 @@ class BackTranslator:
         tok, model = self._pipe(src, tgt)
         out: list[str] = []
         for chunk in self._chunk(text, tok):
-            batch = tok([chunk], return_tensors="pt", truncation=True,
-                        max_length=self._MAX_TOKENS, padding=True)
+            batch = tok(
+                [chunk],
+                return_tensors="pt",
+                truncation=True,
+                max_length=self._MAX_TOKENS,
+                padding=True,
+            )
             with torch.no_grad():
                 gen = model.generate(**batch, max_length=self._MAX_TOKENS, num_beams=4)
             out.append(tok.batch_decode(gen, skip_special_tokens=True)[0])

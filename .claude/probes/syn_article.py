@@ -1,5 +1,6 @@
 """Verify the claim: every distinct first-word in _SYN values gets a correct a/an from agree_article.
 An article that flips wrongly (a university -> an university) is a defect in the closed vocabulary."""
+
 import json
 from untell.attacks.word_importance import _SYN, agree_article
 
@@ -9,8 +10,47 @@ for key, repls in _SYN.items():
         first_words.add(r.split()[0].lower() if r.split() else r.lower())
 # For each first word, decide the CORRECT article by vowel sound heuristics
 VOWELS = set("aeiou")
-silent_h = {"hour", "hourly", "honest", "honestly", "honor", "honour", "honorary", "honoured", "heir", "heiress"}
-y_onset = {"one", "once", "use", "used", "useful", "user", "using", "usable", "usage", "usual", "usually", "unique", "unit", "united", "universal", "university", "uniform", "union", "unified", "utility", "utilize", "utilizing", "utilization", "euro", "european", "eulogy", "ubiquitous"}
+silent_h = {
+    "hour",
+    "hourly",
+    "honest",
+    "honestly",
+    "honor",
+    "honour",
+    "honorary",
+    "honoured",
+    "heir",
+    "heiress",
+}
+y_onset = {
+    "one",
+    "once",
+    "use",
+    "used",
+    "useful",
+    "user",
+    "using",
+    "usable",
+    "usage",
+    "usual",
+    "usually",
+    "unique",
+    "unit",
+    "united",
+    "universal",
+    "university",
+    "uniform",
+    "union",
+    "unified",
+    "utility",
+    "utilize",
+    "utilizing",
+    "utilization",
+    "euro",
+    "european",
+    "eulogy",
+    "ubiquitous",
+}
 
 wrong = []
 for w in sorted(first_words):

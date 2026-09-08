@@ -6,6 +6,7 @@ mutation 2 -> 3 changes the no-input exit code; a caller distinguishing 1
 (checked-and-failed) from 2 (nothing ran) would misread 3 as something else.
 Pinned with read_stdin_or_none patched to simulate a TTY.
 """
+
 from unittest.mock import patch
 
 from untell.scripts.verify import main

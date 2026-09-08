@@ -3,6 +3,7 @@
 These tests verify that the structural rewriter produces grammatically correct,
 natural-sounding output — not regex artifacts like wrong verb tense or fragments.
 """
+
 from __future__ import annotations
 
 import re as _re
@@ -16,7 +17,7 @@ class TestParticipialTrailerGrammar:
     """Verify that participial trailers are converted with correct verb tense."""
 
     def test_underscoring_flattens_straight_to_a_finite_non_tell_verb(self):
-        """"underscores" is itself AI vocabulary, so this stage used to emit a tell and rely on the
+        """ "underscores" is itself AI vocabulary, so this stage used to emit a tell and rely on the
         later plain-register pass to swap it for "shows".
 
         That pass is probabilistic — it fires with probability `intensity * profile["register"]` —
@@ -66,7 +67,7 @@ class TestNegatedContrastGrammar:
         assert "about. The" not in result
 
     def test_the_uncontracted_form_is_flattened_too(self):
-        """"It is not X, it is Y" (uncontracted) must flatten like "It's not X, it's Y".
+        """ "It is not X, it is Y" (uncontracted) must flatten like "It's not X, it's Y".
 
         The pattern used to read `it'?s not ... it'?s`, which only matches the contracted
         form. Contraction injection runs AFTER this pass, so "It is not that the results
@@ -133,7 +134,7 @@ class TestNegatedContrastGrammar:
 
 
 class TestNotOnlyKeepsBothHalves:
-    """"not only X but also Y" is not a negated contrast — X and Y are BOTH asserted.
+    """ "not only X but also Y" is not a negated contrast — X and Y are BOTH asserted.
 
     The handler returned everything after "but also", but the match spans only
     "not only X but also" (Y and the head sit outside it), so that is the empty string: X was
@@ -190,13 +191,15 @@ class TestMergeRespectsSentenceTerminators:
         from untell.rewriter.structural import _merge_sentences
 
         random.seed(0)
-        out = _merge_sentences(["The results were remarkable!", "The team published them."], rate=1.0)
+        out = _merge_sentences(
+            ["The results were remarkable!", "The team published them."], rate=1.0
+        )
         joined = " ".join(out)
         assert "!;" not in joined and "!," not in joined, joined
 
     @pytest.mark.parametrize("merge", ["_merge_sentences", "_merge_pair"])
     def test_a_question_is_never_demoted_to_a_clause(self, merge):
-        """"Was the effect real, and the replication says yes" is not English: the interrogative
+        """ "Was the effect real, and the replication says yes" is not English: the interrogative
         word order cannot carry a coordinate clause, and appending a period gives "?." either way.
         Both copies of the merge must decline."""
         import random
@@ -340,7 +343,9 @@ ABBREVIATION_CASES = [
 ]
 
 
-@pytest.mark.parametrize("label,text,expected", ABBREVIATION_CASES, ids=[c[0] for c in ABBREVIATION_CASES])
+@pytest.mark.parametrize(
+    "label,text,expected", ABBREVIATION_CASES, ids=[c[0] for c in ABBREVIATION_CASES]
+)
 def test_abbreviations_do_not_end_a_sentence(label, text, expected):
     from untell.rewriter.structural import _split_sentences
 
@@ -357,9 +362,13 @@ def test_merge_never_lowercases_a_proper_noun():
     from untell.rewriter.structural import _merge_sentences
 
     for _ in range(40):  # the merge is randomised; a single draw proves nothing
-        out = " ".join(_merge_sentences(["The results were published.", "Smith led the team."], rate=1.0))
+        out = " ".join(
+            _merge_sentences(["The results were published.", "Smith led the team."], rate=1.0)
+        )
         assert "smith" not in out, f"proper noun lowercased: {out!r}"
-        out = " ".join(_merge_sentences(["The results were published.", "NASA confirmed them."], rate=1.0))
+        out = " ".join(
+            _merge_sentences(["The results were published.", "NASA confirmed them."], rate=1.0)
+        )
         assert "nASA" not in out and "nasa" not in out, f"acronym mangled: {out!r}"
 
 
@@ -367,8 +376,11 @@ def test_merge_strips_a_leading_marker_instead_of_stacking_conjunctions():
     from untell.rewriter.structural import _merge_sentences
 
     for _ in range(40):
-        out = " ".join(_merge_sentences(
-            ["Regular exercise reduces risk.", "Also, it improves mood."], rate=1.0))
+        out = " ".join(
+            _merge_sentences(
+                ["Regular exercise reduces risk.", "Also, it improves mood."], rate=1.0
+            )
+        )
         low = out.lower()
         for stacked in ("and also", "but also,", "and plus", "while and", "and and", "though also"):
             assert stacked not in low, f"stacked connectives in {out!r}"
@@ -431,10 +443,18 @@ def test_substitution_carries_the_original_capitalisation(original, synonym, exp
 
 
 SAFE_WORD_CASES = [
-    ("The", "", True), ("Organizations", "", True), ("Artificial", "", True),
-    ("Machine", "", True), ("Results", "", True), ("Regular", "", True),
-    ("Smith", "", False), ("Jones", "", False), ("NASA", "", False),
-    ("iPhone", "", False), ("McDonald", "", False), ("Tokyo", "", False),
+    ("The", "", True),
+    ("Organizations", "", True),
+    ("Artificial", "", True),
+    ("Machine", "", True),
+    ("Results", "", True),
+    ("Regular", "", True),
+    ("Smith", "", False),
+    ("Jones", "", False),
+    ("NASA", "", False),
+    ("iPhone", "", False),
+    ("McDonald", "", False),
+    ("Tokyo", "", False),
     # Evidence from context: a word used in lower case elsewhere is an ordinary word.
     ("Widget", "the widget was replaced twice", True),
     ("Kowalski", "the report by Kowalski was late", False),
@@ -599,7 +619,9 @@ class TestDocumentLayoutSurvives:
         import random
 
         random.seed(0)
-        assert structural_rewrite("Furthermore, the system is robust.\n", intensity=1.0).endswith("\n")
+        assert structural_rewrite("Furthermore, the system is robust.\n", intensity=1.0).endswith(
+            "\n"
+        )
 
     def test_single_line_input_is_unaffected_by_the_layout_path(self):
         """The common case — one paragraph, no newlines — must not change behaviour."""
@@ -636,7 +658,7 @@ class TestOpenersAreNotPrependedOntoOrdinaryCapitals:
         return _vary_openers(sentences, rate=1.0)  # force the transform on every sentence
 
     def test_an_ordinary_capitalised_word_is_left_alone(self):
-        """"Issue" appears nowhere else, so nothing proves it is a name — skip rather than mangle."""
+        """ "Issue" appears nowhere else, so nothing proves it is a name — skip rather than mangle."""
         out = self._vary(["Issue 4821 tracks the release shipped last week."])
         assert out == ["Issue 4821 tracks the release shipped last week."]
 
@@ -708,7 +730,7 @@ class TestASplitNeverStrandsAConjunction:
                         assert tail[-1].lower() not in {"and", "or", "but", "while", "because"}, out
 
     def test_mid_phrase_words_are_not_treated_as_split_blockers(self):
-        """"that", "which", "who", "if", "for" and "so" open clauses AND sit mid-phrase constantly.
+        """ "that", "which", "who", "if", "for" and "so" open clauses AND sit mid-phrase constantly.
 
         Including them made things worse: shifting the split point off "that" in "On top of that,
         the clause ..." produced "On top of, that." — a comma inserted where the phrase had none.
@@ -849,24 +871,30 @@ class TestDropRestatements:
         from untell.rewriter.structural import _drop_restatements
 
         # 7 sentences -> budget 1.
-        seven = ["Opening frames the work here. "] + [
-            "The system is fast and cheap to operate. " for _ in range(5)
-        ] + ["Final sentence stands alone. "]
+        seven = (
+            ["Opening frames the work here. "]
+            + ["The system is fast and cheap to operate. " for _ in range(5)]
+            + ["Final sentence stands alone. "]
+        )
         assert len(_drop_restatements(list(seven))) == len(seven) - 1
 
         # 12 sentences -> budget 2, so a text carrying several restatements loses several.
-        twelve = ["Opening frames the work here. "] + [
-            "The system is fast and cheap to operate. " for _ in range(10)
-        ] + ["Final sentence stands alone. "]
+        twelve = (
+            ["Opening frames the work here. "]
+            + ["The system is fast and cheap to operate. " for _ in range(10)]
+            + ["Final sentence stands alone. "]
+        )
         assert len(_drop_restatements(list(twelve))) == len(twelve) - 2
 
     def test_the_cap_still_bounds_damage(self):
         """However repetitive the input, a single call may never gut it."""
         from untell.rewriter.structural import _drop_restatements
 
-        sents = ["Opening frames the work here. "] + [
-            "The system is fast and cheap to operate. " for _ in range(18)
-        ] + ["Final sentence stands alone. "]
+        sents = (
+            ["Opening frames the work here. "]
+            + ["The system is fast and cheap to operate. " for _ in range(18)]
+            + ["Final sentence stands alone. "]
+        )
         out = _drop_restatements(list(sents))
         assert len(out) >= len(sents) - (len(sents) // 5)
         assert len(out) > len(sents) // 2, "a call must never remove most of a paragraph"
@@ -1034,7 +1062,9 @@ class TestTheRewriterNeverEmitsACataloguedTell:
         # Carried in a two-sentence frame: several catalogue patterns are anchored to a sentence
         # opener or need a preceding sentence, and a bare fragment would miss them.
         probe = f"The team shipped it on time. {fragment[:1].upper()}{fragment[1:]} the plan works."
-        return {k: v for k, v in (score_tells(probe, include_matches=True).get("matches") or {}).items()}
+        return {
+            k: v for k, v in (score_tells(probe, include_matches=True).get("matches") or {}).items()
+        }
 
     def test_participial_flattening_outputs_are_clean(self):
         from untell.rewriter.structural import _PARTICIPIAL_VERBS
@@ -1045,7 +1075,9 @@ class TestTheRewriterNeverEmitsACataloguedTell:
     def test_cliche_flattening_outputs_are_clean(self):
         from untell.rewriter.structural import _CLICHE_FLATTEN
 
-        bad = {rep: t for _pat, rep in _CLICHE_FLATTEN if rep.strip() and (t := self._tells_in(rep))}
+        bad = {
+            rep: t for _pat, rep in _CLICHE_FLATTEN if rep.strip() and (t := self._tells_in(rep))
+        }
         assert not bad, f"flattening a cliche into a catalogued tell: {bad}"
 
     def test_synonym_substitutes_are_clean(self):
@@ -1711,7 +1743,7 @@ class TestSubordinateClauseFronting:
             assert _front_subordinate_clauses([text], rate=1.0) == [text]
 
     def test_the_ambiguous_subordinators_are_excluded(self):
-        """"as" is three different words and fronting the comparative one changes the reading;
+        """ "as" is three different words and fronting the comparative one changes the reading;
         trailing "so" is a result coordinator, which cannot front at all."""
         from untell.rewriter.structural import _FRONTABLE
 
@@ -1792,7 +1824,7 @@ class TestSplittingNeverStrandsASubordinator:
 
 
 class TestNeitherSplitterStrandsACoordinator:
-    """"... in combination with other techniques, but. Salt is often the most effective option."
+    """ "... in combination with other techniques, but. Salt is often the most effective option."
 
     _split_long_sentences has carried a guard for this shape since it was found in real HC3 output:
     a coordinator at the RIGHT edge of the first half is left dangling against the full stop,
@@ -1815,7 +1847,13 @@ class TestNeitherSplitterStrandsACoordinator:
         out = _split_one(self.LONG)
         if out is not None:
             assert out[0].rstrip(".").split()[-1].lower() not in {
-                "and", "but", "or", "so", "because", "while", "which",
+                "and",
+                "but",
+                "or",
+                "so",
+                "because",
+                "while",
+                "which",
             }, out
 
     def test_neither_splitter_produces_one_over_the_corpus_shapes(self):
@@ -1848,10 +1886,13 @@ class TestNeitherSplitterStrandsACoordinator:
         from untell.rewriter.structural import _MIN_SPLIT_SIDE, _split_one
 
         # Declined — kept so a change that starts accepting it is visible here.
-        assert _split_one(
-            "The team tried and, the second approach worked far better than anyone had expected"
-            " it to work in practice."
-        ) is None
+        assert (
+            _split_one(
+                "The team tried and, the second approach worked far better than anyone had expected"
+                " it to work in practice."
+            )
+            is None
+        )
 
         accepted = [
             "The committee reviewed the proposal carefully and the board approved the revised "
@@ -2088,7 +2129,9 @@ class TestMergingRespectsALengthBudget:
     longer than a forum answer's, and a fixed cap would flatten register instead of preserving it.
     """
 
-    LONG = [f"The system performs step number {i} carefully and reliably every time." for i in range(8)]
+    LONG = [
+        f"The system performs step number {i} carefully and reliably every time." for i in range(8)
+    ]
 
     def test_a_merge_that_would_overshoot_is_declined(self):
         import random
@@ -2221,7 +2264,7 @@ class TestParenthesisingAnAside:
         assert "(which is the colored part of your eye)" in got[0], got[0]
 
     def test_a_restrictive_clause_is_never_bracketed(self):
-        """"the method that is fast" identifies WHICH method. Bracketing it changes the claim, and
+        """ "the method that is fast" identifies WHICH method. Bracketing it changes the claim, and
         no meaning gate would catch that — they check entailment and roles, not restrictiveness."""
         assert not self._converted(self.RESTRICTIVE), "a restrictive clause was bracketed"
 
@@ -2307,7 +2350,10 @@ class TestPhrasalSubstitutesDoNotStrandAPronoun:
             random.seed(seed)
             words = _plain_register(text, 1.0).split()
             for a, b in zip(words, words[1:]):
-                if a.lower() in _SEPARABLE_PARTICLES and b.strip(",.;:").lower() in _PRONOUN_OBJECTS:
+                if (
+                    a.lower() in _SEPARABLE_PARTICLES
+                    and b.strip(",.;:").lower() in _PRONOUN_OBJECTS
+                ):
                     raise AssertionError(f"seed {seed}: '{a} {b}' — stranded particle")
 
     def test_a_phrasal_substitute_is_still_used_before_a_noun(self):

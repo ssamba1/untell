@@ -5,6 +5,7 @@ output (see goals/results/20260815_135638-2.md). NER-safe: assertions check
 that the FACT lands inside one sentinel, not exact sentinel counts, because
 en_core_web_sm may add entity spans that merge with the regex locks.
 """
+
 import pytest
 
 from untell.scripts.preserve import lock, restore
@@ -255,8 +256,8 @@ class TestHeightsAndDimensionsLockWhole:
     @pytest.mark.parametrize(
         "text,fact",
         [
-            ('He is 5\'10" tall.', "5'10\""),
-            ('She is 6\'2".', "6'2\""),
+            ("He is 5'10\" tall.", "5'10\""),
+            ("She is 6'2\".", "6'2\""),
             ("The child is 4'6.5\" now.", "4'6.5\""),
             ("The box is 10\u00d75 cm.", "10\u00d75 cm"),
             ("The box is 10x5 cm.", "10x5 cm"),
@@ -319,8 +320,8 @@ ROUNDTRIP_TEXTS = [
     "Call (555) 123-4567 now.",
     "Call +1 (555) 123-4567 now.",
     "Call +1-555-123-4567. Then leave.",
-    'He is 5\'10" tall.',
-    'She is 6\'2".',
+    "He is 5'10\" tall.",
+    "She is 6'2\".",
     "The child is 4'6.5\" now.",
     "The box is 10\u00d75 cm.",
     "The box is 10x5 cm.",

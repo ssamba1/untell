@@ -23,10 +23,14 @@ from untell.scripts import roles as R
 pytestmark = pytest.mark.skipif(not R.available(), reason="the role parser is not installed")
 
 SWAPS = [
-    ("The drug reduced mortality by 12% compared with placebo.",
-     "Placebo reduced mortality by 12% compared with the drug."),
-    ("The treatment scored higher than the control.",
-     "The control scored higher than the treatment."),
+    (
+        "The drug reduced mortality by 12% compared with placebo.",
+        "Placebo reduced mortality by 12% compared with the drug.",
+    ),
+    (
+        "The treatment scored higher than the control.",
+        "The control scored higher than the treatment.",
+    ),
     ("Revenue grew faster than costs.", "Costs grew faster than revenue."),
     # Passive voice on both sides: "drug" and "placebo" are both nsubjpass, so the per-sentence
     # arm scan must include _PASS_SUBJ to detect the subject. Before the fix, the arm was never
@@ -39,11 +43,15 @@ NOT_SWAPS = [
     # these firing would make the gate veto ordinary rewrites.
     ("The committee approved the plan.", "The plan was approved by the committee."),
     ("The drug reduced mortality.", "The medication lowered deaths."),
-    ("The drug reduced mortality compared with placebo.",
-     "The drug lowered deaths relative to placebo."),
+    (
+        "The drug reduced mortality compared with placebo.",
+        "The drug lowered deaths relative to placebo.",
+    ),
     ("The study ran in April.", "The study ran during April."),
-    ("The treatment scored higher than the control.",
-     "The treatment scored better than the control."),
+    (
+        "The treatment scored higher than the control.",
+        "The treatment scored better than the control.",
+    ),
     # Passive comparison kept on the same side — synonym preposition, not a swap.
     ("The drug was compared with placebo.", "The drug was compared against the placebo."),
     # Passive voice change without any comparison arm is always faithful.

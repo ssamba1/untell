@@ -56,7 +56,7 @@ def test_the_carrier_is_clean_on_its_own() -> None:
     # attempt and scored clean: the vocabulary holds `delve`, matching is whole-word, and an
     # inflection is a different token. A positive control built from a near-miss proves nothing, and
     # this one caught its own author.
-    assert (score_tells(CARRIER.format("leverage")).get("by_category") or {}), (
+    assert score_tells(CARRIER.format("leverage")).get("by_category") or {}, (
         "the carrier must be able to show a tell when one is present"
     )
 

@@ -40,8 +40,13 @@ on the same topic) — no teacher key. Adapter pushed to your HF repo on complet
 import torch
 from transformers import AutoModelForCausalLM
 from peft import PeftModel
-base = AutoModelForCausalLM.from_pretrained("Qwen/Qwen2.5-3B-Instruct", torch_dtype=torch.bfloat16, device_map="auto")
-PeftModel.from_pretrained(base, "out/dpo-humanizer").merge_and_unload().save_pretrained("out/dpo-merged")
+
+base = AutoModelForCausalLM.from_pretrained(
+    "Qwen/Qwen2.5-3B-Instruct", torch_dtype=torch.bfloat16, device_map="auto"
+)
+PeftModel.from_pretrained(base, "out/dpo-humanizer").merge_and_unload().save_pretrained(
+    "out/dpo-merged"
+)
 ```
 (Or skip Cells 2–3 and GRPO from the raw base — DPO warm-start just needs fewer GRPO steps.)
 
@@ -50,11 +55,19 @@ Guards against the "trained 4h, session killed, lost everything" failure — upl
 checkpoint every 10 min while training runs.
 ```python
 import threading, time, subprocess
+
+
 def _push(repo, folder, every=600):
     while True:
         time.sleep(every)
-        subprocess.run(["huggingface-cli","upload",repo,folder,"--repo-type","model","--quiet"])
-threading.Thread(target=_push, args=("YOUR_HF_USERNAME/untell-grpo","out/rl-humanizer"), daemon=True).start()
+        subprocess.run(
+            ["huggingface-cli", "upload", repo, folder, "--repo-type", "model", "--quiet"]
+        )
+
+
+threading.Thread(
+    target=_push, args=("YOUR_HF_USERNAME/untell-grpo", "out/rl-humanizer"), daemon=True
+).start()
 ```
 
 ## Cell 5 — GRPO on the free ensemble (~4–8h; resume across sessions)

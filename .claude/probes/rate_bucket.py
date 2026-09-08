@@ -1,10 +1,12 @@
 """Rate bucket: limit+1 rejected, window expiry resets, per-credential isolation."""
+
 import json, os
 from unittest.mock import MagicMock
 import untell.api_server as A
 
 os.environ["UNTELL_RATE_LIMIT"] = "3"
-req = MagicMock(); req.client.host = "1.2.3.4"
+req = MagicMock()
+req.client.host = "1.2.3.4"
 A._rate_buckets.clear()
 out = {}
 r1 = [A._rate_limited(req, "clientA") for _ in range(3)]

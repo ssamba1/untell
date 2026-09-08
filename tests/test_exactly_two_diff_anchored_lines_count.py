@@ -5,6 +5,7 @@ makes a text with exactly two "+" lines report nothing, silently dropping a
 layout tell at its own threshold. Fenced code is stripped first, so the probe
 uses plain diff-anchored lines outside a fence.
 """
+
 from untell.scripts.tells import _formatting_tells
 
 

@@ -13,6 +13,7 @@ Every other surface refuses the same input: the CLI at parse time
 neural, ensemble, max, t5_paraphrase, mt_pivot]`) and REST with 422 ("unknown rewriter
 {name}"). The MCP `untell` tool surfaces the same class of error. ceiling was the hole.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -44,7 +45,9 @@ def test_an_unknown_rewriter_name_is_refused_before_any_measurement():
         return json.loads(result[0].text)
 
     payload = _run(_go())
-    assert "error" in payload, f"ceiling ran a measurement for a nonexistent rewriter: {str(payload)[:160]}"
+    assert "error" in payload, (
+        f"ceiling ran a measurement for a nonexistent rewriter: {str(payload)[:160]}"
+    )
     assert "wat" in payload["error"]
 
 

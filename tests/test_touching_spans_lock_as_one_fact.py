@@ -7,6 +7,7 @@ touching spans into a single mask. The mutation <= -> < splits them into two
 adjacent sentinels, which restores as "2023-05" + "-0542" — a different, broken
 locking of the same text. This test pins the touching-span merge.
 """
+
 from untell.scripts.preserve import lock
 
 

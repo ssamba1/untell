@@ -1,13 +1,14 @@
 import json, os
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
 from untell.attacks.word_importance import _match_case, _SYN, synonyms
 
 out = {}
 # PROBE 1: case matching (invariant: replacement carries original's capitalisation)
-out["title"] = _match_case("Robust", "solid")   # expect 'Solid' (title case preserved)
-out["upper"] = _match_case("ROBUST", "solid")   # expect 'SOLID'
-out["lower"] = _match_case("robust", "solid")   # expect 'solid'
-out["mixed"] = _match_case("rObUsT", "solid")   # expect lowercase fallback 'solid' (reasonable)
+out["title"] = _match_case("Robust", "solid")  # expect 'Solid' (title case preserved)
+out["upper"] = _match_case("ROBUST", "solid")  # expect 'SOLID'
+out["lower"] = _match_case("robust", "solid")  # expect 'solid'
+out["mixed"] = _match_case("rObUsT", "solid")  # expect lowercase fallback 'solid' (reasonable)
 
 # PROBE 2: synonym map self-reference + count
 entries = len(_SYN)

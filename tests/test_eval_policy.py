@@ -26,10 +26,7 @@ class _FakeRewriter:
 
 
 def _rows(*specs):
-    return [
-        {"pre": pre, "post": post, "sim": 0.9, "scored": scored}
-        for pre, post, scored in specs
-    ]
+    return [{"pre": pre, "post": post, "sim": 0.9, "scored": scored} for pre, post, scored in specs]
 
 
 def test_summary_excludes_unscored_rows_instead_of_counting_them_as_bypasses():
@@ -61,24 +58,30 @@ def test_summary_counts_a_real_bypass():
 def test_eval_passes_the_threshold_through_to_the_rewriter():
     """--threshold used to move only the scoreboard: the rewrite call hardcoded 0.30."""
     rw = _FakeRewriter()
-    with patch("untell.scripts.score.score_text", return_value={"max": 0.5}), \
-         patch("untell.scripts.quality.similarity", return_value=0.9):
+    with (
+        patch("untell.scripts.score.score_text", return_value={"max": 0.5}),
+        patch("untell.scripts.quality.similarity", return_value=0.9),
+    ):
         _eval(rw, ["a sample"], "lite", 0.12)
     assert rw.thresholds == [0.12]
 
 
 def test_eval_marks_rows_unscored_when_no_detector_produced_a_number():
     rw = _FakeRewriter()
-    with patch("untell.scripts.score.score_text", return_value={"max": 0.0, "scored": False}), \
-         patch("untell.scripts.quality.similarity", return_value=0.9):
+    with (
+        patch("untell.scripts.score.score_text", return_value={"max": 0.0, "scored": False}),
+        patch("untell.scripts.quality.similarity", return_value=0.9),
+    ):
         rows = _eval(rw, ["a sample"], "lite", 0.30)
     assert rows[0]["scored"] is False
 
 
 def test_eval_marks_rows_scored_when_detectors_worked():
     rw = _FakeRewriter()
-    with patch("untell.scripts.score.score_text", return_value={"max": 0.42}), \
-         patch("untell.scripts.quality.similarity", return_value=0.9):
+    with (
+        patch("untell.scripts.score.score_text", return_value={"max": 0.42}),
+        patch("untell.scripts.quality.similarity", return_value=0.9),
+    ):
         rows = _eval(rw, ["a sample"], "lite", 0.30)
     assert rows[0]["scored"] is True
     assert rows[0]["pre"] == 0.42

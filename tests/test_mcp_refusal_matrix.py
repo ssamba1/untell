@@ -17,6 +17,7 @@ outcomes exist, and each is pinned here:
 MEASURED (this slice, real engine): every row below was probed live; the split between
 dict-refusals and ToolErrors is exactly what the engine does, not what a mock would.
 """
+
 from __future__ import annotations
 
 import asyncio

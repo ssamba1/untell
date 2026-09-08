@@ -39,9 +39,7 @@ _ROOT = Path(__file__).resolve().parents[1]
 
 # `--help` makes the process exit before uvicorn binds anything, so these never open a socket.
 _PROBE = (
-    "import sys; sys.argv=['untell-server','--help']\n"
-    "import untell.api_server as m\n"
-    "m.main()\n"
+    "import sys; sys.argv=['untell-server','--help']\nimport untell.api_server as m\nm.main()\n"
 )
 
 
@@ -52,7 +50,13 @@ def _run_with_port(value: str | None) -> tuple[int, str]:
         env["UNTELL_PORT"] = value
     proc = subprocess.run(
         [sys.executable, "-c", _PROBE],
-        capture_output=True, text=True, encoding="utf-8", errors="replace", env=env, cwd=str(_ROOT), timeout=300,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        env=env,
+        cwd=str(_ROOT),
+        timeout=300,
     )
     return proc.returncode, (proc.stdout or "") + (proc.stderr or "")
 

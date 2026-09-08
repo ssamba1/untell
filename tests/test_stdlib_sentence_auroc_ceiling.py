@@ -75,6 +75,7 @@ def _stdlib_score(text: str) -> float | None:
     os.environ["UNTELL_LITE_NO_TORCH"] = "1"
     try:
         from untell.detectors.perplexity_burstiness import lite_score
+
         return lite_score(text)
     finally:
         if orig is None:
@@ -122,9 +123,7 @@ def test_plain_ai_sentences_do_not_outscore_plain_human_sentences() -> None:
     if not human_scores or not ai_scores:
         pytest.skip("no scores produced — check MIN_WORDS threshold")
 
-    wins = sum(
-        (a > h) + 0.5 * (a == h) for a in ai_scores for h in human_scores
-    )
+    wins = sum((a > h) + 0.5 * (a == h) for a in ai_scores for h in human_scores)
     auc = wins / (len(ai_scores) * len(human_scores))
     assert auc < 0.70, (
         f"stdlib path produced AUROC {auc:.3f} on these plain sentences — "

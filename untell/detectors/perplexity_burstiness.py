@@ -97,16 +97,123 @@ _PPL_WEIGHT = 0.55
 # A tiny stop/common-word list. High coverage by these high-frequency tokens correlates with
 # low perplexity (predictable text). This is a heuristic stand-in for a real LM, not lexicon.
 _COMMON = {
-    "the", "be", "to", "of", "and", "a", "in", "that", "have", "i", "it", "for", "not", "on",
-    "with", "he", "as", "you", "do", "at", "this", "but", "his", "by", "from", "they", "we",
-    "say", "her", "she", "or", "an", "will", "my", "one", "all", "would", "there", "their",
-    "what", "so", "up", "out", "if", "about", "who", "get", "which", "go", "me", "when", "make",
-    "can", "like", "time", "no", "just", "him", "know", "take", "people", "into", "year", "your",
-    "good", "some", "could", "them", "see", "other", "than", "then", "now", "look", "only",
-    "come", "its", "over", "think", "also", "back", "after", "use", "two", "how", "our", "work",
-    "first", "well", "way", "even", "new", "want", "because", "any", "these", "give", "day",
-    "most", "us", "is", "are", "was", "were", "been", "has", "had", "more", "very", "such",
-    "additionally", "moreover", "furthermore", "however", "therefore", "thus", "overall",
+    "the",
+    "be",
+    "to",
+    "of",
+    "and",
+    "a",
+    "in",
+    "that",
+    "have",
+    "i",
+    "it",
+    "for",
+    "not",
+    "on",
+    "with",
+    "he",
+    "as",
+    "you",
+    "do",
+    "at",
+    "this",
+    "but",
+    "his",
+    "by",
+    "from",
+    "they",
+    "we",
+    "say",
+    "her",
+    "she",
+    "or",
+    "an",
+    "will",
+    "my",
+    "one",
+    "all",
+    "would",
+    "there",
+    "their",
+    "what",
+    "so",
+    "up",
+    "out",
+    "if",
+    "about",
+    "who",
+    "get",
+    "which",
+    "go",
+    "me",
+    "when",
+    "make",
+    "can",
+    "like",
+    "time",
+    "no",
+    "just",
+    "him",
+    "know",
+    "take",
+    "people",
+    "into",
+    "year",
+    "your",
+    "good",
+    "some",
+    "could",
+    "them",
+    "see",
+    "other",
+    "than",
+    "then",
+    "now",
+    "look",
+    "only",
+    "come",
+    "its",
+    "over",
+    "think",
+    "also",
+    "back",
+    "after",
+    "use",
+    "two",
+    "how",
+    "our",
+    "work",
+    "first",
+    "well",
+    "way",
+    "even",
+    "new",
+    "want",
+    "because",
+    "any",
+    "these",
+    "give",
+    "day",
+    "most",
+    "us",
+    "is",
+    "are",
+    "was",
+    "were",
+    "been",
+    "has",
+    "had",
+    "more",
+    "very",
+    "such",
+    "additionally",
+    "moreover",
+    "furthermore",
+    "however",
+    "therefore",
+    "thus",
+    "overall",
 }
 
 
@@ -209,7 +316,7 @@ def _single_sentence_signal(text: str, fallback: float, cap: float = _RATIO_CEIL
 
 
 _TTR_WINDOW = 100
-_TTR_FLOOR = 0.25       # below this, no real text was observed; see the measurement below
+_TTR_FLOOR = 0.25  # below this, no real text was observed; see the measurement below
 _TTR_SATURATION = 0.10  # at or below this, report 1.0
 
 
@@ -256,7 +363,7 @@ def lite_score(text: str) -> float | None:
     rep = _repetition_signal(text)
     sents = _sentences(text)
     nonempty = [s for s in sents if _WORD.findall(s)]
-    common = _common_ratio(text)          # ~0.3 (varied) .. ~0.6 (formulaic)
+    common = _common_ratio(text)  # ~0.3 (varied) .. ~0.6 (formulaic)
     # Map common-word ratio: above ~0.45 trends AI-formulaic.
     common_signal = clamp01((common - 0.30) / 0.30)
 
@@ -273,7 +380,7 @@ def lite_score(text: str) -> float | None:
     if len(nonempty) < 2:
         return clamp01(max(rep, _single_sentence_signal(text, common_signal)))
 
-    burst = _burstiness(sents)        # ~0.0 (uniform) .. ~0.8+ (varied human prose)
+    burst = _burstiness(sents)  # ~0.0 (uniform) .. ~0.8+ (varied human prose)
     # Map burstiness to an AI-likelihood contribution: low burstiness -> high P(AI).
     # CV around 0.5 is typical human prose; below ~0.25 reads as machine-uniform.
     burst_signal = clamp01((0.55 - burst) / 0.55)
@@ -309,7 +416,7 @@ def _per_sentence_means(
     per_sent: list[float] = []
     for start, end in bounds:
         lo = bisect.bisect_left(starts, start)  # first token starting at/after the sentence
-        hi = bisect.bisect_right(ends, end)     # first token ending after the sentence
+        hi = bisect.bisect_right(ends, end)  # first token ending after the sentence
         vals = [nll_vals[k] for k in range(lo, hi) if ends[k] > starts[k]]
         if len(vals) >= min_tokens:
             per_sent.append(sum(vals) / len(vals))
@@ -564,10 +671,13 @@ class PerplexityBurstinessDetector:
                 # same run.
                 self._last_path = "gpt2"
                 return None if full is None else clamp01(full)
-            except Exception as exc:  # model/load failure -> heuristic, but say so (don't fail silently)
+            except (
+                Exception
+            ) as exc:  # model/load failure -> heuristic, but say so (don't fail silently)
                 logger.warning(
                     "perplexity_burstiness full path failed (%s: %s); falling back to lite heuristic.",
-                    type(exc).__name__, str(exc)[:120],
+                    type(exc).__name__,
+                    str(exc)[:120],
                 )
         self._last_path = "stdlib"
         return lite_score(text)

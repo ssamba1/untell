@@ -160,6 +160,7 @@ def _shield_sentinels(text: str) -> tuple[str, dict[str, str]]:
     from untell.scripts.preserve import SENTINEL_RE
 
     back: dict[str, str] = {}
+
     def _one(match: re.Match) -> str:
         token = _SHIELD_FMT.format(len(back))
         back[token] = match.group(0)

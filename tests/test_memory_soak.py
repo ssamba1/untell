@@ -39,6 +39,7 @@ _TRACED_GROWTH_LIMIT_KB_PER_ITER = 50.0
 def _rss_mb() -> float:
     psutil = pytest.importorskip("psutil")
     import os as _os
+
     return psutil.Process(_os.getpid()).memory_info().rss / 1024 / 1024
 
 

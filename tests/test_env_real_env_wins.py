@@ -6,6 +6,7 @@ environment, so the .env value would overwrite the real one.
 
 dotenv is disabled so the stdlib fallback loop (where line 100 lives) runs.
 """
+
 import os
 import sys
 
@@ -19,9 +20,7 @@ def test_real_env_wins_over_dotenv_file(tmp_path, monkeypatch):
     monkeypatch.setenv("ALREADY_SET", "real_value")
 
     assert load_env(str(p)) is True
-    assert os.environ["ALREADY_SET"] == "real_value", (
-        ".env overrode a real environment variable"
-    )
+    assert os.environ["ALREADY_SET"] == "real_value", ".env overrode a real environment variable"
 
 
 def test_dotenv_file_sets_a_missing_var(tmp_path, monkeypatch):

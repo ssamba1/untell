@@ -43,7 +43,11 @@ SHIPPED = 0.30  # DEFAULT_THRESHOLD in untell.scripts.score; targeted.py min_sco
 # Same locally-runnable set as eval/detector_audit.py. radar/local_judge/binoculars are
 # opt-in UNAVAILABLE in this environment (as in slice 11).
 _SPECS = [
-    ("perplexity_burstiness", "untell.detectors.perplexity_burstiness", "PerplexityBurstinessDetector"),
+    (
+        "perplexity_burstiness",
+        "untell.detectors.perplexity_burstiness",
+        "PerplexityBurstinessDetector",
+    ),
     ("roberta_openai", "untell.detectors.roberta_openai", "RobertaOpenAIDetector"),
     ("hc3_roberta", "untell.detectors.hc3_roberta", "HC3RobertaDetector"),
     ("fast_detectgpt", "untell.detectors.fast_detectgpt", "FastDetectGPTDetector"),
@@ -105,8 +109,10 @@ def main() -> int:
     ai_raw = [a for _, a in loaded]
     human_sents = _sentences_from([collapse_layout(h) for h in human_raw], args.max_sentences)
     ai_sents = _sentences_from([collapse_layout(a) for a in ai_raw], args.max_sentences)
-    print(f"pairs={len(loaded)} sentences/class human={len(human_sents)} ai={len(ai_sents)}",
-          flush=True)
+    print(
+        f"pairs={len(loaded)} sentences/class human={len(human_sents)} ai={len(ai_sents)}",
+        flush=True,
+    )
 
     rows: list[dict] = []
     raw: dict[str, dict[str, list[float]]] = {}
@@ -136,30 +142,38 @@ def main() -> int:
         fpr20, tpr20 = fpr_tpr(human_scores, ai_scores, t20)
         fpr10, tpr10 = fpr_tpr(human_scores, ai_scores, t10)
         curve = [
-            {"t": t, "fpr": round(fpr_tpr(human_scores, ai_scores, t)[0], 4),
-             "tpr": round(fpr_tpr(human_scores, ai_scores, t)[1], 4)}
+            {
+                "t": t,
+                "fpr": round(fpr_tpr(human_scores, ai_scores, t)[0], 4),
+                "tpr": round(fpr_tpr(human_scores, ai_scores, t)[1], 4),
+            }
             for t in GRID
         ]
-        rows.append({
-            "detector": key,
-            "granularity": "sentence",
-            "n_human": len(human_scores),
-            "n_ai": len(ai_scores),
-            "auroc": round(au, 4) if au is not None else None,
-            "human_mean": round(sum(human_scores) / len(human_scores), 4),
-            "ai_mean": round(sum(ai_scores) / len(ai_scores), 4),
-            "fpr_at_shipped": round(fpr_s, 4),
-            "tpr_at_shipped": round(tpr_s, 4),
-            "t_for_fpr_0.20": t20,
-            "fpr_at_t20": round(fpr20, 4),
-            "tpr_at_t20": round(tpr20, 4),
-            "t_for_fpr_0.10": t10,
-            "fpr_at_t10": round(fpr10, 4),
-            "tpr_at_t10": round(tpr10, 4),
-            "seconds": round(time.time() - t0, 1),
-        })
-        print(f"  {key}: FPR@{SHIPPED}={fpr_s:.3f} TPR={tpr_s:.3f} "
-              f"t(FPR<=.20)={t20} TPR={tpr20:.3f} ({time.time()-t0:.0f}s)", flush=True)
+        rows.append(
+            {
+                "detector": key,
+                "granularity": "sentence",
+                "n_human": len(human_scores),
+                "n_ai": len(ai_scores),
+                "auroc": round(au, 4) if au is not None else None,
+                "human_mean": round(sum(human_scores) / len(human_scores), 4),
+                "ai_mean": round(sum(ai_scores) / len(ai_scores), 4),
+                "fpr_at_shipped": round(fpr_s, 4),
+                "tpr_at_shipped": round(tpr_s, 4),
+                "t_for_fpr_0.20": t20,
+                "fpr_at_t20": round(fpr20, 4),
+                "tpr_at_t20": round(tpr20, 4),
+                "t_for_fpr_0.10": t10,
+                "fpr_at_t10": round(fpr10, 4),
+                "tpr_at_t10": round(tpr10, 4),
+                "seconds": round(time.time() - t0, 1),
+            }
+        )
+        print(
+            f"  {key}: FPR@{SHIPPED}={fpr_s:.3f} TPR={tpr_s:.3f} "
+            f"t(FPR<=.20)={t20} TPR={tpr20:.3f} ({time.time() - t0:.0f}s)",
+            flush=True,
+        )
 
     evidence = {
         "probe": "issue-40 sentence-granularity calibration curves",

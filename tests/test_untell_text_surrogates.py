@@ -9,10 +9,10 @@ loop must process or sanitize them, never leak a traceback.
 from untell.scripts.run import untell_text
 
 SURROGATE_INPUTS = [
-    "abc\ud800def",          # lone high surrogate mid-string
-    "\udc00 start",          # lone low surrogate at start
-    "ends with \udfff",      # lone surrogate at end
-    "mix \ud800 mid \udc00", # two surrogates
+    "abc\ud800def",  # lone high surrogate mid-string
+    "\udc00 start",  # lone low surrogate at start
+    "ends with \udfff",  # lone surrogate at end
+    "mix \ud800 mid \udc00",  # two surrogates
 ]
 
 

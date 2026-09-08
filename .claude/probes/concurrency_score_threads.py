@@ -8,6 +8,7 @@
 
 Run:  PYTHONPATH= UNTELL_LITE_NO_TORCH=1 .venv/Scripts/python.exe .claude/probes/concurrency_score_threads.py
 """
+
 from __future__ import annotations
 
 import json
@@ -74,7 +75,9 @@ def main() -> int:
         )
     if bad_modes:
         FINDINGS.append(f"RACE (a): mode() changed under concurrency: {bad_modes[:3]!r}")
-    print(f"[a] shared-instance: {len(flat)} calls, {wall_a:.1f}s, mismatches={len(bad)}, mode-mismatches={len(bad_modes)}")
+    print(
+        f"[a] shared-instance: {len(flat)} calls, {wall_a:.1f}s, mismatches={len(bad)}, mode-mismatches={len(bad_modes)}"
+    )
 
     # ---- (b) 8 threads, score_text(tier='lite') full path -----------------
     json_results: list[list] = [[] for _ in range(n_threads)]

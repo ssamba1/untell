@@ -4,22 +4,27 @@ Count is flat (5-6). Does the actual rewritten TEXT differ by intensity?
 If outputs are near-identical, the knob adds no diversity and the
 _intensity_sweep's claim of 'exploring genuinely different rewrites' is false.
 """
+
 import sys
 from pathlib import Path
+
 for p in Path(__file__).resolve().parents:
     if (p / "untell" / "__init__.py").exists():
-        sys.path.insert(0, str(p)); break
+        sys.path.insert(0, str(p))
+        break
 
 import untell.rewriter.structural as structural
 import untell.scripts.score as S
 
-TEXT = ("The results demonstrate significant improvements across all metrics. "
-        "Moreover, the data indicate a clear trend toward enhanced performance. "
-        "Furthermore, leveraging robust methodologies optimizes crucial outcomes. "
-        "Additionally, the findings suggest that further investigation is warranted "
-        "and the implications for practice are substantial.")
+TEXT = (
+    "The results demonstrate significant improvements across all metrics. "
+    "Moreover, the data indicate a clear trend toward enhanced performance. "
+    "Furthermore, leveraging robust methodologies optimizes crucial outcomes. "
+    "Additionally, the findings suggest that further investigation is warranted "
+    "and the implications for practice are substantial."
+)
 
-sr = S.score_text(TEXT, tier='lite')
+sr = S.score_text(TEXT, tier="lite")
 
 outputs = {}
 for intensity in (0.2, 0.5, 0.9):

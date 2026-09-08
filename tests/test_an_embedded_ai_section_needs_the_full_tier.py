@@ -24,6 +24,7 @@ These tests pin the contrast rather than the numbers — an exact 0.2657 would b
 detector changes, while "the full tier sees it and the stdlib path does not" is the property a
 user's decision rests on.
 """
+
 from __future__ import annotations
 
 import pytest

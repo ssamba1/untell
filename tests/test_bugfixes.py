@@ -8,6 +8,7 @@ Each test pins the exact failure mode so the fix cannot silently regress:
 * Bug 4 — a score with no real detector signal must never be declared a "pass".
 * Bug 5 — reported similarity must reflect the true final output after polish, not stale locked text.
 """
+
 from __future__ import annotations
 
 from untell.scripts.quality import similarity
@@ -15,6 +16,7 @@ from untell.scripts.quality import similarity
 
 def _num_score(mx: float, flagged: bool = True):
     """A fake score_text returning a real numeric detector signal at ``mx``."""
+
     def _s(text, tier="full", threshold=0.3):
         return {
             "tier": tier,
@@ -24,6 +26,7 @@ def _num_score(mx: float, flagged: bool = True):
             "threshold": threshold,
             "flagged": flagged,
         }
+
     return _s
 
 
@@ -60,10 +63,15 @@ def test_duplicate_sentinel_candidate_is_rejected(monkeypatch):
 
     out = run_mod.untell_text(
         "AI changed the field [1] a lot. It works well overall.",
-        tier="lite", threshold=0.3, max_iters=2, rewriter=_Dup(), scrub=False, sim_bar=0.0,
+        tier="lite",
+        threshold=0.3,
+        max_iters=2,
+        rewriter=_Dup(),
+        scrub=False,
+        sim_bar=0.0,
     )
-    assert out["final"].count("[1]") == 1        # citation NOT duplicated on restore
-    assert out["rewrites"] >= 1                   # the dup rewriter really ran
+    assert out["final"].count("[1]") == 1  # citation NOT duplicated on restore
+    assert out["rewrites"] >= 1  # the dup rewriter really ran
     assert out["stopped"] in ("stalled", "max_iters")  # dup candidate never adopted
 
 
@@ -78,8 +86,8 @@ def test_participial_offset_survives_extra_whitespace():
     # to the original length now misaligns by 7 instead of by 1.
     out = _flatten_participial_trailers("The system evolved,  underscoring its importance.")
     assert "shows its importance" in out
-    assert "showsg" not in out                # no eaten/duplicated boundary char
-    assert "underscor" not in out             # no remnant of the participial form
+    assert "showsg" not in out  # no eaten/duplicated boundary char
+    assert "underscor" not in out  # no remnant of the participial form
 
 
 def test_participial_single_space_still_works():
@@ -107,7 +115,10 @@ def test_marks_is_not_flattened():
 def test_serves_as_still_flattens_to_is():
     from untell.rewriter.structural import _flatten_copula
 
-    assert _flatten_copula("Python serves as a scripting language.") == "Python is a scripting language."
+    assert (
+        _flatten_copula("Python serves as a scripting language.")
+        == "Python is a scripting language."
+    )
 
 
 # --------------------------------------------------------------------------- Bug 4
@@ -128,7 +139,11 @@ def test_no_pass_on_vacuous_all_failed_score(monkeypatch):
     monkeypatch.setattr(run_mod, "score_text", _all_failed)
     out = run_mod.untell_text(
         "Some plain sentence with no citations at all here.",
-        tier="lite", threshold=0.3, max_iters=2, rewriter=_NoOp(), scrub=False,
+        tier="lite",
+        threshold=0.3,
+        max_iters=2,
+        rewriter=_NoOp(),
+        scrub=False,
     )
     assert out["stopped"] != "passed"
 
@@ -140,7 +155,12 @@ def test_real_low_signal_still_passes(monkeypatch):
     monkeypatch.setattr(run_mod, "score_text", _num_score(0.1, flagged=False))
     out = run_mod.untell_text(
         "Some plain sentence with no citations at all here.",
-        tier="lite", threshold=0.3, max_iters=2, rewriter=_NoOp(), scrub=False, sim_bar=0.0,
+        tier="lite",
+        threshold=0.3,
+        max_iters=2,
+        rewriter=_NoOp(),
+        scrub=False,
+        sim_bar=0.0,
     )
     assert out["stopped"] == "passed"
 
@@ -158,17 +178,30 @@ def test_polish_reports_true_similarity(monkeypatch):
     # score the polished variant strictly lower than everything else.
     def _score(text, tier="full", threshold=0.3):
         m = 0.02 if text == polished else 0.10
-        return {"tier": tier, "detectors": {"perplexity_burstiness": m}, "max": m, "mean": m,
-                "threshold": threshold, "flagged": False}
+        return {
+            "tier": tier,
+            "detectors": {"perplexity_burstiness": m},
+            "max": m,
+            "mean": m,
+            "threshold": threshold,
+            "flagged": False,
+        }
 
     monkeypatch.setattr(run_mod, "score_text", _score)
     monkeypatch.setattr(
-        attacks_mod, "surgical_substitute",
+        attacks_mod,
+        "surgical_substitute",
         lambda t, tier=None, threshold=0.3: {"text": polished},
     )
     out = run_mod.untell_text(
-        src, tier="lite", threshold=0.3, max_iters=1, rewriter=_NoOp(),
-        polish=True, scrub=False, sim_bar=0.1,
+        src,
+        tier="lite",
+        threshold=0.3,
+        max_iters=1,
+        rewriter=_NoOp(),
+        polish=True,
+        scrub=False,
+        sim_bar=0.1,
     )
     assert out["final"] == polished
     assert abs(out["similarity"] - similarity(src, polished)) < 1e-9
@@ -261,7 +294,10 @@ def test_no_rewriter_compares_output_sentinels_against_a_deduplicated_list():
     offenders = [
         p.relative_to(root).as_posix()
         for p in root.glob("untell/**/*.py")
-        if re.search(r"dict\.fromkeys\(\s*_SENTINEL_RE\.findall", p.read_text(encoding="utf-8", errors="replace"))
+        if re.search(
+            r"dict\.fromkeys\(\s*_SENTINEL_RE\.findall",
+            p.read_text(encoding="utf-8", errors="replace"),
+        )
     ]
     assert not offenders, (
         f"{offenders} deduplicate sentinels before a Counter comparison — compare findall to "
@@ -302,7 +338,9 @@ def test_tells_tiebreak_prefers_fewer_tells(monkeypatch):
     # rewriter that emits a fixed string would drop the sentinel and be (correctly) rejected — which
     # would test the sentinel guard, not the tells tie-break this test is about.
     source = "Some sample paragraph to rewrite here now."
-    tell_heavy = "Moreover, it is important to note that we leverage robust synergies across verticals."
+    tell_heavy = (
+        "Moreover, it is important to note that we leverage robust synergies across verticals."
+    )
     tell_light = "We use a few tools."
     draws = iter([tell_heavy, tell_light])
 
@@ -318,7 +356,14 @@ def test_tells_tiebreak_prefers_fewer_tells(monkeypatch):
 
     out = run_mod.untell_text(
         source,
-        tier="lite", threshold=0.3, max_iters=1, best_of=2, rewriter=_RW(), scrub=False, sim_bar=0.0, veto_contradictions=False,
+        tier="lite",
+        threshold=0.3,
+        max_iters=1,
+        best_of=2,
+        rewriter=_RW(),
+        scrub=False,
+        sim_bar=0.0,
+        veto_contradictions=False,
     )
     assert out["final"] == tell_light  # equal detector score -> fewer-tells candidate wins
 
@@ -336,8 +381,14 @@ def test_tells_tiebreak_never_loses_a_better_adoptable_candidate(monkeypatch):
 
     def _fake_score(text, tier="full", threshold=0.3):
         m = scores.get(text, 0.30)
-        return {"tier": tier, "detectors": {"perplexity_burstiness": m}, "max": m, "mean": m,
-                "threshold": threshold, "flagged": m >= 0.3}
+        return {
+            "tier": tier,
+            "detectors": {"perplexity_burstiness": m},
+            "max": m,
+            "mean": m,
+            "threshold": threshold,
+            "flagged": m >= 0.3,
+        }
 
     monkeypatch.setattr(run_mod, "score_text", _fake_score)
     draws = iter([a_text, b_text])
@@ -353,7 +404,15 @@ def test_tells_tiebreak_never_loses_a_better_adoptable_candidate(monkeypatch):
             return next(draws)
 
     out = run_mod.untell_text(
-        orig, tier="lite", threshold=0.30, max_iters=1, best_of=2, rewriter=_RW(), scrub=False, sim_bar=0.0, veto_contradictions=False,
+        orig,
+        tier="lite",
+        threshold=0.30,
+        max_iters=1,
+        best_of=2,
+        rewriter=_RW(),
+        scrub=False,
+        sim_bar=0.0,
+        veto_contradictions=False,
     )
     assert out["final"] == a_text  # the 0.295 improvement is kept, not lost to B's fewer tells
 
@@ -366,14 +425,20 @@ def test_selection_breaks_ties_on_ensemble_mean(monkeypatch):
     import untell.scripts.run as run_mod
 
     orig = "Original sample paragraph here to rewrite right now."
-    flat = "We use tools."      # same max, high mean (other detectors unmoved)
-    deep = "We use gear."       # same max, LOW mean (other detectors also improved)
+    flat = "We use tools."  # same max, high mean (other detectors unmoved)
+    deep = "We use gear."  # same max, LOW mean (other detectors also improved)
     table = {orig: (0.30, 0.30), flat: (0.20, 0.60), deep: (0.20, 0.10)}
 
     def _fake_score(text, tier="full", threshold=0.3):
         mx, mn = table.get(text, (0.30, 0.30))
-        return {"tier": tier, "detectors": {"a": mx, "b": mn}, "max": mx, "mean": mn,
-                "threshold": threshold, "flagged": mx >= 0.3}
+        return {
+            "tier": tier,
+            "detectors": {"a": mx, "b": mn},
+            "max": mx,
+            "mean": mn,
+            "threshold": threshold,
+            "flagged": mx >= 0.3,
+        }
 
     monkeypatch.setattr(run_mod, "score_text", _fake_score)
     draws = iter([flat, deep])
@@ -389,7 +454,15 @@ def test_selection_breaks_ties_on_ensemble_mean(monkeypatch):
             return next(draws)
 
     out = run_mod.untell_text(
-        orig, tier="lite", threshold=0.30, max_iters=1, best_of=2, rewriter=_RW(), scrub=False, sim_bar=0.0, veto_contradictions=False,
+        orig,
+        tier="lite",
+        threshold=0.30,
+        max_iters=1,
+        best_of=2,
+        rewriter=_RW(),
+        scrub=False,
+        sim_bar=0.0,
+        veto_contradictions=False,
     )
     assert out["final"] == deep  # tie on max+tells -> lower ensemble mean wins
 
@@ -408,16 +481,16 @@ def test_ensemble_does_not_trade_away_a_lower_detector(monkeypatch):
         def rewrite(self, text, score_result, threshold=0.30):
             return self._out
 
-    good = "member A output"   # same max, much better across the rest of the ensemble
-    bad = "member B output"    # same max, wrecks the lower detector
+    good = "member A output"  # same max, much better across the rest of the ensemble
+    bad = "member B output"  # same max, wrecks the lower detector
     rw._members = [("a", _M(good)), ("b", _M(bad))]
 
     import untell.scripts.score as score_mod
 
     table = {
         "orig text here": (0.90, 0.90),
-        good: (0.700, 0.10),   # max ties with bad, mean far lower
-        bad: (0.695, 0.65),    # microscopically lower max, much worse mean
+        good: (0.700, 0.10),  # max ties with bad, mean far lower
+        bad: (0.695, 0.65),  # microscopically lower max, much worse mean
     }
 
     def _fake_score(text, tier="lite", threshold=0.30):
@@ -465,37 +538,49 @@ class TestEnsembleBandCannotStraddleTheThreshold:
         return rw
 
     def test_a_passing_candidate_beats_a_failing_one_inside_the_band(self, monkeypatch):
-        rw = self._rewriter(monkeypatch, {
-            self.ORIGINAL: (0.90, 0.80),
-            self.PASSING: (0.295, 0.290),  # passes 0.30, worse mean
-            self.FAILING: (0.310, 0.100),  # fails 0.30, better mean
-        })
+        rw = self._rewriter(
+            monkeypatch,
+            {
+                self.ORIGINAL: (0.90, 0.80),
+                self.PASSING: (0.295, 0.290),  # passes 0.30, worse mean
+                self.FAILING: (0.310, 0.100),  # fails 0.30, better mean
+            },
+        )
         assert rw.rewrite(self.ORIGINAL, {"tier": "lite"}, threshold=0.30) == self.PASSING
 
     def test_the_mean_tie_break_still_applies_when_both_pass(self, monkeypatch):
         """The band heuristic is right whenever passing does not separate the candidates."""
-        rw = self._rewriter(monkeypatch, {
-            self.ORIGINAL: (0.90, 0.80),
-            self.PASSING: (0.200, 0.190),
-            self.FAILING: (0.210, 0.050),  # also passes; lower mean should win
-        })
+        rw = self._rewriter(
+            monkeypatch,
+            {
+                self.ORIGINAL: (0.90, 0.80),
+                self.PASSING: (0.200, 0.190),
+                self.FAILING: (0.210, 0.050),  # also passes; lower mean should win
+            },
+        )
         assert rw.rewrite(self.ORIGINAL, {"tier": "lite"}, threshold=0.30) == self.FAILING
 
     def test_the_mean_tie_break_still_applies_when_neither_passes(self, monkeypatch):
-        rw = self._rewriter(monkeypatch, {
-            self.ORIGINAL: (0.90, 0.80),
-            self.PASSING: (0.700, 0.690),
-            self.FAILING: (0.710, 0.400),  # neither passes; lower mean should win
-        })
+        rw = self._rewriter(
+            monkeypatch,
+            {
+                self.ORIGINAL: (0.90, 0.80),
+                self.PASSING: (0.700, 0.690),
+                self.FAILING: (0.710, 0.400),  # neither passes; lower mean should win
+            },
+        )
         assert rw.rewrite(self.ORIGINAL, {"tier": "lite"}, threshold=0.30) == self.FAILING
 
     def test_a_higher_threshold_moves_the_decision(self, monkeypatch):
         """Proof the fix reads the real threshold rather than a constant."""
-        rw = self._rewriter(monkeypatch, {
-            self.ORIGINAL: (0.90, 0.80),
-            self.PASSING: (0.295, 0.290),
-            self.FAILING: (0.310, 0.100),
-        })
+        rw = self._rewriter(
+            monkeypatch,
+            {
+                self.ORIGINAL: (0.90, 0.80),
+                self.PASSING: (0.295, 0.290),
+                self.FAILING: (0.310, 0.100),
+            },
+        )
         # At 0.40 both pass, so the mean tie-break takes over and the lower mean wins.
         assert rw.rewrite(self.ORIGINAL, {"tier": "lite"}, threshold=0.40) == self.FAILING
 
@@ -569,12 +654,19 @@ def test_polish_declines_when_it_does_not_help(monkeypatch):
 
     monkeypatch.setattr(run_mod, "score_text", _num_score(0.10, flagged=False))
     monkeypatch.setattr(
-        attacks_mod, "surgical_substitute",
+        attacks_mod,
+        "surgical_substitute",
         lambda t, tier=None, threshold=0.3: {"text": polished},
     )
     out = run_mod.untell_text(
-        src, tier="lite", threshold=0.3, max_iters=1, rewriter=_NoOp(),
-        polish=True, scrub=False, sim_bar=0.0,
+        src,
+        tier="lite",
+        threshold=0.3,
+        max_iters=1,
+        rewriter=_NoOp(),
+        polish=True,
+        scrub=False,
+        sim_bar=0.0,
     )
     assert out["final"] == src  # unpolished text kept
 
@@ -600,7 +692,13 @@ def test_deterministic_rewriter_draws_once_regardless_of_best_of(monkeypatch):
 
     run_mod.untell_text(
         "Some AI paragraph to rewrite here now.",
-        tier="lite", threshold=0.3, max_iters=1, best_of=8, rewriter=_Det(), scrub=False, sim_bar=0.0,
+        tier="lite",
+        threshold=0.3,
+        max_iters=1,
+        best_of=8,
+        rewriter=_Det(),
+        scrub=False,
+        sim_bar=0.0,
     )
     assert calls["n"] == 1  # not 8
 
@@ -625,7 +723,13 @@ def test_randomized_rewriter_still_draws_best_of_n(monkeypatch):
 
     run_mod.untell_text(
         "Some AI paragraph to rewrite here now.",
-        tier="lite", threshold=0.3, max_iters=1, best_of=4, rewriter=_Rand(), scrub=False, sim_bar=0.0,
+        tier="lite",
+        threshold=0.3,
+        max_iters=1,
+        best_of=4,
+        rewriter=_Rand(),
+        scrub=False,
+        sim_bar=0.0,
     )
     assert calls["n"] == 4
 
@@ -642,12 +746,19 @@ def test_loop_vetoes_a_meaning_inverting_rewrite(monkeypatch):
     # The inversion looks perfect to the detectors — only the veto can catch it.
     def _score(text, tier="full", threshold=0.3):
         m = 0.02 if text == inverted else 0.90
-        return {"tier": tier, "detectors": {"d": m}, "max": m, "mean": m,
-                "threshold": threshold, "flagged": m >= 0.3}
+        return {
+            "tier": tier,
+            "detectors": {"d": m},
+            "max": m,
+            "mean": m,
+            "threshold": threshold,
+            "flagged": m >= 0.3,
+        }
 
     monkeypatch.setattr(run_mod, "score_text", _score)
-    monkeypatch.setattr(run_mod, "meaning_preserved",
-                        lambda src, cand, sim, bar: cand.strip() != inverted)
+    monkeypatch.setattr(
+        run_mod, "meaning_preserved", lambda src, cand, sim, bar: cand.strip() != inverted
+    )
 
     class _Inv:
         name = "inv"
@@ -660,8 +771,14 @@ def test_loop_vetoes_a_meaning_inverting_rewrite(monkeypatch):
             return inverted
 
     out = run_mod.untell_text(
-        src, tier="lite", threshold=0.3, max_iters=1, best_of=1, rewriter=_Inv(),
-        scrub=False, sim_bar=0.0,
+        src,
+        tier="lite",
+        threshold=0.3,
+        max_iters=1,
+        best_of=1,
+        rewriter=_Inv(),
+        scrub=False,
+        sim_bar=0.0,
     )
     assert out["final"] == src  # the inverting rewrite was never adopted
 
@@ -676,8 +793,14 @@ def test_veto_can_be_disabled(monkeypatch):
 
     def _score(text, tier="full", threshold=0.3):
         m = 0.02 if text == inverted else 0.90
-        return {"tier": tier, "detectors": {"d": m}, "max": m, "mean": m,
-                "threshold": threshold, "flagged": m >= 0.3}
+        return {
+            "tier": tier,
+            "detectors": {"d": m},
+            "max": m,
+            "mean": m,
+            "threshold": threshold,
+            "flagged": m >= 0.3,
+        }
 
     monkeypatch.setattr(run_mod, "score_text", _score)
     monkeypatch.setattr(run_mod, "meaning_preserved", lambda *a, **k: False)  # would reject all
@@ -693,7 +816,14 @@ def test_veto_can_be_disabled(monkeypatch):
             return inverted
 
     out = run_mod.untell_text(
-        src, tier="lite", threshold=0.3, max_iters=1, best_of=1, rewriter=_Inv(),
-        scrub=False, sim_bar=0.0, veto_contradictions=False,
+        src,
+        tier="lite",
+        threshold=0.3,
+        max_iters=1,
+        best_of=1,
+        rewriter=_Inv(),
+        scrub=False,
+        sim_bar=0.0,
+        veto_contradictions=False,
     )
     assert out["final"] == inverted  # veto bypassed

@@ -44,9 +44,9 @@ PROSE = (
     "It works down to about minus nine degrees, below which other chemicals are needed instead."
 )
 ONE_SHORT_QUOTE = (
-    'Councils spread salt on roads in winter because it lowers the freezing point of water, and '
+    "Councils spread salt on roads in winter because it lowers the freezing point of water, and "
     'one engineer called it "the cheapest tool we have" during a review of the winter programme '
-    'that ran across several counties and reported back in the spring of the following year.'
+    "that ran across several counties and reported back in the spring of the following year."
 )
 
 

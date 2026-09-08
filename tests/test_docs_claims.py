@@ -50,7 +50,9 @@ def _registry_counts() -> tuple[int, int]:
 def test_registry_has_both_kinds():
     """Guard the guard: if the registry ever returns 0/0, the claim tests below pass vacuously."""
     local, commercial = _registry_counts()
-    assert local > 0 and commercial > 0, f"registry looks broken: {local} local, {commercial} commercial"
+    assert local > 0 and commercial > 0, (
+        f"registry looks broken: {local} local, {commercial} commercial"
+    )
 
 
 @pytest.mark.parametrize(
@@ -69,7 +71,9 @@ def test_documented_detector_counts_match_registry(pattern, kind):
             claimed = int(m.group(1))
             if claimed != expected:
                 line = text[: m.start()].count("\n") + 1
-                wrong.append(f"{doc.relative_to(REPO)}:{line} claims {claimed} {kind}, registry has {expected}")
+                wrong.append(
+                    f"{doc.relative_to(REPO)}:{line} claims {claimed} {kind}, registry has {expected}"
+                )
 
     assert not wrong, "detector counts in docs are stale:\n  " + "\n  ".join(wrong)
 
@@ -77,9 +81,12 @@ def test_documented_detector_counts_match_registry(pattern, kind):
 def test_claims_are_actually_being_found():
     """A regex that matches nothing would make the count test pass no matter how wrong the docs are."""
     hits = sum(
-        len(_LOCAL_CLAIM.findall(d.read_text(encoding="utf-8", errors="replace"))) for d in _live_docs()
+        len(_LOCAL_CLAIM.findall(d.read_text(encoding="utf-8", errors="replace")))
+        for d in _live_docs()
     )
-    assert hits > 0, "no '<n> local' claims found — the pattern or the doc set is wrong, not the docs"
+    assert hits > 0, (
+        "no '<n> local' claims found — the pattern or the doc set is wrong, not the docs"
+    )
 
 
 def test_thresholds_reference_documents_every_gate_the_loop_runs():
@@ -238,7 +245,12 @@ def test_why_best_test_count_is_not_stale():
     claimed = int(m.group(1))
     out = subprocess.run(
         [sys.executable, "-m", "pytest", "--collect-only", "-q", "-p", "no:randomly"],
-        cwd=root, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=600,
+        cwd=root,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=600,
     ).stdout
     actual = int(re.search(r"(\d+) tests collected", out).group(1))
     # Only fails when the doc OVERSTATES, or understates by more than a session's growth.
@@ -387,8 +399,10 @@ def test_roadmap_numbers_track_the_census():
     root = Path(__file__).resolve().parents[1]
     data = json.loads((root / "docs" / "humanizer-census.json").read_text(encoding="utf-8"))
     roadmap = (root / "ROADMAP.md").read_text(encoding="utf-8")
-    assert f"{len(data)} of 1287" in roadmap or f"census read {len(data)}" in roadmap or (
-        f"{len(data)} profiled repos" in roadmap or "435 of 1287" in roadmap
+    assert (
+        f"{len(data)} of 1287" in roadmap
+        or f"census read {len(data)}" in roadmap
+        or (f"{len(data)} profiled repos" in roadmap or "435 of 1287" in roadmap)
     ), "the roadmap does not state how many repos the census actually read"
 
 
@@ -430,7 +444,9 @@ class TestResult19ConstantsMatchTheProse:
 
         pool = " ".join(_OPENERS).lower()
         for dead in ("broadly", "looking at this", "as it turns out", "realistically"):
-            assert f'"{dead}' not in pool, f"Result 19 says {dead!r} was dropped; it is still shipped"
+            assert f'"{dead}' not in pool, (
+                f"Result 19 says {dead!r} was dropped; it is still shipped"
+            )
             assert dead in prose.lower(), f"{dead!r} was dropped without the doc recording it"
 
     def test_the_contraction_target_matches(self, prose):

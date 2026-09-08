@@ -23,6 +23,7 @@ detects that via a chunk wall-clock deadline and binary-searches the chunk.
 IMPORTANT: run with PYTHONPATH= and UNTELL_LITE_NO_TORCH=1 (Hermes venv
 shadows pydantic_core; torch import costs ~10s on first call).
 """
+
 from __future__ import annotations
 
 import faulthandler
@@ -48,8 +49,10 @@ def _capture_exc() -> tuple[str, str]:
 # Case runners. Each returns a result dict (JSON-safe).
 # ---------------------------------------------------------------------------
 
+
 def run_score_case(case: dict) -> dict:
     from untell.scripts.score import score_text
+
     value = _materialise(case.get("text"))
     tier = case.get("tier", "lite")
     threshold = case.get("threshold", 0.3)
@@ -59,6 +62,7 @@ def run_score_case(case: dict) -> dict:
 
 def run_loop_case(case: dict) -> dict:
     from untell.scripts.run import untell_text
+
     text = _materialise(case.get("text"))
     kwargs = {
         "tier": case.get("tier", "lite"),
@@ -74,19 +78,23 @@ def run_loop_case(case: dict) -> dict:
     if "confirm" in case:
         kwargs["confirm"] = case["confirm"]
     res = untell_text(text, **kwargs)
-    return {"ok": True, "stopped": res.get("stopped"), "err": res.get("error"),
-            "iterations": res.get("iterations")}
+    return {
+        "ok": True,
+        "stopped": res.get("stopped"),
+        "err": res.get("error"),
+        "iterations": res.get("iterations"),
+    }
 
 
 def run_preserve_case(case: dict) -> dict:
     from untell.scripts.preserve import lock, restore
+
     kind = case.get("kind")
     if kind == "roundtrip":
         text = _materialise(case["text"])
         masked, mapping = lock(text)
         back = restore(masked, mapping)
-        return {"ok": True, "same": back == text,
-                "masked": masked, "back": back, "orig": text}
+        return {"ok": True, "same": back == text, "masked": masked, "back": back, "orig": text}
     if kind == "adversarial":
         text = _materialise(case["text"])
         masked, mapping = lock(text)
@@ -106,6 +114,7 @@ def run_preserve_case(case: dict) -> dict:
 
 def run_tells_case(case: dict) -> dict:
     from untell.scripts.tells import score_tells, looks_non_english
+
     kind = case.get("kind")
     if kind == "bytes" or kind == "type":
         value = _materialise(case["text"])
@@ -137,8 +146,12 @@ def run_cli_case(case: dict) -> dict:
     finally:
         sys.stdout, sys.stderr = old_out, old_err
     out = buf.getvalue()
-    return {"ok": True, "code": code, "out_tail": out[-400:],
-            "traceback": "Traceback (most recent call last)" in out}
+    return {
+        "ok": True,
+        "code": code,
+        "out_tail": out[-400:],
+        "traceback": "Traceback (most recent call last)" in out,
+    }
 
 
 _SURFACES = {
@@ -156,14 +169,26 @@ def _materialise(spec) -> object:
     if isinstance(spec, dict):
         if "b" in spec:
             import base64
+
             return base64.b64decode(spec["b"])
         if "t" in spec:
-            return {"none": None, "int": 7, "float": 1.5, "nan": float("nan"),
-                    "inf": float("inf"), "list": [1, "x"], "dict": {"k": "v"},
-                    "set": {1, 2}, "tuple": (1, 2), "bytes_empty": b"",
-                    "bytearray": bytearray(b"x"), "complex": 1 + 2j,
-                    "object": object(), "bool": True,
-                    "bytes": b"\xff\x00"}[spec["t"]]
+            return {
+                "none": None,
+                "int": 7,
+                "float": 1.5,
+                "nan": float("nan"),
+                "inf": float("inf"),
+                "list": [1, "x"],
+                "dict": {"k": "v"},
+                "set": {1, 2},
+                "tuple": (1, 2),
+                "bytes_empty": b"",
+                "bytearray": bytearray(b"x"),
+                "complex": 1 + 2j,
+                "object": object(),
+                "bool": True,
+                "bytes": b"\xff\x00",
+            }[spec["t"]]
         if "v" in spec:
             return spec["v"]
     return spec
@@ -193,9 +218,12 @@ def main() -> int:
                 holder["r"] = runner(case)
             except BaseException as exc:  # noqa: BLE001 — fuzz: capture everything
                 head, site = _capture_exc()
-                holder["r"] = {"exc": f"{type(exc).__name__}: {exc}",
-                               "head": head, "site": site,
-                               "exc_type": type(exc).__name__}
+                holder["r"] = {
+                    "exc": f"{type(exc).__name__}: {exc}",
+                    "head": head,
+                    "site": site,
+                    "exc_type": type(exc).__name__,
+                }
 
         th = threading.Thread(target=_run, daemon=True)
         th.start()
@@ -212,9 +240,22 @@ def main() -> int:
             if elapsed > case_timeout * 0.6:
                 result["slow"] = True
         # keep payloads small but sufficient for repro
-        for key in ("text", "argv", "tier", "threshold", "max_iters", "kind",
-                    "fn", "mapping", "include_matches", "scrub", "best_of",
-                    "confirm", "seed", "which"):
+        for key in (
+            "text",
+            "argv",
+            "tier",
+            "threshold",
+            "max_iters",
+            "kind",
+            "fn",
+            "mapping",
+            "include_matches",
+            "scrub",
+            "best_of",
+            "confirm",
+            "seed",
+            "which",
+        ):
             if key in case:
                 val = case[key]
                 if key == "text" and isinstance(val, dict) and "v" in val:
@@ -226,8 +267,10 @@ def main() -> int:
         out_f.write(json.dumps(result, ensure_ascii=True, default=str) + "\n")
         out_f.flush()
         if idx % 25 == 0:
-            sys.stderr.write(f"[worker {surface}] {idx + 1}/{len(cases)} "
-                             f"elapsed={time.time() - start_wall:.0f}s\n")
+            sys.stderr.write(
+                f"[worker {surface}] {idx + 1}/{len(cases)} "
+                f"elapsed={time.time() - start_wall:.0f}s\n"
+            )
             sys.stderr.flush()
 
     out_f.close()

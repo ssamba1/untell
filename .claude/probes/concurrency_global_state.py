@@ -11,6 +11,7 @@ subprocess that never touches the server modules.
 
 Run:  PYTHONPATH= UNTELL_LITE_NO_TORCH=1 .venv/Scripts/python.exe .claude/probes/concurrency_global_state.py
 """
+
 from __future__ import annotations
 
 import json
@@ -89,7 +90,10 @@ print(json.dumps({"score_after_rewrite": r,
 def run_child(code: str, label: str) -> dict:
     p = subprocess.run(
         [str(PY), "-c", code, json.dumps(TEXT)],
-        capture_output=True, text=True, env=env(), timeout=300,
+        capture_output=True,
+        text=True,
+        env=env(),
+        timeout=300,
     )
     if p.returncode != 0:
         FINDINGS.append(f"{label}: subprocess failed rc={p.returncode} stderr={p.stderr[:300]!r}")
@@ -102,7 +106,7 @@ def main() -> int:
     control = run_child(CONTROL, "control")
     imported = run_child(IMPORT_SERVERS, "import-servers")
     rewrote = run_child(REWRITE_THEN_SCORE, "rewrite-then-score")
-    print(f"[pollution] 3 subprocesses finished in {time.time()-t0:.1f}s")
+    print(f"[pollution] 3 subprocesses finished in {time.time() - t0:.1f}s")
 
     if not control or not imported:
         print("\n=== FINDINGS ===")
@@ -126,7 +130,9 @@ def main() -> int:
             f"(control={json.dumps(control['score'], sort_keys=True)[:120]} "
             f"imported={json.dumps(imported['score'], sort_keys=True)[:120]})"
         )
-    print(f"[pollution] score unchanged by server imports: {control.get('score') == imported.get('score')}")
+    print(
+        f"[pollution] score unchanged by server imports: {control.get('score') == imported.get('score')}"
+    )
 
     # Q2: quality.py caches pristine after import?
     if not imported.get("quality_cache_pristine"):
@@ -134,7 +140,9 @@ def main() -> int:
             "GLOBAL-STATE LEAK: importing mcp_server/api_server POPULATES the "
             "untell.scripts.quality model cache (module-level _model no longer _UNSET)"
         )
-    print(f"[pollution] quality cache pristine after imports: {imported.get('quality_cache_pristine')}")
+    print(
+        f"[pollution] quality cache pristine after imports: {imported.get('quality_cache_pristine')}"
+    )
 
     # Q3: rewrite-then-score in same process vs control
     if rewrote and rewrote.get("score_after_rewrite") != control.get("score"):
@@ -144,10 +152,14 @@ def main() -> int:
             f"(control={json.dumps(control['score'], sort_keys=True)[:120]} "
             f"after-rewrite={json.dumps(rewrote['score_after_rewrite'], sort_keys=True)[:120]})"
         )
-    print(f"[pollution] score unchanged after a prior rewrite: {not rewrote or rewrote.get('score_after_rewrite') == control.get('score')}")
+    print(
+        f"[pollution] score unchanged after a prior rewrite: {not rewrote or rewrote.get('score_after_rewrite') == control.get('score')}"
+    )
 
     if rewrote and rewrote.get("quality_cache_populated"):
-        print("[pollution] note: quality._model cache IS populated by the rewrite path (expected lazy load)")
+        print(
+            "[pollution] note: quality._model cache IS populated by the rewrite path (expected lazy load)"
+        )
 
     print("\n=== FINDINGS ===")
     if not FINDINGS:

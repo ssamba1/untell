@@ -1,4 +1,5 @@
 import json, os
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
 from untell.scripts.score import _short_roster_note
 from untell.detectors.base import all_detectors

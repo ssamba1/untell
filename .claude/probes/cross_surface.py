@@ -1,4 +1,5 @@
 import json, os, subprocess, sys
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
 from untell.mcp_server import _bad_args
 
@@ -7,13 +8,17 @@ t = "Moreover, the framework leverages robust solutions to deliver outcomes at s
 # CLI path
 r = subprocess.run(
     [sys.executable, "-m", "untell.scripts.tells", t],
-    capture_output=True, text=True, env={**os.environ, "PYTHONPATH": ""}, timeout=120
+    capture_output=True,
+    text=True,
+    env={**os.environ, "PYTHONPATH": ""},
+    timeout=120,
 )
 out["cli_rc"] = r.returncode
 out["cli_has_count"] = "tells" in r.stdout or "Tells" in r.stdout
 # REST path
 from fastapi.testclient import TestClient
 from untell.api_server import app
+
 client = TestClient(app)
 rr = client.post("/tells", json={"text": t})
 out["rest_200"] = rr.status_code == 200

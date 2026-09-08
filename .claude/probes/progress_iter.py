@@ -1,4 +1,5 @@
 """progress_iteration: format invariants — emits only when score is not None, tier labeled."""
+
 import json
 from untell.rich_output import progress_iteration
 

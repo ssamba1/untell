@@ -35,8 +35,7 @@ def test_valid_check_uses_mask_not_padded_shape():
     from pathlib import Path
 
     src = (
-        Path(__file__).resolve().parent.parent
-        / "untell" / "detectors" / "fast_detectgpt.py"
+        Path(__file__).resolve().parent.parent / "untell" / "detectors" / "fast_detectgpt.py"
     ).read_text(encoding="utf-8")
 
     assert "ids[i].shape[0] >= 2" not in src, (
@@ -58,11 +57,14 @@ def test_valid_check_logic_with_torch_tensors():
     torch = pytest.importorskip("torch")
 
     # Batch of 2, padded to length 4.
-    ids = torch.tensor([[10, 11, 12, 13],  # window 0: 4 real tokens
-                        [10,  0,  0,  0]])  # window 1: 1 real token, 3 padding
+    ids = torch.tensor(
+        [
+            [10, 11, 12, 13],  # window 0: 4 real tokens
+            [10, 0, 0, 0],
+        ]
+    )  # window 1: 1 real token, 3 padding
 
-    mask = torch.tensor([[1, 1, 1, 1],
-                         [1, 0, 0, 0]])
+    mask = torch.tensor([[1, 1, 1, 1], [1, 0, 0, 0]])
 
     # Buggy check: ids[i].shape[0] is the PADDED length (4 for both rows).
     buggy_valid = [i for i in range(ids.shape[0]) if ids[i].shape[0] >= 2]
@@ -73,6 +75,4 @@ def test_valid_check_logic_with_torch_tensors():
 
     # Fixed check: mask[i].sum() counts REAL tokens.
     fixed_valid = [i for i in range(mask.shape[0]) if mask[i].sum().item() >= 2]
-    assert fixed_valid == [0], (
-        "fixed check must exclude window 1 (only 1 real token) from scoring"
-    )
+    assert fixed_valid == [0], "fixed check must exclude window 1 (only 1 real token) from scoring"

@@ -72,15 +72,19 @@ def main() -> int:
     raw = ev["raw_scores"]
     dets = [k for k in raw if raw[k].get("human") and raw[k].get("ai")]
 
-    print(f"evidence: {args.evidence.name}  pairs={ev.get('pairs')} "
-          f"max_sentences={ev.get('max_sentences')}  head={ev.get('git_head')}")
+    print(
+        f"evidence: {args.evidence.name}  pairs={ev.get('pairs')} "
+        f"max_sentences={ev.get('max_sentences')}  head={ev.get('git_head')}"
+    )
     print(f"target FPR: {args.target}   shipped ensemble floor: {SHIPPED}")
     print()
 
     # --- per-detector table ---------------------------------------------------
     print("PER-DETECTOR (sentence granularity)")
-    print(f"{'detector':<22}{'n':>4}{'FPR@0.30':>9}{'TPR@0.30':>9}{'cut(tgt)':>9}"
-          f"{'FPR@cut':>8}{'TPR@cut':>8}{'t_largest':>10}")
+    print(
+        f"{'detector':<22}{'n':>4}{'FPR@0.30':>9}{'TPR@0.30':>9}{'cut(tgt)':>9}"
+        f"{'FPR@cut':>8}{'TPR@cut':>8}{'t_largest':>10}"
+    )
     cuts: dict[str, float] = {}
     for d in dets:
         h, a = raw[d]["human"], raw[d]["ai"]
@@ -93,14 +97,18 @@ def main() -> int:
         cuts[d] = SHIPPED if cut is None else cut
         f_c, t_c = fpr(h, cuts[d]), tpr(a, cuts[d])
         tl = largest_t_for_fpr(h, args.target)
-        print(f"{d:<22}{len(h):>4}{f_s:>9.3f}{t_s:>9.3f}{cuts[d]:>9.3f}"
-              f"{f_c:>8.3f}{t_c:>8.3f}{tl:>10.4f}")
+        print(
+            f"{d:<22}{len(h):>4}{f_s:>9.3f}{t_s:>9.3f}{cuts[d]:>9.3f}"
+            f"{f_c:>8.3f}{t_c:>8.3f}{tl:>10.4f}"
+        )
 
     # --- ensemble simulations -------------------------------------------------
     n_h = len(raw[dets[0]]["human"])
     n_a = len(raw[dets[0]]["ai"])
 
-    def ens_fpr_tpr(cut_map: dict[str, float] | None, floor: float = SHIPPED) -> tuple[float, float]:
+    def ens_fpr_tpr(
+        cut_map: dict[str, float] | None, floor: float = SHIPPED
+    ) -> tuple[float, float]:
         flagged_h = flagged_a = 0
         members = list(cut_map) if cut_map is not None else dets
         for i in range(n_h):
@@ -119,7 +127,9 @@ def main() -> int:
 
     fpr_ship, tpr_ship = ens_fpr_tpr(None, SHIPPED)
     print()
-    print(f"ENSEMBLE shipped (max >= {SHIPPED}):  FPR={fpr_ship:.4f}  TPR={tpr_ship:.4f}  (n={n_h}/{n_a})")
+    print(
+        f"ENSEMBLE shipped (max >= {SHIPPED}):  FPR={fpr_ship:.4f}  TPR={tpr_ship:.4f}  (n={n_h}/{n_a})"
+    )
 
     # contribution: who flags the human sentences at shipped, and who is the sole flagger
     print()
@@ -128,11 +138,14 @@ def main() -> int:
         flags = sum(1 for x in raw[d]["human"] if x >= SHIPPED)
         others = [e for e in dets if e != d]
         exclusive = sum(
-            1 for i, x in enumerate(raw[d]["human"])
+            1
+            for i, x in enumerate(raw[d]["human"])
             if x >= SHIPPED and not any(raw[e]["human"][i] >= SHIPPED for e in others)
         )
-        print(f"  {d:<22} flags {flags:>2}/{n_h} human sents ({flags/n_h:.3f})  "
-              f"sole flagger on {exclusive:>2} ({exclusive/n_h:.3f})")
+        print(
+            f"  {d:<22} flags {flags:>2}/{n_h} human sents ({flags / n_h:.3f})  "
+            f"sole flagger on {exclusive:>2} ({exclusive / n_h:.3f})"
+        )
 
     fpr_cal, tpr_cal = ens_fpr_tpr(cuts)
     print(f"ENSEMBLE calibrated cuts (OR_d score>={cuts}):  FPR={fpr_cal:.4f}  TPR={tpr_cal:.4f}")
@@ -151,8 +164,10 @@ def main() -> int:
         if keep:
             sub = {d: cuts[d] for d in keep}
             f, tp = ens_fpr_tpr(sub)
-            print(f"ENSEMBLE calibrated, exclude TPR<{floor_tpr:.2f} at cut "
-                  f"({sorted(keep)}):  FPR={f:.4f}  TPR={tp:.4f}")
+            print(
+                f"ENSEMBLE calibrated, exclude TPR<{floor_tpr:.2f} at cut "
+                f"({sorted(keep)}):  FPR={f:.4f}  TPR={tp:.4f}"
+            )
         else:
             print(f"ENSEMBLE calibrated, exclude TPR<{floor_tpr:.2f} at cut: no detectors kept")
 

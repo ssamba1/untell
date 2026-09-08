@@ -77,7 +77,9 @@ def test_no_surface_defines_flagged_by_the_loop_threshold(rel: str) -> None:
     if not path.exists():  # a moved file is the audit's business, not this test's
         pytest.skip(f"{rel} is not present")
     offenders = _offending_lines(path)
-    assert not offenders, f"{rel} ties `flagged` to `threshold` with no `verdict_threshold` near it: {offenders}"
+    assert not offenders, (
+        f"{rel} ties `flagged` to `threshold` with no `verdict_threshold` near it: {offenders}"
+    )
 
 
 def test_the_check_catches_the_text_that_actually_shipped(tmp_path: Path) -> None:

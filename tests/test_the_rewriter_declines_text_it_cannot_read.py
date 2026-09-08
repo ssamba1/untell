@@ -46,39 +46,39 @@ from untell.scripts.tells import looks_non_english
 
 NON_ENGLISH = {
     "spanish": "El estudio examinó el carbono del suelo en once sitios durante cuatro años. "
-               "Los resultados variaron según la profundidad de la muestra tomada en cada sitio.",
+    "Los resultados variaron según la profundidad de la muestra tomada en cada sitio.",
     "german": "Die Studie untersuchte den Kohlenstoffgehalt des Bodens an elf Standorten. "
-              "Die Ergebnisse variierten je nach Tiefe der entnommenen Bodenprobe erheblich.",
+    "Die Ergebnisse variierten je nach Tiefe der entnommenen Bodenprobe erheblich.",
     "french": "L'étude a examiné le carbone du sol sur onze sites pendant quatre années entières. "
-              "Les résultats variaient selon la profondeur de l'échantillon prélevé sur le site.",
+    "Les résultats variaient selon la profondeur de l'échantillon prélevé sur le site.",
     "italian": "Lo studio ha esaminato il carbonio del suolo in undici siti per quattro anni. "
-               "I risultati variavano a seconda della profondità del campione prelevato.",
+    "I risultati variavano a seconda della profondità del campione prelevato.",
     "portuguese": "O estudo examinou o carbono do solo em onze locais durante quatro anos. "
-                  "Os resultados variaram conforme a profundidade da amostra recolhida.",
+    "Os resultados variaram conforme a profundidade da amostra recolhida.",
     "dutch": "De studie onderzocht het koolstofgehalte van de bodem op elf locaties. "
-             "De resultaten varieerden afhankelijk van de diepte van het genomen monster.",
+    "De resultaten varieerden afhankelijk van de diepte van het genomen monster.",
 }
 
 # Deliberately awkward English: the shapes with the fewest function words, plus two that carry
 # other-language vocabulary without being in another language.
 ENGLISH = {
     "informal": "My grandmother kept every birthday card anyone ever sent her, in a shoebox, in "
-                "date order. When she died we found forty years of them in the wardrobe.",
+    "date order. When she died we found forty years of them in the wardrobe.",
     "AI-formal": "Moreover, the framework leverages a robust approach to deliver transformative "
-                 "outcomes for every stakeholder involved in the wider programme of work.",
+    "outcomes for every stakeholder involved in the wider programme of work.",
     "academic": "The study examined soil carbon at eleven sites over four years, sampling to "
-                "ninety centimetres, and reported mean stocks of 82.4 t/ha in the deepest layer.",
+    "ninety centimetres, and reported mean stocks of 82.4 t/ha in the deepest layer.",
     "technical spec": "Implementations must reject frames whose declared length exceeds the "
-                      "negotiated maximum. A receiver encountering an unknown opcode terminates "
-                      "the connection with status 1003.",
+    "negotiated maximum. A receiver encountering an unknown opcode terminates "
+    "the connection with status 1003.",
     "terse list": "Install dependencies. Run migrations. Restart workers. Verify health endpoint. "
-                  "Check logs for errors. Roll back on failure now.",
+    "Check logs for errors. Roll back on failure now.",
     "code-heavy prose": "Call untell.score first, then untell.tells; pass --tier lite and read "
-                        "verdict_threshold from config.yaml before invoking run() at all.",
+    "verdict_threshold from config.yaml before invoking run() at all.",
     "english quoting german": "The paper uses the term Kohlenstoffgehalt throughout, which the "
-                              "authors gloss as carbon content, and it is the standard usage.",
+    "authors gloss as carbon content, and it is the standard usage.",
     "proper nouns": "Angela Merkel met Jacques Chirac in Strasbourg. Le Monde covered it. "
-                    "Der Spiegel ran a longer piece the following week about the summit.",
+    "Der Spiegel ran a longer piece the following week about the summit.",
 }
 
 

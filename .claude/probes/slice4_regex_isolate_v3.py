@@ -4,6 +4,7 @@ One subprocess per INPUT; each pattern's label is written to stderr before its
 scan (flushed). A timed-out child is killed and its captured stderr shows the
 last pattern that started = the hang culprit. No queues, no races.
 """
+
 from __future__ import annotations
 
 import subprocess

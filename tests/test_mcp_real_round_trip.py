@@ -20,7 +20,9 @@ import json
 
 import pytest
 
-mcp = pytest.importorskip("mcp")  # declared optional dependency ([project.optional-dependencies].mcp)
+mcp = pytest.importorskip(
+    "mcp"
+)  # declared optional dependency ([project.optional-dependencies].mcp)
 
 from untell.mcp_server import _server  # noqa: E402  (after importorskip)
 
@@ -28,9 +30,24 @@ from untell.mcp_server import _server  # noqa: E402  (after importorskip)
 @pytest.mark.parametrize(
     "name,args,required_keys",
     [
-        ("tells", {"text": "Furthermore, in conclusion, the data clearly shows a trend."}, {"tells", "words"}),
-        ("score", {"text": "This is a perfectly ordinary sentence about nothing in particular.", "tier": "lite"}, {"max", "ai_percent"}),
-        ("sentences", {"text": "This is one sentence. And this is another one.", "tier": "lite"}, {"sentences", "flagged"}),
+        (
+            "tells",
+            {"text": "Furthermore, in conclusion, the data clearly shows a trend."},
+            {"tells", "words"},
+        ),
+        (
+            "score",
+            {
+                "text": "This is a perfectly ordinary sentence about nothing in particular.",
+                "tier": "lite",
+            },
+            {"max", "ai_percent"},
+        ),
+        (
+            "sentences",
+            {"text": "This is one sentence. And this is another one.", "tier": "lite"},
+            {"sentences", "flagged"},
+        ),
     ],
 )
 def test_a_real_round_trip_through_the_actual_fastmcp_engine(name, args, required_keys):

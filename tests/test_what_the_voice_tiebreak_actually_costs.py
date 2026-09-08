@@ -18,6 +18,7 @@ reading "never costs evasion" and then seeing their score rise has been told som
 These tests pin the ORDER of the selection key, which is what bounds the cost, rather than
 re-running a 12-text corpus measurement on every CI run.
 """
+
 from __future__ import annotations
 
 import inspect

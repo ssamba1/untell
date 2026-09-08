@@ -79,8 +79,11 @@ Adding one touches no existing file:
 # untell/tells_zh.py
 from untell.languages import register
 
-def score_zh(text: str, *, include_matches: bool = False) -> dict:
-    ...  # same shape as score_tells: words, tells, tells_per_100w, by_category
+
+def score_zh(
+    text: str, *, include_matches: bool = False
+) -> dict: ...  # same shape as score_tells: words, tells, tells_per_100w, by_category
+
 
 register("zh", score_zh, script="Han", label="Chinese")
 ```

@@ -39,13 +39,15 @@ class TestModuleDegradesWhenRichIsAbsent:
     def test_fallback_diff_returns_the_rewrite_verbatim(self, monkeypatch):
         """Without rich there is no markup engine: the diff is the rewritten text itself."""
         monkeypatch.setattr(rich_output, "_RICH", False)
-        assert rich_output._diff_words("one two three", "one two three four") == "one two three four"
+        assert (
+            rich_output._diff_words("one two three", "one two three four") == "one two three four"
+        )
 
 
 class TestWordDiff:
     @staticmethod
     def _styles(out):
-        return {str(s.style): out.plain[s.start:s.end] for s in out.spans}
+        return {str(s.style): out.plain[s.start : s.end] for s in out.spans}
 
     def test_deleted_words_are_shown_struck_through(self, monkeypatch):
         """A deletion must leave a trace in the report (dim/strike), not a blank space."""
@@ -69,15 +71,15 @@ class TestSaturatedMaxNote:
     def _run_plain(self, monkeypatch, capsys, pre, post):
         monkeypatch.setattr(rich_output, "_RICH", False)
         monkeypatch.setattr(rich_output, "_CONSOLE", None)
-        rich_output.print_humanize_result(
-            "orig", "rewritten", pre, post, 2, "passed"
-        )
+        rich_output.print_humanize_result("orig", "rewritten", pre, post, 2, "passed")
         return capsys.readouterr().out
 
     def test_plain_output_names_the_mean_when_both_means_exist(self, monkeypatch, capsys):
         out = self._run_plain(
-            monkeypatch, capsys,
-            {"max": 0.995, "mean": 0.7000}, {"max": 0.999, "mean": 0.5500},
+            monkeypatch,
+            capsys,
+            {"max": 0.995, "mean": 0.7000},
+            {"max": 0.999, "mean": 0.5500},
         )
         assert "pinned" in out
         assert "0.7000 -> 0.5500" in out
@@ -91,12 +93,17 @@ class TestSaturatedMaxNote:
         printed: list = []
         monkeypatch.setattr(rich_output, "_RICH", True)
         monkeypatch.setattr(
-            rich_output, "_CONSOLE",
+            rich_output,
+            "_CONSOLE",
             type("C", (), {"print": lambda self, *a, _out=printed, **k: _out.append(a)})(),
         )
         rich_output.print_humanize_result(
-            "orig", "rewritten", {"max": 0.995, "mean": 0.7}, {"max": 0.999, "mean": 0.55},
-            2, "passed",
+            "orig",
+            "rewritten",
+            {"max": 0.995, "mean": 0.7},
+            {"max": 0.999, "mean": 0.55},
+            2,
+            "passed",
         )
         blob = "\n".join(str(a) for args in printed for a in args)
         assert "pinned" in blob and "Ensemble mean" in blob
@@ -107,8 +114,14 @@ class TestPlainReportRows:
         monkeypatch.setattr(rich_output, "_RICH", False)
         monkeypatch.setattr(rich_output, "_CONSOLE", None)
         rich_output.print_humanize_result(
-            "orig", "rewritten", {"max": 0.86}, {"max": 0.02}, 2, "passed",
-            tells_before=4, tells_after=1,
+            "orig",
+            "rewritten",
+            {"max": 0.86},
+            {"max": 0.02},
+            2,
+            "passed",
+            tells_before=4,
+            tells_after=1,
         )
         out = capsys.readouterr().out
         assert "AI tells: 4 -> 1" in out
@@ -117,7 +130,12 @@ class TestPlainReportRows:
         monkeypatch.setattr(rich_output, "_RICH", False)
         monkeypatch.setattr(rich_output, "_CONSOLE", None)
         rich_output.print_humanize_result(
-            "orig", "rewritten", {"max": 0.86}, {"max": 0.02}, 2, "passed",
+            "orig",
+            "rewritten",
+            {"max": 0.86},
+            {"max": 0.02},
+            2,
+            "passed",
             warning="threshold not calibrated",
         )
         assert "NOTE: threshold not calibrated" in capsys.readouterr().out
@@ -128,11 +146,13 @@ class TestRichOnlyRenderRows:
         printed: list = []
         monkeypatch.setattr(rich_output, "_RICH", True)
         monkeypatch.setattr(
-            rich_output, "_CONSOLE",
+            rich_output,
+            "_CONSOLE",
             type("C", (), {"print": lambda self, *a, _out=printed, **k: _out.append(a)})(),
         )
         monkeypatch.setattr(
-            rich_output, "_Panel",
+            rich_output,
+            "_Panel",
             lambda *a, _m=panel_marker, **k: f"{_m}(title={k.get('title')})",
         )
         return printed
@@ -158,8 +178,14 @@ class TestRichOnlyRenderRows:
         monkeypatch.setattr(rich_output, "_Table", _FakeTable)
         self._console(monkeypatch)
         rich_output.print_humanize_result(
-            "orig", "rewritten", {"max": 0.86}, {"max": 0.02}, 2, "passed",
-            tells_before=4, tells_after=1,
+            "orig",
+            "rewritten",
+            {"max": 0.86},
+            {"max": 0.02},
+            2,
+            "passed",
+            tells_before=4,
+            tells_after=1,
         )
         assert any(r[0] == "AI tells" and r[1] == "4" and r[2] == "1" for r in rows)
         # The delta is negative (tells fell), so it is styled green, not dim.
@@ -168,7 +194,12 @@ class TestRichOnlyRenderRows:
     def test_warning_is_panelled_on_the_rich_path(self, monkeypatch):
         printed = self._console(monkeypatch)
         rich_output.print_humanize_result(
-            "orig", "rewritten", {"max": 0.86}, {"max": 0.02}, 2, "passed",
+            "orig",
+            "rewritten",
+            {"max": 0.86},
+            {"max": 0.02},
+            2,
+            "passed",
             warning="threshold not calibrated",
         )
         blob = "\n".join(str(a) for args in printed for a in args)

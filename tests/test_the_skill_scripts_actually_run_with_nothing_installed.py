@@ -18,6 +18,7 @@ optional dependency said so in their output rather than failing — `quality` fe
 token_overlap with confidence "low", `roles` reported `available: false` with a note, `entailment`
 the same. `preserve` locked all three of a citation, a percentage and a filename.
 """
+
 from __future__ import annotations
 
 import shutil
@@ -64,7 +65,9 @@ def test_the_isolation_actually_isolates(bare_tree: Path):
     probe = subprocess.run(
         [sys.executable, "-S", "-c", "import untell"],
         capture_output=True,
-        text=True, encoding="utf-8", errors="replace",
+        text=True,
+        encoding="utf-8",
+        errors="replace",
         cwd=bare_tree.parent,
     )
     assert probe.returncode != 0 and "ModuleNotFoundError" in probe.stderr, (
@@ -78,7 +81,9 @@ def test_the_script_runs_with_nothing_installed(bare_tree: Path, script: str, ar
     run = subprocess.run(
         [sys.executable, "-S", str(bare_tree / "untell" / "scripts" / script), *argv],
         capture_output=True,
-        text=True, encoding="utf-8", errors="replace",
+        text=True,
+        encoding="utf-8",
+        errors="replace",
         cwd=bare_tree.parent,
         timeout=180,
     )
@@ -95,7 +100,9 @@ def test_an_optional_dependency_is_reported_not_faked(bare_tree: Path):
     run = subprocess.run(
         [sys.executable, "-S", str(bare_tree / "untell" / "scripts" / "roles.py"), AI, REWRITE],
         capture_output=True,
-        text=True, encoding="utf-8", errors="replace",
+        text=True,
+        encoding="utf-8",
+        errors="replace",
         cwd=bare_tree.parent,
         timeout=180,
     )

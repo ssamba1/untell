@@ -5,6 +5,7 @@ Windows cp1252) must never crash on the emitted text; non-ASCII is escaped as
 \\uXXXX. The mutation True -> False emits literal non-ASCII. Pinned with a
 patched method() that returns a non-ASCII value.
 """
+
 import io
 import sys
 from unittest.mock import patch

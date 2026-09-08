@@ -22,21 +22,32 @@ import pytest
 
 from untell.scripts.latex import cite_keys, dropped_citations
 
-NATBIB = [(r"\citet{a}", ["a"]), (r"\citep{b,c}", ["b", "c"]), (r"\cite{d}", ["d"]),
-          (r"\citeA{e}", ["e"]), (r"\nocite{f}", ["f"])]
-BIBLATEX = [(r"\parencite{g}", ["g"]), (r"\textcite{h}", ["h"]),
-            (r"\footcite{i}", ["i"]), (r"\autocite{j}", ["j"])]
+NATBIB = [
+    (r"\citet{a}", ["a"]),
+    (r"\citep{b,c}", ["b", "c"]),
+    (r"\cite{d}", ["d"]),
+    (r"\citeA{e}", ["e"]),
+    (r"\nocite{f}", ["f"]),
+]
+BIBLATEX = [
+    (r"\parencite{g}", ["g"]),
+    (r"\textcite{h}", ["h"]),
+    (r"\footcite{i}", ["i"]),
+    (r"\autocite{j}", ["j"]),
+]
 STARRED = [(r"\citep*{k}", ["k"]), (r"\parencite*{l}", ["l"])]
 
 
-@pytest.mark.parametrize("tex,expected", NATBIB + BIBLATEX + STARRED,
-                         ids=[t for t, _ in NATBIB + BIBLATEX + STARRED])
+@pytest.mark.parametrize(
+    "tex,expected", NATBIB + BIBLATEX + STARRED, ids=[t for t, _ in NATBIB + BIBLATEX + STARRED]
+)
 def test_every_citation_command_family_is_recognised(tex: str, expected: list[str]) -> None:
     assert cite_keys(tex) == expected
 
 
-@pytest.mark.parametrize("tex", [r"\section{Results}", r"\ref{tab:1}", r"\label{eq:loss}",
-                                 r"\textbf{emphasis}"])
+@pytest.mark.parametrize(
+    "tex", [r"\section{Results}", r"\ref{tab:1}", r"\label{eq:loss}", r"\textbf{emphasis}"]
+)
 def test_a_non_citation_command_yields_nothing(tex: str) -> None:
     """Widening what counts as a citation must not turn every braced command into one."""
     assert cite_keys(tex) == []

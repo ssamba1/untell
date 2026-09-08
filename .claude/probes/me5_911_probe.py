@@ -4,6 +4,7 @@ PROBE 1 (MCP): registered tool list vs _TOOL_NAMES; per-tool docstring parameter
 coverage; score tool with invalid threshold returns refusal dict, not a crash.
 PROBE 2 (CLI): untell.scripts.tells with and without --matches.
 """
+
 import inspect
 import json
 import subprocess
@@ -44,8 +45,10 @@ except Exception as e:  # noqa: BLE001
     print("THRESH 0.5 -> EXCEPTION", type(e).__name__, e)
 
 print("=== PROBE 2: CLI tells flag ===")
-TEXT = ("In conclusion, it is important to note that moreover the framework "
-        "showcases a robust solution. Additionally, it boasts remarkable versatility.")
+TEXT = (
+    "In conclusion, it is important to note that moreover the framework "
+    "showcases a robust solution. Additionally, it boasts remarkable versatility."
+)
 base = [sys.executable, "-m", "untell.scripts.tells"]
 for extra in ([], ["--matches"]):
     cmd = base + extra + [TEXT]
@@ -56,7 +59,9 @@ for extra in ([], ["--matches"]):
     print("HAS_MATCHES_KEY_IN_OUT:", "matches" in out)
     print("STDERR:", p.stderr.strip()[:200] if p.stderr.strip() else "(empty)")
 
-p = subprocess.run(base + ["--json", "--matches", TEXT], capture_output=True, text=True, timeout=120)
+p = subprocess.run(
+    base + ["--json", "--matches", TEXT], capture_output=True, text=True, timeout=120
+)
 print(f"CLI --json --matches exit={p.returncode}")
 try:
     d = json.loads(p.stdout)

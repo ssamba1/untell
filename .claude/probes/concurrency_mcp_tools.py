@@ -6,6 +6,7 @@ the JSON-RPC transport. Every concurrent result must equal its serial baseline.
 
 Run:  PYTHONPATH= UNTELL_LITE_NO_TORCH=1 .venv/Scripts/python.exe .claude/probes/concurrency_mcp_tools.py
 """
+
 from __future__ import annotations
 
 import json
@@ -41,9 +42,10 @@ def main() -> int:
     print(f"[mcp] baseline score tool ok: {base_score[:80]}...")
     print("[mcp] warmup untell tool (one-time imports) ...")
     t0 = time.time()
-    base_untell = canon(untell_fn(TEXT, tier="lite", rewriter="surgical", seed=42,
-                                  max_iters=1, best_of=1))
-    print(f"[mcp] baseline untell tool ok in {time.time()-t0:.1f}s: {base_untell[:80]}...")
+    base_untell = canon(
+        untell_fn(TEXT, tier="lite", rewriter="surgical", seed=42, max_iters=1, best_of=1)
+    )
+    print(f"[mcp] baseline untell tool ok in {time.time() - t0:.1f}s: {base_untell[:80]}...")
 
     errors: list[str] = []
     score_results: list[str] = [None] * 6
@@ -57,13 +59,15 @@ def main() -> int:
 
     def w_untell(i: int) -> None:
         try:
-            untell_results[i] = canon(untell_fn(TEXT, tier="lite", rewriter="surgical",
-                                                seed=42, max_iters=1, best_of=1))
+            untell_results[i] = canon(
+                untell_fn(TEXT, tier="lite", rewriter="surgical", seed=42, max_iters=1, best_of=1)
+            )
         except Exception as e:  # noqa: BLE001
             errors.append(f"untell-{i}: {e!r}")
 
-    threads = [threading.Thread(target=w_score, args=(i,)) for i in range(6)] + \
-              [threading.Thread(target=w_untell, args=(i,)) for i in range(3)]
+    threads = [threading.Thread(target=w_score, args=(i,)) for i in range(6)] + [
+        threading.Thread(target=w_untell, args=(i,)) for i in range(3)
+    ]
     t0 = time.time()
     for t in threads:
         t.start()

@@ -44,7 +44,11 @@ def _eval(rw, samples: list[str], tier: str, threshold: float) -> list[dict]:
         )
         logger.info(
             "[%s] %d/%d  P(AI) %.2f -> %.2f%s",
-            rw.name, i + 1, len(samples), rows[-1]["pre"], rows[-1]["post"],
+            rw.name,
+            i + 1,
+            len(samples),
+            rows[-1]["pre"],
+            rows[-1]["post"],
             "" if rows[-1]["scored"] else "  (UNSCORED — no detector produced a number)",
         )
     return rows
@@ -85,7 +89,9 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--n", type=int, default=25)
     p.add_argument("--tier", default="full", help="detector tier to score against")
     p.add_argument(
-        "--threshold", type=float, default=0.30,
+        "--threshold",
+        type=float,
+        default=0.30,
         help="stop target handed to the rewriter, and the bar for counting a bypass (both)",
     )
     p.add_argument("--vs-base", action="store_true", help="also eval the untuned base model")
@@ -109,7 +115,9 @@ def main(argv: list[str] | None = None) -> int:
 
     if a.vs_base:
         base = LocalPolicyRewriter(adapter_dir=a.policy, use_adapter=False)
-        if not base.available():  # same clean exit as the policy guard, instead of an ImportError in _load
+        if (
+            not base.available()
+        ):  # same clean exit as the policy guard, instead of an ImportError in _load
             logger.error(
                 "base model unavailable for --vs-base: needs torch+transformers (`pip install -e .[train]`)."
             )

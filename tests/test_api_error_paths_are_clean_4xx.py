@@ -10,6 +10,7 @@ used to fall through to auto-selection — MEASURED with a get_rewriter spy: HTT
 rewriter_warning, and `get_rewriter()` called with prefer=None, i.e. the paid hosted backend was
 silently selected and billed. The MCP tools refuse this case; the REST surface now does too.
 """
+
 from __future__ import annotations
 
 from unittest.mock import patch
@@ -42,7 +43,9 @@ REQUESTS = {
 # The hostile bodies: each must be a 4xx on EVERY endpoint, with a JSON body and no traceback.
 HOSTILE_BODIES = {
     "invalid JSON": ({"content": "{not json", "headers": {"content-type": "application/json"}},),
-    "text/plain content-type": ({"content": '{"text": "hello"}', "headers": {"content-type": "text/plain"}},),
+    "text/plain content-type": (
+        {"content": '{"text": "hello"}', "headers": {"content-type": "text/plain"}},
+    ),
     "text is an int": ({"json": {"text": 123}},),
     "text is null": ({"json": {"text": None}},),
     "text is a list": ({"json": {"text": ["a", "b"]}},),
@@ -138,8 +141,12 @@ class TestRequestedFreeRewriterUnavailable:
         """The guard must not fire when the free backend IS available (composite/surgical)."""
         with patch("untell.api_server.untell_text") as mock_text:
             mock_text.return_value = {
-                "final": "ok", "pre": {"max": 0.9}, "post": {"max": 0.2},
-                "iterations": 1, "stopped": "passed", "changed": True,
+                "final": "ok",
+                "pre": {"max": 0.9},
+                "post": {"max": 0.2},
+                "iterations": 1,
+                "stopped": "passed",
+                "changed": True,
             }
             resp = client.post(
                 "/humanize",

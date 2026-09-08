@@ -56,8 +56,13 @@ def stdlib_lite(request):
 
 def _run(text: str, seed: int = SEED) -> str:
     return untell_text(
-        text, tier="lite", rewriter="structural", max_iters=1, best_of=2,
-        threshold=0.001, seed=seed,
+        text,
+        tier="lite",
+        rewriter="structural",
+        max_iters=1,
+        best_of=2,
+        threshold=0.001,
+        seed=seed,
     )["final"]
 
 

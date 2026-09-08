@@ -1,5 +1,7 @@
 """by_category keys vs the reference catalogue: every emitted category must be documented."""
+
 import json, os
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
 from untell.scripts.tells import score_tells
 from pathlib import Path
@@ -18,8 +20,17 @@ for t in probes:
     all_cats.update(r.get("by_category", {}).keys())
 
 # categories documented in the reference catalogue
-ref = Path("untell/references/ai-tells.md").read_text(encoding="utf-8") if Path("untell/references/ai-tells.md").exists() else ""
-print(json.dumps({
-    "emitted_categories": sorted(all_cats),
-    "reference_file_exists": Path("untell/references/ai-tells.md").exists(),
-}, indent=1))
+ref = (
+    Path("untell/references/ai-tells.md").read_text(encoding="utf-8")
+    if Path("untell/references/ai-tells.md").exists()
+    else ""
+)
+print(
+    json.dumps(
+        {
+            "emitted_categories": sorted(all_cats),
+            "reference_file_exists": Path("untell/references/ai-tells.md").exists(),
+        },
+        indent=1,
+    )
+)

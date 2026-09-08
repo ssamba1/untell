@@ -12,12 +12,14 @@ slogan.
 
     python scripts/make_og_card.py
 """
+
 import os
 
 from PIL import Image, ImageDraw, ImageFont
 
 W, H = 1280, 640
 BG, FG, DIM, ACC = (20, 18, 31), (240, 238, 248), (150, 146, 170), (138, 43, 226)
+
 
 def font(px, bold=False):
     names = ["segoeuib.ttf", "seguisb.ttf"] if bold else ["segoeui.ttf"]
@@ -28,6 +30,7 @@ def font(px, bold=False):
             return ImageFont.truetype(p, px)
     return ImageFont.load_default()
 
+
 im = Image.new("RGB", (W, H), BG)
 d = ImageDraw.Draw(im)
 
@@ -35,7 +38,7 @@ d = ImageDraw.Draw(im)
 d.rectangle([0, 0, 10, H], fill=ACC)
 
 x = 74
-d.text((x, 92),  "untell", font=font(96, True), fill=FG)
+d.text((x, 92), "untell", font=font(96, True), fill=FG)
 d.text((x, 210), "an AI-detector auditing toolkit", font=font(44, True), fill=ACC)
 
 body = [
@@ -51,10 +54,18 @@ for line in body:
 
 # the finding, as the card's payload
 d.rectangle([x, 492, x + 1000, 496], fill=(52, 48, 72))
-d.text((x, 522), "Its own bundled ensemble flags 17% of genuine human writing",
-       font=font(29, True), fill=FG)
-d.text((x, 566), "Claude Code skill + Python CLI   ·   MIT   ·   every number reproducible",
-       font=font(25), fill=DIM)
+d.text(
+    (x, 522),
+    "Its own bundled ensemble flags 17% of genuine human writing",
+    font=font(29, True),
+    fill=FG,
+)
+d.text(
+    (x, 566),
+    "Claude Code skill + Python CLI   ·   MIT   ·   every number reproducible",
+    font=font(25),
+    fill=DIM,
+)
 
 im.save(r"C:\Users\Admin\Humanize\docs\og.png", optimize=True)
 print("wrote og.png", im.size)

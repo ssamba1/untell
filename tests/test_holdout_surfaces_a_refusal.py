@@ -37,7 +37,9 @@ _HOLDOUT = Path(__file__).resolve().parents[1] / "eval" / "holdout.py"
 
 
 def test_the_tier_flag_accepts_every_tier_the_loader_supports() -> None:
-    match = re.search(r'"--tier".{0,200}?choices=\[([^\]]*)\]', _HOLDOUT.read_text(encoding="utf-8"), re.S)
+    match = re.search(
+        r'"--tier".{0,200}?choices=\[([^\]]*)\]', _HOLDOUT.read_text(encoding="utf-8"), re.S
+    )
     assert match, "no --tier choices list found; the scan is wrong"
     listed = set(re.findall(r'"([^"]*)"', match.group(1)))
     missing = set(_TIER_RANK) - listed
@@ -64,7 +66,8 @@ def test_a_refusal_is_reported_not_indexed_into(monkeypatch) -> None:
     import eval.holdout as holdout
 
     monkeypatch.setattr(
-        holdout, "untell_text",
+        holdout,
+        "untell_text",
         lambda *a, **k: {"error": "rewriter 'compsite' is not available — check the name"},
     )
     monkeypatch.setattr(holdout, "load_pairs", lambda *a, **k: [("human text", "ai text")])
@@ -82,9 +85,13 @@ def test_a_normal_result_is_still_processed(monkeypatch) -> None:
     import eval.holdout as holdout
 
     monkeypatch.setattr(
-        holdout, "untell_text",
+        holdout,
+        "untell_text",
         lambda *a, **k: {
-            "pre": {"max": 0.9}, "post": {"max": 0.2}, "similarity": 0.99, "final": "rewritten",
+            "pre": {"max": 0.9},
+            "post": {"max": 0.2},
+            "similarity": 0.99,
+            "final": "rewritten",
         },
     )
     monkeypatch.setattr(holdout, "load_pairs", lambda *a, **k: [("human text", "ai text")])
@@ -109,7 +116,13 @@ def _run_cli(*args: str) -> tuple[int, str]:
     env = {**os.environ, "UNTELL_LITE_NO_TORCH": "1", "PYTHONIOENCODING": "utf-8"}
     proc = subprocess.run(
         [sys.executable, str(_HOLDOUT), *args],
-        capture_output=True, text=True, encoding="utf-8", errors="replace", env=env, cwd=str(_HOLDOUT.parents[1]), timeout=300,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        env=env,
+        cwd=str(_HOLDOUT.parents[1]),
+        timeout=300,
     )
     return proc.returncode, (proc.stdout or "") + (proc.stderr or "")
 

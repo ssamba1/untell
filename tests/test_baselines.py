@@ -1,4 +1,5 @@
 """Tests for the benchmark baseline strategies — offline, no network."""
+
 from __future__ import annotations
 
 import pytest
@@ -14,7 +15,9 @@ from eval.baselines import (
 
 
 def test_noop_returns_input_unchanged():
-    text = "This is some sample text with several words in each sentence. It has two sentences total."
+    text = (
+        "This is some sample text with several words in each sentence. It has two sentences total."
+    )
     res = noop(text, tier="lite")
     assert res.text == text
     assert res.iterations == 0
@@ -35,12 +38,20 @@ def test_every_strategy_scores_at_the_tier_it_was_given(name, monkeypatch):
 
     def _spy(text, tier="full", threshold=0.3, **kw):
         seen.append(tier)
-        return {"max": 0.5, "mean": 0.5, "detectors": {"fake": 0.5}, "scored": True, "flagged": True}
+        return {
+            "max": 0.5,
+            "mean": 0.5,
+            "detectors": {"fake": 0.5},
+            "scored": True,
+            "flagged": True,
+        }
 
     monkeypatch.setattr(baselines, "score_text", _spy)
     monkeypatch.setattr(baselines, "similarity", lambda a, b: 1.0)
 
-    STRATEGIES[name]("Some sample text that is long enough to work with.", tier="full", threshold=0.3)
+    STRATEGIES[name](
+        "Some sample text that is long enough to work with.", tier="full", threshold=0.3
+    )
 
     assert seen, f"{name} never scored anything"
     assert set(seen) == {"full"}, f"{name} scored at {sorted(set(seen))}, not the requested tier"
@@ -136,8 +147,11 @@ def test_transition_stripping_is_monotone_in_strength():
         )
     )
     survivors = [
-        sum(1 for w in ("Moreover", "Furthermore", "Additionally", "Overall", "Therefore", "Thus")
-            if w in rewrite(text, strength=s))
+        sum(
+            1
+            for w in ("Moreover", "Furthermore", "Additionally", "Overall", "Therefore", "Thus")
+            if w in rewrite(text, strength=s)
+        )
         for s in (0.0, 0.2, 0.4, 0.6, 0.8, 1.0)
     ]
     assert survivors == sorted(survivors, reverse=True), f"not monotone: {survivors}"

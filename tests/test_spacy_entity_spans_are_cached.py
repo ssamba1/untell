@@ -8,6 +8,7 @@ pure function of the text and the cached pipeline, so repeat calls must hit the
 LRU and not re-run the model. Texts past the scoring truncation cap bypass the
 cache (repeats are rare, and caching would pin huge strings).
 """
+
 from __future__ import annotations
 
 import untell.scripts.preserve as preserve
@@ -24,7 +25,9 @@ def test_repeat_spacy_calls_hit_the_cache(monkeypatch):
     monkeypatch.setattr(preserve, "_spacy_entity_spans_impl", spy)
     preserve._spacy_entity_spans_cached.cache_clear()
 
-    text = "Alice met Bob in Paris on Monday and they discussed the merger with Carol from Acme. " * 10
+    text = (
+        "Alice met Bob in Paris on Monday and they discussed the merger with Carol from Acme. " * 10
+    )
     first = preserve._spacy_entity_spans(text)
     second = preserve._spacy_entity_spans(text)
     assert first == second, "cached and uncached spans must be identical"

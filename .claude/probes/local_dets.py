@@ -1,5 +1,7 @@
 """Local model detectors: available()/score() contract — score in [0,1] or None, never raises."""
+
 import json, os
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
 from untell.detectors.hc3_roberta import HC3RobertaDetector
 from untell.detectors.mage import MageDetector

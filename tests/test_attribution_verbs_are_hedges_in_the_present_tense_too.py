@@ -25,6 +25,7 @@ MEASURED cost of widening, on 11 real rewrites the loop produced from HC3 docume
 vetoes with the new members and 0 without. The class only fires on absence, so a wider class can
 only add vetoes, and on genuine corpus output it added none.
 """
+
 from __future__ import annotations
 
 import pytest
@@ -32,8 +33,11 @@ import pytest
 from untell.scripts.hedges import _CLASSES, certainty_kept
 
 UPGRADES = [
-    ("believe", "We believe the mechanism is oxidative.",
-     "It is established the mechanism is oxidative."),
+    (
+        "believe",
+        "We believe the mechanism is oxidative.",
+        "It is established the mechanism is oxidative.",
+    ),
     ("think", "Researchers think the effect is real.", "The effect is real."),
     ("consider", "We consider this the likely cause.", "This is the cause."),
     ("estimate", "We estimate the loss at 40%.", "The loss is 40%."),
@@ -74,7 +78,9 @@ def test_an_unrelated_rewrite_is_not_vetoed():
     )
 
 
-@pytest.mark.xfail(reason="approximators are in no hedge class; measured and left open", strict=True)
+@pytest.mark.xfail(
+    reason="approximators are in no hedge class; measured and left open", strict=True
+)
 def test_dropping_an_approximator_is_caught():
     """An open gap, pinned as xfail so it is visible rather than forgotten.
 

@@ -55,7 +55,9 @@ _AI_LABEL = re.compile(
     r"ai[-\s]?(?:generated|written|content|score|probability)|machine[-\s]?generated"
     r"|artificial[-\s]?intelligence|chatgpt|artificial|\bai\b|\bgpt\b|\bbot\b"
 )
-_HUMAN_LABEL = re.compile(r"human[-\s]?(?:written|generated)|\bhuman\b|\breal\b|\bperson\b|\borganic\b")
+_HUMAN_LABEL = re.compile(
+    r"human[-\s]?(?:written|generated)|\bhuman\b|\breal\b|\bperson\b|\borganic\b"
+)
 
 
 def _label_spans(raw: str) -> list[tuple[int, int, bool]]:

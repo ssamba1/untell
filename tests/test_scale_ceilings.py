@@ -10,6 +10,7 @@ The regression tests pin the *ceiling* (max allowed time) so a change that makes
 go superlinear fails CI before it ships.  Timing assertions use generous multiples of the
 measured baseline so they are stable on loaded CI boxes.
 """
+
 from __future__ import annotations
 
 import cProfile
@@ -41,9 +42,11 @@ import pytest  # noqa: E402
 # RSS helper
 # ---------------------------------------------------------------------------
 
+
 def _rss_mb() -> float:
     try:
         import psutil
+
         return psutil.Process().memory_info().rss / 1024 / 1024
     except ImportError:
         return float("nan")
@@ -64,7 +67,7 @@ _WORD_CHUNK = "the quick brown fox jumps over the lazy dog. "  # ~45 chars, ~9 w
 def make_prose(target_bytes: int) -> str:
     """Realistic-ish prose with AI tells, ~100 chars/sentence, no pathological shapes."""
     reps = max(1, target_bytes // len(_SENTENCE))
-    return (_SENTENCE * reps)[: target_bytes]
+    return (_SENTENCE * reps)[:target_bytes]
 
 
 def make_sentences(n: int) -> str:
@@ -76,7 +79,7 @@ def make_no_newlines(chars: int) -> str:
     """One long line — no newline at all.  split_sentences must handle it."""
     unit = "word " * 10  # 50 chars, no period
     reps = max(1, chars // len(unit))
-    return (unit * reps)[: chars]
+    return (unit * reps)[:chars]
 
 
 def make_all_newlines(n: int) -> str:
@@ -97,6 +100,7 @@ def make_tiny_paragraphs(n: int) -> str:
 # ---------------------------------------------------------------------------
 # Timing helper: median of `reps` runs, interleaved to average out system noise
 # ---------------------------------------------------------------------------
+
 
 def _timed_median(fn: Callable[[], object], reps: int = 5) -> float:
     """Return median wall-clock seconds over `reps` calls."""
@@ -135,6 +139,7 @@ def _interleaved_pair(
 # Hard-failure probes (always run in pytest)
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture(autouse=True)
 def _force_stdlib(monkeypatch):
     monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
@@ -143,21 +148,25 @@ def _force_stdlib(monkeypatch):
 
 def _score_tells(text: str) -> dict:
     from untell.scripts.tells import score_tells
+
     return score_tells(text)
 
 
 def _score_text(text: str) -> dict:
     from untell.scripts.score import score_text
+
     return score_text(text)
 
 
 def _split(text: str) -> list:
     from untell.text_split import split_sentences
+
     return split_sentences(text)
 
 
 def _chunks(a: str, b: str) -> list:
     from untell.text_split import aligned_chunks
+
     return aligned_chunks(a, b)
 
 
@@ -260,8 +269,8 @@ class TestHardFailures:
 
     def test_aligned_chunks_disjoint_large(self):
         """Completely disjoint pair (no common words) must use proportional fallback, not crash."""
-        a = ("alpha beta gamma delta. " * 50).strip()   # 200 words
-        b = ("epsilon zeta eta theta. " * 50).strip()   # 200 words
+        a = ("alpha beta gamma delta. " * 50).strip()  # 200 words
+        b = ("epsilon zeta eta theta. " * 50).strip()  # 200 words
         pairs = _chunks(a, b)
         assert len(pairs) >= 1
 
@@ -275,6 +284,7 @@ class TestHardFailures:
 # 2-5x higher than a quiet box, so limits are set against the loaded measurement.
 # ---------------------------------------------------------------------------
 
+
 class TestClaimedSpansCorrectness:
     """Regression tests that pin _claimed_spans output against the reference O(n²) algorithm.
 
@@ -287,6 +297,7 @@ class TestClaimedSpansCorrectness:
     def _reference_claimed_spans(text: str):
         """Original O(S²) implementation kept as a reference oracle."""
         from untell.scripts.tells import _CATEGORIES
+
         spans = []
         for name, pat in _CATEGORIES:
             for m in pat.finditer(text):
@@ -301,6 +312,7 @@ class TestClaimedSpansCorrectness:
 
     def _compare(self, text: str) -> None:
         from untell.scripts.tells import _claimed_spans
+
         new = sorted(_claimed_spans(text), key=lambda x: (x[0], x[1]))
         ref = sorted(self._reference_claimed_spans(text), key=lambda x: (x[0], x[1]))
         excerpt = repr(text[:80])
@@ -341,17 +353,14 @@ class TestClaimedSpansCorrectness:
     def test_non_overlapping_invariant(self):
         """No two claimed spans should overlap."""
         from untell.scripts.tells import _claimed_spans
-        text = (
-            "Furthermore, this innovative approach leverages robust synergies. " * 100
-        )
+
+        text = "Furthermore, this innovative approach leverages robust synergies. " * 100
         claimed = _claimed_spans(text)
         spans = sorted((s, e) for s, e, _n, _m in claimed)
         for i in range(len(spans) - 1):
             s1, e1 = spans[i]
             s2, e2 = spans[i + 1]
-            assert e1 <= s2, (
-                f"Overlapping claimed spans: ({s1},{e1}) and ({s2},{e2})"
-            )
+            assert e1 <= s2, f"Overlapping claimed spans: ({s1},{e1}) and ({s2},{e2})"
 
 
 class TestCeilingRegressions:
@@ -448,6 +457,7 @@ class TestCeilingRegressions:
 # Full benchmark — only runs when executed as __main__
 # ---------------------------------------------------------------------------
 
+
 def _profile_1mb() -> str:
     """cProfile the score_tells 1MB case; return formatted top-20 by cumulative time."""
     from untell.scripts.tells import score_tells
@@ -488,8 +498,8 @@ def run_full_benchmark() -> None:
         rss0 = _rss_mb()
         t = _timed_median(lambda t=text: score_tells(t), reps=REPS)
         rss1 = _rss_mb()
-        ratio_str = f"  ({t/prev_t:.1f}x)" if prev_t else ""
-        print(f"{sz:>8,}  {t:>10.3f}  {rss1-rss0:>8.1f}  {words:>8,}{ratio_str}")
+        ratio_str = f"  ({t / prev_t:.1f}x)" if prev_t else ""
+        print(f"{sz:>8,}  {t:>10.3f}  {rss1 - rss0:>8.1f}  {words:>8,}{ratio_str}")
         prev_t = t
 
     # ---- 2. score_tells: sentence count curve ----
@@ -499,7 +509,7 @@ def run_full_benchmark() -> None:
     for n in [1_000, 10_000, 100_000]:
         text = make_sentences(n)
         t = _timed_median(lambda t=text: score_tells(t), reps=REPS)
-        ratio_str = f"  ({t/prev_t:.1f}x)" if prev_t else ""
+        ratio_str = f"  ({t / prev_t:.1f}x)" if prev_t else ""
         print(f"{n:>8,}  {t:>10.3f}  {len(text):>10,}{ratio_str}")
         prev_t = t
 
@@ -530,7 +540,7 @@ def run_full_benchmark() -> None:
     for n in [1_000, 10_000, 100_000]:
         text = make_sentences(n)
         t = _timed_median(lambda t=text: split_sentences(t), reps=REPS)
-        ratio_str = f"  ({t/prev_t:.1f}x)" if prev_t else ""
+        ratio_str = f"  ({t / prev_t:.1f}x)" if prev_t else ""
         print(f"{n:>8,}  {t:>10.3f}{ratio_str}")
         prev_t = t
 
@@ -552,7 +562,7 @@ def run_full_benchmark() -> None:
         results[wb] = tb
     for w in wlist:
         t = results[w]
-        ratio_str = f"{t/results[wlist[wlist.index(w)-1]]:.1f}x" if w != wlist[0] else "—"
+        ratio_str = f"{t / results[wlist[wlist.index(w) - 1]]:.1f}x" if w != wlist[0] else "—"
         print(f"{w:>8,}  {t:>10.4f}  {ratio_str:>8}")
 
     # ---- 7. cProfile on 1MB score_tells ----
@@ -564,15 +574,15 @@ def run_full_benchmark() -> None:
     print("CEILING TABLE")
     print(sep)
     rows = [
-        ("score_tells", "10KB",  "< 0.5s",  "O(n)",    "GREEN"),
-        ("score_tells", "100KB", "< 5s",    "O(n)",    "GREEN"),
-        ("score_tells", "1MB",   "< 60s",   "O(n) measured", "AMBER if > 30s"),
-        ("score_tells", "5MB",   "< 300s",  "O(n) expected", "RED if > 120s"),
-        ("score_text",  "any",   "flat",    "O(1) after 50k cap", "GREEN"),
+        ("score_tells", "10KB", "< 0.5s", "O(n)", "GREEN"),
+        ("score_tells", "100KB", "< 5s", "O(n)", "GREEN"),
+        ("score_tells", "1MB", "< 60s", "O(n) measured", "AMBER if > 30s"),
+        ("score_tells", "5MB", "< 300s", "O(n) expected", "RED if > 120s"),
+        ("score_text", "any", "flat", "O(1) after 50k cap", "GREEN"),
         ("split_sentences", "100k sents", "< 10s", "O(n)", "GREEN"),
-        ("aligned_chunks",  ">6000 words", "linear", "proportional fallback", "GREEN"),
-        ("aligned_chunks",  "1000-6000 words", "O(n log n)", "SequenceMatcher", "WATCH"),
-        ("_claimed_spans",  "dense-tell text", "O(n²) worst case", "claiming loop", "RED if dense"),
+        ("aligned_chunks", ">6000 words", "linear", "proportional fallback", "GREEN"),
+        ("aligned_chunks", "1000-6000 words", "O(n log n)", "SequenceMatcher", "WATCH"),
+        ("_claimed_spans", "dense-tell text", "O(n²) worst case", "claiming loop", "RED if dense"),
     ]
     print(f"{'function':<20}  {'input':<20}  {'verdict':<12}  {'complexity':<25}  {'status'}")
     for r in rows:

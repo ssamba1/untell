@@ -205,7 +205,11 @@ def print_humanize_diff(diff: dict) -> None:
     plural_r = "" if removed == 1 else "s"
     title = f"untell — humanization diff: {added} added line{plural_a}, {removed} removed line{plural_r}"
 
-    note = "" if diff.get("changed") else "No lines changed — the loop returned the original unmodified."
+    note = (
+        ""
+        if diff.get("changed")
+        else "No lines changed — the loop returned the original unmodified."
+    )
 
     lock_note = ""
     if "locked_spans" in diff:
@@ -269,7 +273,9 @@ def print_humanize_result(
     note = ""
     if no_change:
         still = post_score.get("max")
-        still_txt = f" It still scores P(AI) {still:.2f}." if isinstance(still, (int, float)) else ""
+        still_txt = (
+            f" It still scores P(AI) {still:.2f}." if isinstance(still, (int, float)) else ""
+        )
         note = (
             "No change was made: no candidate rewrite scored better than the original, so the "
             f"original is returned unmodified.{still_txt} Try --best-of 3, a higher --intensity, "
@@ -305,7 +311,9 @@ def print_humanize_result(
     if not _RICH:
         # Fallback: plain text
         print(f"Iterations: {iterations}  Stopped: {stopped}")
-        print(f"Before: P(AI)={pre_score.get('max', 0):.2f}  After: P(AI)={post_score.get('max', 0):.2f}")
+        print(
+            f"Before: P(AI)={pre_score.get('max', 0):.2f}  After: P(AI)={post_score.get('max', 0):.2f}"
+        )
         if mean_note:
             print(mean_note)
         if note:
@@ -388,7 +396,9 @@ def print_humanize_result(
             return "flagged"
         return "borderline" if p_ai >= cut - _VERDICT_BAND else "clear"
 
-    table.add_row("P(AI) max", f"{before_max:.2f}", f"{after_max:.2f}", f"[{delta_style}]{delta_str}[/]")
+    table.add_row(
+        "P(AI) max", f"{before_max:.2f}", f"{after_max:.2f}", f"[{delta_style}]{delta_str}[/]"
+    )
     table.add_row("Verdict", _verdict(before_max), _verdict(after_max), "")
 
     # AI tells, when the caller has them. On a saturating corpus this is the only row that moves:
@@ -425,14 +435,29 @@ def print_humanize_result(
         _CONSOLE.print("\n[bold]Before → After[/]")
         _CONSOLE.print(_diff_words(original, final))
         _CONSOLE.print()
-        _CONSOLE.print(_Panel(_Text(original[:2000] + ("..." if len(original) > 2000 else "")), title="Original", border_style="yellow"))
-        _CONSOLE.print(_Panel(_Text(final[:2000] + ("..." if len(final) > 2000 else "")), title="Humanized", border_style="green"))
+        _CONSOLE.print(
+            _Panel(
+                _Text(original[:2000] + ("..." if len(original) > 2000 else "")),
+                title="Original",
+                border_style="yellow",
+            )
+        )
+        _CONSOLE.print(
+            _Panel(
+                _Text(final[:2000] + ("..." if len(final) > 2000 else "")),
+                title="Humanized",
+                border_style="green",
+            )
+        )
     else:
         _CONSOLE.print()
-        _CONSOLE.print(_Panel(
-            _Text(original[:2000] + ("..." if len(original) > 2000 else "")),
-            title="Text (unchanged)", border_style="yellow",
-        ))
+        _CONSOLE.print(
+            _Panel(
+                _Text(original[:2000] + ("..." if len(original) > 2000 else "")),
+                title="Text (unchanged)",
+                border_style="yellow",
+            )
+        )
     # After the panels, not before: the output is what the reader came for. A payload the caller
     # asked to keep (`--no-scrub`) still travels in that output, and nothing else says so.
     if warning:
@@ -468,7 +493,10 @@ def print_tells_result(tells: dict):
     if tells.get("burstiness_cv") is not None:
         cv = tells["burstiness_cv"]
         bstyle = "red" if tells.get("low_burstiness") else "green"
-        _CONSOLE.print(f"Burstiness CV: [{bstyle}]{cv}[/]" + (" [dim](uniform = tell)[/]" if tells.get("low_burstiness") else ""))
+        _CONSOLE.print(
+            f"Burstiness CV: [{bstyle}]{cv}[/]"
+            + (" [dim](uniform = tell)[/]" if tells.get("low_burstiness") else "")
+        )
 
     if tells.get("by_category"):
         table = _Table(show_header=True, header_style="bold")
@@ -514,7 +542,9 @@ def print_humanness(score: float, cls: str):
     _CONSOLE.print()
 
 
-def progress_iteration(current: int, total: int, tier: str, score: float | None = None) -> str | None:
+def progress_iteration(
+    current: int, total: int, tier: str, score: float | None = None
+) -> str | None:
     """Print a progress line for a loop iteration. Returns status string."""
     if not _RICH:
         score_str = f" P(AI)={score:.2f}" if score is not None else ""

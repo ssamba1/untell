@@ -14,6 +14,7 @@ NO THRESHOLDS ARE CHANGED — analysis only; the recommendation is queued (RED).
 Usage:
     python .claude/probes/mage_calib_analyze.py evidence/mage_calib_sweep_20260817.json
 """
+
 from __future__ import annotations
 
 import json
@@ -41,8 +42,7 @@ def smallest_cut_fpr_le(hs: list[float], as_: list[float], max_fpr: float):
         fpr, tpr = fpr_tpr(hs, as_, c)
         # prefer the highest cut (lowest FPR) among those that keep full TPR,
         # then the largest TPR.
-        if fpr <= max_fpr and (best is None or tpr > best[2]
-                               or (tpr == best[2] and fpr < best[1])):
+        if fpr <= max_fpr and (best is None or tpr > best[2] or (tpr == best[2] and fpr < best[1])):
             best = (c, fpr, tpr)
     return best
 
@@ -82,7 +82,9 @@ def main() -> int:
         for maxf, key in ((0.20, "fpr20"), (0.10, "fpr10"), (0.05, "fpr05")):
             b = smallest_cut_fpr_le(hs, as_, maxf)
             if b:
-                print(f"  [fine, true smallest] cut(FPR<={maxf:.2f})={b[0]:.6f} FPR={b[1]:.4f} TPR={b[2]:.4f}")
+                print(
+                    f"  [fine, true smallest] cut(FPR<={maxf:.2f})={b[0]:.6f} FPR={b[1]:.4f} TPR={b[2]:.4f}"
+                )
                 table.setdefault(cname, {})[key] = {"cut": b[0], "fpr": b[1], "tpr": b[2]}
 
         print(f"  {'cut':>9} {'FPR':>7} {'TPR':>7}")

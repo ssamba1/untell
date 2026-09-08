@@ -6,6 +6,7 @@ guard require BOTH already-warned AND sufficient, so an adequate sample falls
 through and logs a false "under 150 words" warning — telling the user their
 voice sample is too thin when it is not.
 """
+
 import logging
 
 import untell.scripts.voice as voice

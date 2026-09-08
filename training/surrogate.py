@@ -113,7 +113,7 @@ def load_labeled(dataset: str = "hc3", n: int = 2000, seed: int = 0) -> list[tup
         # `rows[:n] if n else rows` read n=0 as "no limit" and returned the entire CSV. n is a
         # sample count, so 0 means none — a caller using it as a dry-run sentinel got the full
         # dataset instead. Negative values clamp to 0 rather than slicing from the end.
-        return rows[:max(0, n)]
+        return rows[: max(0, n)]
 
     try:
         from datasets import load_dataset
@@ -126,11 +126,11 @@ def load_labeled(dataset: str = "hc3", n: int = 2000, seed: int = 0) -> list[tup
         if name == "hc3":
             ds = load_dataset("Hello-SimpleAI/HC3", "all", split="train")
             for row in ds:
-                for a in (row.get("human_answers") or []):
+                for a in row.get("human_answers") or []:
                     if a and len(a.split()) > 30:
                         rows.append((a.strip(), 0.0))
                         break
-                for a in (row.get("chatgpt_answers") or []):
+                for a in row.get("chatgpt_answers") or []:
                     if a and len(a.split()) > 30:
                         rows.append((a.strip(), 1.0))
                         break
@@ -204,7 +204,9 @@ def train_surrogate(
             chunk = data[i : i + batch]
             texts = [t for t, _ in chunk]
             labels = torch.tensor([[s] for _, s in chunk], dtype=torch.float, device=device)
-            enc = tok(texts, return_tensors="pt", truncation=True, max_length=512, padding=True).to(device)
+            enc = tok(texts, return_tensors="pt", truncation=True, max_length=512, padding=True).to(
+                device
+            )
             logits = model(**enc).logits
             loss = lossfn(logits, labels)
             opt.zero_grad()
@@ -212,7 +214,9 @@ def train_surrogate(
             opt.step()
             total += float(loss)
             steps += 1
-        logger.info("epoch %d/%d  loss %.4f  (n=%d)", ep + 1, epochs, total / max(steps, 1), len(data))
+        logger.info(
+            "epoch %d/%d  loss %.4f  (n=%d)", ep + 1, epochs, total / max(steps, 1), len(data)
+        )
 
     os.makedirs(out_dir, exist_ok=True)
     model.save_pretrained(out_dir)
@@ -264,14 +268,25 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--epochs", type=int, default=2)
     ap.add_argument("--lr", type=float, default=2e-5)
     ap.add_argument("--batch", type=int, default=8)
-    ap.add_argument("--smoke", action="store_true", help="tiny CPU dry-run (bert-tiny, 16 samples).")
+    ap.add_argument(
+        "--smoke", action="store_true", help="tiny CPU dry-run (bert-tiny, 16 samples)."
+    )
     a = ap.parse_args(argv)
 
     out = train_surrogate(
-        a.out, dataset=a.dataset, base=a.base, n=a.n, epochs=a.epochs, lr=a.lr, batch=a.batch, smoke=a.smoke
+        a.out,
+        dataset=a.dataset,
+        base=a.base,
+        n=a.n,
+        epochs=a.epochs,
+        lr=a.lr,
+        batch=a.batch,
+        smoke=a.smoke,
     )
     print(f"surrogate saved -> {out}")
-    print(f"use it as the RL reward target:  UNTELL_SURROGATE_DIR={out} python -m training.rl_humanizer ...")
+    print(
+        f"use it as the RL reward target:  UNTELL_SURROGATE_DIR={out} python -m training.rl_humanizer ..."
+    )
     return 0
 
 

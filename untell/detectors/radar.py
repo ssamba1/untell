@@ -50,7 +50,9 @@ class RadarDetector:
 
         if RadarDetector._model is None:
             RadarDetector._tokenizer = AutoTokenizer.from_pretrained(_MODEL_ID)
-            RadarDetector._model = AutoModelForSequenceClassification.from_pretrained(_MODEL_ID).eval()
+            RadarDetector._model = AutoModelForSequenceClassification.from_pretrained(
+                _MODEL_ID
+            ).eval()
         return RadarDetector._tokenizer, RadarDetector._model
 
     def score(self, text: str) -> float | None:
@@ -77,7 +79,8 @@ class RadarDetector:
             logger.warning(
                 "radar failed to load and was EXCLUDED from the ensemble "
                 "(%s: %s). Check network access and the HuggingFace cache.",
-                type(exc).__name__, str(exc)[:140],
+                type(exc).__name__,
+                str(exc)[:140],
             )
             raise
 

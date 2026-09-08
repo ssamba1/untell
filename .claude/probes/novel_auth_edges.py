@@ -4,11 +4,14 @@ Covered: no key = open access; x-api-key matches; Bearer matches; wrong
 key; empty strings; Bearer with no space; case sensitivity; key with
 leading/trailing spaces (stripped?); compare_digest constant-time path.
 """
+
 import sys, os, hmac
 from pathlib import Path
+
 for p in Path(__file__).resolve().parents:
     if (p / "untell" / "__init__.py").exists():
-        sys.path.insert(0, str(p)); break
+        sys.path.insert(0, str(p))
+        break
 
 import untell.api_server as A
 

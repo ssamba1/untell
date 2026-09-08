@@ -9,6 +9,7 @@ it as a protected fact, so a rewrite can never touch sentence-initial
 This test pins the fix: common-word PERSON entities must not produce
 lock spans. Skipped when spaCy/model absent (the lock already no-ops).
 """
+
 import pytest
 
 spacy = pytest.importorskip("spacy")
@@ -17,12 +18,12 @@ pytest.importorskip("en_core_web_sm")
 from untell.scripts.preserve import lock  # noqa: E402  (after importorskip guard)
 
 VERB_FALSE_POSITIVES = [
-    "Email me the file",          # 'Email' is a verb, not a person
-    "Email us at support",        # same
-    "This Email needs review",    # noun use
-    "May we proceed",             # 'May' modal, not a month/person
-    "Will you help",              # 'Will' future marker
-    "Mark the spot",              # 'Mark' verb
+    "Email me the file",  # 'Email' is a verb, not a person
+    "Email us at support",  # same
+    "This Email needs review",  # noun use
+    "May we proceed",  # 'May' modal, not a month/person
+    "Will you help",  # 'Will' future marker
+    "Mark the spot",  # 'Mark' verb
 ]
 
 

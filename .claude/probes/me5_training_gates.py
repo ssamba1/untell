@@ -39,9 +39,11 @@ print("similarity(orig, faithful):", round(sim_f, 4))
 print("similarity(orig, off_topic):", round(sim_o, 4))
 print("similarity(orig, contradictory):", round(sim_c, 4))
 
+
 # --- PROBE 1: reward ordering (detector pinned, isolating the gates) ---
 def _pinned(text, tier="full"):
     return 0.5
+
 
 r.target_ai_score = _pinned
 rw_identical = r.humanness_reward(ORIG, ORIG, tier="lite")
@@ -79,7 +81,12 @@ admit_contradictory = (not False) and meaning_preserved(ORIG, CONTRADICTORY, sim
 print("\n[PROBE 2: distill SFT filter]")
 print("filter admits NLI-entailed faithful rewrite:", admit_faithful)
 print("filter excludes contradictory rewrite:", not admit_contradictory)
-print("contradiction_score(orig, contradictory):", round(contradiction_score(ORIG, CONTRADICTORY) or 0.0, 4))
-print("entailment_score(orig, contradictory):", round(entailment_score(ORIG, CONTRADICTORY) or 0.0, 4))
+print(
+    "contradiction_score(orig, contradictory):",
+    round(contradiction_score(ORIG, CONTRADICTORY) or 0.0, 4),
+)
+print(
+    "entailment_score(orig, contradictory):", round(entailment_score(ORIG, CONTRADICTORY) or 0.0, 4)
+)
 print("contradiction_score(orig, faithful):", round(contradiction_score(ORIG, FAITHFUL) or 0.0, 4))
 print("entailment_score(orig, faithful):", round(entailment_score(ORIG, FAITHFUL) or 0.0, 4))

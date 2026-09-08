@@ -18,6 +18,7 @@ run, so locking an ordinary word silently degrades the output; a missed sha is s
 other meaning gates. That asymmetry is why the pattern is the strict one and why the prose traps
 are tested as hard as the shas.
 """
+
 from __future__ import annotations
 
 import pytest
@@ -27,8 +28,11 @@ from untell.scripts.preserve import lock, restore
 SHAS = [
     ("short sha", "Fixed in commit 4f2a91c last week.", "4f2a91c"),
     ("md5", "The digest was a3f5b2c9d8e14f6072b3c4d5e6f70819.", "a3f5b2c9d8e14f6072b3c4d5e6f70819"),
-    ("sha1", "See 1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b for the tree.",
-     "1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b"),
+    (
+        "sha1",
+        "See 1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b for the tree.",
+        "1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b",
+    ),
     ("mixed", "Reverted deadbeef123 after the outage.", "deadbeef123"),
 ]
 

@@ -33,7 +33,9 @@ def test_training_reward_penalizes_meaning_drift():
 
     src = "The cat sat on the mat in the warm afternoon sun, perfectly content."
     faithful = src
-    broken = "Quantum chromodynamics governs the strong nuclear interaction between quarks and gluons."
+    broken = (
+        "Quantum chromodynamics governs the strong nuclear interaction between quarks and gluons."
+    )
     assert humanness_reward(src, faithful, tier="lite") > humanness_reward(src, broken, tier="lite")
     assert humanness_reward("x", "", tier="lite") == -1.0
     assert len(batch_rewards(src, [faithful, broken], tier="lite")) == 2
@@ -56,5 +58,7 @@ def test_loop_scrubs_hidden_chars(monkeypatch):
 def test_style_appears_in_rewrite_prompt():
     from untell.rewriter import build_rewrite_prompt
 
-    p = build_rewrite_prompt("text", {"detectors": {"mage": 0.8}, "max": 0.8, "style": "blunt"}, 0.30)
+    p = build_rewrite_prompt(
+        "text", {"detectors": {"mage": 0.8}, "max": 0.8, "style": "blunt"}, 0.30
+    )
     assert "Voice:" in p and "blunt" in p.lower()

@@ -1,4 +1,5 @@
 import json, os
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
 from untell._env import load_env
 
@@ -11,7 +12,7 @@ load_env("/tmp/_env_bom_test.env")
 out["bom_stripped"] = os.environ.get("UNTELL_BOM_KEY") == "value123"
 # quoted value with # inside quotes
 with open("/tmp/_env_quote_test.env", "w", encoding="utf-8") as f:
-    f.write('UNTELL_Q_KEY="value with # hash"\nUNTELL_Q2=\'single # quote\'\n')
+    f.write("UNTELL_Q_KEY=\"value with # hash\"\nUNTELL_Q2='single # quote'\n")
 os.environ.pop("UNTELL_Q_KEY", None)
 os.environ.pop("UNTELL_Q2", None)
 load_env("/tmp/_env_quote_test.env")

@@ -1,9 +1,15 @@
 """layout _walk edge cases: unterminated constructs, trailing markers, mixed markers."""
+
 import json
 from untell.layout import apply_per_block
 
 out = {}
-def ident(t): return t
+
+
+def ident(t):
+    return t
+
+
 cases = {
     "unterminated_fence": "text before\n```\ncode never closed\n",
     "unterminated_math": "text before\n$$\nmath never closed\n",

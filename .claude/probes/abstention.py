@@ -1,5 +1,7 @@
 """score_text abstention: all detectors erroring -> scored False, honest warning, no phantom verdict."""
+
 import json, os
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
 from untell.scripts.score import score_text, _verdict_threshold
 
@@ -9,9 +11,14 @@ s = score_text("The system reads the file and processes the records in order.", 
 out["normal_scored"] = s.get("scored") is not False
 # Force all detectors to fail via monkeypatch: lite detector raises
 import untell.detectors.perplexity_burstiness as pb
+
 orig = pb.PerplexityBurstinessDetector.score
+
+
 def boom(self, text):
     raise RuntimeError("model exploded")
+
+
 pb.PerplexityBurstinessDetector.score = boom
 try:
     s2 = score_text("Some text that should fail to score.", tier="lite")

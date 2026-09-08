@@ -1,15 +1,20 @@
 """retry integration: recovers on 2nd attempt, honors jitter, no sleep on success."""
+
 import json, time
 from untell._retry import retry
 
 out = {}
 # recovers on attempt 2
 state = {"n": 0}
+
+
 def flaky():
     state["n"] += 1
     if state["n"] < 2:
         raise ConnectionError("connection reset")
     return "ok"
+
+
 r = retry(flaky, max_attempts=3, base_delay=0.05, max_delay=0.1)
 out["recovers"] = r == "ok" and state["n"] == 2
 # success on first try -> no delay

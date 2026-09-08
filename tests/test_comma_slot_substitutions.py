@@ -1,4 +1,4 @@
-""""However," takes a comma. "But" and "though" do not, and the table swapped them in anyway.
+""" "However," takes a comma. "But" and "though" do not, and the table swapped them in anyway.
 
 FOUND by reading RAID output, in two separate runs:
 

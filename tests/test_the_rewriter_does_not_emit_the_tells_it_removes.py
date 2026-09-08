@@ -106,8 +106,14 @@ def test_the_categories_it_clears_are_the_ones_it_targets(deltas) -> None:
     assert {"ai_vocab", "cliche", "formulaic_transition"} <= set(down), dict(down)
 
 
-COMPONENTS = ("_flatten_cliches", "_strip_filler_openers", "_flatten_vague_attribution",
-              "_flatten_copula", "_flatten_negated_contrast", "_flatten_participial_trailers")
+COMPONENTS = (
+    "_flatten_cliches",
+    "_strip_filler_openers",
+    "_flatten_vague_attribution",
+    "_flatten_copula",
+    "_flatten_negated_contrast",
+    "_flatten_participial_trailers",
+)
 
 
 @pytest.mark.parametrize("name", COMPONENTS)
@@ -132,7 +138,7 @@ def test_no_single_transform_emits_a_catalogued_tell(name: str) -> None:
         out = fn(text)
         if out == text:
             continue
-        before = (score_tells(text).get("by_category") or {})
-        after = (score_tells(out).get("by_category") or {})
+        before = score_tells(text).get("by_category") or {}
+        after = score_tells(out).get("by_category") or {}
         emitted = {c: after[c] - before.get(c, 0) for c in after if after[c] > before.get(c, 0)}
         assert not emitted, f"{name} emitted {emitted}"

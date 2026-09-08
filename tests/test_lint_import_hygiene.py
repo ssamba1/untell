@@ -13,6 +13,7 @@ into PYTHONPATH, which shadows the project venv and breaks pydantic/fastapi
 imports, so the untell-server / untell-mcp entry points would fail for the wrong
 reason. The project is not a src-layout, so nothing needs PYTHONPATH set.
 """
+
 from __future__ import annotations
 
 import os

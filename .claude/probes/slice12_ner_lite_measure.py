@@ -6,6 +6,7 @@ before the probe starts), with UNTELL_LITE_NO_TORCH=1 set or unset, and reports:
   - which heavy modules (torch/transformers/spacy/thinc) landed in sys.modules
   - how many entity spans were locked
 """
+
 import importlib.util
 import json
 import os
@@ -55,7 +56,10 @@ def run(label: str, env_extra: dict) -> dict:
     t0 = time.perf_counter()
     out = subprocess.run(
         [sys.executable, "-c", PROBE],
-        capture_output=True, text=True, env=env, timeout=300,
+        capture_output=True,
+        text=True,
+        env=env,
+        timeout=300,
     )
     wall = time.perf_counter() - t0
     result = {"label": label, "wall_total": round(wall, 3), "rc": out.returncode}
@@ -77,8 +81,13 @@ def main():
         if "stderr_tail" in r:
             print(f"\n--- {r['label']} stderr ---\n{r['stderr_tail']}", file=sys.stderr)
     # also report whether the heavy libs exist in this venv (so the "not imported" is meaningful)
-    print("installed:", {m: importlib.util.find_spec(m) is not None
-                         for m in ("torch", "transformers", "spacy", "thinc", "en_core_web_sm")})
+    print(
+        "installed:",
+        {
+            m: importlib.util.find_spec(m) is not None
+            for m in ("torch", "transformers", "spacy", "thinc", "en_core_web_sm")
+        },
+    )
 
 
 if __name__ == "__main__":

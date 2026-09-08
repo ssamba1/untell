@@ -5,6 +5,7 @@ the returned coefficient — sentence lengths (5, 5, 10) give CV 0.353553...
 which rounds to 0.3536 at 4dp but 0.35355 at 5dp. The CV is a published
 detector signal, so its exact value is part of the API.
 """
+
 from untell.scripts.tells import _burstiness_cv
 
 

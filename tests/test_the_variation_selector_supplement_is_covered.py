@@ -17,6 +17,7 @@ It works today — the block is handled by the same rule as U+FE00–U+FE0F. Wha
 anything that would notice if that stopped being true, and a 240-codepoint invisible block is
 exactly what a watermarker reaches for after the obvious ones are closed.
 """
+
 from __future__ import annotations
 
 import pytest
@@ -30,7 +31,11 @@ BLOCK = [0xE0100, 0xE0110, 0xE01EF]  # first, middle, last of the supplement
 def test_a_supplement_selector_is_counted(codepoint: int):
     text = f"hello{chr(codepoint)} world here"
     counted = count_hidden(text)
-    total = sum(v for v in counted.values() if isinstance(v, int)) if isinstance(counted, dict) else counted
+    total = (
+        sum(v for v in counted.values() if isinstance(v, int))
+        if isinstance(counted, dict)
+        else counted
+    )
     assert total >= 1, f"U+{codepoint:04X} was not reported as hidden: {counted}"
 
 
@@ -55,7 +60,11 @@ def test_scrubbing_reports_clean_afterwards():
     text = "hello" + "".join(chr(0xE0100 + i) for i in range(5)) + " world here"
     cleaned = scrub_hidden(text)
     counted = count_hidden(cleaned)
-    total = sum(v for v in counted.values() if isinstance(v, int)) if isinstance(counted, dict) else counted
+    total = (
+        sum(v for v in counted.values() if isinstance(v, int))
+        if isinstance(counted, dict)
+        else counted
+    )
     assert total == 0, f"scrubbed text still reports hidden characters: {counted}"
 
 

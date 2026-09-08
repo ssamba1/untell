@@ -1,4 +1,5 @@
 """Tests for io_utils — UTF-8 configuration and stdin helpers."""
+
 from __future__ import annotations
 
 import io
@@ -237,11 +238,17 @@ class TestEveryFileEntryPointDecodesProperly:
 
         repo = Path(__file__).resolve().parent.parent
         offenders = []
-        for rel in ("untell/scripts/score.py", "untell/scripts/verify.py",
-                    "untell/scripts/sentences.py", "untell/scripts/tells.py",
-                    "untell/scripts/scrub.py", "untell/scripts/run.py", "untell/humanness.py"):
+        for rel in (
+            "untell/scripts/score.py",
+            "untell/scripts/verify.py",
+            "untell/scripts/sentences.py",
+            "untell/scripts/tells.py",
+            "untell/scripts/scrub.py",
+            "untell/scripts/run.py",
+            "untell/humanness.py",
+        ):
             src = (repo / rel).read_text(encoding="utf-8", errors="replace")
-            if not re.search(r'args\.file', src):
+            if not re.search(r"args\.file", src):
                 continue
             # `read_file_or_exit` is `read_file` plus a one-line message and exit 2 for the three
             # ordinary path mistakes. Both count: the guarantee this test protects is that the

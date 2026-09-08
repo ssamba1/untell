@@ -33,9 +33,9 @@ from untell.scripts.tells import score_tells
 logger = logging.getLogger(__name__)
 
 # Weights for the three signal components (sum ≈ 1.0).
-_W_TELLS = 0.30       # AI-tells density contribution
-_W_DETECTOR = 0.50    # Detector ensemble contribution (strongest weight)
-_W_BURSTY = 0.20      # Burstiness / sentence-length variation
+_W_TELLS = 0.30  # AI-tells density contribution
+_W_DETECTOR = 0.50  # Detector ensemble contribution (strongest weight)
+_W_BURSTY = 0.20  # Burstiness / sentence-length variation
 
 # Calibration constants.
 _MAX_TELLS_PER_100W = 25.0  # Approximate ceiling for tells/100w
@@ -650,8 +650,10 @@ def _dominant_signal(text: str, tier: str) -> str | None:
         return None
 
     if not tells.get("language_supported", True):
-        return ("the tell catalogue is English-only and this text is mostly another script, "
-                "so the mechanical half of this score saw nothing")
+        return (
+            "the tell catalogue is English-only and this text is mostly another script, "
+            "so the mechanical half of this score saw nothing"
+        )
 
     # Rank by what the reader can DO about it, not by raw contribution.
     #
@@ -678,21 +680,25 @@ def _dominant_signal(text: str, tier: str) -> str | None:
             penalty = 0.0
         if penalty > 0:
             shape = "uniform" if cv < _BURSTY_IDEAL else "erratic"
-            actionable.append((
-                penalty * _W_BURSTY,
-                f"driven by {shape} sentence rhythm (burstiness {cv:.2f}; measured human medians "
-                f"are {_BURSTY_HUMAN_MEDIAN['forum prose']:.2f} for forum prose and "
-                f"{_BURSTY_HUMAN_MEDIAN['academic abstracts']:.2f} for academic abstracts) — "
-                f"varying sentence length changes this more than word choice does",
-            ))
+            actionable.append(
+                (
+                    penalty * _W_BURSTY,
+                    f"driven by {shape} sentence rhythm (burstiness {cv:.2f}; measured human medians "
+                    f"are {_BURSTY_HUMAN_MEDIAN['forum prose']:.2f} for forum prose and "
+                    f"{_BURSTY_HUMAN_MEDIAN['academic abstracts']:.2f} for academic abstracts) — "
+                    f"varying sentence length changes this more than word choice does",
+                )
+            )
 
     if per_100w > 0:
         worst = max(tells.get("by_category", {}).items(), key=lambda kv: kv[1], default=None)
         named = f", mostly {worst[0]}" if worst else ""
-        actionable.append((
-            min(per_100w / _MAX_TELLS_PER_100W, 1.0) * _W_TELLS,
-            f"driven by {per_100w:.1f} AI tells per 100 words{named}",
-        ))
+        actionable.append(
+            (
+                min(per_100w / _MAX_TELLS_PER_100W, 1.0) * _W_TELLS,
+                f"driven by {per_100w:.1f} AI tells per 100 words{named}",
+            )
+        )
 
     # 0.02 of the blended score. Below that the term is not moving the number enough to be worth
     # naming, and naming it anyway puts a confident-sounding cause on a result that is just middling.
@@ -701,9 +707,11 @@ def _dominant_signal(text: str, tier: str) -> str | None:
         return max(strong, key=lambda c: c[0])[1]
 
     if detector_max is not None and detector_max >= 0.5:
-        return (f"driven by the detector ensemble ({detector_max:.2f} max) rather than by any "
-                f"catalogued tell — nothing mechanical to fix here, which is the honest answer "
-                f"rather than a to-do list")
+        return (
+            f"driven by the detector ensemble ({detector_max:.2f} max) rather than by any "
+            f"catalogued tell — nothing mechanical to fix here, which is the honest answer "
+            f"rather than a to-do list"
+        )
     return None
 
 

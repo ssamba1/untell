@@ -13,6 +13,7 @@ Summary of census results:
   numbers_kept is ALIVE for bare single digits that preserve.py leaves unlocked.
   numbers_kept is ALIVE on any direct API call with unmasked text.
 """
+
 from __future__ import annotations
 
 import pytest
@@ -20,7 +21,7 @@ import pytest
 from untell.scripts.numerals import _numbers, missing_numbers, numbers_kept
 
 # The actual sentinel character sequence: ⟦ = U+27E6, ⟧ = U+27E7
-_S = "⟦HZ0001⟧"   # one locked span
+_S = "⟦HZ0001⟧"  # one locked span
 _S2 = "⟦HZ0002⟧"  # a second locked span
 
 
@@ -44,9 +45,9 @@ class TestReachabilityOnLoopPath:
 
     def test_locked_number_is_stripped_from_both_sides(self):
         """A sentinel erases the value on both sides; nothing can be 'missing'."""
-        src = f"The {_S} patients enrolled."   # ⟦HZ0001⟧ represents e.g. "240"
+        src = f"The {_S} patients enrolled."  # ⟦HZ0001⟧ represents e.g. "240"
         cand = f"A total of {_S} patients enrolled."
-        assert _numbers(src) == []   # sentinel stripped, no digits left
+        assert _numbers(src) == []  # sentinel stripped, no digits left
         assert _numbers(cand) == []
         assert numbers_kept(src, cand)
 
@@ -155,8 +156,8 @@ class TestMeaningPreservedSymmetry:
 
         pos = "The committee approved the plan."
         neg = "The committee did not approve the plan."
-        assert not polarity_kept(pos, neg)   # negation added
-        assert not polarity_kept(neg, pos)   # negation removed
+        assert not polarity_kept(pos, neg)  # negation added
+        assert not polarity_kept(neg, pos)  # negation removed
 
 
 class TestMeaningPreservedDegenerateInputs:
@@ -198,6 +199,7 @@ class TestMeaningPreservedDegenerateInputs:
         src = "The quick brown fox jumps over the lazy dog."
         cand = "The sun rises in the east every morning."  # unrelated topic, low sim
         from untell.scripts.quality import token_overlap
+
         sim = token_overlap(src, cand)
         assert sim < 0.76, f"fixture sim {sim:.3f} unexpectedly high"
         assert not meaning_preserved(src, cand, sim=sim, strict_sim_bar=0.76)

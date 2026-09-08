@@ -122,6 +122,7 @@ def _readme() -> str:
 # Cell 1: documented
 # -----------------------------------------------------------------------------------
 
+
 def test_every_canonical_var_is_documented_in_readme():
     readme = _readme()
     missing = sorted(v for v in CANONICAL if v not in readme)
@@ -140,6 +141,7 @@ def test_the_roster_is_actually_found():
 # -----------------------------------------------------------------------------------
 # Cell 2: actually read
 # -----------------------------------------------------------------------------------
+
 
 def test_every_canonical_var_has_a_read_site():
     direct = _read_sites()
@@ -179,6 +181,7 @@ def test_no_dead_disable_or_enable_flags():
 # -----------------------------------------------------------------------------------
 # Cell 3: sane on bad values (message, not traceback)
 # -----------------------------------------------------------------------------------
+
 
 def test_untell_port_invalid_is_a_message_not_a_traceback(monkeypatch, capsys):
     """UNTELL_PORT=abc used to crash while BUILDING the parser (before --help could run)."""
@@ -286,6 +289,7 @@ def test_untell_browser_sites_bad_path_is_a_quiet_none(monkeypatch):
 # Cell 4: consistent across CLI / REST / MCP
 # -----------------------------------------------------------------------------------
 
+
 def test_cli_config_keys_match_the_rest_surface_bounds_source():
     """The CLI and REST surfaces must agree on what 'config' means: the six env-wired keys
     are exactly the six keys _CLI_DEFAULTS ships, and _api_bounds.py (the shared range
@@ -298,8 +302,16 @@ def test_cli_config_keys_match_the_rest_surface_bounds_source():
 
 def test_server_env_vars_are_read_by_api_server():
     src = (REPO / "untell" / "api_server.py").read_text(encoding="utf-8")
-    for var in ("UNTELL_API_KEY", "UNTELL_HOST", "UNTELL_PORT", "UNTELL_RATE_LIMIT", "UNTELL_CORS_ORIGINS"):
-        assert f'os.environ.get("{var}"' in src, f"{var} is documented as a server var but api_server does not read it"
+    for var in (
+        "UNTELL_API_KEY",
+        "UNTELL_HOST",
+        "UNTELL_PORT",
+        "UNTELL_RATE_LIMIT",
+        "UNTELL_CORS_ORIGINS",
+    ):
+        assert f'os.environ.get("{var}"' in src, (
+            f"{var} is documented as a server var but api_server does not read it"
+        )
 
 
 def test_mcp_server_reads_no_undocumented_env():
@@ -313,6 +325,7 @@ def test_mcp_server_reads_no_undocumented_env():
 # -----------------------------------------------------------------------------------
 # Registry metadata
 # -----------------------------------------------------------------------------------
+
 
 def test_registry_names_and_tiers_match_the_documented_roster():
     from untell.detectors.base import all_detectors

@@ -30,8 +30,8 @@ _PARA = (
     "Moreover, the framework leverages a robust approach to deliver transformative outcomes "
     "for every stakeholder involved in the programme of work across the organisation. "
 )
-OVERSIZED = _PARA * 400          # ~67k chars
-WITHIN = _PARA * 20              # ~3.4k chars
+OVERSIZED = _PARA * 400  # ~67k chars
+WITHIN = _PARA * 20  # ~3.4k chars
 
 
 @pytest.fixture(autouse=True)

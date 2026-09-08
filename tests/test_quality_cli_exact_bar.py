@@ -8,6 +8,7 @@ the passes()-killing test in the set). This test pins the CLI copy directly:
 same exact-bar pair (1 shared of 4 unique = Dice 0.5 = TOKEN_BAR), through
 `quality_main`, asserting the JSON "passes" field flips.
 """
+
 import json
 
 import untell.scripts.quality as quality

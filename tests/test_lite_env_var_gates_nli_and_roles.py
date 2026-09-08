@@ -16,6 +16,7 @@ MEASURED on this machine (torch 2.12.1+cpu, spacy + en_core_web_sm installed): a
 with the heavy paths genuinely skipped the same call completes in ~0.13s. All three
 fixes below return the "unavailable" answer WITHOUT importing anything.
 """
+
 from __future__ import annotations
 
 import builtins
@@ -30,9 +31,7 @@ def _no_heavy_imports(monkeypatch, libs):
 
     def spy_import(name, *a, **kw):
         top = name.split(".")[0]
-        assert top not in libs, (
-            f"{name} was imported under UNTELL_LITE_NO_TORCH=1"
-        )
+        assert top not in libs, f"{name} was imported under UNTELL_LITE_NO_TORCH=1"
         return real_import(name, *a, **kw)
 
     monkeypatch.setattr(builtins, "__import__", spy_import)
@@ -62,7 +61,10 @@ def test_env_var_makes_role_swap_unknown_without_loading_spacy(monkeypatch):
     """role_swap returns None ("unknown", never a pass) and imports nothing."""
     _no_heavy_imports(monkeypatch, {"spacy"})
     monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
-    assert roles.role_swap("The company sued the regulator.", "The regulator sued the company.") is None
+    assert (
+        roles.role_swap("The company sued the regulator.", "The regulator sued the company.")
+        is None
+    )
 
 
 def test_meaning_preserved_falls_back_to_the_strict_bar_under_the_env_var(monkeypatch):
@@ -72,18 +74,26 @@ def test_meaning_preserved_falls_back_to_the_strict_bar_under_the_env_var(monkey
     monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
 
     # A faithful pair above the strict bar passes…
-    assert meaning_preserved(
-        "The build runs faster after the change.",
-        "The build runs quicker after the change.",
-        0.90, 0.76,
-    ) is True
+    assert (
+        meaning_preserved(
+            "The build runs faster after the change.",
+            "The build runs quicker after the change.",
+            0.90,
+            0.76,
+        )
+        is True
+    )
     # …and the same pair below the strict bar is rejected, exactly as the
     # similarity-only path documents.
-    assert meaning_preserved(
-        "The build runs faster after the change.",
-        "The build runs quicker after the change.",
-        0.40, 0.76,
-    ) is False
+    assert (
+        meaning_preserved(
+            "The build runs faster after the change.",
+            "The build runs quicker after the change.",
+            0.40,
+            0.76,
+        )
+        is False
+    )
 
 
 def test_the_loop_names_the_weakened_gate_under_the_env_var(monkeypatch):
@@ -95,7 +105,9 @@ def test_the_loop_names_the_weakened_gate_under_the_env_var(monkeypatch):
 
     r = untell_text(
         "Furthermore, the system leverages robust methodologies to optimize outcomes today.",
-        tier="lite", threshold=0.30, max_iters=1,
+        tier="lite",
+        threshold=0.30,
+        max_iters=1,
         rewriter=get_rewriter(prefer="surgical"),
     )
     assert r["meaning_gate"] == "similarity-only (NLI unavailable)"

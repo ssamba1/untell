@@ -1,5 +1,7 @@
 """Ensemble band semantics: passing candidate outranks failing one within the 0.02 band."""
+
 import json, os
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
 from untell.rewriter.ensemble import _RANK_EPS
 

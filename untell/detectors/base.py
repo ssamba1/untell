@@ -182,7 +182,7 @@ def _split_to_width(sentence: str, width: int) -> list[str]:
         if len(words) <= 1 and len(sentence) > width:
             return [sentence[i : i + width] for i in range(0, len(sentence), width)]
         return [sentence]
-    return [" ".join(words[i:i + width]) for i in range(0, len(words), width)]
+    return [" ".join(words[i : i + width]) for i in range(0, len(words), width)]
 
 
 def _piece_weight(piece: str) -> int:
@@ -304,8 +304,9 @@ def windowed_max(text: str, score_window, window_words: int = WINDOW_WORDS) -> f
     text = normalise_for_scoring(text)
 
     windows = _window_parts(text, window_words)
-    scores = [s for s in (score_window(w) for w in windows if w.strip())
-              if s is not None and s == s]  # drop NaN windows: max() with a NaN is order-dependent
+    scores = [
+        s for s in (score_window(w) for w in windows if w.strip()) if s is not None and s == s
+    ]  # drop NaN windows: max() with a NaN is order-dependent
     return max(scores) if scores else None
 
 
@@ -364,11 +365,7 @@ def load_detectors(tier: Tier = "full") -> list[Detector]:
     Falls back to the lite heuristic if nothing else is installed, so the returned list is
     never empty (the lite detector has no dependencies and is always available).
     """
-    selected = [
-        d
-        for d in all_detectors()
-        if _tier_at_most(d.tier, tier) and d.available()
-    ]
+    selected = [d for d in all_detectors() if _tier_at_most(d.tier, tier) and d.available()]
     if not selected:
         # Guarantee the documented invariant: the lite heuristic is dependency-free and always
         # available, so the registry never returns an empty list (which would silently zero-score).

@@ -214,7 +214,8 @@ def contradiction_score(a: str, b: str) -> float | None:
         if not _NLI.warned:
             logger.warning(
                 "contradiction veto unavailable (%s: %s); meaning inversions will NOT be caught.",
-                type(exc).__name__, str(exc)[:140],
+                type(exc).__name__,
+                str(exc)[:140],
             )
             _NLI.warned = True
         return None
@@ -307,7 +308,8 @@ def entailment_score(a: str, b: str) -> float | None:
         if not _NLI.warned:
             logger.warning(
                 "entailment check unavailable (%s: %s); meaning loss will NOT be caught.",
-                type(exc).__name__, str(exc)[:140],
+                type(exc).__name__,
+                str(exc)[:140],
             )
             _NLI.warned = True
         return None
@@ -626,12 +628,29 @@ def main(argv: list[str] | None = None) -> int:
     if con is None or ent is None:
         # Unknown is NOT a failure: without the model there is nothing to judge with, and refusing
         # every rewrite would be worse than falling back to the similarity gate the skill already runs.
-        print(_json.dumps({"available": False, "contradiction": None, "entailment": None,
-                           "preserved": True, "note": "NLI unavailable — install .[full] to enable"}))
+        print(
+            _json.dumps(
+                {
+                    "available": False,
+                    "contradiction": None,
+                    "entailment": None,
+                    "preserved": True,
+                    "note": "NLI unavailable — install .[full] to enable",
+                }
+            )
+        )
         return 0
     preserved = con < DEFAULT_CONTRADICTION_BAR and ent >= DEFAULT_ENTAILMENT_FLOOR
-    print(_json.dumps({"available": True, "contradiction": round(con, 4),
-                       "entailment": round(ent, 4), "preserved": preserved}))
+    print(
+        _json.dumps(
+            {
+                "available": True,
+                "contradiction": round(con, 4),
+                "entailment": round(ent, 4),
+                "preserved": preserved,
+            }
+        )
+    )
     return 0 if preserved else 1
 
 

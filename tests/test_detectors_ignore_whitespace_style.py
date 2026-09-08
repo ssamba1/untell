@@ -58,7 +58,10 @@ def test_normalisation_is_a_no_op_on_clean_text() -> None:
 
 
 def test_normalisation_does_not_touch_decimals_or_ellipses() -> None:
-    assert normalise_whitespace("It cost 3.50 and took 1,200 ms...") == "It cost 3.50 and took 1,200 ms..."
+    assert (
+        normalise_whitespace("It cost 3.50 and took 1,200 ms...")
+        == "It cost 3.50 and took 1,200 ms..."
+    )
 
 
 # The scope of the normalisation is a decision, not an oversight, so it is pinned. An audit of 28

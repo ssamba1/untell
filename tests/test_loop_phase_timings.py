@@ -87,8 +87,7 @@ def test_timings_key_is_present_in_canonical_order(stdlib_lite) -> None:
     timings = result.get("timings")
     assert timings is not None, "timings=True must attach the phase report to the result"
     assert list(timings) == EXPECTED_KEYS, (
-        "phase order is execution order (score_pre first, total last); got "
-        f"{list(timings)}"
+        f"phase order is execution order (score_pre first, total last); got {list(timings)}"
     )
 
 
@@ -137,10 +136,30 @@ def test_the_cli_flag_emits_the_split_as_json(stdlib_lite) -> None:
     env = {k: v for k, v in os.environ.items() if k != "PYTHONPATH"}
     env["UNTELL_LITE_NO_TORCH"] = "1"
     proc = subprocess.run(
-        [sys.executable, "-m", "untell.scripts.run", "--timings", "--json",
-         "--tier", "lite", "--rewriter", "composite", "--best-of", "1",
-         "--max-iters", "1", "--threshold", "0.001", TEXT],
-        capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=300, env=env,
+        [
+            sys.executable,
+            "-m",
+            "untell.scripts.run",
+            "--timings",
+            "--json",
+            "--tier",
+            "lite",
+            "--rewriter",
+            "composite",
+            "--best-of",
+            "1",
+            "--max-iters",
+            "1",
+            "--threshold",
+            "0.001",
+            TEXT,
+        ],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=300,
+        env=env,
     )
     assert proc.returncode == 0, (proc.stdout[:300], proc.stderr[:300])
     payload = json.loads(proc.stdout)
@@ -154,10 +173,29 @@ def test_the_cli_flag_prints_a_human_summary_without_json(stdlib_lite) -> None:
     env = {k: v for k, v in os.environ.items() if k != "PYTHONPATH"}
     env["UNTELL_LITE_NO_TORCH"] = "1"
     proc = subprocess.run(
-        [sys.executable, "-m", "untell.scripts.run", "--timings",
-         "--tier", "lite", "--rewriter", "composite", "--best-of", "1",
-         "--max-iters", "1", "--threshold", "0.001", TEXT],
-        capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=300, env=env,
+        [
+            sys.executable,
+            "-m",
+            "untell.scripts.run",
+            "--timings",
+            "--tier",
+            "lite",
+            "--rewriter",
+            "composite",
+            "--best-of",
+            "1",
+            "--max-iters",
+            "1",
+            "--threshold",
+            "0.001",
+            TEXT,
+        ],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=300,
+        env=env,
     )
     assert proc.returncode == 0, (proc.stdout[:300], proc.stderr[:300])
     assert "[timings]" in proc.stdout, proc.stdout[-500:]
@@ -172,10 +210,27 @@ def test_without_the_flag_the_payload_is_unchanged(stdlib_lite) -> None:
     env = {k: v for k, v in os.environ.items() if k != "PYTHONPATH"}
     env["UNTELL_LITE_NO_TORCH"] = "1"
     proc = subprocess.run(
-        [sys.executable, "-m", "untell.scripts.run", "--json",
-         "--tier", "lite", "--rewriter", "composite", "--best-of", "1",
-         "--max-iters", "1", TEXT],
-        capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=300, env=env,
+        [
+            sys.executable,
+            "-m",
+            "untell.scripts.run",
+            "--json",
+            "--tier",
+            "lite",
+            "--rewriter",
+            "composite",
+            "--best-of",
+            "1",
+            "--max-iters",
+            "1",
+            TEXT,
+        ],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=300,
+        env=env,
     )
     assert proc.returncode == 0, (proc.stdout[:300], proc.stderr[:300])
     assert "timings" not in json.loads(proc.stdout)

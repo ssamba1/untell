@@ -128,7 +128,7 @@ class TestABrokenConfigFileIsNotSilent:
 
     def test_a_valid_file_warns_about_nothing(self, monkeypatch, tmp_path, caplog):
         (tmp_path / "pyproject.toml").write_text(
-            '[tool.untell]\nthreshold = 0.2\n', encoding="utf-8"
+            "[tool.untell]\nthreshold = 0.2\n", encoding="utf-8"
         )
         monkeypatch.chdir(tmp_path)
         with caplog.at_level("WARNING", logger="untell.config"):
@@ -199,11 +199,22 @@ class TestTheLoopCliActuallyReadsTheConfig:
         return build_parser().parse_args(argv)
 
     def test_shipped_defaults_when_nothing_is_configured(self, monkeypatch):
-        for var in ("UNTELL_TIER", "UNTELL_THRESHOLD", "UNTELL_MAX_ITERS", "UNTELL_REWRITER",
-                    "UNTELL_STYLE", "UNTELL_BEST_OF"):
+        for var in (
+            "UNTELL_TIER",
+            "UNTELL_THRESHOLD",
+            "UNTELL_MAX_ITERS",
+            "UNTELL_REWRITER",
+            "UNTELL_STYLE",
+            "UNTELL_BEST_OF",
+        ):
             monkeypatch.delenv(var, raising=False)
         args = self._parse(["x"])
-        assert (args.tier, args.rewriter, args.best_of, args.style) == ("full", "composite", 3, None)
+        assert (args.tier, args.rewriter, args.best_of, args.style) == (
+            "full",
+            "composite",
+            3,
+            None,
+        )
 
     def test_env_moves_the_default(self, monkeypatch):
         monkeypatch.setenv("UNTELL_TIER", "lite")

@@ -45,27 +45,38 @@ class FakeClock:
         return self.t
 
 
-def _run_with_fake(root, out_dir, scanner, process, *, debounce=5.0,
-                   max_batches=1, **kw):
+def _run_with_fake(root, out_dir, scanner, process, *, debounce=5.0, max_batches=1, **kw):
     return run(
-        root, out_dir, tier="lite", threshold=0.3, rewriter=object(),
-        max_iters=5, best_of=3, poll_interval=1.0, debounce=debounce,
-        max_batches=max_batches, scan=scanner, sleep=lambda _s: None,
-        now=FakeClock(), process=process, **kw,
+        root,
+        out_dir,
+        tier="lite",
+        threshold=0.3,
+        rewriter=object(),
+        max_iters=5,
+        best_of=3,
+        poll_interval=1.0,
+        debounce=debounce,
+        max_batches=max_batches,
+        scan=scanner,
+        sleep=lambda _s: None,
+        now=FakeClock(),
+        process=process,
+        **kw,
     )
 
 
 def _record_process(processed):
     def process(paths):
         processed.append(list(paths))
-        return {"entries": [], "ok": len(paths), "skipped": 0, "failed": 0,
-                "rewrote": 0}
+        return {"entries": [], "ok": len(paths), "skipped": 0, "failed": 0, "rewrote": 0}
+
     return process
 
 
 # --------------------------------------------------------------------------- #
 # Pure pieces: scan / diff / coalescer
 # --------------------------------------------------------------------------- #
+
 
 def test_scan_collects_prose_files_recursively(tmp_path):
     (tmp_path / "a.md").write_text("hi", encoding="utf-8")
@@ -108,27 +119,27 @@ def test_diff_ignores_unchanged_and_deletions():
 
 def test_coalescer_burst_flushes_as_one_batch():
     c = _Coalescer(quiet_for=5.0)
-    assert c.feed(["a.md", "b.md"], 1.0) is None     # just changed; not quiet yet
-    assert c.feed([], 6.0) == ["a.md", "b.md"]       # quiet past window -> flush
-    assert c.feed([], 7.0) is None                   # flushed; pending empty
+    assert c.feed(["a.md", "b.md"], 1.0) is None  # just changed; not quiet yet
+    assert c.feed([], 6.0) == ["a.md", "b.md"]  # quiet past window -> flush
+    assert c.feed([], 7.0) is None  # flushed; pending empty
 
 
 def test_coalescer_dedupes_repeated_edit_of_same_file():
     c = _Coalescer(quiet_for=5.0)
     assert c.feed(["a.md"], 1.0) is None
-    assert c.feed(["a.md"], 3.0) is None             # edited again -> still one slot
-    assert c.feed([], 10.0) == ["a.md"]              # single entry, not two
+    assert c.feed(["a.md"], 3.0) is None  # edited again -> still one slot
+    assert c.feed([], 10.0) == ["a.md"]  # single entry, not two
 
 
 # --------------------------------------------------------------------------- #
 # Loop behaviour with a fake watcher
 # --------------------------------------------------------------------------- #
 
+
 def test_loop_processes_a_new_file_once(tmp_path):
     scanner = FakeScanner([{}, {"note.md": _sig(1, 10)}])
     processed = []
-    batches = _run_with_fake(Path("dummy"), Path("out"), scanner,
-                             _record_process(processed))
+    batches = _run_with_fake(Path("dummy"), Path("out"), scanner, _record_process(processed))
     assert [b["ok"] for b in batches] == [1]
     assert processed == [["note.md"]]
 
@@ -137,20 +148,21 @@ def test_loop_batches_burst_into_one_processing_call(tmp_path):
     # Several files appear in the same quiet window -> one batch, one process().
     scanner = FakeScanner([{}, {"a.md": _sig(1, 10), "b.md": _sig(1, 12)}])
     processed = []
-    batches = _run_with_fake(Path("dummy"), Path("out"), scanner,
-                             _record_process(processed))
+    batches = _run_with_fake(Path("dummy"), Path("out"), scanner, _record_process(processed))
     assert len(batches) == 1
     assert processed == [["a.md", "b.md"]]
 
 
 def test_loop_reuses_latest_state_for_repeated_edit(tmp_path):
     # a.md changes twice inside the debounce window -> processed ONCE (latest).
-    scanner = FakeScanner([
-        {},                          # baseline
-        {"a.md": _sig(1, 10)},       # v1
-        {"a.md": _sig(2, 10)},       # v2 (edit before flush)
-        {"a.md": _sig(2, 10)},       # quiet -> flush
-    ])
+    scanner = FakeScanner(
+        [
+            {},  # baseline
+            {"a.md": _sig(1, 10)},  # v1
+            {"a.md": _sig(2, 10)},  # v2 (edit before flush)
+            {"a.md": _sig(2, 10)},  # quiet -> flush
+        ]
+    )
     processed = []
     _run_with_fake(Path("dummy"), Path("out"), scanner, _record_process(processed))
     assert processed == [["a.md"]]
@@ -165,10 +177,20 @@ def test_loop_drops_deleted_path_before_flush(tmp_path):
         return scanner.calls >= len(scanner.seq)
 
     batches = run(
-        Path("dummy"), Path("out"), tier="lite", threshold=0.3,
-        rewriter=object(), max_iters=5, best_of=3, poll_interval=1.0,
-        debounce=5.0, scan=scanner, sleep=lambda _s: None, now=FakeClock(),
-        should_stop=should_stop, process=_record_process(processed),
+        Path("dummy"),
+        Path("out"),
+        tier="lite",
+        threshold=0.3,
+        rewriter=object(),
+        max_iters=5,
+        best_of=3,
+        poll_interval=1.0,
+        debounce=5.0,
+        scan=scanner,
+        sleep=lambda _s: None,
+        now=FakeClock(),
+        should_stop=should_stop,
+        process=_record_process(processed),
     )
     assert processed == []
     assert batches == []
@@ -180,8 +202,12 @@ def test_loop_max_batches_stops_after_n(tmp_path):
     scanner = FakeScanner([{}, *batch_snaps])
     processed = []
     batches = _run_with_fake(
-        Path("dummy"), Path("out"), scanner, _record_process(processed),
-        debounce=0.0, max_batches=2,
+        Path("dummy"),
+        Path("out"),
+        scanner,
+        _record_process(processed),
+        debounce=0.0,
+        max_batches=2,
     )
     assert len(batches) == 2
     assert len(processed) == 2
@@ -190,17 +216,19 @@ def test_loop_max_batches_stops_after_n(tmp_path):
 def test_loop_continues_watching_across_batches(tmp_path):
     # Two separate quiet windows each flush their own batch: the coalescer resets
     # after the first flush and a later, unrelated change is its own batch.
-    scanner = FakeScanner([
-        {},                                # baseline
-        {"a.md": _sig(1, 10)},             # change 1
-        {"a.md": _sig(1, 10)},             # quiet -> flush [a.md]
-        {"a.md": _sig(1, 10), "b.md": _sig(2, 20)},   # change 2
-        {"a.md": _sig(1, 10), "b.md": _sig(2, 20)},   # quiet -> flush [b.md]
-    ])
+    scanner = FakeScanner(
+        [
+            {},  # baseline
+            {"a.md": _sig(1, 10)},  # change 1
+            {"a.md": _sig(1, 10)},  # quiet -> flush [a.md]
+            {"a.md": _sig(1, 10), "b.md": _sig(2, 20)},  # change 2
+            {"a.md": _sig(1, 10), "b.md": _sig(2, 20)},  # quiet -> flush [b.md]
+        ]
+    )
     processed = []
-    batches = _run_with_fake(Path("dummy"), Path("out"), scanner,
-                             _record_process(processed), debounce=5.0,
-                             max_batches=2)
+    batches = _run_with_fake(
+        Path("dummy"), Path("out"), scanner, _record_process(processed), debounce=5.0, max_batches=2
+    )
     assert len(batches) == 2
     assert processed == [["a.md"], ["b.md"]]  # two batches, not one
 
@@ -211,10 +239,20 @@ def test_loop_timeout_returns_when_idle(tmp_path):
     scanner = FakeScanner([{}, {}, {}, {}])
     processed = []
     batches = run(
-        Path("dummy"), Path("out"), tier="lite", threshold=0.3,
-        rewriter=object(), max_iters=5, best_of=3, poll_interval=1.0,
-        debounce=5.0, timeout=1.0, scan=scanner, sleep=lambda _s: None,
-        now=FakeClock(), process=_record_process(processed),
+        Path("dummy"),
+        Path("out"),
+        tier="lite",
+        threshold=0.3,
+        rewriter=object(),
+        max_iters=5,
+        best_of=3,
+        poll_interval=1.0,
+        debounce=5.0,
+        timeout=1.0,
+        scan=scanner,
+        sleep=lambda _s: None,
+        now=FakeClock(),
+        process=_record_process(processed),
     )
     assert batches == []
     assert processed == []
@@ -223,6 +261,7 @@ def test_loop_timeout_returns_when_idle(tmp_path):
 # --------------------------------------------------------------------------- #
 # Real wiring: the actual batch pipeline on the real filesystem
 # --------------------------------------------------------------------------- #
+
 
 def test_real_watch_reuses_batch_pipeline_and_writes_output(tmp_path, monkeypatch, capsys):
     """A change lands on disk, the real loop sees it via the real scanner, and
@@ -246,11 +285,22 @@ def test_real_watch_reuses_batch_pipeline_and_writes_output(tmp_path, monkeypatc
         return _scan(root, watch_mod._text_suffixes)
 
     from untell.rewriter import get_rewriter
+
     rewriter = get_rewriter(prefer="composite")
     batches = run(
-        src, out, tier="lite", threshold=0.3, rewriter=rewriter,
-        max_iters=1, best_of=1, poll_interval=0.0, debounce=0.0,
-        max_batches=1, scan=scan, sleep=lambda _s: None, now=FakeClock(),
+        src,
+        out,
+        tier="lite",
+        threshold=0.3,
+        rewriter=rewriter,
+        max_iters=1,
+        best_of=1,
+        poll_interval=0.0,
+        debounce=0.0,
+        max_batches=1,
+        scan=scan,
+        sleep=lambda _s: None,
+        now=FakeClock(),
     )
     assert len(batches) == 1
     assert batches[0]["ok"] == 1
@@ -262,6 +312,7 @@ def test_real_watch_reuses_batch_pipeline_and_writes_output(tmp_path, monkeypatc
 # --------------------------------------------------------------------------- #
 # CLI: main orchestration + registration
 # --------------------------------------------------------------------------- #
+
 
 def test_missing_directory_exits_two(tmp_path):
     assert main([str(tmp_path / "no" / "such" / "dir")]) == 2
@@ -282,9 +333,13 @@ def test_main_summary_reflects_processed_batches(capsys, monkeypatch, tmp_path):
             return True
 
     monkeypatch.setattr(watch_mod, "get_rewriter", lambda prefer=None: _FakeRW())
-    monkeypatch.setattr(watch_mod, "run", lambda *a, **k: [
-        {"entries": [], "ok": 2, "skipped": 1, "failed": 0, "rewrote": 1},
-    ])
+    monkeypatch.setattr(
+        watch_mod,
+        "run",
+        lambda *a, **k: [
+            {"entries": [], "ok": 2, "skipped": 1, "failed": 0, "rewrote": 1},
+        ],
+    )
     rc = main([str(src), "--dry-run"])
     assert rc == 0
     out_text = capsys.readouterr().out

@@ -1,10 +1,15 @@
 import json, os
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
 from untell.rewriter.structural import _drop_restatements
 
 out = {}
 # restatement dropped (high coverage of earlier sentence)
-s = ["The system reads the file.", "The parser processes the file contents.", "The tool parses the file contents and reads them."]
+s = [
+    "The system reads the file.",
+    "The parser processes the file contents.",
+    "The tool parses the file contents and reads them.",
+]
 d = _drop_restatements(s)
 out["dropped_some"] = len(d) < len(s)
 # first sentence never dropped

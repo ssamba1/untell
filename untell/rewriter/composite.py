@@ -33,10 +33,7 @@ def _intensity_sweep(base: float, n: int) -> list[float]:
     if n <= 1:
         return [base]
     span = _INTENSITY_SPAN
-    out = [
-        max(0.4, min(1.0, base - span + 2 * span * k / (n - 1)))
-        for k in range(n)
-    ]
+    out = [max(0.4, min(1.0, base - span + 2 * span * k / (n - 1))) for k in range(n)]
     # Often base survives the sweep on its own (it is the midpoint whenever n is odd, and clamping
     # can land on it too). Only when it does not is the nearest draw pulled onto it, so this
     # changes nothing about the existing spread except in the case that dropped it.

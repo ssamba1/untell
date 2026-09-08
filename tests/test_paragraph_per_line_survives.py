@@ -70,9 +70,7 @@ def test_a_terminator_followed_by_a_closer_still_ends_the_line():
     assert len(blocks(doc)) == 2
 
 
-@pytest.mark.parametrize(
-    "rewriter_name", ["structural", "surgical", "composite"]
-)
+@pytest.mark.parametrize("rewriter_name", ["structural", "surgical", "composite"])
 def test_a_real_rewrite_keeps_the_paragraph_count(rewriter_name: str):
     from untell.rewriter import get_rewriter
 

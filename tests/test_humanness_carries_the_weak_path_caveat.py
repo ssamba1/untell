@@ -20,6 +20,7 @@ documents:
 So the bands are fine. The stdlib detector is weak in both directions, `score` says so, and
 `humanness` did not. A single reassuring word is the wrong place to be silent.
 """
+
 from __future__ import annotations
 
 import logging

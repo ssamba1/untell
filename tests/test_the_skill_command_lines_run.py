@@ -15,6 +15,7 @@ The guard below is what keeps this current: every script SKILL.md names must hav
 here. A step added to the procedure without one is unexercised, and an unexercised step in the
 procedure the model follows fails on a user's first run.
 """
+
 from __future__ import annotations
 
 import json
@@ -53,7 +54,15 @@ def _argv(tree: Path, script: str, *args: str) -> list[str]:
 
 def _run(argv: list[str]) -> subprocess.CompletedProcess:
     env = dict(os.environ, UNTELL_LITE_NO_TORCH="1", PYTHONIOENCODING="utf-8")
-    return subprocess.run(argv, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=300, env=env)
+    return subprocess.run(
+        argv,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=300,
+        env=env,
+    )
 
 
 # The flag combinations SKILL.md gives, with its placeholders filled in.
@@ -91,9 +100,7 @@ def test_every_script_the_skill_names_is_invoked_here():
 
 @pytest.mark.parametrize("script", sorted(INVOCATIONS))
 def test_the_command_line_runs(tree: Path, script: str):
-    args = tuple(
-        str(tree / a) if a.endswith(".txt") else a for a in INVOCATIONS[script]
-    )
+    args = tuple(str(tree / a) if a.endswith(".txt") else a for a in INVOCATIONS[script])
     result = _run(_argv(tree, script, *args))
 
     assert "Traceback" not in result.stderr, f"{script}:\n{result.stderr[-400:]}"
@@ -115,8 +122,14 @@ def test_lock_then_restore_returns_the_original(tree: Path):
     assert payload["mapping"], "nothing was locked, so the restore proves nothing"
 
     restored = _run(
-        _argv(tree, "preserve.py", payload["masked"], "--restore",
-              "--mapping", json.dumps(payload["mapping"]))
+        _argv(
+            tree,
+            "preserve.py",
+            payload["masked"],
+            "--restore",
+            "--mapping",
+            json.dumps(payload["mapping"]),
+        )
     )
     assert restored.returncode == 0, restored.stderr[-300:]
     assert restored.stdout.strip() == original

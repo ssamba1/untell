@@ -30,8 +30,10 @@ except Exception as exc:  # pragma: no cover - environment dependent
     pytest.skip(f"torch/transformers unavailable: {exc}", allow_module_level=True)
 
 if os.environ.get("UNTELL_LITE_NO_TORCH") == "1":  # pragma: no cover
-    pytest.skip("UNTELL_LITE_NO_TORCH=1 forces the stdlib path; full-tier tests do not apply",
-                allow_module_level=True)
+    pytest.skip(
+        "UNTELL_LITE_NO_TORCH=1 forces the stdlib path; full-tier tests do not apply",
+        allow_module_level=True,
+    )
 
 from untell.detectors.base import _window_parts  # noqa: E402
 from untell.detectors.fast_detectgpt import FastDetectGPTDetector  # noqa: E402

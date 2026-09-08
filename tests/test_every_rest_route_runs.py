@@ -20,6 +20,7 @@ The parametrisation runs over the routes the app ACTUALLY registers, with a guar
 request body here. A route added later without an entry fails that guard rather than being quietly
 uncovered, which is how `/scrub` came to be the gap.
 """
+
 from __future__ import annotations
 
 import pytest

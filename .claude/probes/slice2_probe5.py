@@ -1,11 +1,13 @@
 """Round 2 probes: heights, dimensions, email/citation corners."""
+
 import sys
+
 sys.path.insert(0, "C:/Users/Admin/Humanize")
 from untell.scripts.preserve import lock
 
 CASES = [
-    ("height 5'10", 'He is 5\'10" tall. Then he left.'),
-    ("height 6'2", 'She is 6\'2". Then she left.'),
+    ("height 5'10", "He is 5'10\" tall. Then he left."),
+    ("height 6'2", "She is 6'2\". Then she left."),
     ("height decimal", "The child is 4'6.5\" now."),
     ("dim x", "The box is 10\u00d75 cm. Then pack."),
     ("dim x compact", "The box is 10x5 cm. Then pack."),
@@ -20,7 +22,10 @@ CASES = [
     ("cite year letter", "Per Smith (2020a) and Jones (2020b), it holds."),
     ("bracket semicolon", "Prior work [12; 15] supports this."),
     ("quote number inside", 'He said "the 5% increase" then left.'),
-    ("apostrophe dense", "The team's results didn't match Jones' figures, and the councils' plans weren't ready."),
+    (
+        "apostrophe dense",
+        "The team's results didn't match Jones' figures, and the councils' plans weren't ready.",
+    ),
     ("5's and 6's", "Count the 5's and 6's in the list."),
     ("footnote 5'", "See note 5' for details."),
 ]

@@ -27,7 +27,13 @@ REPO = Path(__file__).resolve().parent.parent
 
 def _tracked() -> list[str]:
     out = subprocess.run(
-        ["git", "ls-files"], cwd=REPO, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=120
+        ["git", "ls-files"],
+        cwd=REPO,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=120,
     )
     return [line.strip() for line in out.stdout.splitlines() if line.strip()]
 
@@ -55,7 +61,8 @@ def test_no_filename_contains_a_windows_path():
 
 def test_no_editor_or_tooling_debris_is_tracked():
     offenders = [
-        f for f in TRACKED
+        f
+        for f in TRACKED
         if f.endswith((".bak", ".orig", ".rej", ".swp", ".swo", "~", ".pyc", ".pyo"))
         or "/__pycache__/" in f
         or f.startswith("__pycache__/")
@@ -72,8 +79,17 @@ def test_nothing_is_tracked_from_an_ignored_directory():
     `.gitignore` ignores only three subdirectories of it (worktrees/, tasks/, records/). The list
     below must contain exactly what `.gitignore` actually ignores.
     """
-    ignored_dirs = (".venv/", ".venv_test/", "build/", "dist/", "out/", "data/",
-                    "models/", ".pytest_cache/", "site/")
+    ignored_dirs = (
+        ".venv/",
+        ".venv_test/",
+        "build/",
+        "dist/",
+        "out/",
+        "data/",
+        "models/",
+        ".pytest_cache/",
+        "site/",
+    )
     offenders = [f for f in TRACKED if any(f.startswith(d) or f"/{d}" in f for d in ignored_dirs)]
     assert not offenders, f"tracked despite being in an ignored directory: {offenders}"
 

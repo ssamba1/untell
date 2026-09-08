@@ -141,10 +141,7 @@ def _walk_inputs(root: Path, out_dir: Path) -> list[Path]:
     for dirpath, dirnames, filenames in os.walk(root_res):
         cur = Path(dirpath)
         # Prune output subtrees at the directory level.
-        dirnames[:] = [
-            d for d in dirnames
-            if (cur / d).resolve() != out_res
-        ]
+        dirnames[:] = [d for d in dirnames if (cur / d).resolve() != out_res]
         for name in sorted(filenames):
             p = cur / name
             if p.suffix.lower() in _text_suffixes:
@@ -271,7 +268,10 @@ def build_parser() -> argparse.ArgumentParser:
         help="detector tier (default: lite — the zero-dependency stdlib path)",
     )
     parser.add_argument(
-        "--threshold", "-t", type=_probability, default=DEFAULT_THRESHOLD,
+        "--threshold",
+        "-t",
+        type=_probability,
+        default=DEFAULT_THRESHOLD,
         help=f"detector pass threshold (default: {DEFAULT_THRESHOLD})",
     )
     parser.add_argument(
@@ -280,23 +280,31 @@ def build_parser() -> argparse.ArgumentParser:
         help="rewriter to use (default: composite — the free $0 path)",
     )
     parser.add_argument(
-        "--max-iters", type=_positive_int, default=5,
+        "--max-iters",
+        type=_positive_int,
+        default=5,
         help="max rewrite iterations per file (default: 5)",
     )
     parser.add_argument(
-        "--best-of", type=_positive_int, default=3,
+        "--best-of",
+        type=_positive_int,
+        default=3,
         help="rewrite candidates per iteration (default: 3)",
     )
     parser.add_argument(
-        "--dry-run", action="store_true",
+        "--dry-run",
+        action="store_true",
         help="walk and classify every file, but write nothing and rewrite nothing",
     )
     parser.add_argument(
-        "--limit", type=_positive_int, default=None,
+        "--limit",
+        type=_positive_int,
+        default=None,
         help="humanize at most N files (skipped binary/empty files do not count)",
     )
     parser.add_argument(
-        "--json", action="store_true",
+        "--json",
+        action="store_true",
         help="print the manifest to stdout as JSON (summary line goes to stderr)",
     )
     return parser
@@ -343,7 +351,9 @@ def main(argv: list[str] | None = None) -> int:
         if args.limit is not None and humanized >= args.limit:
             break
         entry = _process_one(
-            path, root, out_dir,
+            path,
+            root,
+            out_dir,
             rewriter=rewriter,
             tier=args.tier,
             threshold=args.threshold,

@@ -89,7 +89,9 @@ def test_the_quoted_medians_match_the_corpus() -> None:
         if len(values) < 20:
             pytest.skip(f"{corpus} returned too few pairs to check the median")
         assert abs(statistics.median(values) - _BURSTY_HUMAN_MEDIAN[key]) < 0.08, (
-            corpus, statistics.median(values), _BURSTY_HUMAN_MEDIAN[key]
+            corpus,
+            statistics.median(values),
+            _BURSTY_HUMAN_MEDIAN[key],
         )
 
 

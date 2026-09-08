@@ -17,6 +17,7 @@ The threshold keeps the mutation guards (100/181-word identical fixtures) on the
 path; below 1000 words the exact matcher is under half a second and the guard coverage is
 worth it.
 """
+
 import time
 from unittest.mock import patch
 

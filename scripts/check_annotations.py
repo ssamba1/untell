@@ -12,6 +12,7 @@ resolution and surfaces undefined annotation names.
 
 Run: ./.venv/Scripts/python.exe scripts/check_annotations.py [--package PKG]
 """
+
 from __future__ import annotations
 
 import argparse
@@ -82,9 +83,9 @@ def main(argv: list[str] | None = None) -> int:
             # classes carry annotations worth resolving.
             if isinstance(obj, type):
                 _obj_annotations(obj, f"{mod_name}.{name}", problems)
-            elif (
-                inspect.isfunction(obj) or inspect.isclass(obj)
-            ) and getattr(obj, "__module__", None) == mod_name:
+            elif (inspect.isfunction(obj) or inspect.isclass(obj)) and getattr(
+                obj, "__module__", None
+            ) == mod_name:
                 # Locally-defined functions only: resolving annotations on
                 # *imported* callables (e.g. pydantic.Field) trips over the
                 # library's own lazy forward refs (NameError: JsonValue) and

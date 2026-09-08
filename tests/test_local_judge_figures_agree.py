@@ -61,7 +61,9 @@ def test_every_readme_figure_is_one_the_source_records() -> None:
     truth = set(_AUROC.findall(_SOURCE))
     quoted = {a for ln in _judge_lines(_README) for a in _AUROC.findall(ln)}
     assert quoted, "no local-judge AUROC in README — did the wording change?"
-    assert quoted <= truth, f"README quotes {sorted(quoted - truth)}, which no run in the source produced"
+    assert quoted <= truth, (
+        f"README quotes {sorted(quoted - truth)}, which no run in the source produced"
+    )
 
 
 def test_every_readme_figure_names_its_sample_size() -> None:

@@ -40,7 +40,8 @@ def test_sentence_counts(label, text, expected):
 
 @pytest.mark.parametrize(
     "text",
-    [t for _, t, _ in _CASES] + [
+    [t for _, t, _ in _CASES]
+    + [
         "He paused... then spoke. She left.",
         'She said "stop." He stopped.',
         "Mixed: 3.5% vs. 2.1%, per Dr. Jones (2024). Next.",
@@ -278,7 +279,7 @@ class TestNestedQuotes:
         ]
 
     def test_an_inner_quote_with_both_closers_splits_after_the_outer_closer(self):
-        assert split_sentences('''He said "She told me 'no.'" Then he left.''') == [
+        assert split_sentences("""He said "She told me 'no.'" Then he left.""") == [
             '''He said "She told me 'no.'"''',
             "Then he left.",
         ]

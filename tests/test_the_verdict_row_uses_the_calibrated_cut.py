@@ -19,8 +19,9 @@ from untell import rich_output
 TEXT = "The committee reviewed the proposal and found it broadly acceptable this year."
 
 
-def _render(post_max: float, *, verdict_threshold: float | None = None, threshold: float = 0.30,
-            capsys=None) -> str:
+def _render(
+    post_max: float, *, verdict_threshold: float | None = None, threshold: float = 0.30, capsys=None
+) -> str:
     post: dict = {"max": post_max, "threshold": threshold, "detectors": {}}
     if verdict_threshold is not None:
         post["verdict_threshold"] = verdict_threshold
@@ -38,11 +39,11 @@ def _render(post_max: float, *, verdict_threshold: float | None = None, threshol
 @pytest.mark.parametrize(
     ("post_max", "expected"),
     [
-        (0.90, "flagged"),      # at or above the cut
-        (0.45, "flagged"),      # exactly the cut
-        (0.44, "borderline"),   # inside the 0.10 band below it
-        (0.35, "borderline"),   # bottom edge of the band
-        (0.34, "clear"),        # below the band
+        (0.90, "flagged"),  # at or above the cut
+        (0.45, "flagged"),  # exactly the cut
+        (0.44, "borderline"),  # inside the 0.10 band below it
+        (0.35, "borderline"),  # bottom edge of the band
+        (0.34, "clear"),  # below the band
         (0.01, "clear"),
     ],
 )
@@ -60,10 +61,12 @@ def test_it_falls_back_to_threshold_when_no_calibrated_cut_is_published():
     buf = io.StringIO()
     with contextlib.redirect_stdout(buf):
         rich_output.print_humanize_result(
-            original=TEXT, final=TEXT + " x",
+            original=TEXT,
+            final=TEXT + " x",
             pre_score={"max": 0.99, "threshold": 0.30, "detectors": {}},
             post_score={"max": 0.31, "threshold": 0.30, "detectors": {}},
-            iterations=1, stopped="passed",
+            iterations=1,
+            stopped="passed",
         )
     assert "flagged" in buf.getvalue()
 

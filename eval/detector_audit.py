@@ -138,7 +138,11 @@ AI_PROBES = [
 # list are never audited at all, which is its own silent gap — radar and local_judge were both
 # missing, and local_judge was raising on every call at the time.
 _SPECS = [
-    ("perplexity_burstiness", "untell.detectors.perplexity_burstiness", "PerplexityBurstinessDetector"),
+    (
+        "perplexity_burstiness",
+        "untell.detectors.perplexity_burstiness",
+        "PerplexityBurstinessDetector",
+    ),
     ("roberta_openai", "untell.detectors.roberta_openai", "RobertaOpenAIDetector"),
     ("hc3_roberta", "untell.detectors.hc3_roberta", "HC3RobertaDetector"),
     ("fast_detectgpt", "untell.detectors.fast_detectgpt", "FastDetectGPTDetector"),
@@ -438,9 +442,7 @@ def audit_all(pairs: int = 0, dataset: str = "hc3") -> dict:
         "results": rows,
         "broken": broken,
         "source": source,
-        "layout_shortcut": (
-            round(layout_shortcut, 4) if layout_shortcut is not None else None
-        ),
+        "layout_shortcut": (round(layout_shortcut, 4) if layout_shortcut is not None else None),
     }
 
 
@@ -457,7 +459,11 @@ def render(report: dict) -> str:
         f"probe set: {report.get('source', 'packaged probes')}",
     ]
     if shortcut is not None:
-        note = "" if shortcut < LAYOUT_SHORTCUT_WARN else "  <- layout alone nearly separates this corpus"
+        note = (
+            ""
+            if shortcut < LAYOUT_SHORTCUT_WARN
+            else "  <- layout alone nearly separates this corpus"
+        )
         lines.append(f"layout-only AUROC (newline density, no words): {shortcut:.4f}{note}")
     lines += [
         "",
@@ -499,9 +505,14 @@ def render(report: dict) -> str:
         # (mage ships that way on HC3), and printing "dead or inverted" beside a table whose
         # mage row says MISCALIBRATED is the same summary-contradicts-table defect the
         # footnote below was written to prevent.
-        if any(r.get("verdict") == "MISCALIBRATED" for r in report["results"]
-               if r["detector"] in report["broken"]):
-            lines.append(f"BROKEN (dead, inverted, or miscalibrated): {', '.join(report['broken'])}")
+        if any(
+            r.get("verdict") == "MISCALIBRATED"
+            for r in report["results"]
+            if r["detector"] in report["broken"]
+        ):
+            lines.append(
+                f"BROKEN (dead, inverted, or miscalibrated): {', '.join(report['broken'])}"
+            )
         else:
             lines.append(f"BROKEN (dead or inverted): {', '.join(report['broken'])}")
     else:
@@ -513,8 +524,11 @@ def render(report: dict) -> str:
         # so "six probes per class is 36 pairs" printed beside a table whose sentence rows
         # show n=30 is a contradiction the reader cannot resolve without opening the source.
         n = next(
-            (r.get("n") for r in report["results"]
-             if r.get("granularity") == "sentence" and r.get("n")),
+            (
+                r.get("n")
+                for r in report["results"]
+                if r.get("granularity") == "sentence" and r.get("n")
+            ),
             None,
         )
         if n is not None and n > len(SENTENCE_HUMAN_PROBES):
@@ -546,7 +560,9 @@ def main(argv: list[str] | None = None) -> int:
         help="measure against N labelled human/AI pairs instead of the packaged probes "
         "(needs the .[eval] extra); this is the only mode that supports a discrimination claim",
     )
-    parser.add_argument("--dataset", default="hc3", help="paired dataset for --pairs (default: hc3)")
+    parser.add_argument(
+        "--dataset", default="hc3", help="paired dataset for --pairs (default: hc3)"
+    )
     args = parser.parse_args(argv)
 
     from untell.scripts.io_utils import configure_utf8_io

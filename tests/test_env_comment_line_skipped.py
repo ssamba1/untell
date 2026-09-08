@@ -8,6 +8,7 @@ python-dotenv shadows the stdlib fallback loop when installed, so the dotenv
 import is disabled (same pattern as test_env.py) to force the loop where the
 mutation lives.
 """
+
 import os
 import sys
 

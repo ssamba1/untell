@@ -26,7 +26,7 @@ TEXTS = [
     pytest.param("Moreover, the framework leverages a robust approach — delivering.", id="tells"),
     pytest.param("See https://example.org/a?b=1 and Smith et al. (2019) for details.", id="urls"),
     pytest.param(
-        "Emoji \U0001F468‍\U0001F469 and RTL ‏مرحبا and a soft­hyphen inside.",
+        "Emoji \U0001f468‍\U0001f469 and RTL ‏مرحبا and a soft­hyphen inside.",
         id="unicode",
     ),
     pytest.param("", id="empty"),

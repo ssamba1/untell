@@ -128,7 +128,8 @@ def test_the_score_still_discriminates() -> None:
     except Exception as exc:  # noqa: BLE001 - corpus availability is environmental
         pytest.skip(f"hc3 unavailable: {exc}")
     ordered = sum(
-        1 for human, machine in pairs
+        1
+        for human, machine in pairs
         if humanness(human, tier="lite") > humanness(machine, tier="lite")
     )
     assert ordered >= 0.7 * len(pairs), f"{ordered} of {len(pairs)} pairs ordered correctly"

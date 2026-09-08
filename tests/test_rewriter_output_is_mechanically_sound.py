@@ -62,6 +62,7 @@ _MARKER = (
 )
 _STACKED_MARKERS = re.compile(rf"(?:^|(?<=[.!?])\s+){_MARKER},\s*{_MARKER},\s*{_MARKER}\b", re.I)
 
+
 def _non_initial_caps(text: str) -> set[str]:
     """Capitalised words that are NOT the first word of their sentence.
 
@@ -87,6 +88,7 @@ def _sentence_initial_words(text: str) -> set[str]:
         if words:
             out.add(words[0].strip(".,;:!?\"'()[]"))
     return out
+
 
 # A dangling sentinel fragment, e.g. an opener left attached to nothing.
 _EMPTY_SENTENCE = re.compile(r"(?:^|[.!?])\s*[A-Z][a-z]*,\s*[.!?]")

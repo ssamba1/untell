@@ -6,6 +6,7 @@ longest side stays over 90 words per chunk — the bound the constant exists to
 enforce is exceeded. Pinned at the module-attribute level (deterministic, no
 downloads).
 """
+
 import untell.text_split as text_split
 
 

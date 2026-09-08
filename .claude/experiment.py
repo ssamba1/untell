@@ -41,7 +41,7 @@ KNOBS: dict[str, dict] = {
         "find": r"^DEFAULT_BAR = 0\.76",
         "to": "DEFAULT_BAR = 0.70",
         "asks": "does a looser semantic-similarity gate let better candidates through, or "
-                "does it just admit drift?",
+        "does it just admit drift?",
     },
     "quality-bar-0.82": {
         "file": "untell/scripts/quality.py",
@@ -54,14 +54,14 @@ KNOBS: dict[str, dict] = {
         "find": r"^TOKEN_BAR = 0\.50",
         "to": "TOKEN_BAR = 0.40",
         "asks": "faithful paraphrases reword heavily and score low here - is 0.50 rejecting "
-                "the rewrites that actually work?",
+        "the rewrites that actually work?",
     },
     "contradiction-bar-0.35": {
         "file": "untell/scripts/entailment.py",
         "find": r"^DEFAULT_CONTRADICTION_BAR = 0\.5",
         "to": "DEFAULT_CONTRADICTION_BAR = 0.35",
         "asks": "a stricter contradiction veto: does it protect meaning without vetoing "
-                "everything the structural rewriter emits?",
+        "everything the structural rewriter emits?",
     },
     "relaxed-sim-0.20": {
         "file": "untell/scripts/entailment.py",
@@ -74,14 +74,14 @@ KNOBS: dict[str, dict] = {
         "find": r"^_PPL_WEIGHT = 0\.55",
         "to": "_PPL_WEIGHT = 0.40",
         "asks": "shifting weight from perplexity toward burstiness - does the proxy detector "
-                "track the real ones better or worse?",
+        "track the real ones better or worse?",
     },
     "threshold-0.40": {
         "file": "untell/scripts/score.py",
         "find": r"^DEFAULT_THRESHOLD = 0\.30",
         "to": "DEFAULT_THRESHOLD = 0.40",
         "asks": "the shipped threshold itself: what does the flagged rate do on both the AI "
-                "and the human side? Never adopt from one run - this one moves every claim.",
+        "and the human side? Never adopt from one run - this one moves every claim.",
     },
 }
 
@@ -93,15 +93,19 @@ KNOBS: dict[str, dict] = {
 # wrong seven times.
 KNOB_UNSAFE = {
     "lite-builtin": "3 seeded paragraphs: 5 measured runs show run-to-run drift (post_mean_max "
-                    "spread 0.0096, a 0.1259 outlier vs the 0.1163 cluster) inside the 0.034 band — "
-                    "a knob's effect and no effect look the same",
+    "spread 0.0096, a 0.1259 outlier vs the 0.1163 cluster) inside the 0.034 band — "
+    "a knob's effect and no effect look the same",
 }
 
 
 def sh(*args: str) -> subprocess.CompletedProcess:
     return subprocess.run(
-        ["git", *args], cwd=ROOT, capture_output=True, encoding="utf-8",
-        errors="replace", check=False,
+        ["git", *args],
+        cwd=ROOT,
+        capture_output=True,
+        encoding="utf-8",
+        errors="replace",
+        check=False,
     )
 
 
@@ -110,13 +114,16 @@ def measure(recipe: str, label: str) -> dict:
     print(f"\n--- measuring {label} ({recipe}, ~{spec['minutes']}min) ---")
     p = subprocess.run(
         [sys.executable, *spec["argv"]],
-        cwd=ROOT, capture_output=True, encoding="utf-8", errors="replace",
+        cwd=ROOT,
+        capture_output=True,
+        encoding="utf-8",
+        errors="replace",
         timeout=spec["minutes"] * 120,
     )
     if p.returncode != 0:
         raise RuntimeError(f"{label} measurement exited {p.returncode}: {(p.stderr or '')[-500:]}")
     text = (p.stdout or "").strip()
-    result = json.loads(text[text.find("{"):])
+    result = json.loads(text[text.find("{") :])
     for field in spec["liveness"]:
         if not result.get(field):
             raise RuntimeError(f"{label}: {field} is falsy - the run describes nothing")
@@ -130,32 +137,45 @@ def cmd_run(knob: str, recipe: str) -> int:
     # with nothing changed; a recipe that came back identical cannot distinguish an effect from
     # its absence, and that is a fact about the instrument, not an opinion about it.
     instruments = ROOT / ".claude" / "instruments.json"
-    known = (json.loads(instruments.read_text(encoding="utf-8")).get(recipe)
-             if instruments.exists() else None)
+    known = (
+        json.loads(instruments.read_text(encoding="utf-8")).get(recipe)
+        if instruments.exists()
+        else None
+    )
     if known and known.get("deterministic"):
-        sys.exit(f"REFUSED: --recipe {recipe} was calibrated and returns identical numbers "
-                 f"run to run ({known['run_to_run']}). Through it, a knob that works and a "
-                 "knob that does nothing look the same. Use a recipe that moves.")
+        sys.exit(
+            f"REFUSED: --recipe {recipe} was calibrated and returns identical numbers "
+            f"run to run ({known['run_to_run']}). Through it, a knob that works and a "
+            "knob that does nothing look the same. Use a recipe that moves."
+        )
     if known is None:
         # An uncalibrated instrument is not known to be good, only untested — and the one time
         # that went unchecked here it produced a confident "no effect" from a corpus that could
         # not have shown one. Two runs up front is cheaper than a ledger of false negatives.
-        sys.exit(f"REFUSED: {recipe} has never been calibrated, so nothing yet shows it can "
-                 f"tell an effect from no effect. Run this first, then retry:\n"
-                 f"  python .claude/research.py calibrate {recipe}")
+        sys.exit(
+            f"REFUSED: {recipe} has never been calibrated, so nothing yet shows it can "
+            f"tell an effect from no effect. Run this first, then retry:\n"
+            f"  python .claude/research.py calibrate {recipe}"
+        )
     if recipe in KNOB_UNSAFE:
-        sys.exit(f"REFUSED: --recipe {recipe} cannot answer a knob question - "
-                 f"{KNOB_UNSAFE[recipe]}. Use lite-hc3 or a full-tier recipe.")
+        sys.exit(
+            f"REFUSED: --recipe {recipe} cannot answer a knob question - "
+            f"{KNOB_UNSAFE[recipe]}. Use lite-hc3 or a full-tier recipe."
+        )
     spec = KNOBS[knob]
     path = (ROOT / spec["file"]).resolve()
     if sh("diff", "--quiet", "--", str(path)).returncode:
-        sys.exit(f"REFUSED: {spec['file']} has uncommitted changes. This script restores the "
-                 "file from memory, and it will not gamble with someone else's edit.")
+        sys.exit(
+            f"REFUSED: {spec['file']} has uncommitted changes. This script restores the "
+            "file from memory, and it will not gamble with someone else's edit."
+        )
 
     original = path.read_text(encoding="utf-8")
     if not re.search(spec["find"], original, re.M):
-        sys.exit(f"REFUSED: {spec['file']} no longer contains /{spec['find']}/. The knob moved "
-                 "or was renamed - fix this entry before trusting any row that used it.")
+        sys.exit(
+            f"REFUSED: {spec['file']} no longer contains /{spec['find']}/. The knob moved "
+            "or was renamed - fix this entry before trusting any row that used it."
+        )
 
     print(f"knob     {knob}")
     print(f"asks     {spec['asks']}")
@@ -164,8 +184,9 @@ def cmd_run(knob: str, recipe: str) -> int:
 
     try:
         before = measure(recipe, "before")
-        path.write_text(re.sub(spec["find"], spec["to"], original, count=1, flags=re.M),
-                        encoding="utf-8")
+        path.write_text(
+            re.sub(spec["find"], spec["to"], original, count=1, flags=re.M), encoding="utf-8"
+        )
         after = measure(recipe, "after")
     finally:
         # Unconditional: an exception mid-measurement must not leave a RED constant changed on
@@ -184,25 +205,37 @@ def cmd_run(knob: str, recipe: str) -> int:
             continue
         d = float(a) - float(b)
         deltas[k] = d
-        print(f"  {k:22} {float(b):.3f} -> {float(a):.3f}  ({d:+.3f}, "
-              f"{'MOVED' if abs(d) > band else 'noise'})")
+        print(
+            f"  {k:22} {float(b):.3f} -> {float(a):.3f}  ({d:+.3f}, "
+            f"{'MOVED' if abs(d) > band else 'noise'})"
+        )
     print(f"  band: +/-{band:.3f}")
 
-    row = {"knob": knob, "recipe": recipe, "change": spec["to"], "asks": spec["asks"],
-           "before": {k: before.get(k) for k in metrics},
-           "after": {k: after.get(k) for k in metrics},
-           "deltas": deltas, "band": band}
+    row = {
+        "knob": knob,
+        "recipe": recipe,
+        "change": spec["to"],
+        "asks": spec["asks"],
+        "before": {k: before.get(k) for k in metrics},
+        "after": {k: after.get(k) for k in metrics},
+        "deltas": deltas,
+        "band": band,
+    }
     with LEDGER.open("a", encoding="utf-8") as f:
         f.write(json.dumps(row) + "\n")
     print(f"\nappended to {LEDGER.relative_to(ROOT)}")
 
     if any(abs(d) > band for d in deltas.values()):
-        print("\nSomething moved further than the noise. Write it to .claude/human-queue.md "
-              "with this output. Do NOT adopt the value - one experiment at one corpus is a "
-              "reason to look, not a reason to ship.")
+        print(
+            "\nSomething moved further than the noise. Write it to .claude/human-queue.md "
+            "with this output. Do NOT adopt the value - one experiment at one corpus is a "
+            "reason to look, not a reason to ship."
+        )
     else:
-        print("\nNothing moved beyond noise. That is a real result: this knob does not do what "
-              "it looks like it does at this corpus and tier. Record it and move on.")
+        print(
+            "\nNothing moved beyond noise. That is a real result: this knob does not do what "
+            "it looks like it does at this corpus and tier. Record it and move on."
+        )
     return 0
 
 
@@ -220,8 +253,11 @@ def main() -> int:
 
     if a.cmd == "run":
         return cmd_run(a.knob, a.recipe)
-    done = [json.loads(x)["knob"] for x in
-            (LEDGER.read_text(encoding="utf-8").splitlines() if LEDGER.exists() else []) if x.strip()]
+    done = [
+        json.loads(x)["knob"]
+        for x in (LEDGER.read_text(encoding="utf-8").splitlines() if LEDGER.exists() else [])
+        if x.strip()
+    ]
     for name, spec in KNOBS.items():
         print(f"{name:24} {done.count(name)} run(s)  {spec['file']}  ->  {spec['to']}")
         print(f"{'':24} {spec['asks']}")

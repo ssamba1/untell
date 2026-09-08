@@ -1,5 +1,7 @@
 """humanness edge invariants: NaN/None handling, boundary bands, consistency with components."""
+
 import json, os
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
 from untell.humanness import humanness, undetermined_reason
 

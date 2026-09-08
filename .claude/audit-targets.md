@@ -6,6 +6,7 @@ Before calling anything, confirm the signature so you do not waste a turn guessi
 
 ```python
 import inspect, importlib
+
 m = importlib.import_module("untell.scripts.preserve")
 print(inspect.signature(m.lock))
 ```

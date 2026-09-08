@@ -6,6 +6,7 @@ score of 100.0 to 97.0 for a text whose burstiness sits on the boundary (not
 above it). Pinned with patched score_tells/score_text so the burstiness branch
 is the only moving part.
 """
+
 from unittest.mock import patch
 
 from untell.humanness import humanness
@@ -23,8 +24,9 @@ def _score(cv):
         "detectors": {"x": 0.0},
         "warning": None,
     }
-    with patch("untell.humanness.score_tells", return_value=tells), patch(
-        "untell.humanness.score_text", return_value=det
+    with (
+        patch("untell.humanness.score_tells", return_value=tells),
+        patch("untell.humanness.score_text", return_value=det),
     ):
         return humanness(TEXT, tier="lite")
 

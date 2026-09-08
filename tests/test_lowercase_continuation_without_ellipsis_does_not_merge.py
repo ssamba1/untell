@@ -5,6 +5,7 @@ previous fragment AND a lowercase next word. The mutation and -> or makes a
 plain lowercase continuation merge ("Hello world. next thing" -> ONE sentence),
 silently destroying a sentence boundary the whole pipeline splits on.
 """
+
 from untell.text_split import _continues_after_ellipsis, split_sentences
 
 

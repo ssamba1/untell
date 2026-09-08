@@ -85,9 +85,7 @@ def register(
     """Add a language's catalogue. Re-registering a code replaces it."""
     if not code or not code.strip():
         raise ValueError("a language needs a code")
-    _REGISTRY[code] = Catalogue(
-        code=code, label=label or code, scorer=scorer, script=script
-    )
+    _REGISTRY[code] = Catalogue(code=code, label=label or code, scorer=scorer, script=script)
 
 
 def registered() -> dict[str, Catalogue]:

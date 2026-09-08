@@ -42,7 +42,10 @@ def test_a_spelled_decimal_or_big_scale_reads_as_its_value(text: str, expected: 
 @pytest.mark.parametrize(
     "source,candidate",
     [
-        ("The fund returned 12.4% last year.", "The fund returned twelve point four percent last year."),
+        (
+            "The fund returned 12.4% last year.",
+            "The fund returned twelve point four percent last year.",
+        ),
         ("Rate was 3.5 per 100.", "Rate was three point five per 100."),
         ("Losses hit five billion.", "Losses hit 5,000,000,000."),
         ("Debt reached two trillion.", "Debt reached 2,000,000,000,000."),

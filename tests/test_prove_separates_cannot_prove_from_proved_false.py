@@ -17,6 +17,7 @@ other is "set ORIGINALITY_API_KEY". A caller reading only the code cannot tell w
 `passes_all` is False in both cases, correctly — nothing was proved — so the configured-checker
 count is what separates them.
 """
+
 from __future__ import annotations
 
 import json

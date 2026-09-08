@@ -80,7 +80,10 @@ class TestMeasure:
         m = measure([(_HUMAN, formatted)] * 4)
         assert m["layout_categories_fire_on"] > 0
         # Silencing the tell changes the answer -- which is why it is reported, not removed.
-        assert m["auroc_layout_collapsed"] != m["auroc"] or m["auroc_without_layout_categories"] != m["auroc"]
+        assert (
+            m["auroc_layout_collapsed"] != m["auroc"]
+            or m["auroc_without_layout_categories"] != m["auroc"]
+        )
 
     def test_counts_documents_not_pairs(self) -> None:
         m = measure([(_HUMAN, _AI)] * 7)

@@ -1,4 +1,5 @@
 """Tests for the exponential-backoff retry wrapper — no network, no monkeypatching needed."""
+
 from __future__ import annotations
 
 import time
@@ -110,6 +111,7 @@ def test_retry_detects_api_keywords_in_message():
     # The 429 status code must be recognised as retryable: without detection the
     # first attempt re-raises immediately and the loop never runs twice.
     assert len(calls) == 2
+
 
 def test_rate_limited_response_is_retried(monkeypatch):
     """A 429 comes back as a perfectly successful requests.post with a 429 status.

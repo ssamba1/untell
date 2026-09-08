@@ -1,4 +1,5 @@
 """Tests for the structural, composite, and surgical rewriters."""
+
 from __future__ import annotations
 
 import pytest
@@ -14,7 +15,9 @@ class TestStructuralRewriter:
         assert rw.available() is True
 
     def test_strips_transitions(self):
-        text = "Moreover, this is a test. Furthermore, it works well. Overall, the results are good."
+        text = (
+            "Moreover, this is a test. Furthermore, it works well. Overall, the results are good."
+        )
         result = structural_rewrite(text, intensity=1.0)
         for _bad_word in ("Moreover,", "Furthermore,", "Overall,"):
             # After stripping, these may not appear as sentence openers
@@ -85,7 +88,10 @@ class TestStructuralRewriter:
     def test_strips_filler_openers(self):
         from untell.rewriter.structural import _strip_filler_openers
 
-        assert _strip_filler_openers("It is worth noting that results improved.") == "Results improved."
+        assert (
+            _strip_filler_openers("It is worth noting that results improved.")
+            == "Results improved."
+        )
         assert _strip_filler_openers("It should be noted that errors dropped.") == "Errors dropped."
         # Mid-paragraph, capital of exposed clause restored.
         assert (
@@ -94,8 +100,13 @@ class TestStructuralRewriter:
         )
         # Contracted form must be handled directly by _strip_filler_openers, not silently
         # rescued downstream by _flatten_cliches (which has its own correct pattern).
-        assert _strip_filler_openers("It's worth noting that results improved.") == "Results improved."
-        assert _strip_filler_openers("It's important to note that errors dropped.") == "Errors dropped."
+        assert (
+            _strip_filler_openers("It's worth noting that results improved.") == "Results improved."
+        )
+        assert (
+            _strip_filler_openers("It's important to note that errors dropped.")
+            == "Errors dropped."
+        )
 
     def test_empty_input(self):
         assert structural_rewrite("", intensity=1.0) == ""
@@ -110,7 +121,9 @@ class TestStructuralRewriter:
 class TestStructuralRewriterProtocol:
     def test_satisfies_rewriter_protocol(self):
         rw = StructuralRewriter()
-        result = rw.rewrite("Moreover, this is a test sentence here for rewriting purposes.", {}, threshold=0.30)
+        result = rw.rewrite(
+            "Moreover, this is a test sentence here for rewriting purposes.", {}, threshold=0.30
+        )
         assert isinstance(result, str)
         assert len(result) > 0
 
@@ -128,7 +141,9 @@ class TestCompositeRewriter:
 
     def test_rewrites(self):
         rw = CompositeRewriter(intensity=1.0, max_subs=20)
-        text = "Moreover, we leverage robust solutions to optimize efficiency across various sectors."
+        text = (
+            "Moreover, we leverage robust solutions to optimize efficiency across various sectors."
+        )
         result = rw.rewrite(text, {}, threshold=0.30)
         assert isinstance(result, str)
         assert len(result) > 0
@@ -184,7 +199,10 @@ class TestNeuralComposite:
         masked = "Moreover, AI fundamentally reshaped ⟦HZ0000⟧ across ⟦HZ0001⟧ sectors overall."
         out = rw.rewrite(masked, {"tier": "lite"})
         assert calls["n"] == rw.t5_best_of  # neural stage draws t5_best_of diverse samples
-        assert find_sentinels(out) == {"⟦HZ0000⟧", "⟦HZ0001⟧"}  # locked spans intact through the chain
+        assert find_sentinels(out) == {
+            "⟦HZ0000⟧",
+            "⟦HZ0001⟧",
+        }  # locked spans intact through the chain
 
     def test_neural_keeps_best_scoring_t5_draw(self, monkeypatch):
         import pytest
@@ -193,7 +211,9 @@ class TestNeuralComposite:
         if rw._t5 is None:
             pytest.skip("T5 deps unavailable in this environment")
         # Isolate the neural selection: rule stages pass through unchanged.
-        monkeypatch.setattr(rw._structural, "rewrite", lambda t, s, threshold=0.30, intensity=None: t)
+        monkeypatch.setattr(
+            rw._structural, "rewrite", lambda t, s, threshold=0.30, intensity=None: t
+        )
         monkeypatch.setattr(rw._surgical, "rewrite", lambda t, s, threshold=0.30: t)
         # Three diverse draws; the loop must keep the one the detector scores lowest.
         draws = iter(["AI draw one here.", "AI draw two here.", "AI draw three here."])
@@ -206,7 +226,11 @@ class TestNeuralComposite:
         table = {"AI draw two here.": 0.10}
 
         def _fake_score(text, tier="lite", threshold=0.30):
-            return {"max": table.get(text, 0.90), "detectors": {"d": table.get(text, 0.90)}, "tier": tier}
+            return {
+                "max": table.get(text, 0.90),
+                "detectors": {"d": table.get(text, 0.90)},
+                "tier": tier,
+            }
 
         monkeypatch.setattr(score_mod, "score_text", _fake_score)
         out = rw.rewrite("Original AI sentence about industries.", {"tier": "lite"})
@@ -247,7 +271,11 @@ class TestEnsembleRewriter:
         table = {"candidate A wins": 0.12, "candidate B loses": 0.80}
 
         def _fake_score(text, tier="lite", threshold=0.30):
-            return {"max": table.get(text, 0.99), "detectors": {"d": table.get(text, 0.99)}, "tier": tier}
+            return {
+                "max": table.get(text, 0.99),
+                "detectors": {"d": table.get(text, 0.99)},
+                "tier": tier,
+            }
 
         monkeypatch.setattr(score_mod, "score_text", _fake_score)
         out = rw.rewrite("original text scores 0.99", {"tier": "lite"})
@@ -336,9 +364,9 @@ class TestTargetedRewriter:
 
         for case in [
             "One. Two! Three?",
-            "One.  Two.",          # double space preserved
+            "One.  Two.",  # double space preserved
             "No terminator",
-            "A. B.\n\nC.",         # newlines preserved
+            "A. B.\n\nC.",  # newlines preserved
             "",
         ]:
             assert "".join(split_sentences(case)) == case
@@ -370,8 +398,8 @@ class TestTargetedRewriter:
 
         monkeypatch.setattr(score_mod, "score_text", _fake_score)
         out = rw.rewrite(f"{ai} {human}", {"tier": "lite"})
-        assert "REWRITTEN" in out       # the flagged sentence was rewritten
-        assert human in out             # the clean sentence survived byte-identical
+        assert "REWRITTEN" in out  # the flagged sentence was rewritten
+        assert human in out  # the clean sentence survived byte-identical
 
     def test_returns_original_when_no_sentence_improves(self, monkeypatch):
         from untell.rewriter.targeted import TargetedRewriter
@@ -421,26 +449,38 @@ class TestCompositeIntensitySweep:
         import untell.scripts.score as score_mod
 
         monkeypatch.setattr(
-            score_mod, "score_text",
-            lambda t, tier="lite", threshold=0.30: {"max": 0.5, "mean": 0.5, "detectors": {"d": 0.5},
-                                                    "tier": tier},
+            score_mod,
+            "score_text",
+            lambda t, tier="lite", threshold=0.30: {
+                "max": 0.5,
+                "mean": 0.5,
+                "detectors": {"d": 0.5},
+                "tier": tier,
+            },
         )
         rw.rewrite("Some AI text to rewrite.", {"tier": "lite"})
-        assert len(set(seen)) > 1                    # the draws genuinely differ
-        assert all(0.4 <= i <= 1.0 for i in seen)    # stay in the sane range
+        assert len(set(seen)) > 1  # the draws genuinely differ
+        assert all(0.4 <= i <= 1.0 for i in seen)  # stay in the sane range
 
     def test_intensity_restored_after_rewrite(self, monkeypatch):
         """The swept value must never leak across calls (shared mutable state bug)."""
         rw = CompositeRewriter(best_of=3, intensity=0.7)
-        monkeypatch.setattr(rw._structural, "rewrite", lambda t, s, threshold=0.30, intensity=None: "x")
+        monkeypatch.setattr(
+            rw._structural, "rewrite", lambda t, s, threshold=0.30, intensity=None: "x"
+        )
         monkeypatch.setattr(rw._surgical, "rewrite", lambda t, s, threshold=0.30: t)
 
         import untell.scripts.score as score_mod
 
         monkeypatch.setattr(
-            score_mod, "score_text",
-            lambda t, tier="lite", threshold=0.30: {"max": 0.5, "mean": 0.5, "detectors": {"d": 0.5},
-                                                    "tier": tier},
+            score_mod,
+            "score_text",
+            lambda t, tier="lite", threshold=0.30: {
+                "max": 0.5,
+                "mean": 0.5,
+                "detectors": {"d": 0.5},
+                "tier": tier,
+            },
         )
         rw.rewrite("Some AI text to rewrite.", {"tier": "lite"})
         assert rw._structural.intensity == 0.7
@@ -491,7 +531,9 @@ class TestCompositeIntensitySweep:
         """
         rw = CompositeRewriter(best_of=2, intensity=0.7)
         monkeypatch.setattr(
-            rw._structural, "rewrite", lambda t, s, threshold=0.30, intensity=None: t + " restructured"
+            rw._structural,
+            "rewrite",
+            lambda t, s, threshold=0.30, intensity=None: t + " restructured",
         )
         monkeypatch.setattr(rw._surgical, "rewrite", lambda t, s, threshold=0.30: t + " polished")
 
@@ -619,7 +661,9 @@ ABBREVIATION_SPLITS = [
 ]
 
 
-@pytest.mark.parametrize("label,text,expected", ABBREVIATION_SPLITS, ids=[c[0] for c in ABBREVIATION_SPLITS])
+@pytest.mark.parametrize(
+    "label,text,expected", ABBREVIATION_SPLITS, ids=[c[0] for c in ABBREVIATION_SPLITS]
+)
 def test_abbreviation_is_not_split_into_its_own_sentence(label, text, expected):
     """A naive split made "Dr. " a sentence, and in THIS module that is worse than cosmetic: each
     fragment is independently SCORED and independently REWRITTEN. A one-word fragment gets a
@@ -670,9 +714,14 @@ class TestCompositeDoesNotMutateSharedState:
         import untell.scripts.score as score_mod
 
         monkeypatch.setattr(
-            score_mod, "score_text",
+            score_mod,
+            "score_text",
             lambda t, tier="lite", threshold=0.30: {
-                "max": 0.5, "mean": 0.5, "detectors": {"d": 0.5}, "tier": tier, "scored": True,
+                "max": 0.5,
+                "mean": 0.5,
+                "detectors": {"d": 0.5},
+                "tier": tier,
+                "scored": True,
             },
         )
 
@@ -734,7 +783,8 @@ class TestCompositeDoesNotMutateSharedState:
         passed = []
 
         monkeypatch.setattr(
-            rw._structural, "rewrite",
+            rw._structural,
+            "rewrite",
             lambda t, s, threshold=0.30, intensity=None: passed.append(intensity) or t,
         )
         rw.rewrite(self.SRC, {"tier": "lite"})
@@ -803,14 +853,14 @@ class TestRewritesIntroduceNoMechanicalDefects:
 
     HARD = {
         "abbreviations": "Dr. Smith met Prof. Jones at 3 p.m. Furthermore, they leveraged the data, "
-                         "e.g. the survey results, to optimize outcomes.",
+        "e.g. the survey results, to optimize outcomes.",
         "decimals": "Revenue rose 3.5% vs. 2.1% last year. Moreover, the ratio of 1.5 to 2.0 was "
-                    "robust across sectors.",
+        "robust across sectors.",
         "quotes": 'He said "the results are robust" and then added "furthermore, we must optimize." '
-                  "The team agreed.",
+        "The team agreed.",
         "list": "Key points:\n1. Leverage the data.\n2. Optimize the workflow.\n3. Furthermore, iterate.",
         "urls": "See https://example.com/a_b(c) for details. Furthermore, the docs at "
-                "docs.example.org/x?y=1 explain it.",
+        "docs.example.org/x?y=1 explain it.",
         "initials": "J. R. R. Tolkien wrote it. Moreover, C. S. Lewis leveraged similar themes.",
     }
 

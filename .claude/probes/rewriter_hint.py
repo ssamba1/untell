@@ -1,10 +1,15 @@
 """_stronger_rewriter_hint: fires only for weak rewriters on flagged full-tier."""
+
 import json, os
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
 import untell.scripts.run as R
 
+
 class FakeRW:
-    def __init__(self, name): self.name = name
+    def __init__(self, name):
+        self.name = name
+
 
 out = {}
 # flagged + full + weak -> hint

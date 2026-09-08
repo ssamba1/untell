@@ -43,7 +43,9 @@ def test_there_are_substitutions_to_check() -> None:
     assert len(ALL_SUBSTITUTIONS) > 200, "the map shrank unexpectedly; this test would prove little"
 
 
-@pytest.mark.parametrize("head,sub", ALL_SUBSTITUTIONS, ids=[f"{h}->{s}" for h, s in ALL_SUBSTITUTIONS])
+@pytest.mark.parametrize(
+    "head,sub", ALL_SUBSTITUTIONS, ids=[f"{h}->{s}" for h, s in ALL_SUBSTITUTIONS]
+)
 def test_no_substitution_is_vetoed_by_the_certainty_gate(head: str, sub: str) -> None:
     assert certainty_kept(_pair(head), _pair(sub)), (
         f"{head!r} -> {sub!r} is prescribed by _SYN and refused by certainty_kept, so every "
@@ -51,7 +53,9 @@ def test_no_substitution_is_vetoed_by_the_certainty_gate(head: str, sub: str) ->
     )
 
 
-@pytest.mark.parametrize("head,sub", ALL_SUBSTITUTIONS, ids=[f"{h}->{s}" for h, s in ALL_SUBSTITUTIONS])
+@pytest.mark.parametrize(
+    "head,sub", ALL_SUBSTITUTIONS, ids=[f"{h}->{s}" for h, s in ALL_SUBSTITUTIONS]
+)
 def test_no_substitution_is_vetoed_by_the_polarity_or_number_gates(head: str, sub: str) -> None:
     """The other two unconditional vetoes in `meaning_preserved`, checked for the same reason."""
     a, b = _pair(head), _pair(sub)

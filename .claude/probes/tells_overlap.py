@@ -1,5 +1,7 @@
 """Tell overlap: a span matched by 2+ patterns must count ONCE, claimed by the longest."""
+
 import json, os
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
 from untell.scripts.tells import score_tells
 
@@ -12,6 +14,9 @@ probes = [
 out = {}
 for t in probes:
     r = score_tells(t)
-    out[t[:35]] = {"tells": r["tells"], "by_cat": {k: v for k, v in r.get("by_category", {}).items() if v},
-                   "rate": round(r["tells_per_100w"], 1)}
+    out[t[:35]] = {
+        "tells": r["tells"],
+        "by_cat": {k: v for k, v in r.get("by_category", {}).items() if v},
+        "rate": round(r["tells_per_100w"], 1),
+    }
 print(json.dumps(out, indent=1))

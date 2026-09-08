@@ -37,9 +37,7 @@ def _conjunction_substitutes(head: str) -> list[str]:
     The first word is what inherits the comma, but only a SINGLE-word substitute is bare — "plus
     points" and "by contrast" open a phrase, and a phrase before a comma is fine.
     """
-    return [
-        s for s in _SYN.get(head, []) if " " not in s and s.split()[0].lower() in COORDINATORS
-    ]
+    return [s for s in _SYN.get(head, []) if " " not in s and s.split()[0].lower() in COORDINATORS]
 
 
 AT_RISK = sorted(head for head in _SYN if " " not in head and _conjunction_substitutes(head))
@@ -58,7 +56,7 @@ def test_every_conjunction_substitute_is_prevented_at_a_sentence_start(head: str
         s.lower() for s in _COMMA_UNSAFE.get(head, frozenset())
     }
     assert deleted_instead or filtered, (
-        f"{head!r} can emit {_conjunction_substitutes(head)} as a bare \"<word>,\" opener. Either "
+        f'{head!r} can emit {_conjunction_substitutes(head)} as a bare "<word>," opener. Either '
         f"add it to _TRANSITIONS_RE (delete it, right when the word carries only the join) or to "
         f"_COMMA_UNSAFE (filter the option, right when the word carries meaning)."
     )

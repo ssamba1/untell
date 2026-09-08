@@ -63,6 +63,7 @@ def _torch_path(monkeypatch):
     """
     monkeypatch.delenv("UNTELL_LITE_NO_TORCH", raising=False)
 
+
 SOURCE = (
     "The trial enrolled 240 patients across six sites, and the drug reduced relapse by 31 percent "
     "compared with the placebo group over the twelve-month follow-up period."
@@ -132,8 +133,11 @@ def test_a_faithful_rewrite_is_admitted(name: str) -> None:
 
 
 @pytest.mark.parametrize("name", sorted(GAPS))
-@pytest.mark.xfail(strict=False, reason="measured gap, see module docstring: 0 of 80 corpus "
-                                        "documents produce these shapes on the free path")
+@pytest.mark.xfail(
+    strict=False,
+    reason="measured gap, see module docstring: 0 of 80 corpus "
+    "documents produce these shapes on the free path",
+)
 def test_a_known_gap(name: str) -> None:
     assert not _admits(GAPS[name]), name
 
@@ -160,23 +164,30 @@ def test_the_free_rewriters_do_not_produce_the_gap_shapes() -> None:
 
 DIRECT_OBJECT_SWAPS = [
     ("The council fined the contractor.", "The contractor fined the council."),
-    ("The council fined the contractor after the inspection.",
-     "The contractor fined the council after the inspection."),
-    ("The council fined the contractor after the inspection of the depot last spring, which the "
-     "borough had requested following a series of complaints from residents nearby.",
-     "The contractor fined the council after the inspection of the depot last spring, which the "
-     "borough had requested following a series of complaints from residents nearby."),
+    (
+        "The council fined the contractor after the inspection.",
+        "The contractor fined the council after the inspection.",
+    ),
+    (
+        "The council fined the contractor after the inspection of the depot last spring, which the "
+        "borough had requested following a series of complaints from residents nearby.",
+        "The contractor fined the council after the inspection of the depot last spring, which the "
+        "borough had requested following a series of complaints from residents nearby.",
+    ),
 ]
 FAITHFUL_REORDERINGS = [
-    ("The drug reduced relapse in the placebo group.",
-     "Relapse was reduced by the drug in the placebo group."),
+    (
+        "The drug reduced relapse in the placebo group.",
+        "Relapse was reduced by the drug in the placebo group.",
+    ),
     ("The council fined the contractor.", "The contractor was fined by the council."),
     ("The council fined the contractor.", "The council issued a fine to the contractor."),
 ]
 
 
-@pytest.mark.parametrize("source,candidate", DIRECT_OBJECT_SWAPS,
-                         ids=["5 words", "8 words", "26 words"])
+@pytest.mark.parametrize(
+    "source,candidate", DIRECT_OBJECT_SWAPS, ids=["5 words", "8 words", "26 words"]
+)
 def test_a_direct_object_swap_is_detected_at_any_length(source: str, candidate: str) -> None:
     """The half of `role_swap` that works, pinned — and it is what shows the miss above is about
     grammatical position rather than sentence length. Detected at 26 words, where the drug/placebo
@@ -188,8 +199,9 @@ def test_a_direct_object_swap_is_detected_at_any_length(source: str, candidate: 
     assert role_swap(source, candidate) is True
 
 
-@pytest.mark.parametrize("source,candidate", FAITHFUL_REORDERINGS,
-                         ids=["passive", "by-phrase", "paraphrase"])
+@pytest.mark.parametrize(
+    "source,candidate", FAITHFUL_REORDERINGS, ids=["passive", "by-phrase", "paraphrase"]
+)
 def test_a_faithful_reordering_is_not_called_a_swap(source: str, candidate: str) -> None:
     """Guards the guard. Passivisation moves the subject into a by-phrase, which is exactly the
     surface shape of a swap — a check that flagged it would veto the commonest faithful rewrite

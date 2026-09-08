@@ -5,6 +5,7 @@ verify.py line 152: when `d.score(text)` raises, the row is
 make a broken detector report "passes": True — the worst possible direction
 for a verdict surface. This test forces the exception path and pins the flag.
 """
+
 from untell.scripts.verify import verify
 
 
@@ -20,9 +21,7 @@ class _Boom:
 
 
 def test_a_raising_detector_is_not_a_pass(monkeypatch):
-    monkeypatch.setattr(
-        "untell.detectors.commercial.commercial_detectors", lambda: [_Boom()]
-    )
+    monkeypatch.setattr("untell.detectors.commercial.commercial_detectors", lambda: [_Boom()])
     result = verify("Some text to score.", tier="lite", threshold=0.3)
     row = result["results"]["boom"]
     assert row["ai"] is None

@@ -90,8 +90,17 @@ APP_DESC = __doc__
 # Free, no-key rewriter backends selectable via the ``rewriter`` field. Anything else (e.g. "auto")
 # means "let get_rewriter pick a hosted/local-policy backend" and is passed as prefer=None below.
 _FREE_REWRITERS = frozenset(
-    {"surgical", "structural", "composite", "targeted", "neural", "ensemble", "max",
-     "t5_paraphrase", "mt_pivot"}
+    {
+        "surgical",
+        "structural",
+        "composite",
+        "targeted",
+        "neural",
+        "ensemble",
+        "max",
+        "t5_paraphrase",
+        "mt_pivot",
+    }
 )
 
 
@@ -152,7 +161,11 @@ def _openapi_with_auth() -> dict:
     """
     schema = _original_openapi()
     schema.setdefault("components", {})["securitySchemes"] = {
-        "HTTPBearer": {"type": "http", "scheme": "bearer", "description": "Authorization: Bearer <key>"},
+        "HTTPBearer": {
+            "type": "http",
+            "scheme": "bearer",
+            "description": "Authorization: Bearer <key>",
+        },
         "APIKeyHeader": {"type": "apiKey", "in": "header", "name": "X-API-Key"},
     }
     for path, ops in schema["paths"].items():
@@ -165,6 +178,7 @@ def _openapi_with_auth() -> dict:
 
 
 app.openapi = _openapi_with_auth
+
 
 # ---------------------------------------------------------------------------
 # Validation-error rendering
@@ -250,7 +264,9 @@ async def _validation_error(request: Request, exc) -> JSONResponse:
 # invisible to a module-level constant evaluated before lifespan's `load_env()` ran. The CORS
 # origins had the same defect; the env is loaded at import so the two config surfaces agree.
 load_env()  # noqa: E402 - must run before the CORS read below; idempotent, real env wins
-_CORS_ORIGINS = [o.strip() for o in os.environ.get("UNTELL_CORS_ORIGINS", "").split(",") if o.strip()]
+_CORS_ORIGINS = [
+    o.strip() for o in os.environ.get("UNTELL_CORS_ORIGINS", "").split(",") if o.strip()
+]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_CORS_ORIGINS or ["*"],
@@ -263,6 +279,7 @@ app.add_middleware(
 # ---------------------------------------------------------------------------
 # Auth
 # ---------------------------------------------------------------------------
+
 
 def _api_key() -> str:
     """Read the configured key per request rather than once at import.
@@ -290,7 +307,11 @@ def _check_auth(authorization: str | None, x_api_key: str | None) -> str | None:
         return None
     if x_api_key and _verify_key(x_api_key):
         return None
-    if authorization and authorization.startswith("Bearer ") and _verify_key(authorization[len("Bearer "):]):
+    if (
+        authorization
+        and authorization.startswith("Bearer ")
+        and _verify_key(authorization[len("Bearer ") :])
+    ):
         return None
     return "unauthorized — set UNTELL_API_KEY or pass X-API-Key / Authorization: Bearer <key>"
 
@@ -356,7 +377,9 @@ _Style = Enum("_Style", {name: name for name in STYLE_NAMES}, type=str)
 # pydantic Field constraints AND by `untell.scripts.run` as argparse bounds. The CLI cannot
 # import this module to read them: this module imports FastAPI at top level, which would cost
 # every `untell humanize` invocation a full REST-stack import. See `_api_bounds` docstring.
-_Probability = Annotated[float, Field(ge=_api_bounds._Probability[0], le=_api_bounds._Probability[1])]
+_Probability = Annotated[
+    float, Field(ge=_api_bounds._Probability[0], le=_api_bounds._Probability[1])
+]
 _Iters = Annotated[int, Field(ge=_api_bounds._Iters[0], le=_api_bounds._Iters[1])]
 _BestOf = Annotated[int, Field(ge=_api_bounds._BestOf[0], le=_api_bounds._BestOf[1])]
 _Confirm = Annotated[int, Field(ge=_api_bounds._Confirm[0], le=_api_bounds._Confirm[1])]
@@ -379,8 +402,17 @@ _SampleN = Annotated[int, Field(ge=1, le=1000)]
 # reaches `get_rewriter(prefer=...)`, which returns the "rewriter is not available" error dict —
 # a 200 response whose body says the request failed, where the CLI exits 2 at parse time.
 _Rewriter = Literal[
-    "auto", "surgical", "structural", "composite", "targeted", "neural", "ensemble",
-    "max", "t5_paraphrase", "mt_pivot", "base",
+    "auto",
+    "surgical",
+    "structural",
+    "composite",
+    "targeted",
+    "neural",
+    "ensemble",
+    "max",
+    "t5_paraphrase",
+    "mt_pivot",
+    "base",
 ]
 
 
@@ -546,7 +578,9 @@ def _evict_stale_buckets(now: float) -> None:
     """Drop buckets whose window has expired. No-op below the soft cap."""
     if len(_rate_buckets) <= _RATE_BUCKET_SOFT_CAP:
         return
-    stale = [k for k, (started, _n) in _rate_buckets.items() if now - started >= _RATE_WINDOW_SECONDS]
+    stale = [
+        k for k, (started, _n) in _rate_buckets.items() if now - started >= _RATE_WINDOW_SECONDS
+    ]
     for k in stale:
         del _rate_buckets[k]
     # Still over the cap means every bucket is live — a genuine burst of distinct clients rather
@@ -679,7 +713,10 @@ _SCORE_MAP = {
 _HEALTH_RESPONSES = _obj(
     "Service and detector-stack status.",
     {
-        "status": _STR, "version": _STR, "detector_tier": _STR, "detector_count": _INT,
+        "status": _STR,
+        "version": _STR,
+        "detector_tier": _STR,
+        "detector_count": _INT,
         "detectors": {"type": "array", "items": _STR},
     },
     required=["status", "version"],
@@ -689,18 +726,24 @@ _SCORE_RESPONSES = _obj(
     "AI-likelihood for the text.",
     {
         "tier": {**_STR, "description": "the tier that actually produced numbers"},
-        "tier_requested": {**_STR, "description": "what was asked for; differs when detectors failed"},
+        "tier_requested": {
+            **_STR,
+            "description": "what was asked for; differs when detectors failed",
+        },
         "detectors": _SCORE_MAP,
         "detector_errors": {
-            "type": "object", "additionalProperties": _STR,
+            "type": "object",
+            "additionalProperties": _STR,
             "description": "present only when a detector raised: name -> message",
         },
         "failed_detectors": {
-            "type": "array", "items": _STR,
+            "type": "array",
+            "items": _STR,
             "description": "present only when a detector raised",
         },
         "detector_modes": {
-            "type": "object", "additionalProperties": _STR,
+            "type": "object",
+            "additionalProperties": _STR,
             "description": "which scoring path ran, where a detector has more than one",
         },
         "max": {**_NUM, "description": "highest P(AI) across detectors — the headline number"},
@@ -720,16 +763,18 @@ _SCORE_RESPONSES = _obj(
         # for them and could not act on the diagnostic. MEASURED: a 0-100-scale commercial API
         # adapter was returning 85.0; `out_of_range_raw` was the only path to that information.
         "out_of_range_detectors": {
-            "type": "array", "items": _STR,
+            "type": "array",
+            "items": _STR,
             "description": "present only when a detector returned a value outside [0,1]: "
-                           "the names of those detectors, whose scores were clamped to the "
-                           "nearest boundary before appearing in `detectors`",
+            "the names of those detectors, whose scores were clamped to the "
+            "nearest boundary before appearing in `detectors`",
         },
         "out_of_range_raw": {
-            "type": "object", "additionalProperties": _NUM,
+            "type": "object",
+            "additionalProperties": _NUM,
             "description": "present only when a detector returned a value outside [0,1]: "
-                           "name -> the raw (unclamped) value. The clamped score appears in "
-                           "`detectors`; this records how far off the adapter was",
+            "name -> the raw (unclamped) value. The clamped score appears in "
+            "`detectors`; this records how far off the adapter was",
         },
     },
     required=["tier", "detectors", "max", "ai_percent", "flagged"],
@@ -738,10 +783,13 @@ _SCORE_RESPONSES = _obj(
 _TELLS_RESPONSES = _obj(
     "Mechanical AI-tell counts. Lower is more human-reading.",
     {
-        "words": _INT, "tells": _INT, "tells_per_100w": _NUM,
+        "words": _INT,
+        "tells": _INT,
+        "tells_per_100w": _NUM,
         "by_category": {"type": "object", "additionalProperties": _INT},
         "by_evidence": {
-            "type": "object", "additionalProperties": _INT,
+            "type": "object",
+            "additionalProperties": _INT,
             "description": "counts split by how incriminating the category is: strong/moderate/weak",
         },
         "burstiness_cv": {"type": ["number", "null"]},
@@ -749,15 +797,15 @@ _TELLS_RESPONSES = _obj(
         "language_supported": {
             **_BOOL,
             "description": "false when this English catalogue cannot read the text — a script it "
-                           "cannot match, or a Latin-script language other than English; "
-                           "the counts are then not evidence of anything",
+            "cannot match, or a Latin-script language other than English; "
+            "the counts are then not evidence of anything",
         },
         # Returned all along and documented nowhere, so an API consumer reading the spec had no
         # reason to look for the one field that says the numbers above it mean nothing.
         "warning": {
             **_STR,
             "description": "present when the counts should not be read at face value — text with "
-                           "no letters at all, or mostly in a script this catalogue cannot match",
+            "no letters at all, or mostly in a script this catalogue cannot match",
         },
         # The same omission as `warning` above, one field over: `include_matches=true` has always
         # returned this and the schema never mentioned it, so a client generated from the spec
@@ -767,8 +815,8 @@ _TELLS_RESPONSES = _obj(
             "type": "object",
             "additionalProperties": {"type": "array", "items": _STR},
             "description": "present only when include_matches=true: category -> the exact phrases "
-                           "counted under it, so a caller can see what drove the number rather "
-                           "than trusting it",
+            "counted under it, so a caller can see what drove the number rather "
+            "than trusting it",
         },
     },
     required=["words", "tells", "tells_per_100w", "by_category", "language_supported"],
@@ -781,7 +829,7 @@ _SCRUB_RESPONSES = _obj(
         "hidden_chars_removed": {
             **_INT,
             "description": "how many were found in the SUBMITTED text; 0 means it was already "
-                           "clean, which is itself worth knowing",
+            "clean, which is itself worth knowing",
         },
     },
     required=["clean", "hidden_chars_removed"],
@@ -790,7 +838,8 @@ _SCRUB_RESPONSES = _obj(
 _SENTENCES_RESPONSES = _obj(
     "Per-sentence scores and the sentences worth rewriting.",
     {
-        "tier": _STR, "threshold": _NUM,
+        "tier": _STR,
+        "threshold": _NUM,
         "sentences": {"type": "array", "items": {"type": "object", "additionalProperties": True}},
         "flagged": {"type": "array", "items": _STR},
         "note": {**_STR, "description": "caveat about what this tier's targeting is worth"},
@@ -801,7 +850,7 @@ _SENTENCES_RESPONSES = _obj(
         "warning": {
             **_STR,
             "description": "present when the configured tier's per-sentence ranking is near-chance "
-                           "(the pure-stdlib path). The `flagged` list is then close to arbitrary",
+            "(the pure-stdlib path). The `flagged` list is then close to arbitrary",
         },
         # A different question from `warning`, and the reason both exist: `warning` says the
         # DETECTOR cannot rank, this says THIS DOCUMENT's scores are too close together to order,
@@ -811,8 +860,8 @@ _SENTENCES_RESPONSES = _obj(
         "unrankable": {
             "type": "boolean",
             "description": "present and true when this document's per-sentence scores span less "
-                           "than 0.05, so `flagged` is close to whichever order the sort produced. "
-                           "Rewrite the whole passage rather than the flagged spans",
+            "than 0.05, so `flagged` is close to whichever order the sort produced. "
+            "Rewrite the whole passage rather than the flagged spans",
         },
     },
     required=["tier", "sentences", "flagged"],
@@ -855,21 +904,26 @@ _HUMANIZE_RESPONSES = _obj(
     "The rewritten text plus before/after evidence.",
     {
         "final": {**_STR, "description": "the rewritten text — this is the output"},
-        "iterations": _INT, "rewrites": _INT, "adopted": _INT, "changed": _BOOL,
+        "iterations": _INT,
+        "rewrites": _INT,
+        "adopted": _INT,
+        "changed": _BOOL,
         "pre": {"type": "object", "additionalProperties": True, "description": "score before"},
         "post": {"type": "object", "additionalProperties": True, "description": "score after"},
         "similarity": {**_NUM, "description": "meaning similarity against the source"},
-        "sim_bar": _NUM, "quality_metric": _STR,
+        "sim_bar": _NUM,
+        "quality_metric": _STR,
         "meaning_gate": {
             **_STR,
             "description": "which fidelity checks were in force: 'nli' (all of them), 'nli (no "
-                           "role check)' when spaCy's model is missing, or a 'similarity-only' "
-                           "fallback when the NLI stack is unavailable or the veto is disabled. "
-                           "MEASURED over 49 real rewrites, the role check supplied 2 of the 3 "
-                           "vetoes the full conjunction produced, so the middle value is not a "
-                           "detail",
+            "role check)' when spaCy's model is missing, or a 'similarity-only' "
+            "fallback when the NLI stack is unavailable or the veto is disabled. "
+            "MEASURED over 49 real rewrites, the role check supplied 2 of the 3 "
+            "vetoes the full conjunction produced, so the middle value is not a "
+            "detail",
         },
-        "tier": _STR, "flagged": _BOOL,
+        "tier": _STR,
+        "flagged": _BOOL,
         "stopped": {**_STR, "description": "why the loop stopped"},
         # The caveats a machine client has no other channel for. `pre` and `post` can be identical
         # to four decimals on text that measurably improved — MEASURED, tells/100w 3.80 -> 2.98 with
@@ -877,9 +931,9 @@ _HUMANIZE_RESPONSES = _obj(
         "warning": {
             **_STR,
             "description": "present when the numbers need a caveat: the text carried invisible "
-                           "characters, no detector could score it, or the hardest detector is "
-                           "pinned so the before/after P(AI) comparison cannot move. Several are "
-                           "joined with 'Also:'",
+            "characters, no detector could score it, or the hardest detector is "
+            "pinned so the before/after P(AI) comparison cannot move. Several are "
+            "joined with 'Also:'",
         },
         # `seed` and the tell counts. The loop grew all three and this schema did not, which is
         # the drift docs/result-shapes.md had in the same week — a documented surface enumerating
@@ -896,19 +950,19 @@ _HUMANIZE_RESPONSES = _obj(
         "rewriter": {
             **_STR,
             "description": "which rewriter backend actually ran. May differ from the one "
-                           "requested: an unconfigured hosted backend falls back to the free "
-                           "'composite' path, and `rewriter_warning` says so when it happens",
+            "requested: an unconfigured hosted backend falls back to the free "
+            "'composite' path, and `rewriter_warning` says so when it happens",
         },
         "seed": {
             **_INT,
             "description": "the random stream this run used. Unset in the request, it is derived "
-                           "from the text; send it back to reproduce the run exactly",
+            "from the text; send it back to reproduce the run exactly",
         },
         "tells_before": {**_INT, "description": "AI writing tells counted in the input"},
         "tells_after": {
             **_INT,
             "description": "AI writing tells counted in the output. On a corpus where the "
-                           "detectors saturate this is the only before/after pair that moves",
+            "detectors saturate this is the only before/after pair that moves",
         },
         "voice_warning": {
             **_STR,
@@ -917,8 +971,8 @@ _HUMANIZE_RESPONSES = _obj(
         "rewriter_warning": {
             **_STR,
             "description": "present when the requested rewriter was not the one that ran — today "
-                           "that means no hosted or local-policy backend was configured and the "
-                           "free 'composite' path ran instead",
+            "that means no hosted or local-policy backend was configured and the "
+            "free 'composite' path ran instead",
         },
         # run.py emits this when the loop exhausts max_iters still flagged at the full tier with a
         # rule-based rewriter (surgical, structural, composite, targeted). It was in CONDITIONAL —
@@ -928,8 +982,8 @@ _HUMANIZE_RESPONSES = _obj(
         "suggestion": {
             **_STR,
             "description": "present when the loop exhausted max_iters and the text is still "
-                           "flagged at full tier with a rule-based rewriter. Suggests trying a "
-                           "stronger technique (e.g. neural) and explains the trade-offs",
+            "flagged at full tier with a rule-based rewriter. Suggests trying a "
+            "stronger technique (e.g. neural) and explains the trade-offs",
         },
     },
     required=["final", "changed", "pre", "post", "flagged"],
@@ -949,7 +1003,7 @@ _CEILING_RESPONSES = _obj(
         "rewriter_available": {
             **_BOOL,
             "description": "false means the requested backend could not load and nothing was "
-                           "rewritten — check this before reading the numbers",
+            "rewritten — check this before reading the numbers",
         },
         "tier": _STR,
         "threshold": _NUM,
@@ -957,7 +1011,8 @@ _CEILING_RESPONSES = _obj(
         "best_of": _INT,
         "repeats": {**_INT, "description": "how many times the whole run was repeated"},
         "run_post_means": {
-            "type": "array", "items": _NUM,
+            "type": "array",
+            "items": _NUM,
             "description": "one post mean per repeat; the spread across these is the noise floor",
         },
         "post_mean_max_stdev": {
@@ -1088,11 +1143,11 @@ async def humanize(body: HumanizeRequest) -> JSONResponse:
                 status_code=422,
                 content={
                     "error": f"rewriter {body.rewriter!r} is unavailable — it needs the '.[full]' "
-                             f"extra (pip install -e '.[full]'). Refusing to silently fall back to "
-                             f"a paid rewriter; pass rewriter='composite' for the "
-                             f"zero-dependency free path.",
+                    f"extra (pip install -e '.[full]'). Refusing to silently fall back to "
+                    f"a paid rewriter; pass rewriter='composite' for the "
+                    f"zero-dependency free path.",
                     "hint": "'t5_paraphrase' and 'mt_pivot' are the ones the '.[full]' extra "
-                            "supplies; 'neural'/'ensemble'/'max' compose them.",
+                    "supplies; 'neural'/'ensemble'/'max' compose them.",
                 },
             )
     else:
@@ -1155,8 +1210,12 @@ async def verify_endpoint(body: VerifyRequest) -> dict:
     browser_list = [s.strip() for s in body.browser.split(",")] if body.browser else None
     tier_arg: str | None = None if (body.tier or "").lower() in ("commercial", "") else body.tier
     return await _offload(
-        verify, body.text, threshold=body.threshold, sandbox=body.sandbox,
-        browser=browser_list, tier=tier_arg,
+        verify,
+        body.text,
+        threshold=body.threshold,
+        sandbox=body.sandbox,
+        browser=browser_list,
+        tier=tier_arg,
     )
 
 
@@ -1189,11 +1248,11 @@ async def ceiling(body: CeilingRequest) -> dict:
             status_code=422,
             content={
                 "error": f"rewriter {body.rewriter!r} is unavailable — it needs the '.[full]' "
-                         f"extra (pip install -e '.[full]'). Refusing to silently fall back to a "
-                         f"paid rewriter; pass rewriter='composite' for the zero-dependency free "
-                         f"path.",
+                f"extra (pip install -e '.[full]'). Refusing to silently fall back to a "
+                f"paid rewriter; pass rewriter='composite' for the zero-dependency free "
+                f"path.",
                 "hint": "the measurement would otherwise auto-select a configured hosted backend "
-                        "and bill it while reporting the requested name.",
+                "and bill it while reporting the requested name.",
             },
         )
     # `n` was in the request schema but never used: passing texts=None ran the whole built-in

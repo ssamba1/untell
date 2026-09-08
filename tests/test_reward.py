@@ -144,9 +144,10 @@ def test_out_of_range_sidecar_cannot_enter_the_weighted_mean(monkeypatch):
     import training.reward as r
 
     monkeypatch.setattr(
-        r, "score_text",
+        r,
+        "score_text",
         lambda text, tier="full": {
-            "detectors": {"gptzero": 1.0},   # clamped only — the raw value lives outside this dict
+            "detectors": {"gptzero": 1.0},  # clamped only — the raw value lives outside this dict
             "max": 1.0,
             "out_of_range_raw": {"gptzero": 100.0},
         },
@@ -167,11 +168,21 @@ def test_no_detector_signal_refuses_to_return_a_reward(monkeypatch):
     """
     import training.reward as R
 
-    monkeypatch.setattr(R, "score_text", lambda text, tier="full", threshold=0.30: {
-        "tier": "lite", "detectors": {"d__error": "boom"}, "max": 0.0, "mean": 0.0,
-        "threshold": threshold, "flagged": False, "scored": False,
-        "warning": "no detector produced a score", "failed_detectors": ["d"],
-    })
+    monkeypatch.setattr(
+        R,
+        "score_text",
+        lambda text, tier="full", threshold=0.30: {
+            "tier": "lite",
+            "detectors": {"d__error": "boom"},
+            "max": 0.0,
+            "mean": 0.0,
+            "threshold": threshold,
+            "flagged": False,
+            "scored": False,
+            "warning": "no detector produced a score",
+            "failed_detectors": ["d"],
+        },
+    )
     text = "original text here that is long enough to clear the length gate"
     with pytest.raises(RuntimeError, match="no training signal"):
         R.humanness_reward(text, text, sim_floor=0.0)
@@ -182,12 +193,19 @@ def test_partial_detector_failure_still_scores(monkeypatch):
     surviving detectors are renormalized, which is the documented behaviour."""
     import training.reward as R
 
-    monkeypatch.setattr(R, "score_text", lambda text, tier="full", threshold=0.30: {
-        "tier": "full",
-        "detectors": {"hc3_roberta": 0.80, "mage__error": "boom", "mage": None},
-        "max": 0.80, "mean": 0.80, "threshold": threshold, "flagged": True,
-        "failed_detectors": ["mage"],
-    })
+    monkeypatch.setattr(
+        R,
+        "score_text",
+        lambda text, tier="full", threshold=0.30: {
+            "tier": "full",
+            "detectors": {"hc3_roberta": 0.80, "mage__error": "boom", "mage": None},
+            "max": 0.80,
+            "mean": 0.80,
+            "threshold": threshold,
+            "flagged": True,
+            "failed_detectors": ["mage"],
+        },
+    )
     assert R.free_ensemble_score("some text here") == pytest.approx(0.80)
 
 

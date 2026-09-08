@@ -23,6 +23,7 @@ Classification:
                            clean error (exit 2 / {"error": ...})
     OK      by-design    — documented or correct behaviour
 """
+
 from __future__ import annotations
 
 import json
@@ -37,11 +38,11 @@ PY = os.path.join(REPO, ".venv", "Scripts", "python.exe")
 WORKER = os.path.join(HERE, "fuzz_worker.py")
 
 ENV = dict(os.environ)
-ENV["PYTHONPATH"] = ""           # Hermes venv shadows pydantic_core
+ENV["PYTHONPATH"] = ""  # Hermes venv shadows pydantic_core
 ENV["UNTELL_LITE_NO_TORCH"] = "1"
 ENV["PYTHONUTF8"] = "1"
 
-WARMUP = 16.0                    # first score_text call pays spacy+torch import ~10-15s
+WARMUP = 16.0  # first score_text call pays spacy+torch import ~10-15s
 
 
 def log(msg: str) -> None:
@@ -52,8 +53,10 @@ def log(msg: str) -> None:
 # Chunked engine fuzz
 # ---------------------------------------------------------------------------
 
-def run_chunk(surface: str, cases: list[dict], case_timeout: float,
-              budget_per_case: float, tag: str) -> list[dict]:
+
+def run_chunk(
+    surface: str, cases: list[dict], case_timeout: float, budget_per_case: float, tag: str
+) -> list[dict]:
     """Run cases in one worker subprocess. Returns result lines (in order)."""
     cases_path = os.path.join(HERE, f"_fuzz_{tag}.jsonl")
     out_path = os.path.join(HERE, f"_fuzz_{tag}.out.jsonl")
@@ -68,14 +71,18 @@ def run_chunk(surface: str, cases: list[dict], case_timeout: float,
     try:
         proc = subprocess.run(
             [PY, WORKER, surface, cases_path, out_path, str(case_timeout)],
-            env=ENV, capture_output=True, text=True, encoding="utf-8",
-            errors="replace", timeout=deadline, cwd=REPO,
+            env=ENV,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=deadline,
+            cwd=REPO,
         )
         finished = True
     except subprocess.TimeoutExpired:
         finished = False
-        log(f"  CHUNK TIMEOUT after {deadline:.0f}s ({tag}) — killing, "
-            f"binary-searching for hang")
+        log(f"  CHUNK TIMEOUT after {deadline:.0f}s ({tag}) — killing, binary-searching for hang")
 
     lines: list[dict] = []
     if os.path.exists(out_path):
@@ -88,8 +95,10 @@ def run_chunk(surface: str, cases: list[dict], case_timeout: float,
                     lines.append(json.loads(line))
                 except json.JSONDecodeError:
                     pass  # torn last line from a kill
-    log(f"  chunk {tag}: {len(lines)}/{len(cases)} results, finished={finished}, "
-        f"wall={time.time() - t0:.0f}s")
+    log(
+        f"  chunk {tag}: {len(lines)}/{len(cases)} results, finished={finished}, "
+        f"wall={time.time() - t0:.0f}s"
+    )
     return lines
 
 
@@ -97,8 +106,9 @@ def _deadline_for(n: int, budget: float) -> float:
     return WARMUP + n * budget * 2.5 + 30
 
 
-def find_hang(surface: str, cases: list[dict], case_timeout: float,
-              budget_per_case: float, tag: str) -> list[int]:
+def find_hang(
+    surface: str, cases: list[dict], case_timeout: float, budget_per_case: float, tag: str
+) -> list[int]:
     """Binary-search a chunk whose full run exceeded its deadline. Returns the
     indexes of cases that hang (GIL stall / process-level hang)."""
     lo, hi = 0, len(cases)
@@ -111,8 +121,9 @@ def find_hang(surface: str, cases: list[dict], case_timeout: float,
             if a >= b:
                 continue
             slice_cases = cases[a:b]
-            res = run_chunk(surface, slice_cases, case_timeout,
-                            budget_per_case, f"{tag}_bin{depth}{half}")
+            res = run_chunk(
+                surface, slice_cases, case_timeout, budget_per_case, f"{tag}_bin{depth}{half}"
+            )
             if len(res) < len(slice_cases) - 1:  # didn't finish all cases
                 if len(slice_cases) == 1:
                     hang_idx.append(a)
@@ -126,42 +137,50 @@ def find_hang(surface: str, cases: list[dict], case_timeout: float,
     return hang_idx
 
 
-def fuzz_surface(surface: str, cases: list[dict], case_timeout: float,
-                 budget_per_case: float, chunk_size: int, tag: str) -> list[dict]:
+def fuzz_surface(
+    surface: str,
+    cases: list[dict],
+    case_timeout: float,
+    budget_per_case: float,
+    chunk_size: int,
+    tag: str,
+) -> list[dict]:
     all_results: list[dict] = []
     for start in range(0, len(cases), chunk_size):
-        chunk = cases[start:start + chunk_size]
-        res = run_chunk(surface, chunk, case_timeout, budget_per_case,
-                        f"{tag}_{start}")
+        chunk = cases[start : start + chunk_size]
+        res = run_chunk(surface, chunk, case_timeout, budget_per_case, f"{tag}_{start}")
         if len(res) < len(chunk):
-            log(f"  chunk {tag}_{start} incomplete: {len(res)}/{len(chunk)} — "
-                f"isolating hang/crash")
-            hangs = find_hang(surface, chunk, case_timeout, budget_per_case,
-                              f"{tag}_{start}")
+            log(f"  chunk {tag}_{start} incomplete: {len(res)}/{len(chunk)} — isolating hang/crash")
+            hangs = find_hang(surface, chunk, case_timeout, budget_per_case, f"{tag}_{start}")
             for idx in hangs:
-                log(f"  HANG at case index {idx}: "
-                    f"{json.dumps(chunk[idx], ensure_ascii=True)[:160]}")
-                all_results.append({"i": idx, "status": "hang_isolated",
-                                    "case": chunk[idx]})
+                log(
+                    f"  HANG at case index {idx}: {json.dumps(chunk[idx], ensure_ascii=True)[:160]}"
+                )
+                all_results.append({"i": idx, "status": "hang_isolated", "case": chunk[idx]})
             # also surface the crash suspect: first missing index
             done = {r["i"] for r in res}
             missing = sorted(i for i in range(len(chunk)) if i not in done)
             if missing and not hangs:
                 suspect = missing[0]
-                log(f"  CRASH SUSPECT at case index {suspect}: "
-                    f"{json.dumps(chunk[suspect], ensure_ascii=True)[:160]}")
+                log(
+                    f"  CRASH SUSPECT at case index {suspect}: "
+                    f"{json.dumps(chunk[suspect], ensure_ascii=True)[:160]}"
+                )
                 # confirm in isolation
-                iso = run_chunk(surface, [chunk[suspect]], case_timeout,
-                                budget_per_case, f"{tag}_iso{suspect}")
+                iso = run_chunk(
+                    surface, [chunk[suspect]], case_timeout, budget_per_case, f"{tag}_iso{suspect}"
+                )
                 if len(iso) == 0:
                     log(f"  CONFIRMED CRASH on case index {suspect}")
-                    all_results.append({"i": suspect, "status": "crash",
-                                        "case": chunk[suspect]})
+                    all_results.append({"i": suspect, "status": "crash", "case": chunk[suspect]})
                 else:
-                    log(f"  case {suspect} did not crash in isolation "
-                        f"(cumulative state?) — result: {iso[0].get('status')}")
-                    all_results.append({"i": suspect, "status": "isolated_ok",
-                                        "case": chunk[suspect]})
+                    log(
+                        f"  case {suspect} did not crash in isolation "
+                        f"(cumulative state?) — result: {iso[0].get('status')}"
+                    )
+                    all_results.append(
+                        {"i": suspect, "status": "isolated_ok", "case": chunk[suspect]}
+                    )
         all_results.extend(res)
     return all_results
 
@@ -170,20 +189,25 @@ def fuzz_surface(surface: str, cases: list[dict], case_timeout: float,
 # One-shot CLI subprocess tests
 # ---------------------------------------------------------------------------
 
+
 def cli_one_shots() -> list[dict]:
     """True subprocess CLI invocations with random args / stdin / timeouts."""
     findings: list[dict] = []
-    module_for = {"untell": "untell.scripts.cli",
-                  "score": "untell.scripts.score",
-                  "loop": "untell.scripts.run"}
+    module_for = {
+        "untell": "untell.scripts.cli",
+        "score": "untell.scripts.score",
+        "loop": "untell.scripts.run",
+    }
 
     base_cases = {
         "untell": [
             ([], "empty argv -> demo (slow, by design)"),
             (["--help"], "help"),
             (["--tier", "bogus", "hello world"], "bad tier flag"),
-            (["score", "--tier", "lite", "this is a short text to score"],
-             "subcommand dispatch -> score"),
+            (
+                ["score", "--tier", "lite", "this is a short text to score"],
+                "subcommand dispatch -> score",
+            ),
             (["tells", "a short text with tells"], "subcommand dispatch -> tells"),
             (["\ud800\ud801"], "lone-surrogate argv"),
             (["--file", "C:\\definitely\\not\\here.txt"], "missing file"),
@@ -191,15 +215,13 @@ def cli_one_shots() -> list[dict]:
             (["--seed", "-1", "some text"], "negative seed"),
             (["--check"], "install check"),
             (["x" * 100000], "100KB single token"),
-            (["--json", "--tier", "lite", "em dash — and emoji 🎉 text"],
-             "unicode json run"),
+            (["--json", "--tier", "lite", "em dash — and emoji 🎉 text"], "unicode json run"),
         ],
         "score": [
             ([], "no input"),
             (["--help"], "help"),
             (["--tier", "bogus", "hello"], "bad tier"),
-            (["--tier", "lite", "the committee approved the proposal yesterday"],
-             "valid lite run"),
+            (["--tier", "lite", "the committee approved the proposal yesterday"], "valid lite run"),
             (["--json", "--tier", "lite", "short"], "json lite run"),
             (["\ud800"], "surrogate argv"),
             (["--file", "nope.txt"], "missing file"),
@@ -213,8 +235,10 @@ def cli_one_shots() -> list[dict]:
             ([], "no input"),
             (["--help"], "help"),
             (["--tier", "bogus", "hello"], "bad tier"),
-            (["--tier", "lite", "--json", "the committee approved the proposal"],
-             "valid lite loop"),
+            (
+                ["--tier", "lite", "--json", "the committee approved the proposal"],
+                "valid lite loop",
+            ),
             (["--max-iters", "0", "some text"], "zero iterations"),
             (["--max-iters", "abc", "text"], "non-int iters"),
             (["--file", "nope.txt"], "missing file"),
@@ -232,84 +256,136 @@ def cli_one_shots() -> list[dict]:
             timeout = 70 if (cli == "untell" and not argv) else 40
             t0 = time.time()
             try:
-                proc = subprocess.run(cmd, env=ENV, capture_output=True,
-                                      text=True, encoding="utf-8",
-                                      errors="replace", timeout=timeout,
-                                      cwd=REPO, stdin=subprocess.DEVNULL)
+                proc = subprocess.run(
+                    cmd,
+                    env=ENV,
+                    capture_output=True,
+                    text=True,
+                    encoding="utf-8",
+                    errors="replace",
+                    timeout=timeout,
+                    cwd=REPO,
+                    stdin=subprocess.DEVNULL,
+                )
                 stderr = proc.stderr or ""
                 tb = "Traceback (most recent call last)" in stderr
-                findings.append({
-                    "surface": f"cli:{cli}", "argv": argv, "desc": desc,
-                    "status": "exception" if tb else "ok",
-                    "code": proc.returncode,
-                    "elapsed": round(time.time() - t0, 1),
-                    "stderr_tail": stderr[-500:],
-                })
+                findings.append(
+                    {
+                        "surface": f"cli:{cli}",
+                        "argv": argv,
+                        "desc": desc,
+                        "status": "exception" if tb else "ok",
+                        "code": proc.returncode,
+                        "elapsed": round(time.time() - t0, 1),
+                        "stderr_tail": stderr[-500:],
+                    }
+                )
             except subprocess.TimeoutExpired:
-                findings.append({
-                    "surface": f"cli:{cli}", "argv": argv, "desc": desc,
-                    "status": "hang", "elapsed": round(time.time() - t0, 1),
-                    "stderr_tail": "",
-                })
+                findings.append(
+                    {
+                        "surface": f"cli:{cli}",
+                        "argv": argv,
+                        "desc": desc,
+                        "status": "hang",
+                        "elapsed": round(time.time() - t0, 1),
+                        "stderr_tail": "",
+                    }
+                )
             except Exception as exc:  # e.g. subprocess arg-encoding failure
-                findings.append({
-                    "surface": f"cli:{cli}", "argv": repr(argv), "desc": desc,
-                    "status": f"spawn_error:{type(exc).__name__}",
-                    "elapsed": round(time.time() - t0, 1),
-                    "stderr_tail": str(exc)[:300],
-                })
-            log(f"  one-shot {cli} {argv[:3]!r} -> "
+                findings.append(
+                    {
+                        "surface": f"cli:{cli}",
+                        "argv": repr(argv),
+                        "desc": desc,
+                        "status": f"spawn_error:{type(exc).__name__}",
+                        "elapsed": round(time.time() - t0, 1),
+                        "stderr_tail": str(exc)[:300],
+                    }
+                )
+            log(
+                f"  one-shot {cli} {argv[:3]!r} -> "
                 f"{findings[-1]['status']} code={findings[-1].get('code')} "
-                f"{findings[-1]['elapsed']}s")
+                f"{findings[-1]['elapsed']}s"
+            )
 
     # binary stdin on all three CLIs (reads stdin with utf-8 -> decode error?)
     for cli in ("untell", "score", "loop"):
         cmd = [PY, "-m", module_for[cli]]
         t0 = time.time()
         try:
-            proc = subprocess.run(cmd, env=ENV, capture_output=True,
-                                  input=b"\xff\xfe\x00\x01binary\x80garbage",
-                                  timeout=30, cwd=REPO)
+            proc = subprocess.run(
+                cmd,
+                env=ENV,
+                capture_output=True,
+                input=b"\xff\xfe\x00\x01binary\x80garbage",
+                timeout=30,
+                cwd=REPO,
+            )
             stderr = (proc.stderr or b"").decode("utf-8", errors="replace")
             tb = "Traceback (most recent call last)" in stderr
-            findings.append({
-                "surface": f"cli:{cli}:binary-stdin",
-                "argv": ["<binary stdin>"], "desc": "binary stdin",
-                "status": "exception" if tb else "ok",
-                "code": proc.returncode,
-                "elapsed": round(time.time() - t0, 1),
-                "stderr_tail": stderr[-400:],
-            })
+            findings.append(
+                {
+                    "surface": f"cli:{cli}:binary-stdin",
+                    "argv": ["<binary stdin>"],
+                    "desc": "binary stdin",
+                    "status": "exception" if tb else "ok",
+                    "code": proc.returncode,
+                    "elapsed": round(time.time() - t0, 1),
+                    "stderr_tail": stderr[-400:],
+                }
+            )
         except subprocess.TimeoutExpired:
-            findings.append({"surface": f"cli:{cli}:binary-stdin",
-                             "argv": ["<binary stdin>"], "desc": "binary stdin",
-                             "status": "hang",
-                             "elapsed": round(time.time() - t0, 1),
-                             "stderr_tail": ""})
+            findings.append(
+                {
+                    "surface": f"cli:{cli}:binary-stdin",
+                    "argv": ["<binary stdin>"],
+                    "desc": "binary stdin",
+                    "status": "hang",
+                    "elapsed": round(time.time() - t0, 1),
+                    "stderr_tail": "",
+                }
+            )
         log(f"  one-shot {cli} <binary stdin> -> {findings[-1]['status']}")
 
     # console-script .exe wrappers (entry-point shim path)
     for exe in ("untell-score.exe", "untell-loop.exe"):
         try:
-            proc = subprocess.run([os.path.join(REPO, ".venv", "Scripts", exe),
-                                   "--help"], env=ENV, capture_output=True,
-                                  timeout=30, cwd=REPO)
-            findings.append({
-                "surface": f"cli:exe:{exe}", "argv": ["--help"], "desc": "exe shim",
-                "status": "ok", "code": proc.returncode,
-                "elapsed": 0.0, "stderr_tail": (proc.stderr or "")[-200:],
-            })
+            proc = subprocess.run(
+                [os.path.join(REPO, ".venv", "Scripts", exe), "--help"],
+                env=ENV,
+                capture_output=True,
+                timeout=30,
+                cwd=REPO,
+            )
+            findings.append(
+                {
+                    "surface": f"cli:exe:{exe}",
+                    "argv": ["--help"],
+                    "desc": "exe shim",
+                    "status": "ok",
+                    "code": proc.returncode,
+                    "elapsed": 0.0,
+                    "stderr_tail": (proc.stderr or "")[-200:],
+                }
+            )
         except Exception as exc:
-            findings.append({"surface": f"cli:exe:{exe}", "argv": ["--help"],
-                             "desc": "exe shim",
-                             "status": f"spawn_error:{type(exc).__name__}",
-                             "elapsed": 0.0, "stderr_tail": str(exc)[:200]})
+            findings.append(
+                {
+                    "surface": f"cli:exe:{exe}",
+                    "argv": ["--help"],
+                    "desc": "exe shim",
+                    "status": f"spawn_error:{type(exc).__name__}",
+                    "elapsed": 0.0,
+                    "stderr_tail": str(exc)[:200],
+                }
+            )
     return findings
 
 
 # ---------------------------------------------------------------------------
 # Aggregation / classification / reproducers
 # ---------------------------------------------------------------------------
+
 
 def short_input(case: dict) -> str:
     s = json.dumps(case, ensure_ascii=True, default=str)
@@ -371,8 +447,10 @@ def write_reproducer(finding: dict, n: int) -> str:
             "    sys.exit(main())",
         ]
     else:
-        lines += ["# See findings JSON for the exact case spec.",
-                  "raise SystemExit('reconstruct from fuzz_findings.json')"]
+        lines += [
+            "# See findings JSON for the exact case spec.",
+            "raise SystemExit('reconstruct from fuzz_findings.json')",
+        ]
     with open(path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines) + "\n")
     return path
@@ -383,9 +461,23 @@ def classify(res: dict, surface: str) -> dict | None:
     status = res.get("status")
     exc = res.get("exc", "")
     kind = res.get("kind")
-    case = {k: res[k] for k in ("text", "argv", "tier", "threshold", "max_iters",
-                                "kind", "fn", "mapping", "include_matches",
-                                "seed", "which") if k in res}
+    case = {
+        k: res[k]
+        for k in (
+            "text",
+            "argv",
+            "tier",
+            "threshold",
+            "max_iters",
+            "kind",
+            "fn",
+            "mapping",
+            "include_matches",
+            "seed",
+            "which",
+        )
+        if k in res
+    }
 
     if status == "exception":
         exc_type = res.get("exc_type", "?")
@@ -393,8 +485,10 @@ def classify(res: dict, surface: str) -> dict | None:
             if kind == "str":
                 sev, title = "DEFECT", f"score_text raised {exc_type} on str input"
             elif kind in ("bytes", "type"):
-                sev, title = "GAP", (f"score_text raised {exc_type} on "
-                                     f"{kind} input (typed API, but raw leak)")
+                sev, title = (
+                    "GAP",
+                    (f"score_text raised {exc_type} on {kind} input (typed API, but raw leak)"),
+                )
             else:  # param
                 sev, title = "GAP", f"score_text raised {exc_type} on param variant"
         elif surface == "loop":
@@ -413,25 +507,47 @@ def classify(res: dict, surface: str) -> dict | None:
                 sev, title = "GAP", f"score_tells raised {exc_type} on {kind}"
         else:
             sev, title = "GAP", f"cli main() raised {exc_type}"
-        return {"severity": sev, "title": title, "status": status,
-                "exc": exc, "case": case, "input_preview": res.get("input_preview"),
-                "head": res.get("head"), "site": res.get("site")}
+        return {
+            "severity": sev,
+            "title": title,
+            "status": status,
+            "exc": exc,
+            "case": case,
+            "input_preview": res.get("input_preview"),
+            "head": res.get("head"),
+            "site": res.get("site"),
+        }
 
     if status == "hang_thread" or status == "hang_isolated":
-        return {"severity": "DEFECT", "title": f"HANG on {surface} input",
-                "status": status, "exc": "timeout", "case": case,
-                "input_preview": res.get("input_preview"),
-                "elapsed": res.get("elapsed")}
+        return {
+            "severity": "DEFECT",
+            "title": f"HANG on {surface} input",
+            "status": status,
+            "exc": "timeout",
+            "case": case,
+            "input_preview": res.get("input_preview"),
+            "elapsed": res.get("elapsed"),
+        }
 
     if status == "crash":
-        return {"severity": "DEFECT", "title": f"PROCESS CRASH on {surface} input",
-                "status": status, "exc": "segfault/hard-kill", "case": case,
-                "input_preview": res.get("input_preview")}
+        return {
+            "severity": "DEFECT",
+            "title": f"PROCESS CRASH on {surface} input",
+            "status": status,
+            "exc": "segfault/hard-kill",
+            "case": case,
+            "input_preview": res.get("input_preview"),
+        }
 
     if status == "ok" and surface == "preserve" and res.get("same") is False:
-        return {"severity": "GAP", "title": "lock/restore round-trip changed text",
-                "status": "mismatch", "exc": "identity violation", "case": case,
-                "input_preview": res.get("input_preview")}
+        return {
+            "severity": "GAP",
+            "title": "lock/restore round-trip changed text",
+            "status": "mismatch",
+            "exc": "identity violation",
+            "case": case,
+            "input_preview": res.get("input_preview"),
+        }
     return None
 
 
@@ -445,8 +561,8 @@ def main() -> int:
     # ---- Surface 1: score_text ----
     log("building score cases…")
     score_cases = fuzz_corpus.build_score_cases(
-        n_str=150 if quick else 300, n_bytes=150 if quick else 300,
-        n_type=50 if quick else 100)
+        n_str=150 if quick else 300, n_bytes=150 if quick else 300, n_type=50 if quick else 100
+    )
     # lump param cases into the unicode chunks (they are cheap)
     str_cases = [c for c in score_cases if c["kind"] == "str"]
     param_cases = [c for c in score_cases if c["kind"] == "param"]
@@ -461,7 +577,7 @@ def main() -> int:
         if f:
             f["surface"] = "score"
             findings.append(f)
-    log(f"score: {len(res)} cases, {sum(1 for f in findings if f['surface']=='score')} findings")
+    log(f"score: {len(res)} cases, {sum(1 for f in findings if f['surface'] == 'score')} findings")
 
     # ---- Surface 2: untell_text loop ----
     log("building loop cases…")
@@ -472,12 +588,11 @@ def main() -> int:
         if f:
             f["surface"] = "loop"
             findings.append(f)
-    log(f"loop: {len(res)} cases, {sum(1 for f in findings if f['surface']=='loop')} findings")
+    log(f"loop: {len(res)} cases, {sum(1 for f in findings if f['surface'] == 'loop')} findings")
 
     # ---- Surface 3: CLIs ----
     log("building CLI cases…")
-    for which, tag in (("untell", "cli_untell"), ("score", "cli_score"),
-                       ("loop", "cli_loop")):
+    for which, tag in (("untell", "cli_untell"), ("score", "cli_score"), ("loop", "cli_loop")):
         n = 120 if quick else 150
         cli_cases = fuzz_corpus.build_cli_cases(n, seed=100 + hash(which) % 1000)
         for c in cli_cases:
@@ -485,8 +600,9 @@ def main() -> int:
         # drop demo-triggering argv for `untell` (documented ~28s demo);
         # exercised via one-shot subprocess instead
         if which == "untell":
-            cli_cases = [c for c in cli_cases
-                         if c.get("argv") and c["argv"][0] not in ("--demo", "-d")]
+            cli_cases = [
+                c for c in cli_cases if c.get("argv") and c["argv"][0] not in ("--demo", "-d")
+            ]
         res = fuzz_surface("cli", cli_cases, 40.0, 4.0, 150, tag)
         for r in res:
             f = classify(r, "cli")
@@ -504,7 +620,9 @@ def main() -> int:
         if f:
             f["surface"] = "preserve"
             findings.append(f)
-    log(f"preserve: {len(res)} cases, {sum(1 for f in findings if f['surface']=='preserve')} findings")
+    log(
+        f"preserve: {len(res)} cases, {sum(1 for f in findings if f['surface'] == 'preserve')} findings"
+    )
 
     # ---- Surface 5: tells scan ----
     log("building tells cases…")
@@ -515,37 +633,55 @@ def main() -> int:
         if f:
             f["surface"] = "tells"
             findings.append(f)
-    log(f"tells: {len(res)} cases, {sum(1 for f in findings if f['surface']=='tells')} findings")
+    log(f"tells: {len(res)} cases, {sum(1 for f in findings if f['surface'] == 'tells')} findings")
 
     # ---- One-shot CLI subprocess tests ----
     log("running one-shot CLI subprocess tests…")
     one_shots = cli_one_shots()
     for r in one_shots:
         if r["status"] == "exception":
-            findings.append({"severity": "GAP",
-                             "title": f"CLI traceback ({r['desc']})",
-                             "status": "exception", "exc": "traceback on stderr",
-                             "case": {"argv": r["argv"]},
-                             "site": r["stderr_tail"][-300:]})
+            findings.append(
+                {
+                    "severity": "GAP",
+                    "title": f"CLI traceback ({r['desc']})",
+                    "status": "exception",
+                    "exc": "traceback on stderr",
+                    "case": {"argv": r["argv"]},
+                    "site": r["stderr_tail"][-300:],
+                }
+            )
         elif r["status"] == "hang":
-            findings.append({"severity": "DEFECT",
-                             "title": f"CLI hang ({r['desc']})",
-                             "status": "hang", "exc": "subprocess timeout",
-                             "case": {"argv": r["argv"]},
-                             "elapsed": r["elapsed"]})
+            findings.append(
+                {
+                    "severity": "DEFECT",
+                    "title": f"CLI hang ({r['desc']})",
+                    "status": "hang",
+                    "exc": "subprocess timeout",
+                    "case": {"argv": r["argv"]},
+                    "elapsed": r["elapsed"],
+                }
+            )
         elif r["status"].startswith("spawn_error"):
-            findings.append({"severity": "GAP",
-                             "title": f"CLI spawn failure ({r['desc']})",
-                             "status": r["status"], "exc": r["stderr_tail"],
-                             "case": {"argv": r["argv"]}})
+            findings.append(
+                {
+                    "severity": "GAP",
+                    "title": f"CLI spawn failure ({r['desc']})",
+                    "status": r["status"],
+                    "exc": r["stderr_tail"],
+                    "case": {"argv": r["argv"]},
+                }
+            )
     log(f"one-shots: {len(one_shots)} runs")
 
     # ---- Dedupe by (surface, exc, input_preview) ----
     seen = set()
     deduped = []
     for f in findings:
-        key = (f["surface"], f["title"], f.get("input_preview") or
-               json.dumps(f.get("case", {}), ensure_ascii=True)[:80])
+        key = (
+            f["surface"],
+            f["title"],
+            f.get("input_preview") or json.dumps(f.get("case", {}), ensure_ascii=True)[:80],
+        )
         if key in seen:
             continue
         seen.add(key)
@@ -561,16 +697,18 @@ def main() -> int:
             except Exception as exc:  # reproducer is best-effort
                 log(f"  reproducer {i} failed: {exc}")
 
-    out = {"findings": deduped, "one_shots": one_shots,
-           "elapsed_total": round(time.time() - t_start, 1),
-           "reproducers": repro_paths}
+    out = {
+        "findings": deduped,
+        "one_shots": one_shots,
+        "elapsed_total": round(time.time() - t_start, 1),
+        "reproducers": repro_paths,
+    }
     with open(os.path.join(HERE, "fuzz_findings.json"), "w", encoding="utf-8") as f:
         json.dump(out, f, ensure_ascii=True, indent=1, default=str)
 
     # ---- Print numbered findings ----
     print("\n" + "=" * 78)
-    print(f"UNTELL FUZZ — {len(deduped)} unique findings "
-          f"({time.time() - t_start:.0f}s)")
+    print(f"UNTELL FUZZ — {len(deduped)} unique findings ({time.time() - t_start:.0f}s)")
     print("=" * 78)
     for i, f in enumerate(deduped, start=1):
         print(f"\n{i}. [{f['severity']}] {f['title']}")

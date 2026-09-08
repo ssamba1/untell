@@ -17,8 +17,12 @@ def test_clean_human_text_has_few_tells():
 
 
 def test_catches_ai_vocabulary_cluster():
-    r = score_tells("We leverage robust, seamless, and innovative solutions to delve into the realm.")
-    assert r["by_category"].get("ai_vocab", 0) >= 5  # leverage, robust, seamless, innovative, delve, realm
+    r = score_tells(
+        "We leverage robust, seamless, and innovative solutions to delve into the realm."
+    )
+    assert (
+        r["by_category"].get("ai_vocab", 0) >= 5
+    )  # leverage, robust, seamless, innovative, delve, realm
 
 
 def test_catches_formulaic_transition_openers():
@@ -43,22 +47,33 @@ def test_catches_negated_contrast():
 
 
 def test_catches_vague_attribution():
-    r = score_tells("Studies show that this works. Research suggests it is effective in most cases.")
+    r = score_tells(
+        "Studies show that this works. Research suggests it is effective in most cases."
+    )
     assert r["by_category"].get("vague_attribution", 0) >= 2
 
 
 def test_catches_cliches():
-    r = score_tells("In today's fast-paced world, let's dive in and shed light on the game-changer.")
+    r = score_tells(
+        "In today's fast-paced world, let's dive in and shed light on the game-changer."
+    )
     assert r["by_category"].get("cliche", 0) >= 3
 
 
 def test_catches_chatbot_artifact():
-    r = score_tells("Here is the rewrite. As an AI language model, I cannot have personal opinions here.")
+    r = score_tells(
+        "Here is the rewrite. As an AI language model, I cannot have personal opinions here."
+    )
     assert r["by_category"].get("chatbot_artifact", 0) >= 1
 
 
 def test_burstiness_cv_none_for_single_sentence():
-    assert score_tells("Just one sentence here with several words in it indeed today").get("burstiness_cv") is None
+    assert (
+        score_tells("Just one sentence here with several words in it indeed today").get(
+            "burstiness_cv"
+        )
+        is None
+    )
 
 
 def test_low_burstiness_flag_on_uniform_lengths():
@@ -84,7 +99,9 @@ def test_steering_opener_not_double_counted_as_transition():
 
 
 def test_in_conclusion_counts_once_as_cliche():
-    r = score_tells("In conclusion, the project worked out fine and everyone went home happy that day.")
+    r = score_tells(
+        "In conclusion, the project worked out fine and everyone went home happy that day."
+    )
     # counted as a cliche, and NOT additionally as a formulaic_transition
     assert r["by_category"].get("cliche", 0) >= 1
     assert "formulaic_transition" not in r["by_category"]
@@ -92,12 +109,16 @@ def test_in_conclusion_counts_once_as_cliche():
 
 def test_em_dash_not_counted_in_digit_ranges():
     # "2020 - 2025" and "pp. 10 - 20" are ranges, not dashes — must not inflate the em_dash count.
-    r = score_tells("The study ran 2020 - 2025 across pp. 10 - 20 of the report without any issue at all.")
+    r = score_tells(
+        "The study ran 2020 - 2025 across pp. 10 - 20 of the report without any issue at all."
+    )
     assert r["by_category"].get("em_dash", 0) == 0
 
 
 def test_em_dash_spaced_hyphen_between_words_still_counts():
-    r = score_tells("This is the point - the one that really matters more than anything else here today.")
+    r = score_tells(
+        "This is the point - the one that really matters more than anything else here today."
+    )
     assert r["by_category"].get("em_dash", 0) == 1
 
 
@@ -107,41 +128,60 @@ def test_catches_hedge_stacking():
 
 
 def test_catches_false_range():
-    r = score_tells("Whether you're a beginner or a seasoned pro, the tool fits your workflow nicely.")
+    r = score_tells(
+        "Whether you're a beginner or a seasoned pro, the tool fits your workflow nicely."
+    )
     assert r["by_category"].get("false_range", 0) >= 1
 
 
 def test_catches_rule_of_three_staccato():
-    r = score_tells("The launch went well. Fast. Simple. Effective. Everyone on the team was pleased.")
+    r = score_tells(
+        "The launch went well. Fast. Simple. Effective. Everyone on the team was pleased."
+    )
     assert r["by_category"].get("rule_of_three", 0) == 1
 
 
 def test_rule_of_three_needs_three_in_a_row():
     # Only two short sentences in a row must NOT trigger the tricolon tell.
-    r = score_tells("Fast. Simple. The rest of this sentence is comfortably long and ordinary prose.")
+    r = score_tells(
+        "Fast. Simple. The rest of this sentence is comfortably long and ordinary prose."
+    )
     assert "rule_of_three" not in r["by_category"]
 
 
 def test_catches_markdown_artifact():
-    r = score_tells("## Key Takeaways\nThe project shipped on time and under budget this past quarter.")
+    r = score_tells(
+        "## Key Takeaways\nThe project shipped on time and under budget this past quarter."
+    )
     assert r["by_category"].get("markdown_artifact", 0) >= 1
 
 
 def test_semicolon_crutch_needs_two():
-    one = score_tells("He ran fast; then he stopped to catch his breath near the old wooden bridge.")
-    two = score_tells("He ran fast; she ran faster; they both made it home before the rain came down.")
+    one = score_tells(
+        "He ran fast; then he stopped to catch his breath near the old wooden bridge."
+    )
+    two = score_tells(
+        "He ran fast; she ran faster; they both made it home before the rain came down."
+    )
     assert "semicolon_crutch" not in one["by_category"]  # a single semicolon is ordinary
     assert two["by_category"].get("semicolon_crutch", 0) == 2
 
 
 def test_new_vocabulary_terms():
-    r = score_tells("Our world-class, cutting-edge, state-of-the-art platform showcasing next-level wins.")
+    r = score_tells(
+        "Our world-class, cutting-edge, state-of-the-art platform showcasing next-level wins."
+    )
     assert r["by_category"].get("ai_vocab", 0) >= 5
 
 
 def test_no_new_category_double_counts_clean_text():
     # A plain human sentence must still score zero across ALL categories (no new false positives).
-    assert score_tells("The cat knocked a mug off the table and then stared at me without any guilt.")["tells"] == 0
+    assert (
+        score_tells("The cat knocked a mug off the table and then stared at me without any guilt.")[
+            "tells"
+        ]
+        == 0
+    )
 
 
 def test_cli_json_ascii_safe(capsys):
@@ -225,7 +265,7 @@ def test_ordinary_negation_is_not_a_tell(text):
 
 
 class TestSignpostingCliche:
-    """"It is important to note that ..." — the most common signpost in AI prose — scored as
+    """ "It is important to note that ..." — the most common signpost in AI prose — scored as
     perfectly clean text.
 
     The cliche list had `it'?s (?:important|worth) (?:to note|noting)`, which matches "it's" and
@@ -244,7 +284,14 @@ class TestSignpostingCliche:
             "It’s important to note that curly apostrophes appear constantly in AI output.",
             "it's worth noting that the old straight-quote form still works.",
         ],
-        ids=["it-is-important", "should-be-noted", "essential", "necessary", "curly", "regression-its"],
+        ids=[
+            "it-is-important",
+            "should-be-noted",
+            "essential",
+            "necessary",
+            "curly",
+            "regression-its",
+        ],
     )
     def test_signpost_forms_are_counted(self, text):
         assert score_tells(text)["tells"] >= 1, f"signpost not counted: {text!r}"
@@ -388,7 +435,7 @@ class TestNonEnglishIsNotReportedAsClean:
 
     @pytest.mark.parametrize("lang", sorted(NON_LATIN))
     def test_cli_does_not_say_no_tells_found(self, lang, capsys):
-        """"no catalogued tells found" reads as a verdict on the text, not on the catalogue.
+        """ "no catalogued tells found" reads as a verdict on the text, not on the catalogue.
 
         The exit code was `== 0` here, asserted on the same line as a warning that says the count
         "means the patterns did not apply, NOT that the text reads as human". The two halves of this
@@ -438,7 +485,9 @@ class TestEvidenceStrength:
     """
 
     def test_same_count_different_evidence(self):
-        strong = score_tells("Great question! I hope this helps. Let me know if you have questions.")
+        strong = score_tells(
+            "Great question! I hope this helps. Let me know if you have questions."
+        )
         weak = score_tells("The plan failed — nobody checked; the logs were empty; we moved on.")
         assert strong["tells"] == weak["tells"], "the point is equal totals"
         assert strong["by_evidence"] == {"strong": strong["tells"]}
@@ -457,8 +506,11 @@ class TestEvidenceStrength:
 
         # Categories computed rather than matched by a regex, so absent from _CATEGORIES.
         computed = {
-            "em_dash", "rule_of_three", "semicolon_crutch",
-            "repeated_phrasing", "repeated_sentence_openers",
+            "em_dash",
+            "rule_of_three",
+            "semicolon_crutch",
+            "repeated_phrasing",
+            "repeated_sentence_openers",
         }
         known = {n for n, _ in _CATEGORIES} | computed
         assert set(_EVIDENCE) <= known, f"unknown: {set(_EVIDENCE) - known}"

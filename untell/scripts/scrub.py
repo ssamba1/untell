@@ -101,7 +101,7 @@ def main(argv: list[str] | None = None) -> int:
         #     sentences  {"error": "no input: ..."}                                        exit 2
         #     tells      {"error": "no input: ..."}                                        exit 2
         #     scrub      (nothing on stdout)                                               exit 2
-        message = 'no input: pass text, --file PATH, or pipe to stdin'
+        message = "no input: pass text, --file PATH, or pipe to stdin"
         if args.json:
             print(json.dumps({"error": message}))
         else:

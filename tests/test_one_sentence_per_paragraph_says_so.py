@@ -127,8 +127,12 @@ def test_the_note_names_only_transforms_that_really_cannot_run() -> None:
     import untell.rewriter.structural as structural
     from untell.scripts.score import _LINE_PER_SENTENCE_NOTE
 
-    names = ("_merge_sentences", "_target_burstiness", "_drop_restatements",
-             "_split_long_sentences")
+    names = (
+        "_merge_sentences",
+        "_target_burstiness",
+        "_drop_restatements",
+        "_split_long_sentences",
+    )
     seen: dict[str, int] = {}
     originals = {n: getattr(structural, n) for n in names}
 
@@ -136,6 +140,7 @@ def test_the_note_names_only_transforms_that_really_cannot_run() -> None:
         def spy(arg, *a, **k):
             seen[name] = seen.get(name, 0) + 1
             return fn(arg, *a, **k)
+
         return spy
 
     for name, fn in originals.items():
@@ -148,8 +153,12 @@ def test_the_note_names_only_transforms_that_really_cannot_run() -> None:
         for name, fn in originals.items():
             setattr(structural, name, fn)
 
-    assert seen.get("_split_long_sentences"), "splitting no longer reaches a lone-sentence paragraph"
-    assert "splitting" not in _LINE_PER_SENTENCE_NOTE, "the note claims splitting cannot run, and it can"
+    assert seen.get("_split_long_sentences"), (
+        "splitting no longer reaches a lone-sentence paragraph"
+    )
+    assert "splitting" not in _LINE_PER_SENTENCE_NOTE, (
+        "the note claims splitting cannot run, and it can"
+    )
     for name in ("_merge_sentences", "_target_burstiness", "_drop_restatements"):
         assert not seen.get(name), f"{name} runs here, so the note must stop naming it"
 

@@ -30,8 +30,15 @@ def _report(rows: list[dict]) -> dict:
 
 def _row(name: str, verdict: str, auroc: float | None, granularity: str) -> dict:
     return {
-        "detector": name, "verdict": verdict, "auroc": auroc, "granularity": granularity,
-        "human_mean": 0.3, "ai_mean": 0.2, "gap": -0.1, "fpr": 0.0, "tpr": 0.0,
+        "detector": name,
+        "verdict": verdict,
+        "auroc": auroc,
+        "granularity": granularity,
+        "human_mean": 0.3,
+        "ai_mean": 0.2,
+        "gap": -0.1,
+        "fpr": 0.0,
+        "tpr": 0.0,
         "available": True,
     }
 
@@ -61,8 +68,14 @@ def test_a_paragraph_verdict_is_never_excused() -> None:
 def test_a_clean_report_says_nothing_extra() -> None:
     """Guards the guard. A note appended to every run is noise, and noise is how a real one is
     missed."""
-    out = render(_report([_row("pb", "OK", 0.96, "paragraph"),
-                          _row("pb [sentence]", "OK_SEPARATED", 1.0, "sentence")]))
+    out = render(
+        _report(
+            [
+                _row("pb", "OK", 0.96, "paragraph"),
+                _row("pb [sentence]", "OK_SEPARATED", 1.0, "sentence"),
+            ]
+        )
+    )
     assert "BROKEN: none" in out
     assert "Not counted" not in out, out
 

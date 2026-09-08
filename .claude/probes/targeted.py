@@ -1,9 +1,13 @@
 import json, os
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
 from untell.rewriter.targeted import TargetedRewriter, split_sentences
 
 out = {}
-out["split_2"] = split_sentences("First sentence. Second sentence.") == ["First sentence. ", "Second sentence."]
+out["split_2"] = split_sentences("First sentence. Second sentence.") == [
+    "First sentence. ",
+    "Second sentence.",
+]
 out["split_1"] = len(split_sentences("Only one here.")) == 1
 # non-scoreable tier defers to inner wholesale
 rw = TargetedRewriter(min_score=0.30)

@@ -43,7 +43,9 @@ class TestLeastUsed:
     def test_least_used_wins(self) -> None:
         options = ["T1", "T2", "T3"]
         history = [
-            {"target": "T1"}, {"target": "T1"}, {"target": "T2"},
+            {"target": "T1"},
+            {"target": "T1"},
+            {"target": "T2"},
         ]
         assert A.least_used(options, history) == "T3"
 
@@ -82,17 +84,32 @@ class TestEvidenceGate:
     def test_evidence_verdict_requires_commit(self, tmp_path, monkeypatch) -> None:
         """Survivor 181 (or->and): `--commit -` with an evidence verdict must refuse."""
         log = tmp_path / "audit-log.md"
-        log.write_text("# Audit log\n\n| n | lane | target | verdict | before | after | commit | note |\n", encoding="utf-8")
+        log.write_text(
+            "# Audit log\n\n| n | lane | target | verdict | before | after | commit | note |\n",
+            encoding="utf-8",
+        )
         monkeypatch.setattr(A, "LOG", log)
         targets = tmp_path / "audit-targets.md"
         targets.write_text("## T12 API surface\nbody\n", encoding="utf-8")
         monkeypatch.setattr(A, "TARGETS", targets)
         monkeypatch.setattr(A, "LANES", tmp_path / "audit-lanes.md")
         monkeypatch.setattr(
-            sys, "argv",
-            ["audit_next", "record", "--verdict", "defect-fixed",
-             "--commit", "-", "--tests-before", "5", "--tests-after", "6",
-             "--note", "a note that is long enough to pass the minimum"],
+            sys,
+            "argv",
+            [
+                "audit_next",
+                "record",
+                "--verdict",
+                "defect-fixed",
+                "--commit",
+                "-",
+                "--tests-before",
+                "5",
+                "--tests-after",
+                "6",
+                "--note",
+                "a note that is long enough to pass the minimum",
+            ],
         )
         with pytest.raises(SystemExit) as ei:
             A.main()
@@ -104,17 +121,32 @@ class TestEvidenceGate:
         An evidence verdict with EQUAL test counts must refuse (no regression
         test was added). The mutation accepts it."""
         log = tmp_path / "audit-log.md"
-        log.write_text("# Audit log\n\n| n | lane | target | verdict | before | after | commit | note |\n", encoding="utf-8")
+        log.write_text(
+            "# Audit log\n\n| n | lane | target | verdict | before | after | commit | note |\n",
+            encoding="utf-8",
+        )
         monkeypatch.setattr(A, "LOG", log)
         targets = tmp_path / "audit-targets.md"
         targets.write_text("## T12 API surface\nbody\n", encoding="utf-8")
         monkeypatch.setattr(A, "TARGETS", targets)
         monkeypatch.setattr(A, "LANES", tmp_path / "audit-lanes.md")
         monkeypatch.setattr(
-            sys, "argv",
-            ["audit_next", "record", "--verdict", "defect-fixed",
-             "--commit", "abc123", "--tests-before", "5", "--tests-after", "5",
-             "--note", "a note that is long enough to pass the minimum"],
+            sys,
+            "argv",
+            [
+                "audit_next",
+                "record",
+                "--verdict",
+                "defect-fixed",
+                "--commit",
+                "abc123",
+                "--tests-before",
+                "5",
+                "--tests-after",
+                "5",
+                "--note",
+                "a note that is long enough to pass the minimum",
+            ],
         )
         with pytest.raises(SystemExit) as ei:
             A.main()
@@ -146,8 +178,17 @@ class TestNextPassNumber:
 
     def test_assign_offset_continues_from_max(self) -> None:
         def row(n: str) -> dict:
-            return {"n": n, "lane": "L1", "target": "T01", "verdict": "clean",
-                    "before": "0", "after": "0", "commit": "-", "note": "x" * 20}
+            return {
+                "n": n,
+                "lane": "L1",
+                "target": "T01",
+                "verdict": "clean",
+                "before": "0",
+                "after": "0",
+                "commit": "-",
+                "note": "x" * 20,
+            }
+
         history = [row("1"), row("2"), row("2730")]
         # Each simulated offset step numbers from the appended copy, so the third
         # simulated pass is 2733, not 2731 - the fleet never reissues a number.
@@ -180,10 +221,20 @@ class TestByteIdentical:
         # Force the same (n, lane, target) a stale worker would compute.
         monkeypatch.setattr(A, "assign", lambda history, offset=0: (5, "L1", "T12"))
         monkeypatch.setattr(
-            sys, "argv",
-            ["audit_next", "record", "--verdict", "clean",
-             "--tests-before", "3", "--tests-after", "3",
-             "--note", "probed X, invariant held"],
+            sys,
+            "argv",
+            [
+                "audit_next",
+                "record",
+                "--verdict",
+                "clean",
+                "--tests-before",
+                "3",
+                "--tests-after",
+                "3",
+                "--note",
+                "probed X, invariant held",
+            ],
         )
         with pytest.raises(SystemExit) as ei:
             A.main()
@@ -199,10 +250,20 @@ class TestByteIdentical:
         monkeypatch.setattr(A, "LOG", log)
         monkeypatch.setattr(A, "assign", lambda history, offset=0: (5, "L1", "T12"))
         monkeypatch.setattr(
-            sys, "argv",
-            ["audit_next", "record", "--verdict", "clean",
-             "--tests-before", "3", "--tests-after", "3",
-             "--note", "probed Y, different numbers surfaced"],
+            sys,
+            "argv",
+            [
+                "audit_next",
+                "record",
+                "--verdict",
+                "clean",
+                "--tests-before",
+                "3",
+                "--tests-after",
+                "3",
+                "--note",
+                "probed Y, different numbers surfaced",
+            ],
         )
         assert A.main() == 0
         text = log.read_text(encoding="utf-8")

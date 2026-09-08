@@ -19,24 +19,24 @@ import pytest
 
 from untell.attacks.unicode_tricks import count_hidden, scrub_hidden
 
-ENGLAND = "\U0001F3F4\U000E0067\U000E0062\U000E0065\U000E006E\U000E0067\U000E007F"
-KEYCAP = "1\uFE0F\u20E3"
-US_FLAG = "\U0001F1FA\U0001F1F8"
+ENGLAND = "\U0001f3f4\U000e0067\U000e0062\U000e0065\U000e006e\U000e0067\U000e007f"
+KEYCAP = "1\ufe0f\u20e3"
+US_FLAG = "\U0001f1fa\U0001f1f8"
 
 LEGITIMATE = [
     ("england flag", f"Team {ENGLAND} won"),
     ("keycap", f"Press {KEYCAP} to continue"),
     ("us flag", f"Go {US_FLAG} go"),
-    ("arabic with RLM", "\u0645\u0631\u062D\u0628\u0627 \u200F\u0639\u0627\u0644\u0645"),
+    ("arabic with RLM", "\u0645\u0631\u062d\u0628\u0627 \u200f\u0639\u0627\u0644\u0645"),
     ("accented latin", "Café naïvely résumé"),
 ]
 
 CARRIERS = [
-    ("lone tag char", "\U000E0061"),
-    ("RLM in latin", "\u200F"),
+    ("lone tag char", "\U000e0061"),
+    ("RLM in latin", "\u200f"),
     ("RLI in latin", "\u2067"),
-    ("ALM in latin", "\u061C"),
-    ("ZWSP", "\u200B"),
+    ("ALM in latin", "\u061c"),
+    ("ZWSP", "\u200b"),
 ]
 
 
@@ -53,7 +53,9 @@ def test_carrier_classes_count_one_and_are_removed(name, carrier):
     assert carrier not in scrub_hidden(text), f"{name}: survived the scrub"
 
 
-@pytest.mark.parametrize("name,text", LEGITIMATE + CARRIERS, ids=[t[0] for t in LEGITIMATE + CARRIERS])
+@pytest.mark.parametrize(
+    "name,text", LEGITIMATE + CARRIERS, ids=[t[0] for t in LEGITIMATE + CARRIERS]
+)
 def test_count_is_zero_exactly_when_scrub_is_a_no_op(name, text):
     if len(text) == 1:  # bare carrier probe
         text = f"The build{text} succeeded on the first try."

@@ -33,12 +33,14 @@ def _capture(monkeypatch, tells):
 
 
 def test_count_three_renders_red(monkeypatch):
-    captured = _capture(monkeypatch, {"tells": 0, "tells_per_100w": 0.0,
-                                      "by_category": {"hedging": 3}})
+    captured = _capture(
+        monkeypatch, {"tells": 0, "tells_per_100w": 0.0, "by_category": {"hedging": 3}}
+    )
     assert ("[red]hedging[/]", "3") in captured, captured
 
 
 def test_count_two_renders_yellow(monkeypatch):
-    captured = _capture(monkeypatch, {"tells": 0, "tells_per_100w": 0.0,
-                                      "by_category": {"hedging": 2}})
+    captured = _capture(
+        monkeypatch, {"tells": 0, "tells_per_100w": 0.0, "by_category": {"hedging": 2}}
+    )
     assert ("[yellow]hedging[/]", "2") in captured, captured

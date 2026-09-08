@@ -5,11 +5,14 @@ draws tie. This probes: for N docs, how many candidate draws beat the baseline o
 the selection key, how many tie on max but improve on mean (the key's raison
 d'etre), and how many lose.
 """
+
 import sys
 from pathlib import Path
+
 for p in Path(__file__).resolve().parents:
     if (p / "untell" / "__init__.py").exists():
-        sys.path.insert(0, str(p)); break
+        sys.path.insert(0, str(p))
+        break
 
 import untell.rewriter.composite as C
 import untell.rewriter.base as B
@@ -19,8 +22,10 @@ import untell.scripts.score as S
 orig_key = C._selection_key
 stats = {"beats": 0, "ties_max_improves_mean": 0, "loses": 0, "total": 0, "exact_ties": 0}
 
+
 def logged_key(result):
     return orig_key(result)
+
 
 C._selection_key = logged_key
 
@@ -29,6 +34,7 @@ orig_score = S.score_text
 firings = {"improve": 0, "no_improve": 0, "tie_mean_improve": 0, "calls": 0}
 
 import types
+
 
 # Easier: patch _selection_key to record outcomes relative to a running baseline
 class Tracker:
@@ -40,7 +46,9 @@ class Tracker:
         self.worse = 0
         self.same = 0
 
+
 tracker = Tracker()
+
 
 def tracking_key(result):
     key = orig_key(result)  # (max, mean)
@@ -62,6 +70,7 @@ def tracking_key(result):
             tracker.worse += 1
     return key
 
+
 C._selection_key = tracking_key
 
 from untell.scripts.run import untell_text
@@ -76,7 +85,7 @@ TEXTS = [
 
 for i, t in enumerate(TEXTS):
     tracker.base = None
-    r = untell_text(t, tier='lite', max_iters=2, progress=False, seed=100 + i)
+    r = untell_text(t, tier="lite", max_iters=2, progress=False, seed=100 + i)
     if i == 0:
         print(f"doc0 changed: {r['final'] != t}")
 

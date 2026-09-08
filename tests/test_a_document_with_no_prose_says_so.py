@@ -33,7 +33,11 @@ import pytest
 
 from untell.scripts.score import _no_prose_warning, score_text
 
-CODE = "```python\n" + "\n".join(f"def f{i}(a, b):\n    return a + b * {i}" for i in range(30)) + "\n```"
+CODE = (
+    "```python\n"
+    + "\n".join(f"def f{i}(a, b):\n    return a + b * {i}" for i in range(30))
+    + "\n```"
+)
 TABLE = "| name | value |\n|---|---|\n| alpha | 1 |\n| beta | 2 |\n| gamma | 3 |"
 FRONT_MATTER = "---\ntitle: Example\ntags: [a, b, c]\ndate: 2026-01-01\n---"
 PROSE = (

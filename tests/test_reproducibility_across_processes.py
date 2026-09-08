@@ -126,7 +126,9 @@ def test_humanize_cli_is_byte_identical_across_processes() -> None:
     a, b = _spawn("cli"), _spawn("cli")
     _assert_ran(a, "cli")
     _assert_ran(b, "cli")
-    assert a.stdout == b.stdout, "untell-humanize --json gave different bytes in two fresh processes"
+    assert a.stdout == b.stdout, (
+        "untell-humanize --json gave different bytes in two fresh processes"
+    )
 
 
 def test_the_rewrite_actually_happened() -> None:
@@ -162,8 +164,12 @@ def test_the_sampled_t5_path_is_byte_identical_across_processes() -> None:
     Runs only when the ~850MB model is already cached — `pytest.skip` (not a decorator) so a
     cache-less machine reports the environment fact instead of a false failure.
     """
-    cached = Path.home() / ".cache" / "huggingface" / "hub" / (
-        "models--humarin--chatgpt_paraphraser_on_T5_base"
+    cached = (
+        Path.home()
+        / ".cache"
+        / "huggingface"
+        / "hub"
+        / ("models--humarin--chatgpt_paraphraser_on_T5_base")
     )
     if not (cached / "snapshots").is_dir():
         pytest.skip("T5 paraphrase model not in the HF cache; sampled-path proof needs it")

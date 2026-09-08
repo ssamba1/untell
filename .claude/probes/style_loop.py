@@ -1,10 +1,13 @@
 import json, os
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
 from untell.scripts.run import untell_text
 
 out = {}
-t = ("Moreover, the framework leverages robust solutions to deliver outcomes at scale. "
-     "It is important to note that the results demonstrate significant improvement.")
+t = (
+    "Moreover, the framework leverages robust solutions to deliver outcomes at scale. "
+    "It is important to note that the results demonstrate significant improvement."
+)
 # style via the prompt path needs an LLM rewriter; with composite the style is a hint only.
 # Verify style doesn't crash and the loop still runs.
 for style in ("casual", "academic", "blunt"):

@@ -83,7 +83,8 @@ def test_no_category_claims_a_direction_on_identical_halves() -> None:
     sides must not read as evidence for either."""
     rows = precision_table([(ai, ai) for ai in AI_LIKE])
     decisive = [
-        r for r in rows
+        r
+        for r in rows
         if isinstance(r.get("precision"), (int, float))
         and (r["precision"] > 0.9 or r["precision"] < 0.1)
         and r.get("n", 0) >= 4

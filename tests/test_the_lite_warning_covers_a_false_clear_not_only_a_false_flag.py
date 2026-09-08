@@ -17,6 +17,7 @@ These tests assert the warning's CONTENT, not the rates — re-measuring live wo
 ensemble and a corpus download. What is checked mechanically is that the sentence covers both
 directions and cannot silently revert to the flag-only form.
 """
+
 from __future__ import annotations
 
 import pytest
@@ -42,7 +43,9 @@ def lite_warning(monkeypatch) -> str:
     if result.get("detector_modes", {}).get("perplexity_burstiness") != "stdlib":
         pytest.skip("torch is importable here, so the stdlib path did not run")
     warning = result.get("warning")
-    assert warning, "the stdlib lite path must carry a warning; it is the weakest verdict untell has"
+    assert warning, (
+        "the stdlib lite path must carry a warning; it is the weakest verdict untell has"
+    )
     return warning
 
 

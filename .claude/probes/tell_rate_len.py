@@ -1,5 +1,7 @@
 """tell rate vs length: is the rate stable for REPEATED identical tells (the degenerate case)?"""
+
 import json, os
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
 from untell.scripts.tells import score_tells
 

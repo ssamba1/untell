@@ -1,5 +1,7 @@
 """Every _CATEGORIES entry must fire on a known positive built from its own grammar."""
+
 import json, os, re
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
 from untell.scripts.tells import _CATEGORIES, score_tells
 
@@ -12,7 +14,9 @@ for name, pat in _CATEGORIES:
     # Try each literal as the core of a sentence
     hit = False
     for w in words[:6]:
-        probe = f"The report {w} the finding. The team agreed with the result and published it widely."
+        probe = (
+            f"The report {w} the finding. The team agreed with the result and published it widely."
+        )
         if pat.search(probe):
             hit = True
             break
@@ -25,7 +29,12 @@ for name, pat in _CATEGORIES:
                 break
     if not hit:
         dead.append(name)
-print(json.dumps({
-    "categories": len(_CATEGORIES),
-    "dead_by_literal_probe": dead,
-}, indent=1))
+print(
+    json.dumps(
+        {
+            "categories": len(_CATEGORIES),
+            "dead_by_literal_probe": dead,
+        },
+        indent=1,
+    )
+)

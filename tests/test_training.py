@@ -9,7 +9,9 @@ from training.reward import fluency, humanness_reward
 
 
 def test_fluency_penalizes_repetition():
-    assert fluency("the quick brown fox jumps over the lazy dog") > fluency("spam spam spam spam spam spam")
+    assert fluency("the quick brown fox jumps over the lazy dog") > fluency(
+        "spam spam spam spam spam spam"
+    )
     assert fluency("hi") == 1.0  # too short -> neutral
 
 
@@ -24,7 +26,9 @@ def test_reward_penalizes_degenerate_and_meaning_drift():
 def test_free_ensemble_score_in_range():
     from training.reward import free_ensemble_score
 
-    s = free_ensemble_score("Furthermore, we leverage robust synergies to optimize outcomes.", tier="lite")
+    s = free_ensemble_score(
+        "Furthermore, we leverage robust synergies to optimize outcomes.", tier="lite"
+    )
     assert 0.0 <= s <= 1.0
 
 
@@ -60,7 +64,9 @@ def test_distill_keeps_passing_samples(monkeypatch):
     import untell.scripts.run as run_mod
 
     monkeypatch.setattr(
-        run_mod, "untell_text", lambda text, **k: {"final": "a human rewrite", "flagged": False, "similarity": 0.9}
+        run_mod,
+        "untell_text",
+        lambda text, **k: {"final": "a human rewrite", "flagged": False, "similarity": 0.9},
     )
     # The gate now goes through meaning_preserved (NLI), so stub it to admit — the stub final
     # text is unrelated to the sample and would otherwise be NLI-rejected.
@@ -75,10 +81,16 @@ def test_distill_drops_flagged_or_low_similarity(monkeypatch):
     import untell.scripts.entailment as ent
     import untell.scripts.run as run_mod
 
-    monkeypatch.setattr(run_mod, "untell_text", lambda text, **k: {"final": "x", "flagged": True, "similarity": 0.9})
+    monkeypatch.setattr(
+        run_mod, "untell_text", lambda text, **k: {"final": "x", "flagged": True, "similarity": 0.9}
+    )
     assert distill("builtin", n=3, tier="lite")["kept"] == 0
 
-    monkeypatch.setattr(run_mod, "untell_text", lambda text, **k: {"final": "x", "flagged": False, "similarity": 0.2})
+    monkeypatch.setattr(
+        run_mod,
+        "untell_text",
+        lambda text, **k: {"final": "x", "flagged": False, "similarity": 0.2},
+    )
     # The meaning gate must reject an unrelated rewrite even when NLI is present.
     assert distill("builtin", n=3, tier="lite")["kept"] == 0
 
@@ -117,8 +129,13 @@ def test_distill_keeps_a_faithful_paraphrase_the_loop_admits(monkeypatch):
         lambda dataset, n, strict=False: [orig],
     )
     monkeypatch.setattr(
-        run_mod, "untell_text",
-        lambda text, **k: {"final": faithful, "flagged": False, "similarity": similarity(orig, faithful)},
+        run_mod,
+        "untell_text",
+        lambda text, **k: {
+            "final": faithful,
+            "flagged": False,
+            "similarity": similarity(orig, faithful),
+        },
     )
     out = distill("builtin", n=1, tier="lite")
     assert out["kept"] == 1, out
@@ -176,13 +193,29 @@ class TestDistillRunsTheStrongLoop:
         import training.distill as d
 
         seen: dict = {}
-        monkeypatch.setattr(d, "distill", lambda **kw: seen.update(kw) or {
-            "kept": 0, "total": 0, "requested": 0, "rows": []
-        })
-        d.main([
-            "--n", "5", "--tier", "lite", "--threshold", "0.2", "--margin", "0.07",
-            "--best-of", "4", "--rewriter", "surgical", "--out", str(tmp_path / "sft.jsonl"),
-        ])
+        monkeypatch.setattr(
+            d,
+            "distill",
+            lambda **kw: seen.update(kw) or {"kept": 0, "total": 0, "requested": 0, "rows": []},
+        )
+        d.main(
+            [
+                "--n",
+                "5",
+                "--tier",
+                "lite",
+                "--threshold",
+                "0.2",
+                "--margin",
+                "0.07",
+                "--best-of",
+                "4",
+                "--rewriter",
+                "surgical",
+                "--out",
+                str(tmp_path / "sft.jsonl"),
+            ]
+        )
         assert seen["threshold"] == 0.2
         assert seen["margin"] == 0.07
         assert seen["best_of"] == 4
@@ -201,7 +234,13 @@ def test_dpo_build_pairs(monkeypatch):
     import training.distill as d
 
     monkeypatch.setattr(
-        d, "distill", lambda *a, **k: {"rows": [{"prompt": "p", "source": "ai text", "humanized": "human text"}], "kept": 1, "total": 1}
+        d,
+        "distill",
+        lambda *a, **k: {
+            "rows": [{"prompt": "p", "source": "ai text", "humanized": "human text"}],
+            "kept": 1,
+            "total": 1,
+        },
     )
     from training.dpo_humanizer import build_pairs
 

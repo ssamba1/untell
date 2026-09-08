@@ -43,7 +43,7 @@ CARRIER_MATRIX = [
     ("RLE U+202B", "‫"),
     ("PDF U+202C", "‬"),
     ("LRO U+202D", "‭"),
-    ("RLO U+202E", "‮"),   # Trojan Source / right-to-left override
+    ("RLO U+202E", "‮"),  # Trojan Source / right-to-left override
     ("LRI U+2066", "⁦"),
     ("RLI U+2067", "⁧"),
     ("FSI U+2068", "⁨"),
@@ -102,8 +102,7 @@ class TestCarrierMatrixLockRestore:
             assert carrier not in restored, f"{name}: surrogate survived lock()/restore()"
         else:
             assert restored == text, (
-                f"{name}: round-trip changed the text\n"
-                f"before: {text!r}\nafter:  {restored!r}"
+                f"{name}: round-trip changed the text\nbefore: {text!r}\nafter:  {restored!r}"
             )
 
     def test_carrier_inside_locked_span_survives_restore(self, name, carrier):
@@ -115,7 +114,7 @@ class TestCarrierMatrixLockRestore:
         restore().
         """
         # Embed the carrier inside a quotation, which the citation pattern locks.
-        text = 'The results (Smith' + carrier + ', 2020) were significant.'
+        text = "The results (Smith" + carrier + ", 2020) were significant."
         try:
             masked, mapping = lock(text)
             restored = restore(masked, mapping)
@@ -138,6 +137,7 @@ class TestCarrierMatrixLockRestore:
 # ---------------------------------------------------------------------------
 # Lone surrogate: the specific gap this slice found and fixed
 # ---------------------------------------------------------------------------
+
 
 class TestLoneSurrogateHandling:
     """Lone surrogates (U+D800..U+DFFF) are invalid Unicode scalar values.
@@ -195,6 +195,7 @@ class TestLoneSurrogateHandling:
 # BiDi carrier smuggling — documented known limitation
 # ---------------------------------------------------------------------------
 
+
 class TestBidiCarrierSmuggling:
     """Bidi OVERRIDES are stripped unconditionally; embeddings and isolates are not (issue #48).
 
@@ -214,10 +215,10 @@ class TestBidiCarrierSmuggling:
     "if this assertion ever fails, the security posture improved and the test should be updated".
     """
 
-    RLO = "‮"        # RIGHT-TO-LEFT OVERRIDE — the Trojan Source character
-    LRO = "‭"        # LEFT-TO-RIGHT OVERRIDE — same class, opposite direction
-    RLE = "‫"        # RIGHT-TO-LEFT EMBEDDING — legitimate layout, must survive real RTL
-    ARABIC_M = "م"   # Arabic letter meem — one real RTL character
+    RLO = "‮"  # RIGHT-TO-LEFT OVERRIDE — the Trojan Source character
+    LRO = "‭"  # LEFT-TO-RIGHT OVERRIDE — same class, opposite direction
+    RLE = "‫"  # RIGHT-TO-LEFT EMBEDDING — legitimate layout, must survive real RTL
+    ARABIC_M = "م"  # Arabic letter meem — one real RTL character
 
     def test_rlo_in_pure_latin_is_stripped(self):
         """Baseline: no RTL content -> RLO is removed."""
@@ -267,6 +268,7 @@ class TestBidiCarrierSmuggling:
 # ---------------------------------------------------------------------------
 # Carrier interactions: multiple carriers at once
 # ---------------------------------------------------------------------------
+
 
 class TestMultipleCarriers:
     """count_hidden counts all affected source characters, not just distinct types."""

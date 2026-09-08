@@ -1,5 +1,7 @@
 """Pipeline robustness: no crash on adversarial input, output non-empty, idempotence-ish."""
+
 import json, os
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
 from untell.rewriter.structural import StructuralRewriter
 

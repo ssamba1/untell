@@ -98,6 +98,7 @@ def test_a_faithful_paraphrase_of_the_same_length_survives() -> None:
     assert words_lost(SOURCE, FAITHFUL) <= deletion_allowance(SOURCE)
     assert _preserved(FAITHFUL)
 
+
 def test_short_input_may_lose_its_filler() -> None:
     """The case the ratio version broke. Removing "Moreover," and "it is important to note that"
     from a 24-word paragraph is the job, and it costs a quarter of the document."""

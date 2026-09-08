@@ -53,8 +53,13 @@ def prove(
     """Verify original -> untell at commercial tier -> verify result. Returns a structured dict."""
     before = verify(text, threshold=threshold)
     result = untell_text(
-        text, tier="commercial", threshold=threshold, margin=margin, max_iters=max_iters,
-        best_of=best_of, rewriter=rewriter,
+        text,
+        tier="commercial",
+        threshold=threshold,
+        margin=margin,
+        max_iters=max_iters,
+        best_of=best_of,
+        rewriter=rewriter,
     )
     if "error" in result:
         return {"error": result["error"], "before": before}
@@ -89,7 +94,11 @@ def _render(v: dict) -> str:
         mark = "PASS" if a["results"][name].get("passes") else "FAIL"
         lines.append(f"| {name} | {bs} | {as_} | {mark} |")
     lines.append("")
-    lines.append("PASSES ALL CHECKERS" if v["passes_all"] else f"FAILS - {a['n_passing']}/{a['n_configured']} passed")
+    lines.append(
+        "PASSES ALL CHECKERS"
+        if v["passes_all"]
+        else f"FAILS - {a['n_passing']}/{a['n_configured']} passed"
+    )
     lines.append("\n--- humanized text ---\n" + v["humanized"])
     return "\n".join(lines)
 
@@ -107,15 +116,27 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--margin", type=float, default=0.10)
     parser.add_argument("--max-iters", type=int, default=5)
     parser.add_argument(
-        "--best-of", type=int, default=3,
+        "--best-of",
+        type=int,
+        default=3,
         help="candidates per iteration (default 3, matching `untell humanize`). Each extra draw "
         "costs another commercial-tier scoring call, so this is the credits/strength dial.",
     )
     parser.add_argument(
         "--rewriter",
         default="composite",
-        choices=["auto", "surgical", "structural", "composite", "targeted", "neural",
-                 "ensemble", "max", "t5_paraphrase", "mt_pivot"],
+        choices=[
+            "auto",
+            "surgical",
+            "structural",
+            "composite",
+            "targeted",
+            "neural",
+            "ensemble",
+            "max",
+            "t5_paraphrase",
+            "mt_pivot",
+        ],
         help="rewriter backend (default composite - free, no key, same as "
         "`untell humanize`). 'auto' requires a hosted-LLM key.",
     )
@@ -135,8 +156,12 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     v = prove(
-        text, threshold=args.threshold, margin=args.margin, max_iters=args.max_iters,
-        best_of=args.best_of, rewriter=args.rewriter,
+        text,
+        threshold=args.threshold,
+        margin=args.margin,
+        max_iters=args.max_iters,
+        best_of=args.best_of,
+        rewriter=args.rewriter,
     )
     print(json.dumps(v, ensure_ascii=True, indent=2) if args.json else _render(v))
 

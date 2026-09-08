@@ -78,11 +78,11 @@ _VALUE_CASES = [
     ("PLAIN=abc123", "abc123"),
     ("WITH_COMMENT=abc123 # the prod key", "abc123"),
     ('QUOTED="abc123"', "abc123"),
-    ('QUOTED_WITH_HASH="abc # 123"', "abc # 123"),      # inside quotes a # is data
+    ('QUOTED_WITH_HASH="abc # 123"', "abc # 123"),  # inside quotes a # is data
     ('QUOTED_THEN_COMMENT="abc123" # note', "abc123"),  # close on the MATCHING quote
     ("SINGLE='abc123'", "abc123"),
     ("SINGLE_WITH_HASH='abc # 123'", "abc # 123"),
-    ("HASH_NO_SPACE=abc#123", "abc#123"),               # a comment needs leading whitespace
+    ("HASH_NO_SPACE=abc#123", "abc#123"),  # a comment needs leading whitespace
     ("URL=https://example.com/path#fragment", "https://example.com/path#fragment"),
     ("APOSTROPHE=it's fine", "it's fine"),
     ("EQUALS_IN_VALUE=a=b=c", "a=b=c"),
@@ -91,7 +91,9 @@ _VALUE_CASES = [
 ]
 
 
-@pytest.mark.parametrize(("line", "expected"), _VALUE_CASES, ids=[c[0].split("=")[0] for c in _VALUE_CASES])
+@pytest.mark.parametrize(
+    ("line", "expected"), _VALUE_CASES, ids=[c[0].split("=")[0] for c in _VALUE_CASES]
+)
 def test_fallback_parser_values(tmp_path, monkeypatch, line, expected):
     monkeypatch.setitem(sys.modules, "dotenv", None)  # force the zero-dependency parser
     key = line.split("=", 1)[0]

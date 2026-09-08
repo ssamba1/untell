@@ -61,8 +61,24 @@ FUNCTIONS = ("score_text", "score_tells", "score_sentences", "untell_text", "ver
 # document, so the check reported the payload's most important field as undocumented. The block is
 # now key lists only, with the explanation outside it, and the set stays this small.
 _PROSE = {
-    "only", "when", "and", "the", "detector", "raised", "caveat", "applies", "per",
-    "sentence", "scores", "cannot", "be", "ranked", "above", "for", "input", "plus",
+    "only",
+    "when",
+    "and",
+    "the",
+    "detector",
+    "raised",
+    "caveat",
+    "applies",
+    "per",
+    "sentence",
+    "scores",
+    "cannot",
+    "be",
+    "ranked",
+    "above",
+    "for",
+    "input",
+    "plus",
 }
 
 
@@ -100,8 +116,13 @@ def payloads() -> dict[str, dict]:
         "score_tells": score_tells(TEXT),
         "score_sentences": score_sentences(TEXT, tier="lite"),
         "untell_text": untell_text(
-            TEXT, tier="lite", threshold=0.3, max_iters=1, rewriter="structural",
-            best_of=1, seed=1,
+            TEXT,
+            tier="lite",
+            threshold=0.3,
+            max_iters=1,
+            rewriter="structural",
+            best_of=1,
+            seed=1,
         ),
     }
 

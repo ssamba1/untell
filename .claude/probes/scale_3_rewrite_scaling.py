@@ -7,6 +7,7 @@ Fit log-log exponent over 1k..50k chars at max_iters=1, best_of=1.
 
 Usage: python scale_3_rewrite_scaling.py
 """
+
 import json
 import math
 import os
@@ -66,20 +67,27 @@ def main():
         res = untell_text(doc, tier="lite", max_iters=1, best_of=1, seed=42)
         dt = time.perf_counter() - t0
         times[n] = dt
-        print(f"untell_text {n:>7,} chars: {dt:.2f}s  iterations={res.get('iterations')} "
-              f"flagged={res.get('flagged')} sim={res.get('similarity')}", flush=True)
+        print(
+            f"untell_text {n:>7,} chars: {dt:.2f}s  iterations={res.get('iterations')} "
+            f"flagged={res.get('flagged')} sim={res.get('similarity')}",
+            flush=True,
+        )
 
     b, r2 = loglog_fit(list(times.keys()), list(times.values()))
-    print(json.dumps({
-        "times": {str(k): round(v, 3) for k, v in times.items()},
-        "scaling_exponent": round(b, 3),
-        "r2": round(r2, 4),
-        "params": {"max_iters": 1, "best_of": 1, "tier": "lite"},
-        "defect": b > 1.2,
-        "note": "exponent > 1.2 = superlinear; untell_text runs the FULL doc through the "
+    print(
+        json.dumps(
+            {
+                "times": {str(k): round(v, 3) for k, v in times.items()},
+                "scaling_exponent": round(b, 3),
+                "r2": round(r2, 4),
+                "params": {"max_iters": 1, "best_of": 1, "tier": "lite"},
+                "defect": b > 1.2,
+                "note": "exponent > 1.2 = superlinear; untell_text runs the FULL doc through the "
                 "rewriter + similarity gate every iteration (API /humanize caps at 50k chars "
                 "with 422, but library/MCP paths do not)",
-    }))
+            }
+        )
+    )
 
 
 if __name__ == "__main__":

@@ -17,14 +17,14 @@ class TestVariationSelectors:
     def test_orphan_variation_selector_is_dropped(self):
         # A VS16 after a plain letter is not joined to an emoji and not part of a keycap, so
         # it is hidden text with nothing to decorate: removed.
-        assert u._strip_orphan_variation_selectors("a\uFE0F b") == "a b"
+        assert u._strip_orphan_variation_selectors("a\ufe0f b") == "a b"
 
     def test_variation_selector_after_an_emoji_is_kept(self):
-        assert u._strip_orphan_variation_selectors("\U0001F600\uFE0F") == "\U0001F600\uFE0F"
+        assert u._strip_orphan_variation_selectors("\U0001f600\ufe0f") == "\U0001f600\ufe0f"
 
     def test_variation_selector_before_a_keycap_is_kept(self):
         # "1\uFE0F\u20E3" is the keycap emoji sequence; the selector here is part of it.
-        assert u._strip_orphan_variation_selectors("1\uFE0F\u20E3") == "1\uFE0F\u20E3"
+        assert u._strip_orphan_variation_selectors("1\ufe0f\u20e3") == "1\ufe0f\u20e3"
 
 
 class TestScriptedMarks:

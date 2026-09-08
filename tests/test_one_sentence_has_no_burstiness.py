@@ -166,9 +166,10 @@ def test_the_caveat_stays_quiet_when_gpt2_scored_the_sentence(monkeypatch) -> No
     assert _single_sentence_warning(ONE_LONG_SENTENCE, [detector]) is None, (
         "the caveat fired on the GPT-2 path, describing a heuristic that did not score this text"
     )
-    assert _single_sentence_warning(
-        ONE_LONG_SENTENCE, [detector], {"perplexity_burstiness": "gpt2"}
-    ) is None
+    assert (
+        _single_sentence_warning(ONE_LONG_SENTENCE, [detector], {"perplexity_burstiness": "gpt2"})
+        is None
+    )
 
     # And it must still fire when the modes dict says the fallback ran, even though torch imports —
     # that is the case `mode()` exists to distinguish.

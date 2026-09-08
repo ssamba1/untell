@@ -83,8 +83,11 @@ def _rows(result: dict) -> dict[str, dict]:
 
 def test_every_scored_row_states_the_cut_that_judged_it(with_stub) -> None:
     result = verify(TEXT, tier="lite", threshold=DEFAULT_THRESHOLD)
-    silent = [k for k, v in _rows(result).items()
-              if v.get("ai") is not None and v.get("verdict_threshold") is None]
+    silent = [
+        k
+        for k, v in _rows(result).items()
+        if v.get("ai") is not None and v.get("verdict_threshold") is None
+    ]
     assert not silent, silent
 
 
@@ -106,8 +109,11 @@ def test_the_two_kinds_of_row_keep_their_own_bars(with_stub) -> None:
     """The local ensemble is judged at its swept cut; a commercial score is judged at the caller's.
     Collapsing them would apply a calibration derived from one scorer to a different one."""
     rows = _rows(verify(TEXT, tier="lite", threshold=DEFAULT_THRESHOLD))
-    local = [v["verdict_threshold"] for k, v in rows.items()
-             if k.startswith("local:") and v.get("ai") is not None]
+    local = [
+        v["verdict_threshold"]
+        for k, v in rows.items()
+        if k.startswith("local:") and v.get("ai") is not None
+    ]
     assert local and all(c > DEFAULT_THRESHOLD for c in local), local
     assert rows["stub_commercial"]["verdict_threshold"] == DEFAULT_THRESHOLD
 

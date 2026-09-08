@@ -10,6 +10,7 @@
 
 Run:  PYTHONPATH= UNTELL_LITE_NO_TORCH=1 .venv/Scripts/python.exe .claude/probes/concurrency_rewrite_threads.py
 """
+
 from __future__ import annotations
 
 import random
@@ -46,16 +47,14 @@ FINDINGS: list[str] = []
 
 
 def run(text: str, seed: int) -> dict:
-    return untell_text(
-        text, tier="lite", rewriter="surgical", max_iters=1, best_of=1, seed=seed
-    )
+    return untell_text(text, tier="lite", rewriter="surgical", max_iters=1, best_of=1, seed=seed)
 
 
 def main() -> int:
     print("[warmup] first call pays one-time imports ...")
     t0 = time.time()
     run(TEXTS["t1"], 42)
-    print(f"[warmup] done in {time.time()-t0:.1f}s")
+    print(f"[warmup] done in {time.time() - t0:.1f}s")
 
     # ---- serial baselines ---------------------------------------------------
     serial: dict[str, dict] = {}
@@ -94,7 +93,8 @@ def main() -> int:
             f"RACE (a): 4 concurrent same-text seed=42 rewrites; threads {bad_a} differ "
             f"from serial baseline (len {len(baseline)}). Diffs: "
             + "; ".join(
-                f"thr{i}: len={len(results_a[i]['final']) if results_a[i] else 'EXC'}" for i in bad_a
+                f"thr{i}: len={len(results_a[i]['final']) if results_a[i] else 'EXC'}"
+                for i in bad_a
             )
         )
     print(f"[a] same-text 4 threads: wall={wall_a:.1f}s mismatches={bad_a}")
@@ -119,8 +119,7 @@ def main() -> int:
     wall_b = time.time() - t0
 
     bad_b = [
-        i for i, r in enumerate(results_b)
-        if r is None or r["final"] != serial[names[i]]["final"]
+        i for i, r in enumerate(results_b) if r is None or r["final"] != serial[names[i]]["final"]
     ]
     if bad_b:
         FINDINGS.append(
@@ -145,8 +144,10 @@ def main() -> int:
     for i in range(4):
         run(TEXTS[names[i]], 42)
     wall_serial = time.time() - t0
-    print(f"[d] 4 serial rewrites: {wall_serial:.1f}s | 4 concurrent: {wall_a:.1f}s "
-          f"(same text), {wall_b:.1f}s (diff text)")
+    print(
+        f"[d] 4 serial rewrites: {wall_serial:.1f}s | 4 concurrent: {wall_a:.1f}s "
+        f"(same text), {wall_b:.1f}s (diff text)"
+    )
     if wall_b > 1.6 * wall_serial:
         FINDINGS.append(
             f"GAP (d): concurrent rewrites are NOT faster than serial "

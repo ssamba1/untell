@@ -44,7 +44,9 @@ MIN_CHANGE_RATE = 0.30
 INVARIANTS = {
     # A sentence boundary inside a bracket. The sentence continues after the close, so a clause in
     # there can never stand alone however well-formed it looks.
-    "sentence break inside a bracket": lambda t: len(re.findall(r"\([^()]*[.!?]\s+[A-Z][^()]*\)", t)),
+    "sentence break inside a bracket": lambda t: len(
+        re.findall(r"\([^()]*[.!?]\s+[A-Z][^()]*\)", t)
+    ),
     "unbalanced brackets": lambda t: abs(t.count("(") - t.count(")")),
     "unbalanced double quotes": lambda t: t.count('"') % 2,
     "unbalanced curly quotes": lambda t: abs(t.count("“") - t.count("”")),
@@ -73,8 +75,11 @@ INVARIANTS = {
     # keeps them (scrubbing the input is a different command), so this asks only what the
     # rewriter introduced.
     "invisible character added": lambda t: len(
-        re.findall(r"[\u00a0\u00ad\u200b-\u200f\u2028\u2029\u202a-\u202e"
-                   r"\u2060-\u2064\u2066-\u2069\ufeff]", t)
+        re.findall(
+            r"[\u00a0\u00ad\u200b-\u200f\u2028\u2029\u202a-\u202e"
+            r"\u2060-\u2064\u2066-\u2069\ufeff]",
+            t,
+        )
     ),
 }
 

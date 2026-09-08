@@ -5,6 +5,7 @@ release behind the package (0.3.0 in pyproject.toml and untell/__init__.py),
 while test_every_declared_version_agrees covered four declarations but not the
 API's. This pins the API surface directly.
 """
+
 import re
 from pathlib import Path
 
@@ -19,8 +20,7 @@ def test_api_version_matches_package_version():
     declared = re.search(r'APP_VERSION = "([^"]+)"', api).group(1)
 
     assert declared == expected, (
-        f"untell/api_server.py APP_VERSION is {declared!r} but the package version is "
-        f"{expected!r}"
+        f"untell/api_server.py APP_VERSION is {declared!r} but the package version is {expected!r}"
     )
 
 

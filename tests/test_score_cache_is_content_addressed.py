@@ -12,6 +12,7 @@ return results identical to recomputation, caller mutation cannot corrupt an ent
 are never frozen, and oversized texts bypass the cache (the same shape as the round-1 spaCy
 NER cache).
 """
+
 from __future__ import annotations
 
 import os
@@ -124,7 +125,9 @@ def test_batch_and_single_paths_share_one_cache(monkeypatch, stdlib_lite):
     sent = "The quick brown fox jumps over the lazy dog."
     S.batch_score_texts([sent], tier="lite")
     S.score_text(sent, tier="lite")
-    assert calls["n"] == 1, "both paths funnel into _score_with_detectors, so the second call must hit"
+    assert calls["n"] == 1, (
+        "both paths funnel into _score_with_detectors, so the second call must hit"
+    )
 
 
 def test_lru_evicts_oldest_entries(monkeypatch):
@@ -144,10 +147,14 @@ def test_lru_evicts_oldest_entries(monkeypatch):
     mode = tuple(
         (name, os.environ.get(name)) for name in S._SCORING_MODE_ENV_VARS if os.environ.get(name)
     )
-    assert S._score_cache.get(
-        ("text number 0 here", ("fake0",), "lite", S.DEFAULT_THRESHOLD, mode)
-    ) is None
-    assert S._score_cache.get(
-        (f"text number {n - 1} here", (f"fake{n - 1}",), "lite", S.DEFAULT_THRESHOLD, mode)
-    ) is not None
+    assert (
+        S._score_cache.get(("text number 0 here", ("fake0",), "lite", S.DEFAULT_THRESHOLD, mode))
+        is None
+    )
+    assert (
+        S._score_cache.get(
+            (f"text number {n - 1} here", (f"fake{n - 1}",), "lite", S.DEFAULT_THRESHOLD, mode)
+        )
+        is not None
+    )
     S._score_cache.clear()

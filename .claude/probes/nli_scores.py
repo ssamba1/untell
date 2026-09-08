@@ -1,4 +1,5 @@
 import json, os
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
 from untell.scripts.entailment import contradiction_score, entailment_score
 
@@ -15,7 +16,13 @@ out["contra_unrelated"] = contradiction_score(a, d)
 out["entail_unrelated"] = entailment_score(a, d)
 out["all_in_range"] = all(
     v is None or 0.0 <= v <= 1.0
-    for v in (out["contra_identical"], out["entail_identical"], out["contra_negation"],
-              out["entail_negation"], out["contra_unrelated"], out["entail_unrelated"])
+    for v in (
+        out["contra_identical"],
+        out["entail_identical"],
+        out["contra_negation"],
+        out["entail_negation"],
+        out["contra_unrelated"],
+        out["entail_unrelated"],
+    )
 )
 print(json.dumps(out, indent=1))

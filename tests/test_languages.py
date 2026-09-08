@@ -14,7 +14,9 @@ from untell import languages
 
 ENGLISH = "Moreover, the framework leverages a robust approach to deliver outcomes at scale."
 CHINESE = "此外，该框架利用强大的方法在规模上提供成果，并且显著提高了整体效率和准确性。"
-KOREAN = "또한 이 프레임워크는 강력한 접근 방식을 활용하여 대규모로 결과를 제공하며 효율성을 높입니다."
+KOREAN = (
+    "또한 이 프레임워크는 강력한 접근 방식을 활용하여 대규모로 결과를 제공하며 효율성을 높입니다."
+)
 RUSSIAN = "Кроме того, эта система использует надёжный подход для достижения результатов."
 MIXED = "The API returned 结果 successfully, and the framework leverages a robust approach here."
 
@@ -64,7 +66,7 @@ class TestEveryScriptRangeFires:
         "script,first,last",
         [
             ("Han", 0x4E00, 0x9FFF),
-            ("Han", 0x3400, 0x4DBF),   # CJK Extension A — no common character exercises this
+            ("Han", 0x3400, 0x4DBF),  # CJK Extension A — no common character exercises this
             ("Hangul", 0xAC00, 0xD7AF),
             ("Hangul", 0x1100, 0x11FF),  # Jamo — no common character exercises this
             ("Hiragana", 0x3040, 0x309F),
@@ -159,8 +161,13 @@ class TestRouting:
             "'importing untell.scripts.tells must not import the language registry'"
         )
         result = subprocess.run(
-            [sys.executable, "-c", probe], capture_output=True, text=True, encoding="utf-8", errors="replace",
-            timeout=60, cwd=repo,
+            [sys.executable, "-c", probe],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=60,
+            cwd=repo,
         )
         assert result.returncode == 0, (
             "importing untell.scripts.tells must not import the language registry — "

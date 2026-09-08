@@ -66,7 +66,9 @@ def test_it_warns_once_not_every_call(broken_polish, caplog: pytest.LogCaptureFi
     assert caplog.text.count("polish stage failed") == 1
 
 
-def test_two_different_failure_types_each_warn_once(broken_polish, caplog: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch):
+def test_two_different_failure_types_each_warn_once(
+    broken_polish, caplog: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch
+):
     """The dedupe is per exception TYPE, not a single process-wide warning.
 
     The guard used to be ``if not _POLISH_FAILED`` — emptiness, not membership — which let the

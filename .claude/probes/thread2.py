@@ -1,15 +1,21 @@
 """Precise: identical doc, same seed, threaded vs sequential."""
+
 import json, os
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
 from concurrent.futures import ThreadPoolExecutor
 from untell.scripts.run import untell_text
 
-DOC = ("Moreover, the framework leverages robust solutions for team 1 to deliver outcomes at scale. "
-       "It is important to note that the results demonstrate significant improvement.")
+DOC = (
+    "Moreover, the framework leverages robust solutions for team 1 to deliver outcomes at scale. "
+    "It is important to note that the results demonstrate significant improvement."
+)
+
 
 def run(seed):
     r = untell_text(DOC, tier="lite", max_iters=2, seed=seed)
     return seed, r["final"]
+
 
 r_seq = untell_text(DOC, tier="lite", max_iters=2, seed=1)
 with ThreadPoolExecutor(max_workers=4) as ex:

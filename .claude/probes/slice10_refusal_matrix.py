@@ -1,4 +1,5 @@
 """Slice 10 probe: enumerate every MCP tool refusal path + malformed payloads via the REAL engine."""
+
 import asyncio
 import json
 import sys
@@ -103,12 +104,16 @@ async def main():
     # --- malformed payloads: wrong types for text -----------------------------
     for bad_text in (123, None, ["a", "list"], {"a": 1}, 1.5, True):
         status, payload = await call(srv, "tells", {"text": bad_text})
-        print(f"[tells] text={bad_text!r}: {status} :: {(payload or [''])[0][:160] if payload else ''}")
+        print(
+            f"[tells] text={bad_text!r}: {status} :: {(payload or [''])[0][:160] if payload else ''}"
+        )
 
     # --- huge strings ----------------------------------------------------------
     huge = "Furthermore, the system leverages robust methodologies. " * 200_000  # ~11MB
     status, payload = await call(srv, "scrub", {"text": huge})
-    print(f"[scrub] 11MB text: {status} :: {len(payload or [])} items, {(payload or [''])[0][:80] if payload else ''}")
+    print(
+        f"[scrub] 11MB text: {status} :: {len(payload or [])} items, {(payload or [''])[0][:80] if payload else ''}"
+    )
 
 
 asyncio.run(main())

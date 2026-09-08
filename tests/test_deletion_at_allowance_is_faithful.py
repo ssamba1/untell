@@ -7,6 +7,7 @@ The allowance is 10 + 10% of words, so with a 120-word source it is exactly
 measured allowance. Prior 'fractional allowance makes equality unreachable'
 note was wrong: 0.1*n is an exact integer whenever n is a multiple of 10.
 """
+
 from unittest.mock import patch
 
 from untell.scripts.entailment import (
@@ -29,13 +30,17 @@ def test_deletion_at_allowance_passes_the_gate():
     # function imports it), stdlib path (available -> False), sim well above
     # the strict bar. The ONLY thing that can reject the pair is the deletion
     # gate, so a False return means the >= mutation fired.
-    with patch("untell.scripts.hedges.polarity_kept", return_value=True), \
-         patch("untell.scripts.entailment.available", return_value=False):
+    with (
+        patch("untell.scripts.hedges.polarity_kept", return_value=True),
+        patch("untell.scripts.entailment.available", return_value=False),
+    ):
         assert meaning_preserved(SRC, CAND, sim=0.99, strict_sim_bar=0.5) is True
 
 
 def test_deletion_beyond_allowance_is_rejected():
     beyond = " ".join(f"w{i}" for i in range(100))  # drops 20 words > 12.0
-    with patch("untell.scripts.hedges.polarity_kept", return_value=True), \
-         patch("untell.scripts.entailment.available", return_value=False):
+    with (
+        patch("untell.scripts.hedges.polarity_kept", return_value=True),
+        patch("untell.scripts.entailment.available", return_value=False),
+    ):
         assert meaning_preserved(SRC, beyond, sim=0.99, strict_sim_bar=0.5) is False

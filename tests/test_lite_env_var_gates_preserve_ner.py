@@ -12,6 +12,7 @@ MEASURED on this machine (torch installed): `untell-score --tier lite -q "..."` 
 the env var took 26.9-44.4s and imported torch/transformers/spacy/thinc; with the NER
 pass gated the same call completes in ~0.5s with none of those imported.
 """
+
 from __future__ import annotations
 
 import builtins
@@ -27,9 +28,7 @@ def _no_heavy_imports(monkeypatch):
 
     def spy_import(name, *a, **kw):
         top = name.split(".")[0]
-        assert top not in HEAVY, (
-            f"{name} was imported under UNTELL_LITE_NO_TORCH=1"
-        )
+        assert top not in HEAVY, f"{name} was imported under UNTELL_LITE_NO_TORCH=1"
         return real_import(name, *a, **kw)
 
     monkeypatch.setattr(builtins, "__import__", spy_import)

@@ -129,7 +129,9 @@ class MageDetector:
                 raw["num_labels"] = 2
                 with open(cfg_path + ".fixed", "w", encoding="utf-8") as fh:
                     json.dump(raw, fh)
-                os.replace(cfg_path + ".fixed", cfg_path)  # replaces the symlink, leaves weight blobs intact
+                os.replace(
+                    cfg_path + ".fixed", cfg_path
+                )  # replaces the symlink, leaves weight blobs intact
             tok = AutoTokenizer.from_pretrained(local)
             model = AutoModelForSequenceClassification.from_pretrained(local)
             MageDetector._tok, MageDetector._model = tok, model.eval()
@@ -176,9 +178,14 @@ class MageDetector:
             encs = [tok(w, return_tensors="pt", truncation=True, max_length=1024) for w in windows]
             maxlen = max(e["input_ids"].shape[1] for e in encs)
             pad = torch.nn.functional.pad
-            ids = torch.cat([pad(e["input_ids"], (0, maxlen - e["input_ids"].shape[1])) for e in encs], dim=0)
+            ids = torch.cat(
+                [pad(e["input_ids"], (0, maxlen - e["input_ids"].shape[1])) for e in encs], dim=0
+            )
             mask = torch.cat(
-                [pad(torch.ones_like(e["input_ids"]), (0, maxlen - e["input_ids"].shape[1])) for e in encs],
+                [
+                    pad(torch.ones_like(e["input_ids"]), (0, maxlen - e["input_ids"].shape[1]))
+                    for e in encs
+                ],
                 dim=0,
             )
         except Exception:
@@ -213,7 +220,8 @@ class MageDetector:
                 logger.warning(
                     "mage failed to load and was EXCLUDED from the ensemble "
                     "(%s: %s). Often a NumPy 2.x / huggingface_hub mismatch - see README troubleshooting.",
-                    type(exc).__name__, str(exc)[:140],
+                    type(exc).__name__,
+                    str(exc)[:140],
                 )
                 MageDetector._warned = True
             raise

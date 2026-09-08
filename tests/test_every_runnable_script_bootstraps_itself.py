@@ -30,7 +30,8 @@ _SCRIPTS = pathlib.Path(__file__).resolve().parents[1] / "untell" / "scripts"
 
 def _runnable() -> list[pathlib.Path]:
     return sorted(
-        p for p in _SCRIPTS.glob("*.py")
+        p
+        for p in _SCRIPTS.glob("*.py")
         if p.stem != "__init__" and "__main__" in p.read_text(encoding="utf-8")
     )
 
@@ -49,7 +50,11 @@ def _first_package_import_line(tree: ast.AST) -> int | None:
         module = node.module if isinstance(node, ast.ImportFrom) else None
         names = [alias.name for alias in node.names]
         level = getattr(node, "level", 0) or 0
-        if (module or "").startswith("untell") or any(n.startswith("untell") for n in names) or level:
+        if (
+            (module or "").startswith("untell")
+            or any(n.startswith("untell") for n in names)
+            or level
+        ):
             if best is None or node.lineno < best:
                 best = node.lineno
     return best
@@ -95,7 +100,8 @@ def test_the_scan_finds_the_scripts_it_is_supposed_to() -> None:
 def test_at_least_one_script_actually_needs_the_bootstrap() -> None:
     """If nothing imported the package, every case would pass vacuously via the early return."""
     needing = [
-        p.stem for p in _runnable()
+        p.stem
+        for p in _runnable()
         if _first_package_import_line(ast.parse(p.read_text(encoding="utf-8"))) is not None
     ]
     assert len(needing) >= 8, f"only {len(needing)} scripts import the package: {needing}"

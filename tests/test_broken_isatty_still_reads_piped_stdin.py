@@ -6,6 +6,7 @@ interactive so piped input still reaches the command" — per the comment. The
 mutation False -> True makes the command return None (no input), silently
 dropping piped content.
 """
+
 import sys
 
 from untell.scripts.io_utils import read_stdin_or_none

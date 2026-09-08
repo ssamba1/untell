@@ -7,6 +7,7 @@ One process, warm detector. Measures:
 
 Usage: python scale_2_throughput.py
 """
+
 import json
 import os
 import time
@@ -95,8 +96,10 @@ def main():
             "words_per_sec": round(eff_words / dt, 1),
             "chars_per_sec": round(len(doc) / dt, 1),
         }
-        print(f"throughput {nw:>6,}w: {dt:.3f}s  {eff_words / dt:,.0f} words/s "
-              f"({len(doc):,} chars)", flush=True)
+        print(
+            f"throughput {nw:>6,}w: {dt:.3f}s  {eff_words / dt:,.0f} words/s ({len(doc):,} chars)",
+            flush=True,
+        )
 
     # (b) scaling: runtime vs char length (warm), fit <=50k (the real scored region)
     lengths = [1_000, 5_000, 10_000, 25_000, 50_000, 100_000]
@@ -118,8 +121,10 @@ def main():
         "r2_all": round(r2_all, 4),
         "note": "score_text truncates at 50k chars, so >50k points should plateau (exponent -> 0)",
     }
-    print(f"scaling exponent (<=50k): {b:.3f}  R^2={r2:.4f} | all points: {b_all:.3f} R^2={r2_all:.4f}",
-          flush=True)
+    print(
+        f"scaling exponent (<=50k): {b:.3f}  R^2={r2:.4f} | all points: {b_all:.3f} R^2={r2_all:.4f}",
+        flush=True,
+    )
 
     # (c) memory: tracemalloc peak
     for n in (100_000, 1_000_000):
@@ -135,7 +140,7 @@ def main():
             "tracemalloc_peak_bytes": peak,
             "tracemalloc_peak_mb": round(peak / 1e6, 1),
         }
-        print(f"memory {n:>8,} chars: peak {peak/1e6:,.1f} MB traced, {dt:.2f}s", flush=True)
+        print(f"memory {n:>8,} chars: peak {peak / 1e6:,.1f} MB traced, {dt:.2f}s", flush=True)
 
     print(json.dumps(results))
 

@@ -10,5 +10,7 @@ out["bidi_detected"] = _invisible_char_warning("x\u202ey") is not None
 out["cyrillic_detected"] = _homoglyph_warning("The systеm reads the file.") is not None
 out["latin_clean"] = _homoglyph_warning("The system reads the file.") is None
 # all-confusable word (pure Cyrillic lookalike)
-out["all_confusable"] = _homoglyph_warning("Привет") is not None or _homoglyph_warning("Привет") is None
+out["all_confusable"] = (
+    _homoglyph_warning("Привет") is not None or _homoglyph_warning("Привет") is None
+)
 print(json.dumps(out, indent=1))

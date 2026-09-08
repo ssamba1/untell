@@ -39,15 +39,21 @@ def test_roundtrip_numeric_citation():
 
 
 def test_roundtrip_author_year():
-    _roundtrip("As Smith (2020) argued, and others agreed (Lee & Park, 2019, p. 4).", expect_locked=2)
+    _roundtrip(
+        "As Smith (2020) argued, and others agreed (Lee & Park, 2019, p. 4).", expect_locked=2
+    )
 
 
 def test_roundtrip_numbers_and_units():
-    _roundtrip("The sample of 1,024 subjects showed a 42% increase over 3.5 years.", expect_locked=3)
+    _roundtrip(
+        "The sample of 1,024 subjects showed a 42% increase over 3.5 years.", expect_locked=3
+    )
 
 
 def test_roundtrip_quotes_and_url():
-    _roundtrip('She said "this changes everything" and cited https://example.com/x?y=1.', expect_locked=2)
+    _roundtrip(
+        'She said "this changes everything" and cited https://example.com/x?y=1.', expect_locked=2
+    )
 
 
 def test_citation_is_masked_and_unchanged():
@@ -183,6 +189,7 @@ def test_sign_and_operator_cannot_be_stripped_from_a_locked_number():
     assert "-15" not in masked  # the sign is inside the sentinel
     assert "<" not in masked  # so is the operator
 
+
 # --- Fact-type coverage table -------------------------------------------------------------
 # The property that matters is NOT `restore(*lock(t)) == t` (that holds whether or not a span is
 # locked, because unlocked text passes through unchanged). It is: the WHOLE fact lands inside ONE
@@ -274,7 +281,9 @@ def test_ordinary_prose_is_not_over_locked(prose):
     """Locking must not eat rewritable prose — a starved rewriter cannot move a detector score."""
     _masked, mapping = lock(prose)
     locked_chars = sum(len(v) for v in mapping.values())
-    assert locked_chars == 0, f"over-locked {locked_chars}/{len(prose)} chars: {list(mapping.values())}"
+    assert locked_chars == 0, (
+        f"over-locked {locked_chars}/{len(prose)} chars: {list(mapping.values())}"
+    )
 
 
 def test_sentinel_pattern_is_defined_once():
@@ -323,7 +332,10 @@ def test_sentinel_pattern_matches_past_9999_spans():
     from untell.scripts.preserve import SENTINEL_RE
 
     assert SENTINEL_RE.findall("⟦HZ0000⟧ ⟦HZ9999⟧ ⟦HZ10000⟧ ⟦HZ123456⟧") == [
-        "⟦HZ0000⟧", "⟦HZ9999⟧", "⟦HZ10000⟧", "⟦HZ123456⟧"
+        "⟦HZ0000⟧",
+        "⟦HZ9999⟧",
+        "⟦HZ10000⟧",
+        "⟦HZ123456⟧",
     ]
 
 
@@ -406,7 +418,7 @@ class TestFactsLockedWholeNotInPieces:
         assert "+" not in masked and "-" not in masked
 
     def test_meridiem_is_inside_the_lock(self):
-        """"9:30 AM" locked only "9:30", so a rewrite could move a meeting twelve hours."""
+        """ "9:30 AM" locked only "9:30", so a rewrite could move a meeting twelve hours."""
         from untell.scripts.preserve import lock
 
         _, m = lock("The meeting starts at 9:30 AM and ends at 4:15 PM.")
@@ -471,7 +483,7 @@ class TestWeekdayAbbreviationsDoNotLockOrdinaryWords:
         assert mapping, f"failed to lock a weekday in {text!r}"
 
     def test_full_weekday_names_stay_case_insensitive(self):
-        """"sunday" is unambiguous whatever its case, unlike "sun"."""
+        """ "sunday" is unambiguous whatever its case, unlike "sun"."""
         from untell.scripts.preserve import lock
 
         _, mapping = lock("it happened on sunday afternoon")
@@ -657,9 +669,7 @@ class TestIdempotence:
         text = "Smith (2020) rose 47%. As noted in [12]. See https://example.com."
         masked1, mapping1 = lock(text)
         masked2, _mapping2 = lock(masked1)
-        assert masked1 == masked2, (
-            f"lock(lock(t)[0])[0] != lock(t)[0]: {masked2!r} != {masked1!r}"
-        )
+        assert masked1 == masked2, f"lock(lock(t)[0])[0] != lock(t)[0]: {masked2!r} != {masked1!r}"
 
     def test_lock_of_masked_maps_each_sentinel_to_itself(self):
         """The second lock's mapping maps each sentinel to itself (a no-op round-trip)."""
@@ -697,8 +707,7 @@ class TestIdempotence:
         masked2, mapping2 = lock(restored)
         assert masked2 == masked1, "masked text changed after restore+relock"
         assert mapping2 == mapping1, (
-            f"mapping changed after restore+relock:\n"
-            f"  mapping1={mapping1}\n  mapping2={mapping2}"
+            f"mapping changed after restore+relock:\n  mapping1={mapping1}\n  mapping2={mapping2}"
         )
 
     def test_two_literal_sentinels_in_input_round_trip(self):
@@ -786,6 +795,4 @@ class TestArXivIDs:
         """The 'arXiv:' prefix must not appear in the masked text (it would be rewritable)."""
         text = "See arXiv:2301.00000 for the method."
         masked, _ = lock(text)
-        assert "arXiv:" not in masked, (
-            f"'arXiv:' leaked into the rewritable text: {masked!r}"
-        )
+        assert "arXiv:" not in masked, f"'arXiv:' leaked into the rewritable text: {masked!r}"

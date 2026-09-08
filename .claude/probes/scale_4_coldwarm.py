@@ -6,6 +6,7 @@ Measures, in a fresh interpreter with PYTHONPATH= UNTELL_LITE_NO_TORCH=1:
 
 Usage: python scale_4_coldwarm.py [child|parent]
 """
+
 import json
 import os
 import subprocess
@@ -24,6 +25,7 @@ def child():
 
     t0 = time.perf_counter()
     import untell.scripts.score as sc
+
     t_import = time.perf_counter() - t0
 
     t1 = time.perf_counter()
@@ -40,21 +42,27 @@ def child():
 
     t4 = time.perf_counter()
     from untell.scripts.run import untell_text
+
     t_import_run = time.perf_counter() - t4
 
     t5 = time.perf_counter()
     res = untell_text(doc, tier="lite", max_iters=1, best_of=1, seed=7)
     t_untell_cold = time.perf_counter() - t5
 
-    print(json.dumps({
-        "import_score_module_s": round(t_import, 3),
-        "first_score_text_s": round(t_first, 3),
-        "warm_score_2nd_s": round(t_warm2, 4),
-        "warm_score_3rd_s": round(t_warm3, 4),
-        "import_run_module_s": round(t_import_run, 3),
-        "first_untell_text_s": round(t_untell_cold, 3),
-        "untell_tier": res.get("tier"),
-    }), flush=True)
+    print(
+        json.dumps(
+            {
+                "import_score_module_s": round(t_import, 3),
+                "first_score_text_s": round(t_first, 3),
+                "warm_score_2nd_s": round(t_warm2, 4),
+                "warm_score_3rd_s": round(t_warm3, 4),
+                "import_run_module_s": round(t_import_run, 3),
+                "first_untell_text_s": round(t_untell_cold, 3),
+                "untell_tier": res.get("tier"),
+            }
+        ),
+        flush=True,
+    )
 
 
 def parent():
@@ -63,9 +71,10 @@ def parent():
     rows = []
     for i in range(3):
         t0 = time.time()
-        p = subprocess.run([PY, THIS, "child"], capture_output=True, text=True,
-                           timeout=180, env=env, cwd=REPO)
-        print(f"[run {i+1}] wall={time.time()-t0:.1f}s rc={p.returncode}", flush=True)
+        p = subprocess.run(
+            [PY, THIS, "child"], capture_output=True, text=True, timeout=180, env=env, cwd=REPO
+        )
+        print(f"[run {i + 1}] wall={time.time() - t0:.1f}s rc={p.returncode}", flush=True)
         if p.returncode == 0:
             rows.append(json.loads(p.stdout.strip().splitlines()[-1]))
         else:

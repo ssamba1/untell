@@ -183,12 +183,18 @@ def test_hunk_headers_match_difflib_range_format() -> None:
     assert _unified_range(2, 5) == "3,3"
     assert _unified_range(4, 4) == "4,0"
     # Pure insertion at the top of the file renders as `-0,0`, exactly like difflib.
-    assert _hunk_header({"start_original": 0, "count_original": 0,
-                         "start_final": 0, "count_final": 1}) == "@@ -0,0 +1 @@"
-    assert _hunk_header({"start_original": 1, "count_original": 1,
-                         "start_final": 1, "count_final": 1}) == "@@ -2 +2 @@"
-    assert _hunk_header({"start_original": 0, "count_original": 3,
-                         "start_final": 0, "count_final": 4}) == "@@ -1,3 +1,4 @@"
+    assert (
+        _hunk_header({"start_original": 0, "count_original": 0, "start_final": 0, "count_final": 1})
+        == "@@ -0,0 +1 @@"
+    )
+    assert (
+        _hunk_header({"start_original": 1, "count_original": 1, "start_final": 1, "count_final": 1})
+        == "@@ -2 +2 @@"
+    )
+    assert (
+        _hunk_header({"start_original": 0, "count_original": 3, "start_final": 0, "count_final": 4})
+        == "@@ -1,3 +1,4 @@"
+    )
 
 
 # ---------------------------------------------------------------------------

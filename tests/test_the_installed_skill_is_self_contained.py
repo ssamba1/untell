@@ -31,10 +31,17 @@ _SKILL_MD = _SKILL_DIR / "SKILL.md"
 
 # Filenames used as EXAMPLES in prose rather than as references to shipped files. Named explicitly
 # so a genuinely missing file cannot hide among them.
-_EXAMPLE_FILENAMES = frozenset({
-    "their-writing.txt", "candidate.txt", "path.json", "tmp/untell_scoring.txt",
-    "score.py", "quality.py", "ai-tells.md",
-})
+_EXAMPLE_FILENAMES = frozenset(
+    {
+        "their-writing.txt",
+        "candidate.txt",
+        "path.json",
+        "tmp/untell_scoring.txt",
+        "score.py",
+        "quality.py",
+        "ai-tells.md",
+    }
+)
 
 _PATHLIKE = re.compile(r"[A-Za-z0-9_./-]+\.(?:py|md|json|yaml|yml|toml|txt|html|cff)\b")
 
@@ -71,7 +78,7 @@ def test_every_repo_path_named_in_skill_md_survives_installation() -> None:
     for ref in _references():
         if ref in _EXAMPLE_FILENAMES:
             continue
-        candidate = ref[len("untell/"):] if ref.startswith("untell/") else ref
+        candidate = ref[len("untell/") :] if ref.startswith("untell/") else ref
         if candidate in installed:
             continue
         if any(name.endswith("/" + candidate) for name in installed):

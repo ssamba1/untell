@@ -57,7 +57,7 @@ def test_none_and_nan_windows_are_dropped() -> None:
         for _w in ws:
             calls["n"] += 1
             if calls["n"] % 3 == 0:
-                out.append(None)      # no signal
+                out.append(None)  # no signal
             elif calls["n"] % 3 == 1:
                 out.append(float("nan"))  # failure signal — must not poison the max
             else:

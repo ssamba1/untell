@@ -5,6 +5,7 @@ thin-sample warning. The mutation True -> False never sets the flag, so every
 subsequent thin sample warns again, spamming the log. Pinned by calling the
 guard twice with a thin sample and asserting only the first call warns.
 """
+
 import logging
 
 import untell.scripts.voice as voice

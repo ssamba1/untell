@@ -6,6 +6,7 @@ and an unexpired timestamp. The mutation and -> or returns the cached token
 whenever it exists, even long after expiry — a 48h token used past its life
 401s on every scan. Pinned with a _post_json spy: the expired case must re-auth.
 """
+
 import os
 import time
 from unittest.mock import patch

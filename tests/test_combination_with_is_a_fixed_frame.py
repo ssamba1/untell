@@ -1,4 +1,4 @@
-""""in combination WITH" is a fixed frame; "a combination OF" is not.
+""" "in combination WITH" is a fixed frame; "a combination OF" is not.
 
 FOUND by reading loop output: "used in combination with other methods" became "used in **pairing**
 with other methods", and `mix` and `blend` break it the same way — "in mix with", "in blend with".
@@ -73,6 +73,6 @@ def test_the_word_itself_is_replaced_in_the_free_frame() -> None:
     """Sharper than "something changed": the headword must actually be the thing that moved, or the
     of-frame test above is satisfied by an unrelated substitution elsewhere in the sentence."""
     text = "The result is a combination of several factors across the whole study."
-    assert any(
-        "combination" not in out and out != text for out in _outputs(text)
-    ), "the headword itself was never substituted in the unbound frame"
+    assert any("combination" not in out and out != text for out in _outputs(text)), (
+        "the headword itself was never substituted in the unbound frame"
+    )

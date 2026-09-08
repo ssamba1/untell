@@ -1,13 +1,22 @@
 """prove: structure contract via stubs on prove's own bindings."""
+
 import json, os
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
 import eval.prove as P
 
 orig_text = P.untell_text
 orig_verify = P.verify
-P.verify = lambda text, threshold=0.3: {"passes_all": False, "results": [{"name": "x", "passed": False}]}
+P.verify = lambda text, threshold=0.3: {
+    "passes_all": False,
+    "results": [{"name": "x", "passed": False}],
+}
 try:
-    P.untell_text = lambda *a, **k: {"error": "no rewriter configured", "iterations": 0, "final": None}
+    P.untell_text = lambda *a, **k: {
+        "error": "no rewriter configured",
+        "iterations": 0,
+        "final": None,
+    }
     r = P.prove("Some text to prove.")
     out = {
         "error_structured": "error" in r and "before" in r,

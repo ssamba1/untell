@@ -46,18 +46,41 @@ _LATEX_SIGNALS = (
 # imported rather than copied.
 LOCKED_ENVIRONMENTS = (
     "abstract",
-    r"equation\*?", r"align\*?", r"gather\*?", r"multline\*?", r"eqnarray\*?",
-    "displaymath", "math",
-    r"figure\*?", r"table\*?", r"tabular\*?", "tabularx", "longtable", "wrapfigure", "subfigure",
-    "theorem", "lemma", "corollary", "proposition", "definition", "proof", "remark", "example",
+    r"equation\*?",
+    r"align\*?",
+    r"gather\*?",
+    r"multline\*?",
+    r"eqnarray\*?",
+    "displaymath",
+    "math",
+    r"figure\*?",
+    r"table\*?",
+    r"tabular\*?",
+    "tabularx",
+    "longtable",
+    "wrapfigure",
+    "subfigure",
+    "theorem",
+    "lemma",
+    "corollary",
+    "proposition",
+    "definition",
+    "proof",
+    "remark",
+    "example",
     "axiom",
-    "verbatim", "lstlisting", "minted", "Verbatim", "alltt", r"algorithm\*?", "algorithmic",
-    "thebibliography", "tikzpicture",
+    "verbatim",
+    "lstlisting",
+    "minted",
+    "Verbatim",
+    "alltt",
+    r"algorithm\*?",
+    "algorithmic",
+    "thebibliography",
+    "tikzpicture",
 )
 ENV_ALTERNATION = "|".join(LOCKED_ENVIRONMENTS)
-_NON_PROSE_ENV = re.compile(
-    r"\\begin\{(" + ENV_ALTERNATION + r")\}.*?\\end\{\1\}", re.DOTALL
-)
+_NON_PROSE_ENV = re.compile(r"\\begin\{(" + ENV_ALTERNATION + r")\}.*?\\end\{\1\}", re.DOTALL)
 _COMMENT = re.compile(r"(?<!\\)%.*?$", re.MULTILINE)
 _MATH = re.compile(r"\$\$.+?\$\$|\\\[.+?\\\]|\$[^$\n]{1,200}\$", re.DOTALL)
 # A command with a braced argument whose argument IS prose the reader sees (\textbf{...}) —
@@ -150,6 +173,7 @@ def unresolved_citations(text: str, bib_text: str) -> list[str]:
 # CLI
 # ---------------------------------------------------------------------------
 
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="untell-latex",
@@ -183,8 +207,9 @@ def main(argv: list[str] | None = None) -> int:
     problems = 0
     keys = cite_keys(text)
     print(f"{src.name}: {len(keys)} citation references, {len(set(keys))} distinct")
-    print(f"  prose extracted: {len(prose_only(text).split())} words of "
-          f"{len(text.split())} in source")
+    print(
+        f"  prose extracted: {len(prose_only(text).split())} words of {len(text.split())} in source"
+    )
     print(f"  looks like LaTeX: {is_latex(text)}")
 
     if args.bib:

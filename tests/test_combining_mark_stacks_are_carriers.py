@@ -75,7 +75,9 @@ def test_the_cutoff_has_headroom_over_every_script_measured():
         for ch in unicodedata.normalize("NFC", text):
             run = run + 1 if unicodedata.category(ch) == "Mn" else 0
             deepest = max(deepest, run)
-    assert deepest < _MAX_MARK_STACK, f"deepest legitimate stack {deepest} vs cutoff {_MAX_MARK_STACK}"
+    assert deepest < _MAX_MARK_STACK, (
+        f"deepest legitimate stack {deepest} vs cutoff {_MAX_MARK_STACK}"
+    )
 
 
 def test_plain_text_is_untouched():

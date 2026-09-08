@@ -85,10 +85,13 @@ def test_the_declared_flag_matches_what_the_draws_do(name, module_path, cls_name
     assert declared == measured, (
         f"{name} declares deterministic={declared} but produced {len(set(drawn))} distinct "
         f"results from {DRAWS} consecutive draws. "
-        + ("The loop will collapse best_of to 1 and may stop early on a round that would still "
-           "improve." if declared else
-           "The loop will draw best_of times per round for identical candidates, paying a "
-           "full-tier detector pass and the meaning gate on each.")
+        + (
+            "The loop will collapse best_of to 1 and may stop early on a round that would still "
+            "improve."
+            if declared
+            else "The loop will draw best_of times per round for identical candidates, paying a "
+            "full-tier detector pass and the meaning gate on each."
+        )
     )
 
 

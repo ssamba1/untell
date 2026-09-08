@@ -1,10 +1,25 @@
 """Commercial detectors: unavailable without keys, available() False never raises."""
-import json, os
-os.environ["UNTELL_LITE_NO_TORCH"] = "1"
-from untell.detectors.commercial import (OriginalityDetector, WinstonDetector, GPTZeroDetector,
-                                          SaplingDetector, ZeroGPTDetector, CopyleaksDetector)
 
-dets = [OriginalityDetector(), WinstonDetector(), GPTZeroDetector(), SaplingDetector(), ZeroGPTDetector(), CopyleaksDetector()]
+import json, os
+
+os.environ["UNTELL_LITE_NO_TORCH"] = "1"
+from untell.detectors.commercial import (
+    OriginalityDetector,
+    WinstonDetector,
+    GPTZeroDetector,
+    SaplingDetector,
+    ZeroGPTDetector,
+    CopyleaksDetector,
+)
+
+dets = [
+    OriginalityDetector(),
+    WinstonDetector(),
+    GPTZeroDetector(),
+    SaplingDetector(),
+    ZeroGPTDetector(),
+    CopyleaksDetector(),
+]
 out = {}
 for d in dets:
     try:

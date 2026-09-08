@@ -84,8 +84,7 @@ def test_the_rest_surface_documents_it() -> None:
     pytest.importorskip("fastapi")
     from untell.api_server import app
 
-    schema = (
-        app.openapi()["paths"]["/sentences"]["post"]["responses"]["200"]
-        ["content"]["application/json"]["schema"]
-    )
+    schema = app.openapi()["paths"]["/sentences"]["post"]["responses"]["200"]["content"][
+        "application/json"
+    ]["schema"]
     assert "warning" in schema.get("properties", {})

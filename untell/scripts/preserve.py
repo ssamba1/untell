@@ -187,7 +187,9 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
     # swallow a document; the backreference keeps `<code>x</pre>` from matching at all.
     (
         "code",
-        re.compile(r"<(code|pre|kbd|samp|tt|var)\b[^>]{0,200}>.{0,2000}?</\1>", re.DOTALL | re.IGNORECASE),
+        re.compile(
+            r"<(code|pre|kbd|samp|tt|var)\b[^>]{0,200}>.{0,2000}?</\1>", re.DOTALL | re.IGNORECASE
+        ),
     ),
     # LaTeX. MEASURED before these entries existed: `lock()` protected **0 spans** of
     #     r"As \citep{smith2020} shows, see Eq.~\ref{eq:main}. We use $E = mc^2$ and \cite{jones}."
@@ -268,9 +270,9 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
     ("latex_cmd", re.compile(r"(?<![A-Za-z0-9:])\\[a-zA-Z@]+(?:\[[^\]]*\])*\{[^{}]{0,300}\}")),
     ("latex_cmd", re.compile(r"(?<![A-Za-z0-9:])\\[a-zA-Z@]+\*?")),
     # Bracketed numeric citations: [12], [3, 4], [1-5], [12; 15]. The separator
-        # class admits ';' too — "[12; 15]" locked "12" and "15" with the separator
-        # free, so a rewrite could turn the semi-colon into a comma or a sentence end.
-        ("citation", re.compile(r"\[\d+(?:\s*[-,;]\s*\d+)*\]")),
+    # class admits ';' too — "[12; 15]" locked "12" and "15" with the separator
+    # free, so a rewrite could turn the semi-colon into a comma or a sentence end.
+    ("citation", re.compile(r"\[\d+(?:\s*[-,;]\s*\d+)*\]")),
     # Parenthetical author-year (APA/MLA): (Smith, 2020), (Smith & Lee, 2019, p. 4),
     # (see Smith, 2019), (Smith 2019; Jones 2020), (cf. Smith 2019; Jones 2020, p. 4).
     #
@@ -290,14 +292,26 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
     (
         "citation",
         re.compile(
-            r"\(\s*(?:" + _CITE_PREFIX + r"\s*)?" + _CITE_ENTRY
-            + r"(?:\s*;\s*(?:" + _CITE_PREFIX + r"\s*)?" + _CITE_ENTRY + r")*\s*\)"
+            r"\(\s*(?:"
+            + _CITE_PREFIX
+            + r"\s*)?"
+            + _CITE_ENTRY
+            + r"(?:\s*;\s*(?:"
+            + _CITE_PREFIX
+            + r"\s*)?"
+            + _CITE_ENTRY
+            + r")*\s*\)"
         ),
     ),
     # Narrative author-year: Smith (2020), Smith et al. (2019). Same accented-letter
     # widening as _CITE_ENTRY: "García (2020)" locked only via NER, and the NFD form
     # locked nothing at all — see the MEASURED note at _CITE_LETTER.
-    ("citation", re.compile(rf"[A-ZÀ-ÖØ-Þ\u0100-\u017f][{_CITE_LETTER}]+(?:\s+et al\.?)?\s+\(\d{{4}}[a-z]?\)")),
+    (
+        "citation",
+        re.compile(
+            rf"[A-ZÀ-ÖØ-Þ\u0100-\u017f][{_CITE_LETTER}]+(?:\s+et al\.?)?\s+\(\d{{4}}[a-z]?\)"
+        ),
+    ),
     # DOIs and URLs. The trailing lookbehind keeps the match from swallowing the
     # sentence's own full stop: `\S+` greedily took "https://example.com." whole,
     # so the masked text lost its terminator and sentence splitting downstream
@@ -313,7 +327,13 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
     #   Old (pre-2007):   arXiv:subj-class/YYMMNNN  e.g. arXiv:cs.AI/0301042, arXiv:hep-th/9901001
     # The `\S+` suffix with a trailing lookbehind mirrors the doi pattern exactly; ordered BEFORE
     # the number/dotted rules so the prefix is claimed with the numeric part rather than ceded.
-    ("url", re.compile(r"https?://\S+(?<![.,;:!?])|doi:\s*\S+(?<![.,;:!?])|arXiv:\S+(?<![.,;:!?])", re.IGNORECASE)),
+    (
+        "url",
+        re.compile(
+            r"https?://\S+(?<![.,;:!?])|doi:\s*\S+(?<![.,;:!?])|arXiv:\S+(?<![.,;:!?])",
+            re.IGNORECASE,
+        ),
+    ),
     # Quoted spans (straight or curly double quotes)
     ("quote", re.compile(r"[\"“][^\"”]{1,400}[\"”]")),
     # Single-quoted spans. British and academic house styles quote this way as a matter of course,
@@ -432,21 +452,29 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
             # tight form "1.2e-3m" was worse — the exponent \b failed on "m",
             # "-3m" locked as a unit number and the "1.2e" mantissa stayed free.
             # The unit suffix and (?!\w) terminator mirror the number+unit rule.
-            r"|\b\d+(?:\.\d+)?[eE][+-]?\d+(?:\s*(?:" + _UNIT + r"))?(?!\w)"  # scientific notation: 1.5e10, 1.2e-3 m
+            r"|\b\d+(?:\.\d+)?[eE][+-]?\d+(?:\s*(?:"
+            + _UNIT
+            + r"))?(?!\w)"  # scientific notation: 1.5e10, 1.2e-3 m
             # Caret and superscript exponents. "1.5 × 10^9" locked "1.5 ×" and "10"
             # separately and left "^9" — the magnitude carrier — rewritable, and
             # "10⁹" locked nothing at all. The base is included with an optional
             # "× 10" prefix, so the whole magnitude is one span.
-            r"|\b\d+(?:\.\d+)?(?:\s*[×x]\s*10)?\s*\^+\s*[-−+]?\d+(?:\s*(?:" + _UNIT + r"))?(?!\w)"  # 10^9, 2^31, 1.5 × 10^9 m
-                        r"|\b\d+(?:\.\d+)?(?:\s*[×x]\s*10)?[⁰¹²³⁴⁵⁶⁷⁸⁹⁻]+[0-9⁰¹²³⁴⁵⁶⁷⁸⁹]*(?:\s*(?:" + _UNIT + r"))?(?!\w)"  # 10⁹, 10⁻⁹ m
-                        # Dimensions "10×5 cm" and feet-inches heights "5'10\"". "10x5 cm"
-                        # locked NOTHING before this — the 'x' blocks the \b on both sides,
-                        # so neither number could match — and "5'10\"" locked only the "10".
-                        # Placed AFTER the caret branches so "1.5 × 10^9" is still claimed
-                        # whole by the exponent rule, not split by the dimension rule.
-                        r"|\b\d[\d,]*(?:\.\d+)?\s*[×x]\s*\d[\d,]*(?:\.\d+)?(?:\s*(?:" + _UNIT + r"))?(?!\w)"  # 10×5 cm
-                        r"|\b\d+(?:\.\d+)?\s*['′]\s*\d+(?:\.\d+)?\s*(?:\"|″|′′)(?!\w)"  # 5'10", 6'2"
-                        # Slash date BEFORE the fraction rule, which would otherwise take "03/04" and leave
+            r"|\b\d+(?:\.\d+)?(?:\s*[×x]\s*10)?\s*\^+\s*[-−+]?\d+(?:\s*(?:"
+            + _UNIT
+            + r"))?(?!\w)"  # 10^9, 2^31, 1.5 × 10^9 m
+            r"|\b\d+(?:\.\d+)?(?:\s*[×x]\s*10)?[⁰¹²³⁴⁵⁶⁷⁸⁹⁻]+[0-9⁰¹²³⁴⁵⁶⁷⁸⁹]*(?:\s*(?:"
+            + _UNIT
+            + r"))?(?!\w)"  # 10⁹, 10⁻⁹ m
+            # Dimensions "10×5 cm" and feet-inches heights "5'10\"". "10x5 cm"
+            # locked NOTHING before this — the 'x' blocks the \b on both sides,
+            # so neither number could match — and "5'10\"" locked only the "10".
+            # Placed AFTER the caret branches so "1.5 × 10^9" is still claimed
+            # whole by the exponent rule, not split by the dimension rule.
+            r"|\b\d[\d,]*(?:\.\d+)?\s*[×x]\s*\d[\d,]*(?:\.\d+)?(?:\s*(?:"
+            + _UNIT
+            + r"))?(?!\w)"  # 10×5 cm
+            r"|\b\d+(?:\.\d+)?\s*['′]\s*\d+(?:\.\d+)?\s*(?:\"|″|′′)(?!\w)"  # 5'10", 6'2"
+            # Slash date BEFORE the fraction rule, which would otherwise take "03/04" and leave
             # "/2021" as free text: measured, "03/04/2021" masked to "⟦HZ0000⟧/⟦HZ0001⟧" with the
             # separator rewritable and the day/month pair severed from its year.
             r"|\b\d{1,2}\s*/\s*\d{1,2}\s*/\s*\d{2,4}\b"  # slash date: 03/04/2021
@@ -498,7 +526,11 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
             # number+unit branch would otherwise claim "20°C" before the range branch ever sees
             # the pair, exactly the "5–10%" shape with the unit on the wrong side. This branch
             # must therefore sit BEFORE number+unit; it declines anything without a dash.
-            r"|\b\d[\d,]*(?:\.\d+)?(?:\s*(?:" + _UNIT + r"))?\s*[-–—]\s*\d[\d,]*(?:\.\d+)?(?:\s*(?:" + _UNIT + r"))?(?!\w)"
+            r"|\b\d[\d,]*(?:\.\d+)?(?:\s*(?:"
+            + _UNIT
+            + r"))?\s*[-–—]\s*\d[\d,]*(?:\.\d+)?(?:\s*(?:"
+            + _UNIT
+            + r"))?(?!\w)"
             # Number + unit, allowing a decimal and a leading sign. The terminator is (?!\w), NOT \b:
             # `\b` requires a word character on one side, and "%" / bare "°" are non-word, so a
             # trailing `\b` could only succeed when the symbol was followed by a letter or digit —
@@ -518,7 +550,11 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
     (
         "date",
         re.compile(
-            r"\b(?:" + _WEEKDAY + r"),?\s+(?:" + _MONTH + r")\s+\d{1,2}(?:st|nd|rd|th)?(?:,?\s*\d{4})?"
+            r"\b(?:"
+            + _WEEKDAY
+            + r"),?\s+(?:"
+            + _MONTH
+            + r")\s+\d{1,2}(?:st|nd|rd|th)?(?:,?\s*\d{4})?"
             r"|\b(?:" + _MONTH + r")\s+\d{1,2}(?:st|nd|rd|th)?,?\s*\d{4}"
             r"|\b\d{1,2}(?:st|nd|rd|th)?\s+(?:" + _MONTH + r"),?\s*\d{4}"
             r"|\b(?:" + _MONTH + r")\s+\d{4}\b"
@@ -630,9 +666,7 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
         # character before the match start means an interior component of a longer dotted word is
         # never locked on its own; the whole word either matches from its first letter or is
         # excluded verbatim.
-        re.compile(
-            rf"\b(?<![\w.])(?!(?i:{_ABBR_DOTTED})\.)[A-Za-z_][\w.-]*\.\d*[A-Za-z][\w.-]*\b"
-        ),
+        re.compile(rf"\b(?<![\w.])(?!(?i:{_ABBR_DOTTED})\.)[A-Za-z_][\w.-]*\.\d*[A-Za-z][\w.-]*\b"),
     ),
     # Coordinates: "37.7749° N" masked to "⟦HZ0000⟧ N" — the degree value locked and the
     # HEMISPHERE letter free, so a rewrite could flip N to S and move the point to the other side
@@ -727,7 +761,11 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
             # whole. "5% ± 2%" was the remaining split: both endpoints carried units, the first
             # branch matched the bare numbers and the ± stayed free — so each endpoint takes its
             # own optional unit, and the first branch now claims the whole tolerance.
-            r"\d[\d,]*(?:\.\d+)?(?:\s*(?:" + _UNIT + r"))?\s*(?:±|\+/-|\+-)\s*\d[\d,]*(?:\.\d+)?(?:\s*(?:" + _UNIT + r"))?(?!\w)"
+            r"\d[\d,]*(?:\.\d+)?(?:\s*(?:"
+            + _UNIT
+            + r"))?\s*(?:±|\+/-|\+-)\s*\d[\d,]*(?:\.\d+)?(?:\s*(?:"
+            + _UNIT
+            + r"))?(?!\w)"
             r"|(?:[±∓~≈≃]|\+/-)\s*[-−+]?\d[\d,]*(?:\.\d+)?(?:\s*(?:" + _UNIT + r"))?(?!\w)"
         ),
     ),
@@ -1012,19 +1050,72 @@ def _spacy_entity_spans_impl(text: str) -> list[tuple[int, int]]:
     # are dictionary words. Wordlist is deliberately small and unambiguous.
     _COMMON_WORD_PERSONS = frozenset(
         {
-            "email", "may", "will", "mark", "bill", "rose", "lily", "holly",
-            "hunter", "harper", "mason", "logan", "carter", "chase", "clay",
-            "cole", "drake", "grant", "reed", "stone", "wolf", "fox", "crow",
-            "robin", "wren", "jade", "amber", "ivy", "joy", "hope", "faith",
-            "grace", "summer", "autumn", "winter", "june", "march", "april",
-            "august", "jack", "max", "sam", "pat", "rob", "tom", "sue",
-            "article", "comments", "feedback", "status", "update", "support",
-            "contact", "security", "terms", "privacy", "search", "settings",
+            "email",
+            "may",
+            "will",
+            "mark",
+            "bill",
+            "rose",
+            "lily",
+            "holly",
+            "hunter",
+            "harper",
+            "mason",
+            "logan",
+            "carter",
+            "chase",
+            "clay",
+            "cole",
+            "drake",
+            "grant",
+            "reed",
+            "stone",
+            "wolf",
+            "fox",
+            "crow",
+            "robin",
+            "wren",
+            "jade",
+            "amber",
+            "ivy",
+            "joy",
+            "hope",
+            "faith",
+            "grace",
+            "summer",
+            "autumn",
+            "winter",
+            "june",
+            "march",
+            "april",
+            "august",
+            "jack",
+            "max",
+            "sam",
+            "pat",
+            "rob",
+            "tom",
+            "sue",
+            "article",
+            "comments",
+            "feedback",
+            "status",
+            "update",
+            "support",
+            "contact",
+            "security",
+            "terms",
+            "privacy",
+            "search",
+            "settings",
             # Measured on en_core_web_sm, sentence-initial: 'Insert', 'Map',
             # 'Mode' are tagged PERSON, and 'Lunch is at 12:30 p.m.' locked
             # 'Lunch' as a person. Each is an ordinary word the rewriter must
             # stay free to touch; none is a name the register would capitalise.
-            "insert", "lunch", "map", "mode",
+            "insert",
+            "lunch",
+            "map",
+            "mode",
         }
     )
     return [
@@ -1102,9 +1193,7 @@ def _collect_labeled_spans(text: str) -> list[tuple[str, int, int]]:
 # (single source, imported above) plus ALM. No variation-selector or tag-character
 # wrinkle applies: inside a fact none of these is load-bearing, so every one of them is
 # transparent to the patterns.
-_CARRIER_BETWEEN = re.compile(
-    "[" + re.escape(_ZERO_WIDTH_BETWEEN + "\u061c") + "]"
-)
+_CARRIER_BETWEEN = re.compile("[" + re.escape(_ZERO_WIDTH_BETWEEN + "\u061c") + "]")
 
 
 def _collect_spans_carrier_transparent(text: str) -> list[tuple[int, int]]:
@@ -1115,7 +1204,7 @@ def _collect_spans_carrier_transparent(text: str) -> list[tuple[int, int]]:
     locked span — and therefore restore() — still carries the exact source characters.
     The union with the plain-text spans (caller merges) can only WIDEN a lock, never
     narrow one: a plain-text pass that already locked "9:30" and this pass locking
-    "9:30AM" merge into the full "9:30\u200EAM" span.
+    "9:30AM" merge into the full "9:30\u200eAM" span.
     """
     if not _CARRIER_BETWEEN.search(text):
         return []
@@ -1247,7 +1336,7 @@ def restore(masked: str, mapping: dict[str, str]) -> str:
             return m.group(0)
         # The "." of "1." terminates a list marker, not a sentence.
         line_start = m.string.rfind("\n", 0, m.start()) + 1
-        if _LIST_MARKER_ONLY.match(m.string[line_start:m.start()]):
+        if _LIST_MARKER_ONLY.match(m.string[line_start : m.start()]):
             return m.group(0)
         return m.group(0).replace(m.group(1), span[0].upper() + span[1:])
 
@@ -1322,11 +1411,14 @@ def main(argv: list[str] | None = None) -> int:
         elif args.mapping:
             mapping = json.loads(args.mapping)
         missing = set(mapping) - find_sentinels(text)
-        if missing:  # a locked span was dropped during rewriting — make it loud, don't lose it silently
+        if (
+            missing
+        ):  # a locked span was dropped during rewriting — make it loud, don't lose it silently
             logger.warning(
                 "%d locked span(s) are missing from the text and will "
                 "NOT appear in the output (dropped during rewriting): %s",
-                len(missing), ", ".join(sorted(missing)),
+                len(missing),
+                ", ".join(sorted(missing)),
             )
         print(restore(text, mapping))
         return 0

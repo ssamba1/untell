@@ -31,15 +31,36 @@ from untell.scripts.run import untell_text
 from untell.scripts.tells import score_tells
 
 SUBJECTS = [
-    "climate adaptation", "protein folding", "urban transit", "credit scoring", "soil carbon",
-    "vaccine logistics", "grid storage", "coral restoration", "supply chains", "wildfire modelling",
-    "language teaching", "water reuse", "orbital debris", "crop rotation", "noise abatement",
-    "port automation", "flood mapping", "dialect survey", "seed banking", "tunnel ventilation",
+    "climate adaptation",
+    "protein folding",
+    "urban transit",
+    "credit scoring",
+    "soil carbon",
+    "vaccine logistics",
+    "grid storage",
+    "coral restoration",
+    "supply chains",
+    "wildfire modelling",
+    "language teaching",
+    "water reuse",
+    "orbital debris",
+    "crop rotation",
+    "noise abatement",
+    "port automation",
+    "flood mapping",
+    "dialect survey",
+    "seed banking",
+    "tunnel ventilation",
 ]
 OPENERS = ["Moreover,", "Furthermore,", "Additionally,", "Notably,", "In conclusion,"]
 VERBS = ["leverages", "underscores", "delves into", "highlights", "showcases"]
-NOUNS = ["a robust framework", "the pivotal integration", "a multifaceted tapestry",
-         "the comprehensive landscape", "a transformative paradigm"]
+NOUNS = [
+    "a robust framework",
+    "the pivotal integration",
+    "a multifaceted tapestry",
+    "the comprehensive landscape",
+    "a transformative paradigm",
+]
 
 PARAS = [
     f"{OPENERS[i % 5]} the study of {subject} {VERBS[i % 5]} {NOUNS[i % 5]} for every stakeholder. "
@@ -54,8 +75,9 @@ DOC = "\n\n".join(PARAS)
 def _tells_per_fifth(text: str) -> list[int]:
     paras = [p for p in text.split("\n\n") if p.strip()]
     step = max(1, len(paras) // 5)
-    return [score_tells("\n\n".join(paras[i:i + step]))["tells"]
-            for i in range(0, len(paras), step)][:5]
+    return [
+        score_tells("\n\n".join(paras[i : i + step]))["tells"] for i in range(0, len(paras), step)
+    ][:5]
 
 
 @pytest.fixture(scope="module")
@@ -65,8 +87,9 @@ def rewritten(request) -> dict:
     mp = pytest.MonkeyPatch()
     mp.setenv("UNTELL_LITE_NO_TORCH", "1")
     request.addfinalizer(mp.undo)
-    return untell_text(DOC, tier="lite", max_iters=3, rewriter="composite", best_of=3, seed=21,
-                       threshold=0.001)
+    return untell_text(
+        DOC, tier="lite", max_iters=3, rewriter="composite", best_of=3, seed=21, threshold=0.001
+    )
 
 
 def test_the_document_starts_evenly_loaded() -> None:

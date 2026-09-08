@@ -98,8 +98,7 @@ def _scan(root: Path, suffixes, exclude: Path | None = None) -> dict[str, tuple]
     for dirpath, dirnames, filenames in os.walk(root_res):
         cur = Path(dirpath)
         dirnames[:] = [
-            d for d in dirnames
-            if not (excl is not None and (cur / d).resolve() == excl)
+            d for d in dirnames if not (excl is not None and (cur / d).resolve() == excl)
         ]
         for name in filenames:
             p = cur / name
@@ -160,8 +159,9 @@ class _Coalescer:
         return batch
 
 
-def _make_processor(root: Path, out_dir: Path, *, tier, threshold, rewriter,
-                    max_iters, best_of, dry_run):
+def _make_processor(
+    root: Path, out_dir: Path, *, tier, threshold, rewriter, max_iters, best_of, dry_run
+):
     """A ``process(paths) -> stats`` callable built on the batch pipeline.
 
     Reuses ``untell.scripts.batch._process_one`` for every changed file — the
@@ -175,7 +175,9 @@ def _make_processor(root: Path, out_dir: Path, *, tier, threshold, rewriter,
         entries = []
         for rel in paths:
             entry = batch._process_one(
-                root_res / rel, root_res, out_res,
+                root_res / rel,
+                root_res,
+                out_res,
                 rewriter=rewriter,
                 tier=tier,
                 threshold=threshold,
@@ -227,6 +229,7 @@ def run(
     test: ``scan`` yields snapshots, ``sleep``/``now``/``should_stop`` drive the
     polling and debounce clock, and ``process`` replaces the batch pipeline.
     """
+
     def _scan_default(_r: Path) -> dict:
         return _scan(_r, suffixes, exclude=out_dir)
 
@@ -243,13 +246,21 @@ def run(
         should_stop = _stop_never
     if timeout is not None and should_stop is _stop_never:
         _start = now()
+
         def _timeout_stop() -> bool:
             return (now() - _start) >= timeout
+
         should_stop = _timeout_stop
     if process is None:
         process = _make_processor(
-            root, out_dir, tier=tier, threshold=threshold, rewriter=rewriter,
-            max_iters=max_iters, best_of=best_of, dry_run=dry_run,
+            root,
+            out_dir,
+            tier=tier,
+            threshold=threshold,
+            rewriter=rewriter,
+            max_iters=max_iters,
+            best_of=best_of,
+            dry_run=dry_run,
         )
 
     prev = scan(root)
@@ -296,7 +307,10 @@ def build_parser() -> argparse.ArgumentParser:
         help="detector tier (default: lite — the zero-dependency stdlib path)",
     )
     parser.add_argument(
-        "--threshold", "-t", type=_probability, default=DEFAULT_THRESHOLD,
+        "--threshold",
+        "-t",
+        type=_probability,
+        default=DEFAULT_THRESHOLD,
         help=f"detector pass threshold (default: {DEFAULT_THRESHOLD})",
     )
     parser.add_argument(
@@ -305,31 +319,44 @@ def build_parser() -> argparse.ArgumentParser:
         help="rewriter to use (default: composite — the free $0 path)",
     )
     parser.add_argument(
-        "--max-iters", type=_positive_int, default=5,
+        "--max-iters",
+        type=_positive_int,
+        default=5,
         help="max rewrite iterations per file (default: 5)",
     )
     parser.add_argument(
-        "--best-of", type=_positive_int, default=3,
+        "--best-of",
+        type=_positive_int,
+        default=3,
         help="rewrite candidates per iteration (default: 3)",
     )
     parser.add_argument(
-        "--dry-run", action="store_true",
+        "--dry-run",
+        action="store_true",
         help="report what would be humanized, but rewrite and write nothing",
     )
     parser.add_argument(
-        "--poll-interval", type=_nonneg_float, default=1.0,
+        "--poll-interval",
+        type=_nonneg_float,
+        default=1.0,
         help="seconds between filesystem rescans (default: 1.0)",
     )
     parser.add_argument(
-        "--debounce", type=_nonneg_float, default=2.0,
+        "--debounce",
+        type=_nonneg_float,
+        default=2.0,
         help="quiet seconds before a batch of changes is processed (default: 2.0)",
     )
     parser.add_argument(
-        "--max-batches", type=_positive_int, default=None,
+        "--max-batches",
+        type=_positive_int,
+        default=None,
         help="exit after processing N batches (default: run until Ctrl-C)",
     )
     parser.add_argument(
-        "--timeout", type=_nonneg_float, default=None,
+        "--timeout",
+        type=_nonneg_float,
+        default=None,
         help="exit after N seconds even if no change was processed (default: run until Ctrl-C)",
     )
     return parser

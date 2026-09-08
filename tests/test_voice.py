@@ -214,7 +214,7 @@ class TestADegenerateVoiceSampleIsInertNotInverted:
 
     CANDIDATES = {
         "rich": "I've been running these experiments for months, and honestly, the results "
-                "keep surprising me.",
+        "keep surprising me.",
         "terse": "It works.",
         "medium": "The system processed the input and returned a result within the expected time.",
     }
@@ -229,7 +229,8 @@ class TestADegenerateVoiceSampleIsInertNotInverted:
         return {k: _voice_key(v, sample) for k, v in self.CANDIDATES.items()}
 
     @pytest.mark.parametrize(
-        "sample", [None, "", "   ", "\n\t ", "It works fine.", "Three word sample"],
+        "sample",
+        [None, "", "   ", "\n\t ", "It works fine.", "Three word sample"],
         ids=["none", "empty", "spaces", "newline-tab", "three-words", "three-words-2"],
     )
     def test_a_sample_too_thin_to_profile_ranks_nothing(self, sample):

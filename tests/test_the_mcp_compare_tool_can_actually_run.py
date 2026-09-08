@@ -14,6 +14,7 @@ Registration happens inside `_server()` via a decorator, so the tools are not mo
 These tests capture them the way the probe did: stand in for FastMCP with a `.tool()` that records
 each function and returns it unchanged.
 """
+
 from __future__ import annotations
 
 import sys
@@ -55,8 +56,10 @@ def tools() -> dict:
     # empty dict and errored. Alone it passed. Test order is not something a fixture should depend
     # on, so the entries are forced and restored, and `untell.mcp_server` is dropped from the cache
     # so its decorators re-run against the fake installed here.
-    saved = {name: sys.modules.get(name) for name in
-             ("mcp", "mcp.server", "mcp.server.fastmcp", "untell.mcp_server")}
+    saved = {
+        name: sys.modules.get(name)
+        for name in ("mcp", "mcp.server", "mcp.server.fastmcp", "untell.mcp_server")
+    }
     for name, mod in (("mcp", mcp), ("mcp.server", server), ("mcp.server.fastmcp", fastmcp)):
         sys.modules[name] = mod
     sys.modules.pop("untell.mcp_server", None)
@@ -107,8 +110,14 @@ def test_compare_refuses_an_unknown_tier(tools):
 @pytest.mark.parametrize(
     "tool,kwargs",
     [
-        ("score", {"text": "Moreover, the framework leverages robust methodologies.", "tier": "turbo"}),
-        ("sentences", {"text": "Moreover, the framework leverages methodologies.", "tier": "turbo"}),
+        (
+            "score",
+            {"text": "Moreover, the framework leverages robust methodologies.", "tier": "turbo"},
+        ),
+        (
+            "sentences",
+            {"text": "Moreover, the framework leverages methodologies.", "tier": "turbo"},
+        ),
         ("untell", {"text": "Moreover, the framework leverages methodologies.", "max_iters": -3}),
     ],
 )

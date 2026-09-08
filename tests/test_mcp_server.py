@@ -1,5 +1,6 @@
 """Tests for the MCP server — verifies tool registration, not network/MCP protocol.
 Mocks the mcp package entirely before importing so we don't need it installed."""
+
 from __future__ import annotations
 
 import sys
@@ -161,7 +162,9 @@ class TestMcpToolsActuallyRun:
     def test_the_error_lists_the_styles_the_tool_advertises(self):
         from untell.rewriter.prompts import STYLE_NAMES
 
-        err = _mcp_tools()["untell"](text=self.TEXT, tier="lite", max_iters=1, style="nope")["error"]
+        err = _mcp_tools()["untell"](text=self.TEXT, tier="lite", max_iters=1, style="nope")[
+            "error"
+        ]
         for name in STYLE_NAMES:
             assert name in err, name
 
@@ -218,7 +221,7 @@ def test_best_of_default_matches_the_cli_on_every_surface():
 
 
 def test_rewriter_default_is_the_free_path_on_every_surface():
-    """"auto" declines to pick a backend without an API key, so it cannot be the default on a
+    """ "auto" declines to pick a backend without an API key, so it cannot be the default on a
     tool that advertises a zero-dependency free path."""
     import inspect
 
@@ -269,14 +272,15 @@ class TestMcpRejectsOutOfRangeArguments:
         from untell.mcp_server import _bad_args
 
         assert "outside 1..100" in _bad_args(max_iters=(0, "count"))["error"]
-        assert "outside 1..100" in _bad_args(best_of=(10 ** 6, "count"))["error"]
+        assert "outside 1..100" in _bad_args(best_of=(10**6, "count"))["error"]
 
     def test_valid_arguments_pass_through(self):
         from untell.mcp_server import _bad_args
 
-        assert _bad_args(
-            tier=("lite", "tier"), threshold=(0.3, "probability"), best_of=(3, "count")
-        ) is None
+        assert (
+            _bad_args(tier=("lite", "tier"), threshold=(0.3, "probability"), best_of=(3, "count"))
+            is None
+        )
 
     def test_the_tools_actually_call_it(self):
         """A validator nothing invokes is decoration."""
@@ -294,9 +298,15 @@ class TestMcpRejectsOutOfRangeArguments:
         can send ANYTHING, and a traceback is what this validator exists to prevent."""
         from untell.mcp_server import _bad_args
 
-        for name, kind in (("threshold", "probability"), ("margin", "probability"),
-                           ("max_iters", "count"), ("best_of", "count"),
-                           ("confirm", "count_or_zero"), ("top", "top"), ("seed", "seed")):
+        for name, kind in (
+            ("threshold", "probability"),
+            ("margin", "probability"),
+            ("max_iters", "count"),
+            ("best_of", "count"),
+            ("confirm", "count_or_zero"),
+            ("top", "top"),
+            ("seed", "seed"),
+        ):
             err = _bad_args(**{name: ("abc", kind)})
             assert err and "is not a number" in err["error"], (name, err)
 

@@ -26,8 +26,16 @@ import pytest
 from untell.scripts.preserve import lock
 
 ACCENTED_NAMES = [
-    "García", "Müller", "Zúñiga", "François", "Álvarez", "Sørensen",
-    "Łódź", "Café", "Sánchez", "Núñez",
+    "García",
+    "Müller",
+    "Zúñiga",
+    "François",
+    "Álvarez",
+    "Sørensen",
+    "Łódź",
+    "Café",
+    "Sánchez",
+    "Núñez",
 ]
 
 
@@ -37,14 +45,12 @@ def test_a_parenthetical_citation_locks_the_same_in_nfc_and_nfd(name):
     nfd = unicodedata.normalize("NFD", nfc)
     masked_nfc, map_nfc = lock(nfc)
     masked_nfd, map_nfd = lock(nfd)
+
     # Both forms must protect the author name — either the whole parenthetical
     # locks as one span, or the name does on its own. Compare in NFC so the
     # decomposed form's value matches the composed name.
     def name_locked(mapping) -> bool:
-        return any(
-            name in v or name in unicodedata.normalize("NFC", v)
-            for v in mapping.values()
-        )
+        return any(name in v or name in unicodedata.normalize("NFC", v) for v in mapping.values())
 
     assert name_locked(map_nfc), f"NFC {name!r} not locked: {map_nfc!r}"
     assert name_locked(map_nfd), f"NFD {name!r} not locked: {map_nfd!r}"
@@ -58,10 +64,7 @@ def test_a_narrative_citation_locks_the_same_in_nfc_and_nfd(name):
     _, map_nfd = lock(nfd)
 
     def name_locked(mapping) -> bool:
-        return any(
-            name in v or name in unicodedata.normalize("NFC", v)
-            for v in mapping.values()
-        )
+        return any(name in v or name in unicodedata.normalize("NFC", v) for v in mapping.values())
 
     assert name_locked(map_nfc), f"NFC narrative {name!r} not locked: {map_nfc!r}"
     assert name_locked(map_nfd), f"NFD narrative {name!r} not locked: {map_nfd!r}"
@@ -73,9 +76,7 @@ def test_et_al_keeps_the_accented_name_locked():
     _, map_nfc = lock(nfc)
     _, map_nfd = lock(nfd)
     assert any("Müller" in v for v in map_nfc.values()), map_nfc
-    assert any(
-        "Müller" in unicodedata.normalize("NFC", v) for v in map_nfd.values()
-    ), map_nfd
+    assert any("Müller" in unicodedata.normalize("NFC", v) for v in map_nfd.values()), map_nfd
 
 
 def test_round_trip_still_holds_for_both_forms():

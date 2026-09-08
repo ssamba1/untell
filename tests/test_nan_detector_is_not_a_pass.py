@@ -21,9 +21,7 @@ class _NaN:
 
 
 def test_nan_detector_is_not_a_pass(monkeypatch):
-    monkeypatch.setattr(
-        "untell.detectors.commercial.commercial_detectors", lambda: [_NaN()]
-    )
+    monkeypatch.setattr("untell.detectors.commercial.commercial_detectors", lambda: [_NaN()])
     r = verify("x", tier=None, threshold=0.30)
     row = r["results"]["nan_detector"]
     assert row["ai"] is None

@@ -6,6 +6,7 @@ subsequent too-short text warns again, spamming the log. Prior 'warning latch,
 no observable output change' note wrong — the latch IS the observable, same
 class as the voice.py:187 warn-once kill.
 """
+
 import logging
 
 import untell.humanness as humanness

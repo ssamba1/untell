@@ -63,6 +63,7 @@ _CLEAN_TEXT = (
 # Core property: cliché-heavy text → cliché named, unrelated category absent
 # ---------------------------------------------------------------------------
 
+
 def test_cliche_detected_text_names_cliche_in_prompt():
     """A document heavy in clichés must produce a prompt that names the cliché signal."""
     sr = {"detectors": {}}
@@ -91,6 +92,7 @@ def test_cliche_detected_text_omits_absent_category():
 # Core property: repeated-opener-heavy text → repeated openers named, clichés absent
 # ---------------------------------------------------------------------------
 
+
 def test_repeated_opener_text_names_opener_signal():
     """A document with many repeated sentence starters must name that signal."""
     sr = {"detectors": {}}
@@ -116,6 +118,7 @@ def test_repeated_opener_text_omits_absent_cliche():
 # The two documents produce DIFFERENT named-signal sections
 # ---------------------------------------------------------------------------
 
+
 def test_cliche_and_opener_texts_produce_different_prompts():
     """The named-signal section must differ between the cliché-heavy and opener-heavy texts."""
     sr = {"detectors": {}}
@@ -131,6 +134,7 @@ def test_cliche_and_opener_texts_produce_different_prompts():
 # Clean text: no signals section added
 # ---------------------------------------------------------------------------
 
+
 def test_clean_text_has_no_named_signal_section():
     """A text with no detectable tells must produce no named-signal section."""
     sr = {"detectors": {}}
@@ -145,6 +149,7 @@ def test_clean_text_has_no_named_signal_section():
 # ---------------------------------------------------------------------------
 # Pre-supplied by_category takes priority over running score_tells
 # ---------------------------------------------------------------------------
+
 
 def test_presupplied_by_category_is_used():
     """When score_result carries by_category, the function uses it without calling score_tells."""
@@ -176,6 +181,7 @@ def test_presupplied_by_category_excludes_uninjected_category():
 # Exception safety: a broken score_tells must not crash the prompt
 # ---------------------------------------------------------------------------
 
+
 def test_score_tells_exception_does_not_crash_prompt():
     """If by_category raises an exception (simulated by a non-dict), prompt still returns."""
     sr = {
@@ -189,6 +195,7 @@ def test_score_tells_exception_does_not_crash_prompt():
 # ---------------------------------------------------------------------------
 # _detected_signals properties
 # ---------------------------------------------------------------------------
+
 
 def test_detected_signals_only_returns_actionable_categories():
     """_detected_signals must only return categories present in _CATEGORY_ADVICE."""
@@ -205,9 +212,7 @@ def test_detected_signals_sorted_by_count_descending():
     sr = {"by_category": {"cliche": 1, "formulaic_transition": 5, "ai_vocab": 3}}
     result = _detected_signals("irrelevant", sr)
     counts = [count for _, count in result]
-    assert counts == sorted(counts, reverse=True), (
-        f"expected descending counts, got {counts}"
-    )
+    assert counts == sorted(counts, reverse=True), f"expected descending counts, got {counts}"
 
 
 def test_detected_signals_capped_at_max():
@@ -240,6 +245,4 @@ def test_every_category_advice_key_is_known_to_score_tells():
         }
     )
     unknown = set(_CATEGORY_ADVICE) - known
-    assert not unknown, (
-        f"_CATEGORY_ADVICE keys not recognised by score_tells: {unknown}"
-    )
+    assert not unknown, f"_CATEGORY_ADVICE keys not recognised by score_tells: {unknown}"

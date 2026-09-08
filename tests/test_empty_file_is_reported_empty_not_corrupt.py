@@ -6,6 +6,7 @@ bytes", so an empty .docx is reported as "not a readable .docx (corrupt...)"
 instead of "is empty, so there is no .docx to read". This test pins the
 boundary — 0 bytes must be "empty", not "corrupt".
 """
+
 import os
 import tempfile
 

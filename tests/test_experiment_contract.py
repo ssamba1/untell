@@ -27,10 +27,16 @@ class _Proc:
 
 class TestMeasure:
     def test_parses_json_result(self, monkeypatch) -> None:
-        result = {"pre_flagged_rate": 0.5, "post_flagged_rate": 0.1,
-                  "rewriter_available": True, "rewrote": True, "n": 10}
+        result = {
+            "pre_flagged_rate": 0.5,
+            "post_flagged_rate": 0.1,
+            "rewriter_available": True,
+            "rewrote": True,
+            "n": 10,
+        }
         monkeypatch.setattr(
-            E.subprocess, "run",
+            E.subprocess,
+            "run",
             lambda *a, **k: _Proc(0, json.dumps(result)),
         )
         out = E.measure("lite-builtin", "test-label")
@@ -42,7 +48,8 @@ class TestMeasure:
 
         A failing measurement must raise. The mutation swallows it."""
         monkeypatch.setattr(
-            E.subprocess, "run",
+            E.subprocess,
+            "run",
             lambda *a, **k: _Proc(1, "", "boom"),
         )
         with pytest.raises(RuntimeError):
@@ -54,7 +61,8 @@ class TestMeasure:
         A run that reports nothing (falsy liveness field) must raise — the
         measurement describes nothing."""
         monkeypatch.setattr(
-            E.subprocess, "run",
+            E.subprocess,
+            "run",
             lambda *a, **k: _Proc(0, json.dumps({"rewrote": False, "n": 0})),
         )
         with pytest.raises(RuntimeError):
@@ -85,7 +93,8 @@ class TestVerdict:
         f = Path(spec["file"])
         orig = f.read_text(encoding="utf-8")
         monkeypatch.setattr(
-            E, "measure",
+            E,
+            "measure",
             lambda recipe, label: before if label == "before" else after,
         )
         # instruments file says the recipe is NOT deterministic -> guard passes
@@ -103,12 +112,20 @@ class TestVerdict:
         knob_file.parent.mkdir(parents=True, exist_ok=True)
         # write a line that the find pattern matches (e.g. "DEFAULT_BAR = 0.76")
         find_pat = re.compile(spec["find"])
-        seed = spec["find"].lstrip("^").replace(r"\.", ".").replace("0.70", "0.76").replace("0.82", "0.76")
+        seed = (
+            spec["find"]
+            .lstrip("^")
+            .replace(r"\.", ".")
+            .replace("0.70", "0.76")
+            .replace("0.82", "0.76")
+        )
         knob_file.write_text(seed + "\n", encoding="utf-8")
         assert find_pat.search(seed), f"seed {seed!r} must match find {spec['find']!r}"
+
         # git-clean guard: report the knob file as clean
         class _Clean:
             returncode = 0
+
         monkeypatch.setattr(E, "sh", lambda *a, **k: _Clean())
         try:
             return E.cmd_run(knob, "lite-hc3")
@@ -125,14 +142,24 @@ class TestVerdict:
         0.04, but 0.54-0.5 = 0.03999999999999998 < 0.04 -> noise even under
         mutation... so use the 2x-vs-3x band shape instead:
         band 2*0.01=0.02; delta 0.025 between 2x and 3x."""
-        before = {"pre_flagged_rate": 0.5, "post_flagged_rate": 0.5,
-                  "rewriter_available": True, "rewrote": True, "n": 10,
-                  "post_mean_max_stdev": 0.01}
+        before = {
+            "pre_flagged_rate": 0.5,
+            "post_flagged_rate": 0.5,
+            "rewriter_available": True,
+            "rewrote": True,
+            "n": 10,
+            "post_mean_max_stdev": 0.01,
+        }
         # delta 0.025 (0.525-0.5) > band 0.02: MOVED under original.
         # The 2->3 band mutation (0.03) makes it noise: distinguishing.
-        after = {"pre_flagged_rate": 0.525, "post_flagged_rate": 0.525,
-                 "rewriter_available": True, "rewrote": True, "n": 10,
-                 "post_mean_max_stdev": 0.01}
+        after = {
+            "pre_flagged_rate": 0.525,
+            "post_flagged_rate": 0.525,
+            "rewriter_available": True,
+            "rewrote": True,
+            "n": 10,
+            "post_mean_max_stdev": 0.01,
+        }
         rc = self._run(monkeypatch, tmp_path, before, after)
         assert rc == 0
         out = capsys.readouterr().out

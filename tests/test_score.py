@@ -152,7 +152,8 @@ class TestTheResultNamesTheScoringPath:
         import untell.detectors.perplexity_burstiness as pb
 
         monkeypatch.setattr(
-            pb.PerplexityBurstinessDetector, "mode",
+            pb.PerplexityBurstinessDetector,
+            "mode",
             lambda self: (_ for _ in ()).throw(RuntimeError("boom")),
         )
         result = score_text(self.TEXT, tier="lite")
@@ -193,7 +194,9 @@ def test_dead_detectors_excluded_not_pinned_at_half(monkeypatch):
         def score(self, text):
             return None
 
-    monkeypatch.setattr(score_mod, "load_detectors", lambda tier="full": [GoodLite(), Broken(), NoSignal()])
+    monkeypatch.setattr(
+        score_mod, "load_detectors", lambda tier="full": [GoodLite(), Broken(), NoSignal()]
+    )
     r = score_mod.score_text("some text", tier="full", threshold=0.3)
 
     assert r["max"] == 0.1, "max must reflect only the live detector, not a 0.5 from a dead one"
@@ -207,6 +210,7 @@ def test_dead_detectors_excluded_not_pinned_at_half(monkeypatch):
 
 def _fake_detectors(values):
     """Install detectors returning exactly `values` (an Exception instance means it raises)."""
+
     class _D:
         def __init__(self, name, v):
             self.name, self.tier, self._v = name, "lite", v

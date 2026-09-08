@@ -19,7 +19,9 @@ _POOL = re.compile(
 
 # 20 sentences that all open the same way: the worst case for `repeated_sentence_openers`, and
 # the input this transform exists to improve.
-_REPETITIVE = [f"The system handles case number {i} without any difficulty at all." for i in range(20)]
+_REPETITIVE = [
+    f"The system handles case number {i} without any difficulty at all." for i in range(20)
+]
 
 
 def _share(sentences: list[str]) -> float:

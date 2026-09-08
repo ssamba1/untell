@@ -171,7 +171,11 @@ def render(result: dict) -> str:
     """One arm as a human-readable block, caveats included rather than appended."""
     lines = [
         f"{result['label']}  (n={result['n']}"
-        + (f", {result['degenerate_rewrites']} empty rewrites excluded" if result["degenerate_rewrites"] else "")
+        + (
+            f", {result['degenerate_rewrites']} empty rewrites excluded"
+            if result["degenerate_rewrites"]
+            else ""
+        )
         + ")",
         f"  numerals kept        {result['numerals_kept_rate']:.1%}"
         f"   ({result['documents_dropping_a_number']} documents dropped"
@@ -186,8 +190,7 @@ def render(result: dict) -> str:
     ]
     if result["detector_pre"] is not None:
         lines.append(
-            f"  detector max P(AI)   {result['detector_pre']:.4f}"
-            f" -> {result['detector_post']:.4f}"
+            f"  detector max P(AI)   {result['detector_pre']:.4f} -> {result['detector_post']:.4f}"
         )
     for gate in result["gates_unavailable"]:
         lines.append(f"  NOT RUN: {gate}")

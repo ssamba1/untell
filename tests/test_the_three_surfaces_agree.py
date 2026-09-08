@@ -16,6 +16,7 @@ The five knobs absent from BOTH remote surfaces (browser, progress, scrub, sim_b
 veto_contradictions) are a deliberate line — they drive Playwright, write to stdout, or are
 internals — so the gap really was those two, both of which change the verdict.
 """
+
 from __future__ import annotations
 
 import inspect
@@ -60,8 +61,10 @@ def mcp_tools() -> dict:
     mcp = MagicMock()
     mcp.server = server
 
-    saved = {n: sys.modules.get(n) for n in
-             ("mcp", "mcp.server", "mcp.server.fastmcp", "untell.mcp_server")}
+    saved = {
+        n: sys.modules.get(n)
+        for n in ("mcp", "mcp.server", "mcp.server.fastmcp", "untell.mcp_server")
+    }
     for name, mod in (("mcp", mcp), ("mcp.server", server), ("mcp.server.fastmcp", fastmcp)):
         sys.modules[name] = mod
     sys.modules.pop("untell.mcp_server", None)
@@ -86,9 +89,11 @@ def test_the_same_text_scores_the_same_on_every_surface(mcp_tools):
 
     library = score_text(TEXT, tier="lite", threshold=0.30)["max"]
     mcp = mcp_tools["score"](text=TEXT, tier="lite", threshold=0.30)["max"]
-    rest = TestClient(app).post(
-        "/score", json={"text": TEXT, "tier": "lite", "threshold": 0.30}
-    ).json()["max"]
+    rest = (
+        TestClient(app)
+        .post("/score", json={"text": TEXT, "tier": "lite", "threshold": 0.30})
+        .json()["max"]
+    )
 
     assert library == mcp == rest, f"library={library} mcp={mcp} rest={rest}"
 
@@ -149,7 +154,5 @@ def test_confirm_accepts_zero_and_rejects_out_of_range(mcp_tools, confirm: int, 
     rejected and the flagship tool answered {"error": "confirm=0 is outside 1..100."} to every
     ordinary call. Found by testing the boundary rather than the middle.
     """
-    result = mcp_tools["untell"](
-        text=TEXT, tier="lite", max_iters=1, best_of=1, confirm=confirm
-    )
+    result = mcp_tools["untell"](text=TEXT, tier="lite", max_iters=1, best_of=1, confirm=confirm)
     assert (not result.get("error")) is ok, result

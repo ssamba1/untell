@@ -1,4 +1,5 @@
 """Pass 714 probe: io_utils write side + config module (untell)."""
+
 import io
 import logging
 import os
@@ -10,7 +11,12 @@ print(f"python: {sys.executable}")
 print(f"PYTHONPATH={os.environ.get('PYTHONPATH')!r}")
 
 sys.path.insert(0, os.getcwd())
-from untell.scripts.io_utils import read_file, read_file_or_exit, read_stdin_or_none, configure_utf8_io
+from untell.scripts.io_utils import (
+    read_file,
+    read_file_or_exit,
+    read_stdin_or_none,
+    configure_utf8_io,
+)
 from untell import config
 
 print("=" * 60)
@@ -20,9 +26,12 @@ print("=" * 60)
 # 1a. Write functions inventory
 import inspect
 import untell.scripts.io_utils as iu
+
 writes = [n for n in dir(iu) if not n.startswith("__")]
 print(f"io_utils public/private names: {writes}")
-print(f"write-related names: {[n for n in writes if 'write' in n.lower()] or 'NONE - module is read-only'}")
+print(
+    f"write-related names: {[n for n in writes if 'write' in n.lower()] or 'NONE - module is read-only'}"
+)
 
 # 1b. Round-trip: stdlib write -> read_file
 tmpdir = tempfile.mkdtemp(prefix="io_wr_", dir=tempfile.gettempdir())
@@ -91,6 +100,7 @@ print("=" * 60)
 
 # 2a. Config keys: defaults live in run.py _CLI_DEFAULTS
 from untell.scripts.run import _CLI_DEFAULTS
+
 print(f"_CLI_DEFAULTS: {_CLI_DEFAULTS}")
 
 # 2b. Unknown key -> default
@@ -146,7 +156,9 @@ tier = config.get("tier", "full")
 threshold = config.get("threshold", 0.30)
 max_iters = config.get("max_iters", 5)
 best_of = config.get("best_of", 3)
-print(f"defaults: tier={tier!r} threshold={threshold!r} max_iters={max_iters!r} best_of={best_of!r}")
+print(
+    f"defaults: tier={tier!r} threshold={threshold!r} max_iters={max_iters!r} best_of={best_of!r}"
+)
 assert tier == "full" and threshold == 0.30 and max_iters == 5 and best_of == 3
 print(f"load() in CWD = {config.load()!r}")
 

@@ -119,7 +119,10 @@ class TestScriptedFormatMarks:
         # The mark is stripped only when its script is ABSENT after removal. In real
         # Arabic the script survives, so the `and` is what protects the mark; the mutated
         # `or` strips it out of genuine Arabic prose.
-        text = "\u0628\u0633\u0645 \u0627\u0644\u0644\u0647 \u0627\u0644\u0631\u062d\u0645\u0646 \u0627\u0644\u0631\u062d\u064a\u0645 " + chr(0x06DD)
+        text = (
+            "\u0628\u0633\u0645 \u0627\u0644\u0644\u0647 \u0627\u0644\u0631\u062d\u0645\u0646 \u0627\u0644\u0631\u062d\u064a\u0645 "
+            + chr(0x06DD)
+        )
         assert _strip_orphan_scripted_marks(text) == text
 
     def test_arabic_format_mark_is_stripped_from_pure_ascii(self):
@@ -205,9 +208,9 @@ class TestUnhomoglyph:
         # unicode_tricks.py:368  logic: or -> and   (`ch.isascii() or ch not in _UNHOMOGLYPH`)
         # The mutated `and` excludes native Cyrillic letters from the evidence, so one
         # stray ASCII 'x' makes the document "mostly ASCII" and folds real Cyrillic words.
-        assert _unhomoglyph("\u042d\u0442\u043e\u0442 x \u043e\u0440\u0435 \u0442\u0435\u043a\u0441\u0442.") == (
+        assert _unhomoglyph(
             "\u042d\u0442\u043e\u0442 x \u043e\u0440\u0435 \u0442\u0435\u043a\u0441\u0442."
-        )
+        ) == ("\u042d\u0442\u043e\u0442 x \u043e\u0440\u0435 \u0442\u0435\u043a\u0441\u0442.")
 
     def test_confusables_do_not_vote_on_latinness(self):
         # unicode_tricks.py:368  membership: not in -> in
@@ -251,7 +254,9 @@ class TestUnhomoglyph:
         # unicode_tricks.py:379  logic: and -> or   (`mostly_ascii and alpha and all(...)`)
         # Inside Russian prose an all-confusable word is a real word; the mutated `or`
         # folds it because the later conjuncts hold.
-        assert _unhomoglyph("\u042d\u0442\u043e \u043e\u0447\u0435\u043d\u044c \u043e\u0440\u0435 \u0442\u0435\u043a\u0441\u0442.") == (
+        assert _unhomoglyph(
+            "\u042d\u0442\u043e \u043e\u0447\u0435\u043d\u044c \u043e\u0440\u0435 \u0442\u0435\u043a\u0441\u0442."
+        ) == (
             "\u042d\u0442\u043e \u043e\u0447\u0435\u043d\u044c \u043e\u0440\u0435 \u0442\u0435\u043a\u0441\u0442."
         )
 

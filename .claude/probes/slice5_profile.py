@@ -1,4 +1,5 @@
 """Profile the core humanize path (untell_text) on a realistic corpus."""
+
 import cProfile
 import io
 import pstats
@@ -39,7 +40,9 @@ print(f"rewriter: {rw.name}")
 t0 = time.perf_counter()
 res = untell_text(corpus, tier="lite", max_iters=2, rewriter=rw, progress=False)
 t1 = time.perf_counter()
-print(f"untell_text wall: {t1 - t0:.2f}s, iterations={res.get('iterations')}, flagged={res.get('flagged')}")
+print(
+    f"untell_text wall: {t1 - t0:.2f}s, iterations={res.get('iterations')}, flagged={res.get('flagged')}"
+)
 
 # cProfile on a fresh call
 pr = cProfile.Profile()

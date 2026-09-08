@@ -3316,7 +3316,7 @@ Found by the trace in [Result 56](free-ceiling-measured.md), which showed the lo
 candidate tuple was built as
 
 ```python
-cscore = score(candidate)                                  # restores first
+cscore = score(candidate)  # restores first
 valid.append((candidate, cscore, score_tells(candidate)))  # does not
 ```
 
@@ -7491,7 +7491,7 @@ One is not.
 ```python
 def test_sim_floor_adapts_to_the_active_similarity_metric(monkeypatch):
     monkeypatch.setattr(q, "method", lambda: "token_overlap")
-    monkeypatch.setattr(r, "recommended_bar", lambda: q.TOKEN_BAR)   # <- short-circuits the chain
+    monkeypatch.setattr(r, "recommended_bar", lambda: q.TOKEN_BAR)  # <- short-circuits the chain
 ```
 
 `recommended_bar()` reads `method()` — that is the adaptation, and it is the entire subject of the

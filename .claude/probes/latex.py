@@ -1,7 +1,15 @@
 """latex: detection, citation preservation, bib resolution."""
+
 import json, os
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
-from untell.scripts.latex import is_latex, cite_keys, bib_keys, dropped_citations, unresolved_citations
+from untell.scripts.latex import (
+    is_latex,
+    cite_keys,
+    bib_keys,
+    dropped_citations,
+    unresolved_citations,
+)
 
 out = {}
 out["detect_latex"] = is_latex(r"The model \cite{smith2019} improves accuracy.")

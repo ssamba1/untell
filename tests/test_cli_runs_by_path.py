@@ -39,7 +39,9 @@ RUN_AS_FILE = [
 ]
 
 
-@pytest.mark.parametrize(("rel", "needle"), RUN_AS_FILE, ids=[r[0].split("/")[-1] for r in RUN_AS_FILE])
+@pytest.mark.parametrize(
+    ("rel", "needle"), RUN_AS_FILE, ids=[r[0].split("/")[-1] for r in RUN_AS_FILE]
+)
 def test_cli_runs_as_main_and_answers_help(rel: str, needle: str, capsys, monkeypatch) -> None:
     """Executing the file as __main__ (the documented bare-interpreter path) works."""
     script = REPO / rel

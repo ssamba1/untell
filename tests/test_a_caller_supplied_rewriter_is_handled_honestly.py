@@ -54,16 +54,12 @@ class TestACompletedRunSurvivesAMissingName:
 
 class TestTheManifestDoesNotVouchForStrangers:
     def test_an_unrecognised_rewriter_is_unknown_not_reproducible(self):
-        payload = _manifest_payload(
-            AI, _run(NamedRewriter()), threshold=0.30, browser=None
-        )
+        payload = _manifest_payload(AI, _run(NamedRewriter()), threshold=0.30, browser=None)
         assert payload["determinism"] == "unknown"
         assert "my-custom-rewriter" in payload["determinism_reason"]
 
     def test_the_reason_tells_the_caller_how_to_settle_it_themselves(self):
-        payload = _manifest_payload(
-            AI, _run(MinimalRewriter()), threshold=0.30, browser=None
-        )
+        payload = _manifest_payload(AI, _run(MinimalRewriter()), threshold=0.30, browser=None)
         assert "output_sha256" in payload["determinism_reason"]
 
     def test_a_known_local_rewriter_is_still_reproducible(self):

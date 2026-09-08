@@ -6,6 +6,7 @@ flips it to pass. The cut is a published constant, so the exact-equality case
 is reachable — the 'measure-zero with real floats' claim was wrong; the stdlib
 path publishes an exact cut and a detector value can land on it.
 """
+
 from unittest.mock import patch
 
 from untell.scripts.verify import verify
@@ -52,9 +53,7 @@ class _Exact:
 
 
 def test_commercial_detector_at_exact_threshold_does_not_pass(monkeypatch):
-    monkeypatch.setattr(
-        "untell.detectors.commercial.commercial_detectors", lambda: [_Exact()]
-    )
+    monkeypatch.setattr("untell.detectors.commercial.commercial_detectors", lambda: [_Exact()])
     r = verify("x", tier=None, threshold=0.30)
     row = r["results"]["exact_commercial"]
     assert row["ai"] == 0.30

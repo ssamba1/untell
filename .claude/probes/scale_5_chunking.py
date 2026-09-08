@@ -9,6 +9,7 @@ Measures at 10k / 100k / 1M chars:
 
 Usage: python scale_5_chunking.py
 """
+
 import json
 import math
 import os
@@ -71,7 +72,8 @@ def main():
         ss_counts[n] = len(sents)
         rejoined = " ".join(sents)
         out["split_sentences"][str(n)] = {
-            "sentences": len(sents), "seconds": round(dt, 3),
+            "sentences": len(sents),
+            "seconds": round(dt, 3),
             "consistent": abs(len(rejoined) - len(doc.strip())) / max(len(doc), 1) < 0.05,
         }
         print(f"split_sentences {n:>8,} chars: {len(sents):,} chunks in {dt:.3f}s", flush=True)
@@ -91,12 +93,17 @@ def main():
         max_words = max((len(a.split()) for a, _ in pairs), default=0)
         n_words = len(doc.split())
         out["aligned_chunks"][str(n)] = {
-            "chunk_pairs": len(pairs), "seconds": round(dt, 3),
-            "max_chunk_words": max_words, "total_words": n_words,
+            "chunk_pairs": len(pairs),
+            "seconds": round(dt, 3),
+            "max_chunk_words": max_words,
+            "total_words": n_words,
             "consistent": all(a == b for a, b in pairs),
         }
-        print(f"aligned_chunks({n:>8,} chars, identical): {len(pairs):,} pairs in {dt:.3f}s "
-              f"(max chunk {max_words} words)", flush=True)
+        print(
+            f"aligned_chunks({n:>8,} chars, identical): {len(pairs):,} pairs in {dt:.3f}s "
+            f"(max chunk {max_words} words)",
+            flush=True,
+        )
     b, r2 = loglog_fit(list(ac_times.keys()), list(ac_times.values()))
     out["aligned_chunks"]["scaling_exponent"] = round(b, 3)
     out["aligned_chunks"]["r2"] = round(r2, 4)
@@ -113,12 +120,16 @@ def main():
         pairs = aligned_chunks(doc, shuffled)
         dt = time.perf_counter() - t0
         out["adversarial_aligned"][str(n)] = {"chunk_pairs": len(pairs), "seconds": round(dt, 3)}
-        print(f"aligned_chunks SHUFFLED {n:>8,} chars: {len(pairs):,} pairs in {dt:.3f}s", flush=True)
+        print(
+            f"aligned_chunks SHUFFLED {n:>8,} chars: {len(pairs):,} pairs in {dt:.3f}s", flush=True
+        )
     if "100000" in out["adversarial_aligned"] and "10000" in out["adversarial_aligned"]:
         t10 = out["adversarial_aligned"]["10000"]["seconds"]
         t100 = out["adversarial_aligned"]["100000"]["seconds"]
         if t10 > 0 and t100 > 0:
-            out["adversarial_aligned"]["exp_10x_ratio"] = round(math.log(t100 / t10) / math.log(10), 2)
+            out["adversarial_aligned"]["exp_10x_ratio"] = round(
+                math.log(t100 / t10) / math.log(10), 2
+            )
 
     print(json.dumps(out))
 

@@ -48,7 +48,9 @@ def test_no_stray_untracked_scratch_at_root() -> None:
         ["git", "status", "--porcelain=v1", "--untracked-files=all"],
         cwd=ROOT,
         capture_output=True,
-        text=True, encoding="utf-8", errors="replace",
+        text=True,
+        encoding="utf-8",
+        errors="replace",
         check=True,
     )
 
@@ -70,6 +72,5 @@ def test_no_stray_untracked_scratch_at_root() -> None:
 
     assert not offenders, (
         "Stray untracked scratch found at repo root — clean these up or add "
-        "them to .gitignore under 'Root-scratch policy':\n  "
-        + "\n  ".join(offenders)
+        "them to .gitignore under 'Root-scratch policy':\n  " + "\n  ".join(offenders)
     )

@@ -156,7 +156,10 @@ def _read_pdf(path: str) -> str:
     if empty:
         logger.warning(
             "%s: %d of %d pages yielded no text (likely scanned images); the extracted text is "
-            "PARTIAL.", path, empty, len(pages),
+            "PARTIAL.",
+            path,
+            empty,
+            len(pages),
         )
     return "\n".join(texts)
 
@@ -200,13 +203,17 @@ def _read_text(path: str) -> str:
             logger.warning(
                 "%s: decoded as latin-1 only because it maps every byte; %s all failed. If this "
                 "file is not Latin-1 the text is mojibake. Convert it to UTF-8 to be sure.",
-                path, ", ".join(_TEXT_ENCODINGS[:-1]),
+                path,
+                ", ".join(_TEXT_ENCODINGS[:-1]),
             )
         return _reject_if_binary(path, text)
 
     # Unreachable while latin-1 is in the list, but kept so removing it degrades safely.
-    logger.warning("%s: could not decode with %s; falling back to lossy replacement.",
-                   path, ", ".join(_TEXT_ENCODINGS))
+    logger.warning(
+        "%s: could not decode with %s; falling back to lossy replacement.",
+        path,
+        ", ".join(_TEXT_ENCODINGS),
+    )
     with open(path, encoding="utf-8", errors="replace") as fh:
         return _reject_if_binary(path, fh.read())
 

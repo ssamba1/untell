@@ -69,9 +69,17 @@ def test_the_gate_accepts_a_text_against_itself(text: str) -> None:
 @pytest.mark.parametrize(
     "source,candidate,label",
     [
-        ("The drug reduced mortality by 30 percent.", "The drug increased mortality by 30 percent.", "negation"),
+        (
+            "The drug reduced mortality by 30 percent.",
+            "The drug increased mortality by 30 percent.",
+            "negation",
+        ),
         ("Revenue rose above costs in Q3.", "Revenue fell below costs in Q3.", "direction flip"),
-        ("The method outperforms every baseline.", "The method underperforms every baseline.", "inverted claim"),
+        (
+            "The method outperforms every baseline.",
+            "The method underperforms every baseline.",
+            "inverted claim",
+        ),
     ],
     ids=lambda v: v if isinstance(v, str) and " " not in v else "",
 )

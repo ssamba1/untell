@@ -65,15 +65,35 @@ CLEAN = {
     "english": "The system shuts down when the sensor fails.",
     # Genuine Cyrillic and Greek prose. These are the false-positive cases: every 'o' matched
     # the confusable table context-free, so the old count reported 9 on text never touched.
-    "russian prose": "".join(chr(c) for c in
-        (0x42D, 0x442, 0x43E, 0x20, 0x43E, 0x447, 0x435, 0x43D, 0x44C, 0x20,
-         0x43F, 0x440, 0x43E, 0x441, 0x442, 0x43E, 0x439, 0x2E)),
-    "greek prose": "".join(chr(c) for c in
-        (0x391, 0x3C5, 0x3C4, 0x3CC, 0x20, 0x3B5, 0x3AF, 0x3BD, 0x3B1, 0x3B9, 0x2E)),
+    "russian prose": "".join(
+        chr(c)
+        for c in (
+            0x42D,
+            0x442,
+            0x43E,
+            0x20,
+            0x43E,
+            0x447,
+            0x435,
+            0x43D,
+            0x44C,
+            0x20,
+            0x43F,
+            0x440,
+            0x43E,
+            0x441,
+            0x442,
+            0x43E,
+            0x439,
+            0x2E,
+        )
+    ),
+    "greek prose": "".join(
+        chr(c) for c in (0x391, 0x3C5, 0x3C4, 0x3CC, 0x20, 0x3B5, 0x3AF, 0x3BD, 0x3B1, 0x3B9, 0x2E)
+    ),
     "accented composition": "caf" + chr(0xE9) + " na" + chr(0xEF) + "ve",
     "cjk": "".join(chr(c) for c in (0x8FD9, 0x662F, 0x4E2D, 0x6587, 0x3002)),
 }
-
 
 
 @pytest.mark.parametrize("name", sorted(CARRIERS))
@@ -128,8 +148,7 @@ def test_no_fixture_carries_a_literal_invisible_character() -> None:
         {
             hex(ord(ch))
             for ch in source
-            if ch not in "\n\t\r "
-            and unicodedata.category(ch) in ("Cf", "Cc", "Zl", "Zp", "Zs")
+            if ch not in "\n\t\r " and unicodedata.category(ch) in ("Cf", "Cc", "Zl", "Zp", "Zs")
         }
     )
     assert not literal, f"literal invisible characters in this file's source: {literal}"

@@ -415,7 +415,9 @@ def _wordnet():
     try:
         from nltk.corpus import wordnet as _wn
 
-        _wn.synsets("test")  # the corpus is a lazy loader; touch it so a missing download fails here
+        _wn.synsets(
+            "test"
+        )  # the corpus is a lazy loader; touch it so a missing download fails here
         _wordnet_cache = _wn
     except Exception:
         _wordnet_cache = None
@@ -489,8 +491,26 @@ def importance(
 # 30 of the table's multi-word values end in one of these, so this is a property of the substitution
 # mechanism rather than of any particular entry — the table cannot know what follows the word.
 _PARTICLES = frozenset(
-    {"on", "into", "in", "up", "out", "of", "to", "for", "with", "at", "from", "off", "over",
-     "through", "about", "by", "down", "across"}
+    {
+        "on",
+        "into",
+        "in",
+        "up",
+        "out",
+        "of",
+        "to",
+        "for",
+        "with",
+        "at",
+        "from",
+        "off",
+        "over",
+        "through",
+        "about",
+        "by",
+        "down",
+        "across",
+    }
 )
 
 # `(?![\w-])` so "the reason for for-profit companies" is left alone: the second "for" starts a
@@ -546,7 +566,9 @@ def _looks_plural(noun: str) -> bool:
 
 def _frame_form(replacement: str, plural_head: bool = True) -> str | None:
     """How ``replacement`` reads in "a <key> of X", or None if it has no grammatical form there."""
-    form = replacement if replacement.lower().endswith(" of") else _FRAME_FORM.get(replacement.lower())
+    form = (
+        replacement if replacement.lower().endswith(" of") else _FRAME_FORM.get(replacement.lower())
+    )
     if form is None:
         return None
     if not plural_head and form.lower() not in _MASS_SAFE_FORMS:
@@ -588,7 +610,7 @@ def takes_an(word: str) -> bool:
 def agree_article(article: str, following: str) -> str:
     """Return ``article`` corrected to agree with ``following``, keeping case and spacing."""
     head = article.rstrip()
-    spacing = article[len(head):]
+    spacing = article[len(head) :]
     want = "an" if takes_an(following) else "a"
     if head[:1].isupper():
         want = want.capitalize()
@@ -626,7 +648,7 @@ def substitute_once(text: str, word: str, replacement: str) -> str:
                 return text  # no grammatical form in this frame — leave it rather than mangle it
             if match.group(1)[:1].isupper():
                 form = form[:1].upper() + form[1:]
-            return text[: match.start(1)] + form + text[match.end(1):]
+            return text[: match.start(1)] + form + text[match.end(1) :]
 
     # A connective that is fine mid-sentence can be ungrammatical opening one. MEASURED across 240
     # real HC3 texts, "however -> though" is the single most common substitution this makes (31 of
@@ -648,7 +670,11 @@ def substitute_once(text: str, word: str, replacement: str) -> str:
         )
         first = re.search(rf"\b{re.escape(word)}\b", text, re.IGNORECASE)
         opening = opener.search(text)
-        if first is not None and opening is not None and opening.end() > first.start() >= opening.start():
+        if (
+            first is not None
+            and opening is not None
+            and opening.end() > first.start() >= opening.start()
+        ):
             return text
 
     if replacement.lower() in _COMMA_LESS_OPENERS:
@@ -665,7 +691,7 @@ def substitute_once(text: str, word: str, replacement: str) -> str:
         match = opener.search(text)
         if match:
             rep_here = _match_case(word, replacement)
-            return text[: match.start()] + match.group(1) + rep_here + " " + text[match.end():]
+            return text[: match.start()] + match.group(1) + rep_here + " " + text[match.end() :]
 
     rep = _match_case(word, replacement)
     tail = replacement.rsplit(" ", 1)[-1].lower() if " " in replacement else ""
@@ -1002,8 +1028,9 @@ def surgical_substitute(
     # per unique word, and a word with no synonym can never be substituted no matter how important
     # it turns out to be — so every pass spent on one is pure waste. On a 207-word paragraph at full
     # tier this was the difference between 57s and a few seconds, with identical output.
-    substitutable = {w.lower() for w in dict.fromkeys(m.group(0) for m in _WORD.finditer(text))
-                     if synonyms(w)}
+    substitutable = {
+        w.lower() for w in dict.fromkeys(m.group(0) for m in _WORD.finditer(text)) if synonyms(w)
+    }
     if prefer_tells:
         # Rank by "does swapping this word remove a catalogued tell" — detector-independent, and
         # therefore still informative on the stdlib path where deletion-importance leads nowhere.
@@ -1024,7 +1051,9 @@ def surgical_substitute(
         # 0.571 -> 0.458), not for speed a lite user will not see.
         word_ranks = _tell_ranks(text)
     else:
-        word_ranks = importance(text, tier=tier, only=substitutable, base=pre)  # `pre` IS its baseline
+        word_ranks = importance(
+            text, tier=tier, only=substitutable, base=pre
+        )  # `pre` IS its baseline
     # NOTE: ``word_ranks`` is computed ONCE from the original text. After a substitution changes
     # the text, subsequent drop values are stale — a word's true importance may differ in the
     # modified text. This is a performance caveat (we may try an already-deflated word), not a

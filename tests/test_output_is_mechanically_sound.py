@@ -113,8 +113,15 @@ _CHECKS: dict[str, re.Pattern[str]] = {
 # paper." must be blamed on the fragment, not on the opener, and an early version of this battery
 # counted every "Of course," as damage for exactly that reason.
 _OUR_OPENERS = (
-    "actually", "in practice", "in short", "put simply",
-    "also", "now", "basically", "well", "of course",
+    "actually",
+    "in practice",
+    "in short",
+    "put simply",
+    "also",
+    "now",
+    "basically",
+    "well",
+    "of course",
 )
 _FRAGMENT_LEADS = {"such", "which", "who", "whom", "including", "of", "as", "than", "can"}
 
@@ -126,18 +133,15 @@ _FIXTURES = [
     " calcium chloride or magnesium chloride, or using mechanical methods like plows and sand."
     " However, salt is often the most effective and affordable option for most municipalities."
     " The ice melts on the road surface because salt lowers the freezing point of the water.",
-
     "In this paper, we present EdgeFlow, a novel approach to interactive image segmentation that"
     " leverages edge-guided flow to reach practical accuracy on a tight annotation budget."
     " Existing methods are often limited by their heavy reliance on repeated iterative user"
     " input, which can be extremely time-consuming for a working analyst in the field."
     " Moreover, the authors, Smith, Jones, and Patel, reported that the effect held at every site.",
-
     'He said "the result is robust, and it replicates", which the reviewers accepted without'
     " further argument. The study enrolled 3,000 participants across twelve separate sites, and"
     " the follow-up ran for two full years afterwards. Revenue rose in Q1, Q2, and Q3, but the"
     " fourth quarter fell short of the target by a considerable margin overall.",
-
     "NASA confirmed the result because the second probe returned matching data from orbit."
     " Dr. Smith published the findings in a journal that is read widely across the discipline."
     " The system leverages robust methodologies to optimize operational efficiency, and it is"
@@ -149,7 +153,7 @@ def _strip_our_opener(sentence: str) -> str:
     low = sentence.strip()
     for opener in _OUR_OPENERS:
         if low.lower().startswith(opener + ","):
-            return low[len(opener) + 1:].strip()
+            return low[len(opener) + 1 :].strip()
     return low
 
 
@@ -301,8 +305,7 @@ def test_no_cpu_rewriter_damages_the_text(name):
             out = rw.rewrite(source, {"max": 0.9})
             worse = {k: (baseline[k], v) for k, v in _damage(out).items() if v > baseline[k]}
             assert not worse, (
-                f"{name}, seed {seed}: {worse}\n"
-                f"--- source ---\n{source}\n--- output ---\n{out}"
+                f"{name}, seed {seed}: {worse}\n--- source ---\n{source}\n--- output ---\n{out}"
             )
 
 
@@ -331,10 +334,38 @@ def test_locking_round_trips_exactly(source):
 # Words the rewriter is SUPPOSED to remove: formulaic transitions it strips, filler openers, and
 # the AI vocabulary it substitutes. Everything else is the user's content.
 _MAY_REMOVE = {
-    "moreover", "furthermore", "additionally", "overall", "notably", "importantly",
-    "consequently", "therefore", "thus", "hence", "ultimately", "nevertheless", "nonetheless",
-    "accordingly", "subsequently", "arguably", "indeed", "essentially", "conclusion", "summary",
-    "in", "it", "is", "worth", "noting", "that", "should", "be", "noted", "the", "a", "an",
+    "moreover",
+    "furthermore",
+    "additionally",
+    "overall",
+    "notably",
+    "importantly",
+    "consequently",
+    "therefore",
+    "thus",
+    "hence",
+    "ultimately",
+    "nevertheless",
+    "nonetheless",
+    "accordingly",
+    "subsequently",
+    "arguably",
+    "indeed",
+    "essentially",
+    "conclusion",
+    "summary",
+    "in",
+    "it",
+    "is",
+    "worth",
+    "noting",
+    "that",
+    "should",
+    "be",
+    "noted",
+    "the",
+    "a",
+    "an",
 }
 
 
@@ -472,7 +503,7 @@ class TestInputShapesTheCorporaDoNotContain:
 
 
 class TestWordsThatCarryTheirPreposition:
-    """"An approach TO segmentation" is idiomatic; "a method to segmentation" is not.
+    """ "An approach TO segmentation" is idiomatic; "a method to segmentation" is not.
 
     Substituting the noun alone strands the preposition on a synonym that does not take it. Found
     indirectly: the repaired contradiction gate began vetoing real candidates, and three of the four
@@ -501,8 +532,14 @@ class TestWordsThatCarryTheirPreposition:
         )
         for got in self._many(text):
             low = got.lower()
-            for broken in ("method to medical", "technique to medical", "way to medical",
-                           "route to medical", "segmentation way", "segmentation route"):
+            for broken in (
+                "method to medical",
+                "technique to medical",
+                "way to medical",
+                "route to medical",
+                "segmentation way",
+                "segmentation route",
+            ):
                 assert broken not in low, f"{broken!r} in: {got}"
 
     def test_other_preposition_bound_nouns_survive(self):

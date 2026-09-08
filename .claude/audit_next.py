@@ -33,9 +33,26 @@ RECORDS = ROOT / "records"
 # toward L2 because a suite this large is mostly unverified until something breaks it. The
 # cycle is fixed rather than random so a pass is reproducible from its number alone.
 SCHEDULE = [
-    "L1", "L1", "L2", "L1", "L3", "L1", "L2", "L8",
-    "L4", "L1", "L2", "L5", "L1", "L8", "L2", "L6",
-    "L1", "L9", "L2", "L7",
+    "L1",
+    "L1",
+    "L2",
+    "L1",
+    "L3",
+    "L1",
+    "L2",
+    "L8",
+    "L4",
+    "L1",
+    "L2",
+    "L5",
+    "L1",
+    "L8",
+    "L2",
+    "L6",
+    "L1",
+    "L9",
+    "L2",
+    "L7",
 ]
 
 # Small enough to mutate in an hour, and each one is pure logic where a flipped comparison is
@@ -112,8 +129,7 @@ def byte_identical(row: str) -> bool:
     if not LOG.exists():
         return False
     needle = row.strip()
-    return any(line.strip() == needle
-               for line in LOG.read_text(encoding="utf-8").splitlines())
+    return any(line.strip() == needle for line in LOG.read_text(encoding="utf-8").splitlines())
 
 
 ROW = re.compile(
@@ -151,8 +167,11 @@ def section(path: Path, heading: str) -> str:
 def rows() -> list[dict[str, str]]:
     if not LOG.exists():
         return []
-    return [m.groupdict() for line in LOG.read_text(encoding="utf-8").splitlines()
-            if (m := ROW.match(line.strip()))]
+    return [
+        m.groupdict()
+        for line in LOG.read_text(encoding="utf-8").splitlines()
+        if (m := ROW.match(line.strip()))
+    ]
 
 
 def least_used(options: list[str], history: list[dict[str, str]]) -> str:
@@ -190,8 +209,18 @@ def assign(history: list[dict[str, str]], offset: int = 0) -> tuple[int, str, st
             target = least_used(sibling("experiment", "KNOBS"), history)
         else:
             target = lane
-        history.append({"n": str(n), "lane": lane, "target": target, "verdict": "pending",
-                        "before": "0", "after": "0", "commit": "-", "note": "in flight"})
+        history.append(
+            {
+                "n": str(n),
+                "lane": lane,
+                "target": target,
+                "verdict": "pending",
+                "before": "0",
+                "after": "0",
+                "commit": "-",
+                "note": "in flight",
+            }
+        )
     return n, lane, target
 
 
@@ -218,11 +247,12 @@ def cmd_next(offset: int = 0) -> int:
     elif lane == "L8":
         print(f"Run: .venv/Scripts/python.exe .claude/research.py run {target}")
     elif lane == "L9":
-        print(f"Run: .venv/Scripts/python.exe .claude/experiment.py run {target} "
-              "--recipe lite-hc3")
+        print(f"Run: .venv/Scripts/python.exe .claude/experiment.py run {target} --recipe lite-hc3")
     print()
-    print("Read .claude/audit-envelope.md before changing anything. Follow "
-          ".claude/audit-loop.md. Work this target only.")
+    print(
+        "Read .claude/audit-envelope.md before changing anything. Follow "
+        ".claude/audit-loop.md. Work this target only."
+    )
     return 0
 
 
@@ -312,9 +342,13 @@ def main() -> int:
         if hasattr(stream, "reconfigure"):
             stream.reconfigure(encoding="utf-8", errors="replace")
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--offset", type=int, default=0,
-                   help="assign the pass this many ahead; the fleet gives each worker "
-                        "a different one so they do not collide")
+    p.add_argument(
+        "--offset",
+        type=int,
+        default=0,
+        help="assign the pass this many ahead; the fleet gives each worker "
+        "a different one so they do not collide",
+    )
     sub = p.add_subparsers(dest="cmd")
     r = sub.add_parser("record", help="append this pass to the audit log")
     r.add_argument("--verdict", required=True, choices=VERDICTS)
@@ -324,8 +358,12 @@ def main() -> int:
     r.add_argument("--lane", default="")
     r.add_argument("--target", default="")
     r.add_argument("--offset", type=int, default=0)
-    r.add_argument("--worker", default="", help="parallel worker id; queues the row "
-                   "instead of appending, so worktrees never conflict on the log")
+    r.add_argument(
+        "--worker",
+        default="",
+        help="parallel worker id; queues the row "
+        "instead of appending, so worktrees never conflict on the log",
+    )
     r.add_argument("--note", required=True)
     a = p.parse_args()
     return cmd_record(a) if a.cmd == "record" else cmd_next(a.offset)

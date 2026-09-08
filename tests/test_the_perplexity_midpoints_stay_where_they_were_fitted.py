@@ -23,6 +23,7 @@ records "TPR unchanged at 100%" and that is true at the 0.30 cut while the AI-si
 that cut shrank from 0.250 to 0.057 at the AI upper corner. The last test here exists to fail
 loudly if a future refit spends the rest of it.
 """
+
 from __future__ import annotations
 
 import math
@@ -42,9 +43,9 @@ TEXT = (
 #   mean surprisal   human 3.85 [3.09, 5.15]   ai 2.23 [1.85, 2.62]
 #   sentence spread  human 0.78 [0.23, 1.74]   ai 0.48 [0.19, 0.89]
 HUMAN_MEDIAN = (3.85, 0.78)
-HUMAN_LOW_TAIL = (3.09, 0.23)   # the human corner closest to the AI class
+HUMAN_LOW_TAIL = (3.09, 0.23)  # the human corner closest to the AI class
 AI_MEDIAN = (2.23, 0.48)
-AI_HIGH_TAIL = (2.62, 0.89)     # the AI corner closest to the human class
+AI_HIGH_TAIL = (2.62, 0.89)  # the AI corner closest to the human class
 
 OLD_MIDPOINTS = (3.036, 0.625)
 LOOP_THRESHOLD = 0.30
@@ -97,7 +98,9 @@ def test_the_synthetic_surprisals_reproduce_the_requested_statistics():
             start = TEXT.find(sentence, pos)
             end = start + len(sentence)
             pos = end
-            vals = [float(v) for v, (a, b) in zip(nll, offsets) if a >= start and b <= end and b > a]
+            vals = [
+                float(v) for v, (a, b) in zip(nll, offsets) if a >= start and b <= end and b > a
+            ]
             assert len(vals) >= 3, "a sentence contributed too few tokens to be grouped"
             per_sentence.append(sum(vals) / len(vals))
 

@@ -1,4 +1,4 @@
-""""It is important to note that X" asserts nothing about X, and the role gate disagreed.
+""" "It is important to note that X" asserts nothing about X, and the role gate disagreed.
 
 FOUND by asking which transforms fire and are then rejected by the gate the loop actually uses.
 MEASURED over 120 corpus texts:
@@ -40,6 +40,7 @@ def _embedding_path(monkeypatch):
     short sentence under token counting. Pin the env unset for the file.
     """
     monkeypatch.delenv("UNTELL_LITE_NO_TORCH", raising=False)
+
 
 DELETED_FRAMES = [
     "It's important to note that the cache is cleared on restart.",
@@ -99,7 +100,9 @@ def test_the_frame_is_removed_from_both_sides() -> None:
     without = "The cache is cleared on restart."
     # Case-insensitive: removing a leading frame leaves the next word lowercase, which the rewriter
     # repairs afterwards and the gate does not care about.
-    assert strip_scaffolding(with_frame).strip().lower() == strip_scaffolding(without).strip().lower()
+    assert (
+        strip_scaffolding(with_frame).strip().lower() == strip_scaffolding(without).strip().lower()
+    )
 
 
 def test_every_frame_the_rewriter_deletes_is_exempted() -> None:

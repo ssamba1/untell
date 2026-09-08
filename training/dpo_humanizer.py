@@ -24,7 +24,10 @@ def build_pairs(dataset: str = "builtin", n: int = 200, tier: str = "full") -> d
     from training.distill import distill
 
     out = distill(dataset, n=n, tier=tier)
-    pairs = [{"prompt": r["prompt"], "chosen": r["humanized"], "rejected": r["source"]} for r in out["rows"]]
+    pairs = [
+        {"prompt": r["prompt"], "chosen": r["humanized"], "rejected": r["source"]}
+        for r in out["rows"]
+    ]
     return {"pairs": pairs, "kept": out["kept"], "total": out["total"]}
 
 
@@ -55,10 +58,16 @@ def build_pairs_human(n: int = 500) -> list[dict]:
         return _smoke_pairs(min(n, 8))
     pairs: list[dict] = []
     for row in ds:
-        human = next((a for a in (row.get("human_answers") or []) if a and len(a.split()) > 30), None)
-        ai = next((a for a in (row.get("chatgpt_answers") or []) if a and len(a.split()) > 30), None)
+        human = next(
+            (a for a in (row.get("human_answers") or []) if a and len(a.split()) > 30), None
+        )
+        ai = next(
+            (a for a in (row.get("chatgpt_answers") or []) if a and len(a.split()) > 30), None
+        )
         if human and ai:
-            pairs.append({"prompt": _PROMPT.format(text=ai), "chosen": human.strip(), "rejected": ai.strip()})
+            pairs.append(
+                {"prompt": _PROMPT.format(text=ai), "chosen": human.strip(), "rejected": ai.strip()}
+            )
         if len(pairs) >= n:
             break
     return pairs or _smoke_pairs(min(n, 8))
@@ -99,7 +108,9 @@ def train(
     elif use_human_corpus:
         pairs = build_pairs_human(n=n)  # free: HC3 human vs AI, no key
     else:
-        pairs = build_pairs(dataset, n=n, tier=tier)["pairs"]  # loop-distilled (needs a teacher key)
+        pairs = build_pairs(dataset, n=n, tier=tier)[
+            "pairs"
+        ]  # loop-distilled (needs a teacher key)
 
     # Fail FAST on a bad Hub token: validate auth and create the repo BEFORE the multi-hour train.
     if hub_id and not smoke:
@@ -143,12 +154,18 @@ def train(
         except Exception as exc:  # noqa: BLE001
             import logging as _logging
 
-            _logging.getLogger(__name__).warning("trainer.save_model failed: %s: %s", type(exc).__name__, exc)
+            _logging.getLogger(__name__).warning(
+                "trainer.save_model failed: %s: %s", type(exc).__name__, exc
+            )
 
     # Verify the FINAL adapter is a real (>=1MB) LoRA, not a misfired KiB-scale save.
     out_dir = pathlib.Path(out)
     adapter = next(
-        (out_dir / nm for nm in ("adapter_model.safetensors", "adapter_model.bin") if (out_dir / nm).exists()),
+        (
+            out_dir / nm
+            for nm in ("adapter_model.safetensors", "adapter_model.bin")
+            if (out_dir / nm).exists()
+        ),
         None,
     )
     size_mb = adapter.stat().st_size / 1e6 if adapter else 0.0
@@ -170,24 +187,39 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--n", type=int, default=1000)
     parser.add_argument("--tier", default="full", choices=["lite", "full", "heavy", "commercial"])
     parser.add_argument("--out", default="out/dpo-humanizer")
-    parser.add_argument("--smoke", action="store_true", help="tiny model + 2 steps + synthetic pairs (proves it runs)")
-    parser.add_argument("--load-4bit", action="store_true", help="QLoRA 4-bit load so 3B fits a free 16GB T4")
+    parser.add_argument(
+        "--smoke",
+        action="store_true",
+        help="tiny model + 2 steps + synthetic pairs (proves it runs)",
+    )
+    parser.add_argument(
+        "--load-4bit", action="store_true", help="QLoRA 4-bit load so 3B fits a free 16GB T4"
+    )
     parser.add_argument(
         "--use-human-corpus",
         action="store_true",
         help="FREE warm-start: preference pairs from HC3 (human answer preferred over the ChatGPT "
         "answer on the same topic) — no teacher key, no cost. The recommended $0 DPO path.",
     )
-    parser.add_argument("--hub-id", help="push the adapter to this HF Hub repo after save (needs HF_TOKEN)")
+    parser.add_argument(
+        "--hub-id", help="push the adapter to this HF Hub repo after save (needs HF_TOKEN)"
+    )
     parser.add_argument("--resume", default=None, help="resume from this checkpoint directory")
     args = parser.parse_args(argv)
     from untell._env import load_env
 
     load_env()
     path = train(
-        model_id=args.model, dataset=args.dataset, n=args.n, tier=args.tier, out=args.out,
-        smoke=args.smoke, load_4bit=args.load_4bit, use_human_corpus=args.use_human_corpus,
-        hub_id=args.hub_id, resume=args.resume,
+        model_id=args.model,
+        dataset=args.dataset,
+        n=args.n,
+        tier=args.tier,
+        out=args.out,
+        smoke=args.smoke,
+        load_4bit=args.load_4bit,
+        use_human_corpus=args.use_human_corpus,
+        hub_id=args.hub_id,
+        resume=args.resume,
     )
     print(f"saved DPO policy -> {path}")
     return 0

@@ -37,17 +37,14 @@ from untell.scripts.score import score_text
 from untell.scripts.tells import score_tells
 
 TEXTS = {
-    "clean informal":
-        "My grandmother kept every birthday card anyone ever sent her, in a shoebox, in date "
-        "order. When she died we found forty years of them. Half were from people none of us could "
-        "place.",
+    "clean informal": "My grandmother kept every birthday card anyone ever sent her, in a shoebox, in date "
+    "order. When she died we found forty years of them. Half were from people none of us could "
+    "place.",
     "clean one sentence": "An unsupervised segmentation approach was used throughout the study.",
-    "clean recollection":
-        "The oven has been dead since March. I keep meaning to call someone about it and then I "
-        "do not. The toaster oven does most of what I need, so roast chicken is off the menu.",
-    "ai heavy":
-        "Moreover, the framework leverages robust methodologies to deliver outcomes at scale. "
-        "It significantly improves overall efficiency and accuracy across the evaluated corpus.",
+    "clean recollection": "The oven has been dead since March. I keep meaning to call someone about it and then I "
+    "do not. The toaster oven does most of what I need, so roast chicken is off the menu.",
+    "ai heavy": "Moreover, the framework leverages robust methodologies to deliver outcomes at scale. "
+    "It significantly improves overall efficiency and accuracy across the evaluated corpus.",
 }
 REWRITERS = ["structural", "surgical", "composite"]
 SEEDS = range(5)

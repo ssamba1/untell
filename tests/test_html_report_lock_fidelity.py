@@ -30,11 +30,12 @@ from untell.scripts.preserve import lock
 # Helper
 # ---------------------------------------------------------------------------
 
+
 def _result(original: str, final: str | None = None) -> dict:
     """Minimal result dict."""
     return {
         "final": final if final is not None else original,
-        "pre":  {"max": 0.80, "tier": "lite"},
+        "pre": {"max": 0.80, "tier": "lite"},
         "post": {"max": 0.50, "tier": "lite"},
         "iterations": 1,
         "stopped": "passed",
@@ -47,6 +48,7 @@ def _result(original: str, final: str | None = None) -> dict:
 # Tests
 # ---------------------------------------------------------------------------
 
+
 def test_citation_locked_by_lock_appears_in_report() -> None:
     """A citation that lock() protects must appear inside a <mark class="locked"> in the report."""
     doc = "As shown by Smith (2020), the method is effective."
@@ -58,7 +60,7 @@ def test_citation_locked_by_lock_appears_in_report() -> None:
 
     # At least one locked span must produce a <mark class="locked"> in the output.
     assert '<mark class="locked"' in html, (
-        "no <mark class=\"locked\"> in the report, but explain_spans found locked spans"
+        'no <mark class="locked"> in the report, but explain_spans found locked spans'
     )
 
     # The citation span text must be inside a mark element.
@@ -66,12 +68,13 @@ def test_citation_locked_by_lock_appears_in_report() -> None:
     if citation_span is not None:
         # The span text is HTML-escaped in the mark; check the escaped form is inside a mark.
         import html as _html
+
         escaped = _html.escape(citation_span, quote=True)
         marks = re.findall(r'<mark class="locked"[^>]*>(.*?)</mark>', html, re.DOTALL)
         contents = "".join(marks)
         assert escaped in contents, (
             f"citation span {citation_span!r} (escaped: {escaped!r}) not found "
-            "inside any <mark class=\"locked\"> element"
+            'inside any <mark class="locked"> element'
         )
 
 
@@ -164,7 +167,7 @@ def test_changed_text_is_marked_in_final_panel() -> None:
     final = "The approach is excellent and performs well."
     html = generate_html_report(original, _result(original, final))
     assert '<mark class="changed"' in html, (
-        "no <mark class=\"changed\"> elements despite original and final differing"
+        'no <mark class="changed"> elements despite original and final differing'
     )
 
 
@@ -173,5 +176,5 @@ def test_unchanged_text_produces_no_diff_marks() -> None:
     doc = "The method is quite good."
     html = generate_html_report(doc, _result(doc, doc))
     assert '<mark class="changed"' not in html, (
-        "spurious <mark class=\"changed\"> elements when original and final are identical"
+        'spurious <mark class="changed"> elements when original and final are identical'
     )

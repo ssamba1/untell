@@ -1,4 +1,5 @@
 """Apply slice-4 fixes to untell/layout.py. Idempotent; CRLF-aware; backslashes via chr(92)."""
+
 import io
 
 PATH = r"C:/Users/Admin/Humanize/untell/layout.py"
@@ -19,13 +20,26 @@ new_lines = [
     old,
     "# A THEMATIC BREAK or SETEXT HEADING UNDERLINE is a whole-line construct: `---`, `===`,",
     "# `***`, `___` and the spaced `- - -` / `* * *` forms. It is not prose \u2014 a merge",
-    '# transform turned "My Heading' + BS + BS + '==========" into "My Heading ==========" and welded',
+    '# transform turned "My Heading'
+    + BS
+    + BS
+    + '==========" into "My Heading ==========" and welded',
     '# "---" onto the next paragraph ("--- Para two.") \u2014 so it is emitted verbatim like a',
     "# table row. The SETEXT underline gets the same treatment as the ATX marker: the heading",
     "# text above it is still prose; the underline itself is layout. Guarded by the fence/",
     "# math/blank branch above, so a `---` inside fenced code stays code.",
     "_HR_RE = re.compile(",
-    "    r'" + "^" + BS + "s*(?:(?:-{3,}|={3,}|" + BS + "*{3,}|_{3,})|(?:[-*]" + BS + "s+){2,}[-*])" + BS + "s*$" + "'",
+    "    r'"
+    + "^"
+    + BS
+    + "s*(?:(?:-{3,}|={3,}|"
+    + BS
+    + "*{3,}|_{3,})|(?:[-*]"
+    + BS
+    + "s+){2,}[-*])"
+    + BS
+    + "s*$"
+    + "'",
     ")",
     "",
     "",
@@ -33,15 +47,15 @@ new_lines = [
     '    """True when the line is a markdown table row, including inside a blockquote.',
     "",
     "    The leading-pipe test is what every markdown table row has and what ordinary prose",
-    '    never starts with; a table quoted inside a blockquote starts with the quote arrow',
-    '    instead, so peel any number of `>` markers first. Without that, `> | Method |` fell',
+    "    never starts with; a table quoted inside a blockquote starts with the quote arrow",
+    "    instead, so peel any number of `>` markers first. Without that, `> | Method |` fell",
     "    through to the marker branch and the CELL CONTENT was handed to the transform \u2014 a",
     "    column heading got relabeled (Method -> Technique), which nothing downstream can",
     "    restore. Nested blockquotes (`> > | x |`) peel one arrow at a time.",
     '    """',
-    '    s = line.lstrip()',
+    "    s = line.lstrip()",
     '    while s.startswith(">"):',
-    '        s = s[1:].lstrip()',
+    "        s = s[1:].lstrip()",
     '    return s.startswith("|")',
 ]
 new = NL.join(new_lines)
@@ -75,7 +89,5 @@ assert old in src, "table-branch anchor missing"
 src = src.replace(old, new, 1)
 changed = True
 
-io.open(PATH, "w", encoding="utf-8", newline="").write(
-    src.replace(NL, "\r\n") if crlf else src
-)
+io.open(PATH, "w", encoding="utf-8", newline="").write(src.replace(NL, "\r\n") if crlf else src)
 print("changed" if changed else "NO CHANGE (already applied?)")

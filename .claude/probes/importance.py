@@ -1,5 +1,7 @@
 """importance: ranks words, returns (word, score) pairs, no crash on weird input."""
+
 import json, os
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
 from untell.attacks import importance
 

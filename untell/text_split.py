@@ -138,26 +138,126 @@ _SENT_SPLIT = re.compile(
 # an English surname. Kept minimal on purpose: false positives (splitting a
 # genuine "J. However Doe" — a name nobody has) are far less likely than the
 # false negatives the set allows through.
-_SENTENCE_STARTERS = frozenset({
-    "the", "a", "an",
-    "it", "its", "he", "she", "they", "we",
-    "this", "that", "these", "those", "there",
-    "however", "therefore", "moreover", "furthermore", "additionally",
-    "nevertheless", "consequently", "thus", "hence",
-    "note", "consider", "observe", "recall", "suppose", "assume",
-    "first", "second", "third", "finally", "next",
-    "then", "now", "here",
-})
+_SENTENCE_STARTERS = frozenset(
+    {
+        "the",
+        "a",
+        "an",
+        "it",
+        "its",
+        "he",
+        "she",
+        "they",
+        "we",
+        "this",
+        "that",
+        "these",
+        "those",
+        "there",
+        "however",
+        "therefore",
+        "moreover",
+        "furthermore",
+        "additionally",
+        "nevertheless",
+        "consequently",
+        "thus",
+        "hence",
+        "note",
+        "consider",
+        "observe",
+        "recall",
+        "suppose",
+        "assume",
+        "first",
+        "second",
+        "third",
+        "finally",
+        "next",
+        "then",
+        "now",
+        "here",
+    }
+)
 
 # Abbreviations whose trailing period is not a sentence end.
 _ABBREVIATIONS = {
-    "dr", "mr", "mrs", "ms", "prof", "sr", "jr", "st", "rev", "hon", "gen", "col", "sgt", "lt",
-    "vs", "etc", "al", "cf", "approx", "ca", "viz", "nb", "op", "cit", "est", "dept", "univ",
-    "inc", "ltd", "co", "corp",
-    "fig", "figs", "eq", "no", "nos", "vol", "vols", "ch", "chap", "sec", "pp", "ed", "eds",
-    "jan", "feb", "mar", "apr", "jun", "jul", "aug", "sep", "sept", "oct", "nov", "dec",
-    "mon", "tue", "wed", "thu", "fri", "sat", "sun",
-    "e.g", "i.e", "a.m", "p.m", "u.s", "u.k", "u.s.a", "u.s.s.r", "ph.d", "m.d", "b.a", "m.a", "d.c",
+    "dr",
+    "mr",
+    "mrs",
+    "ms",
+    "prof",
+    "sr",
+    "jr",
+    "st",
+    "rev",
+    "hon",
+    "gen",
+    "col",
+    "sgt",
+    "lt",
+    "vs",
+    "etc",
+    "al",
+    "cf",
+    "approx",
+    "ca",
+    "viz",
+    "nb",
+    "op",
+    "cit",
+    "est",
+    "dept",
+    "univ",
+    "inc",
+    "ltd",
+    "co",
+    "corp",
+    "fig",
+    "figs",
+    "eq",
+    "no",
+    "nos",
+    "vol",
+    "vols",
+    "ch",
+    "chap",
+    "sec",
+    "pp",
+    "ed",
+    "eds",
+    "jan",
+    "feb",
+    "mar",
+    "apr",
+    "jun",
+    "jul",
+    "aug",
+    "sep",
+    "sept",
+    "oct",
+    "nov",
+    "dec",
+    "mon",
+    "tue",
+    "wed",
+    "thu",
+    "fri",
+    "sat",
+    "sun",
+    "e.g",
+    "i.e",
+    "a.m",
+    "p.m",
+    "u.s",
+    "u.k",
+    "u.s.a",
+    "u.s.s.r",
+    "ph.d",
+    "m.d",
+    "b.a",
+    "m.a",
+    "d.c",
 }
 
 
@@ -234,13 +334,13 @@ def _ends_in_a_name_prefix(fragment: str) -> bool:
     if len(word.replace(".", "")) <= 1:
         return True
     parts = [p for p in word.split(".") if p]
-    if (
-        word not in _ABBREVIATIONS
-        and parts
-        and all(p.isalpha() and len(p) == 1 for p in parts)
-    ):
+    if word not in _ABBREVIATIONS and parts and all(p.isalpha() and len(p) == 1 for p in parts):
         return True
-    return bool(parts) and all(p.isdigit() for p in parts) and tail == fragment.strip().rstrip(_ZERO_WIDTH_BETWEEN)
+    return (
+        bool(parts)
+        and all(p.isdigit() for p in parts)
+        and tail == fragment.strip().rstrip(_ZERO_WIDTH_BETWEEN)
+    )
 
 
 def _continues_after_abbreviation(previous: str, nxt: str) -> bool:
@@ -301,6 +401,7 @@ def _continues_after_abbreviation(previous: str, nxt: str) -> bool:
 # after an ellipsis still splits.
 _ELLIPSIS_END_RE = re.compile(r"(?:\.{2,}|…)" r"[\"'”’)\]}»" + _ZERO_WIDTH_CLASS + r"]*$")
 
+
 def _first_alpha_is_lower(nxt: str) -> bool:
     """The continuation's first LETTER is lowercase, skipping leading quotes and brackets.
 
@@ -326,7 +427,7 @@ def _first_alpha_is_lower(nxt: str) -> bool:
 # not fire on a plain "ten." with a lowercase follow-up, or every ordinary sentence pair
 # would be welded together.
 _QUOTED_PERIOD_END_RE = re.compile(
-    rf'[.!?][\"\'”’)}}\]»](?:[\"\'”’)}}\]»{_ZERO_WIDTH_CLASS}])*\s*$'
+    rf"[.!?][\"\'”’)}}\]»](?:[\"\'”’)}}\]»{_ZERO_WIDTH_CLASS}])*\s*$"
 )
 
 
@@ -346,7 +447,7 @@ def _continues_after_a_quoted_period(previous: str, nxt: str) -> bool:
 # separate end-test is needed here — `_QUOTED_PERIOD_END_RE` looks for a closer right
 # after the terminator and does not see through "[1]".
 _FOOTNOTE_END_RE = re.compile(
-    rf'[.!?](?:\[\d{{1,3}}\]|[{_FN}])+[\"\'’)}}\]{_ZERO_WIDTH_CLASS}]*\s*$'
+    rf"[.!?](?:\[\d{{1,3}}\]|[{_FN}])+[\"\'’)}}\]{_ZERO_WIDTH_CLASS}]*\s*$"
 )
 
 

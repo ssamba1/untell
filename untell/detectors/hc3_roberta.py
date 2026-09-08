@@ -40,7 +40,9 @@ class HC3RobertaDetector:
 
         if HC3RobertaDetector._model is None:
             HC3RobertaDetector._tokenizer = AutoTokenizer.from_pretrained(_MODEL_ID)
-            HC3RobertaDetector._model = AutoModelForSequenceClassification.from_pretrained(_MODEL_ID).eval()
+            HC3RobertaDetector._model = AutoModelForSequenceClassification.from_pretrained(
+                _MODEL_ID
+            ).eval()
         return HC3RobertaDetector._tokenizer, HC3RobertaDetector._model
 
     def _score_batch(self, windows: list[str]) -> list[float | None]:
@@ -56,8 +58,7 @@ class HC3RobertaDetector:
         import torch.nn.functional as F
 
         tok, model = self._load()
-        enc = tok(windows, return_tensors="pt", truncation=True, max_length=512,
-                  padding="longest")
+        enc = tok(windows, return_tensors="pt", truncation=True, max_length=512, padding="longest")
         ids, mask = enc["input_ids"], enc["attention_mask"]
         with torch.no_grad():
             probs = F.softmax(model(ids, attention_mask=mask).logits, dim=-1)[:, 1]
@@ -80,7 +81,8 @@ class HC3RobertaDetector:
                 logger.warning(
                     "hc3_roberta failed to load and was EXCLUDED from the ensemble "
                     "(%s: %s). Often a NumPy 2.x / torch mismatch - see README troubleshooting.",
-                    type(exc).__name__, str(exc)[:140],
+                    type(exc).__name__,
+                    str(exc)[:140],
                 )
                 HC3RobertaDetector._warned = True
             raise

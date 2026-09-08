@@ -73,9 +73,24 @@ class TestTheCliRefusesIt:
     def _run(args: list[str]) -> subprocess.CompletedProcess:
         env = dict(os.environ, UNTELL_LITE_NO_TORCH="1", PYTHONIOENCODING="utf-8")
         return subprocess.run(
-            [sys.executable, "-m", "untell.scripts.run", TEXT, "--tier", "lite",
-             "--max-iters", "1", *args],
-            capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=300, env=env, input="",
+            [
+                sys.executable,
+                "-m",
+                "untell.scripts.run",
+                TEXT,
+                "--tier",
+                "lite",
+                "--max-iters",
+                "1",
+                *args,
+            ],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=300,
+            env=env,
+            input="",
         )
 
     @pytest.mark.parametrize("value", ["-1", "-12345"])

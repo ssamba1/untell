@@ -62,13 +62,18 @@ class RobertaOpenAIDetector:
         for item in out:
             scores = item[0] if isinstance(item[0], list) else item
             fake = next(
-                (s["score"] for s in scores if str(s["label"]).lower() in ("fake", "label_1", "ai")),
+                (
+                    s["score"]
+                    for s in scores
+                    if str(s["label"]).lower() in ("fake", "label_1", "ai")
+                ),
                 None,
             )
             if fake is None:
                 # Fall back: 1 - P(real) if only the real label is present.
                 real = next(
-                    (s["score"] for s in scores if str(s["label"]).lower() in ("real", "label_0")), 0.5
+                    (s["score"] for s in scores if str(s["label"]).lower() in ("real", "label_0")),
+                    0.5,
                 )
                 fake = 1.0 - real
             results.append(fake)
@@ -87,7 +92,8 @@ class RobertaOpenAIDetector:
                 logger.warning(
                     "roberta_openai failed to load and was EXCLUDED from the ensemble "
                     "(%s: %s). Often a NumPy 2.x / torch mismatch - see README troubleshooting.",
-                    type(exc).__name__, str(exc)[:140],
+                    type(exc).__name__,
+                    str(exc)[:140],
                 )
                 RobertaOpenAIDetector._warned = True
             raise

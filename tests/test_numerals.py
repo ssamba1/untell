@@ -25,8 +25,16 @@ class TestNumbersKept:
     @pytest.mark.parametrize(
         ("source", "candidate", "label"),
         [
-            ("Only 7 of the 19 tests passed.", "Just seven of the nineteen tests passed.", "spelled out"),
-            ("Only 7 of the 19 tests passed.", "Only 7 of the 19 tests came back green.", "reworded"),
+            (
+                "Only 7 of the 19 tests passed.",
+                "Just seven of the nineteen tests passed.",
+                "spelled out",
+            ),
+            (
+                "Only 7 of the 19 tests passed.",
+                "Only 7 of the 19 tests came back green.",
+                "reworded",
+            ),
             ("Line one has 5 items.", "There are five things in line one.", "numeral to word"),
             ("Revenue grew 1,234 units.", "Revenue grew 1234 units.", "separator is cosmetic"),
             ("It has 2 parts.", "It has both parts.", "2 -> both"),
@@ -42,7 +50,12 @@ class TestNumbersKept:
     @pytest.mark.parametrize(
         ("source", "candidate", "dropped", "label"),
         [
-            ("Only 7 of the 19 tests passed.", "Only a few of the 19 tests passed.", "7", "the leak"),
+            (
+                "Only 7 of the 19 tests passed.",
+                "Only a few of the 19 tests passed.",
+                "7",
+                "the leak",
+            ),
             ("Line one has 5 items.", "Line one has several items.", "5", "count to vague"),
             ("We ran 240 trials.", "We ran many trials.", "240", "large number dropped"),
         ],
@@ -95,7 +108,7 @@ def test_meaning_gate_now_rejects_the_leak():
 
 
 class TestListMarkersAreNotQuantities:
-    """"1." at the start of a line is document structure, not a fact.
+    """ "1." at the start of a line is document structure, not a fact.
 
     MEASURED at paragraph scale: a numbered HC3 paragraph rewritten into flowing prose ("There are
     a few reasons why...") was vetoed for "dropping" the 3 in "\n3. HD channels also require more
@@ -108,12 +121,14 @@ class TestListMarkersAreNotQuantities:
         # spelled-out count in the lead-in is a real quantity that prose must keep (see the test
         # below, and `test_real_quantities_inside_a_list_are_still_checked` — same principle, the
         # marker is structure but everything else on the line is a fact).
-        src = "There are several reasons:\n1. Cost is high.\n2. Speed is low.\n3. HD needs bandwidth."
+        src = (
+            "There are several reasons:\n1. Cost is high.\n2. Speed is low.\n3. HD needs bandwidth."
+        )
         prose = "There are a few reasons: cost is high, speed is low, and HD needs bandwidth."
         assert numbers_kept(src, prose), missing_numbers(src, prose)
 
     def test_a_spelled_count_in_the_lead_in_is_still_a_quantity(self):
-        """"three reasons" -> "a few reasons" is the module's opening example, in word form.
+        """ "three reasons" -> "a few reasons" is the module's opening example, in word form.
 
         Stripping the markers must not also excuse the count they were introduced by: the source
         states how many, and the rewrite makes it vague. Identical in kind to the "7 of the 19
@@ -135,7 +150,9 @@ class TestListMarkersAreNotQuantities:
         """Only the marker is structure — everything else on the line is still a fact."""
         src = "Findings:\n1. Only 7 of the 19 tests passed.\n2. Latency rose 12%."
         assert not numbers_kept(src, "Findings: a few of the 19 tests passed, latency rose 12%.")
-        assert "7" in missing_numbers(src, "Findings: a few of the 19 tests passed, latency rose 12%.")
+        assert "7" in missing_numbers(
+            src, "Findings: a few of the 19 tests passed, latency rose 12%."
+        )
         assert numbers_kept(src, "Findings: only 7 of the 19 tests passed; latency rose 12%.")
 
     def test_a_year_opening_a_line_is_not_a_marker(self):
@@ -215,7 +232,15 @@ class TestNumbersCLIUsage:
         import logging
 
         with caplog.at_level(logging.ERROR, logger="untell.scripts.numerals"):
-            rc = numbers.main(["--json", "Only 7 of the 19 tests passed.", "Only seven of the nineteen tests passed."])
+            rc = numbers.main(
+                [
+                    "--json",
+                    "Only 7 of the 19 tests passed.",
+                    "Only seven of the nineteen tests passed.",
+                ]
+            )
         assert rc == 2
-        assert any("unrecognized argument --json" in r.getMessage() and "untell-numbers" in r.getMessage()
-                   for r in caplog.records)
+        assert any(
+            "unrecognized argument --json" in r.getMessage() and "untell-numbers" in r.getMessage()
+            for r in caplog.records
+        )

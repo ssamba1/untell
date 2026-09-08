@@ -5,6 +5,7 @@ survive a Windows cp1252 stdout). The mutation -> False emits literal U+27E6,
 which would crash cp1252. Same portability class as scrub.py:119,
 quality.py:304-adjacent, sentences.py:338 — all killed this way.
 """
+
 import json
 
 from untell.scripts.preserve import main as preserve_main

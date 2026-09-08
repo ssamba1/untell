@@ -81,7 +81,9 @@ def test_the_loop_survives_and_never_returns_none(name: str, text: str) -> None:
     from untell.rewriter import get_rewriter
     from untell.scripts.run import untell_text
 
-    result = untell_text(text, tier="lite", max_iters=1, best_of=2, rewriter=get_rewriter("composite"))
+    result = untell_text(
+        text, tier="lite", max_iters=1, best_of=2, rewriter=get_rewriter("composite")
+    )
     assert isinstance(result, dict)
     assert isinstance(result.get("final"), str), f"{name}: final is {type(result.get('final'))}"
     # An error is an acceptable outcome, but then the text must come back untouched rather than
@@ -405,7 +407,9 @@ def test_the_verify_caveat_is_printed_after_the_verdict() -> None:
     obtained this way is the one to distrust."""
     from untell.scripts.verify import _render, verify
 
-    lines = [ln for ln in _render(verify(_inject(_PROSE, "\u200b"), tier="lite")).splitlines() if ln]
+    lines = [
+        ln for ln in _render(verify(_inject(_PROSE, "\u200b"), tier="lite")).splitlines() if ln
+    ]
     assert "WARNING" in lines[-1], lines[-3:]
     assert any("CHECKER" in ln or "FAILS" in ln for ln in lines[:-1]), lines
 

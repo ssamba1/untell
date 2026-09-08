@@ -41,6 +41,7 @@ def _torch_path(monkeypatch):
     """
     monkeypatch.delenv("UNTELL_LITE_NO_TORCH", raising=False)
 
+
 AI_TEXT = (
     "Moreover, the framework leverages robust methodologies to deliver outcomes at scale. "
     "It significantly improves overall efficiency and accuracy across the evaluated corpus. "
@@ -107,7 +108,9 @@ def test_an_abstaining_detector_is_reported(healthy, monkeypatch: pytest.MonkeyP
     # Patch the real extension point: the batched windowing path calls `_score_batch`,
     # not the per-text `score` (wave-3 slice-5 batched scoring), so `.score` is dead here.
     for cls, name in _top_member(healthy):
-        monkeypatch.setattr(cls, "_score_batch", lambda self, windows, _n=name: [None] * len(windows))
+        monkeypatch.setattr(
+            cls, "_score_batch", lambda self, windows, _n=name: [None] * len(windows)
+        )
     result = score_text(AI_TEXT, tier="full")
 
     assert result["max"] < healthy["max"], "premise: silencing the top member(s) must lower max"
@@ -166,7 +169,7 @@ def test_a_healthy_ensemble_says_nothing(healthy) -> None:
 
 
 def test_the_count_is_the_real_one(monkeypatch: pytest.MonkeyPatch) -> None:
-    """"3 of 4" has to be arithmetic, not a fixed string."""
+    """ "3 of 4" has to be arithmetic, not a fixed string."""
     monkeypatch.setattr(_detector_class(), "score", lambda self, text: None)
     result = score_text(AI_TEXT, tier="full")
     live = sum(1 for v in result["detectors"].values() if isinstance(v, (int, float)))
@@ -181,8 +184,9 @@ def test_it_composes_with_the_other_caveats(monkeypatch: pytest.MonkeyPatch) -> 
     single slot this is where it shows.
     """
     monkeypatch.setattr(_detector_class(), "score", lambda self, text: None)
-    result = score_text("Moreover, the framework leverages robust methodologies at scale.",
-                        tier="full")
+    result = score_text(
+        "Moreover, the framework leverages robust methodologies at scale.", tier="full"
+    )
     warning = result.get("warning") or ""
     if "too short" in warning:  # only assert composition where both conditions genuinely hold
         assert "detectors produced a score" in warning, warning

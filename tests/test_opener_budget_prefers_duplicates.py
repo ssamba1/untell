@@ -9,6 +9,7 @@ duplicates the transform exists to fix. Pinned with a seed sweep: 40 seeds, the
 duplicate must win every time under the original (0.25^40 is not a thing that
 happens), while the mutant wins 11/40.
 """
+
 import random
 
 from untell.rewriter.structural import _vary_openers

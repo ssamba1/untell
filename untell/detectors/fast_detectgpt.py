@@ -79,8 +79,12 @@ class FastDetectGPTDetector:
             # GPT-Neo ships without a pad token; batched scoring pads with it (its
             # logits are masked out before any mean, so scores are unaffected).
             if FastDetectGPTDetector._tokenizer.pad_token is None:
-                FastDetectGPTDetector._tokenizer.pad_token = FastDetectGPTDetector._tokenizer.eos_token
-            FastDetectGPTDetector._model = AutoModelForCausalLM.from_pretrained(_SCORING_MODEL).eval()
+                FastDetectGPTDetector._tokenizer.pad_token = (
+                    FastDetectGPTDetector._tokenizer.eos_token
+                )
+            FastDetectGPTDetector._model = AutoModelForCausalLM.from_pretrained(
+                _SCORING_MODEL
+            ).eval()
         return FastDetectGPTDetector._tokenizer, FastDetectGPTDetector._model
 
     def _score_batch(self, windows: list[str]) -> list[float | None]:
@@ -95,8 +99,7 @@ class FastDetectGPTDetector:
         import torch
 
         tok, model = self._load()
-        enc = tok(windows, return_tensors="pt", truncation=True, max_length=512,
-                  padding="longest")
+        enc = tok(windows, return_tensors="pt", truncation=True, max_length=512, padding="longest")
         ids, mask = enc["input_ids"], enc["attention_mask"]
         # MUST use mask.sum() to count real (non-padding) tokens, not ids[i].shape[0].
         # After padding="longest", every row has the same shape (the batch-max padded length),
@@ -143,7 +146,8 @@ class FastDetectGPTDetector:
                 logger.warning(
                     "fast_detectgpt failed to load and was EXCLUDED from the ensemble "
                     "(%s: %s). Often a NumPy 2.x / torch mismatch - see README troubleshooting.",
-                    type(exc).__name__, str(exc)[:140],
+                    type(exc).__name__,
+                    str(exc)[:140],
                 )
                 FastDetectGPTDetector._warned = True
             raise

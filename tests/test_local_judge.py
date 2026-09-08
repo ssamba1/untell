@@ -1,4 +1,5 @@
 """Tests for the local LLaMA-as-judge detector — offline (no model download)."""
+
 from __future__ import annotations
 
 import pytest

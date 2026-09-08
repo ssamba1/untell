@@ -1,4 +1,5 @@
 """_intensity_sweep invariants over the FULL parameter space: base always present, in-range, monotone."""
+
 import json
 from untell.rewriter.composite import _intensity_sweep
 
@@ -16,6 +17,6 @@ for n in range(1, 12):
         if any(v < 0.4 or v > 1.0 for v in out):
             violations.append(f"n={n} base={base}: out of range {out}")
         # monotone non-decreasing
-        if any(out[i] > out[i+1] + 1e-9 for i in range(len(out)-1)):
+        if any(out[i] > out[i + 1] + 1e-9 for i in range(len(out) - 1)):
             violations.append(f"n={n} base={base}: not sorted {out}")
 print(json.dumps({"violations": violations[:10], "total_violations": len(violations)}, indent=1))

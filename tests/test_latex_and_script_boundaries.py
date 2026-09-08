@@ -111,7 +111,9 @@ def test_cjk_is_not_reported_as_too_short(caplog: pytest.LogCaptureFixture) -> N
     mod._WARNED_UNSUPPORTED_LANGUAGE = False
     mod._WARNED_TOO_SHORT = False
     with caplog.at_level(logging.WARNING, logger=mod.logger.name):
-        humanness("此外，该框架利用强大的方法在规模上提供成果，并且显著提高了整体效率。", tier="lite")
+        humanness(
+            "此外，该框架利用强大的方法在规模上提供成果，并且显著提高了整体效率。", tier="lite"
+        )
     text = caplog.text.lower()
     assert "script" in text or "english-only" in text, f"no language warning: {caplog.text!r}"
     assert "shorter than" not in text, f"still blaming length for a script problem: {caplog.text!r}"

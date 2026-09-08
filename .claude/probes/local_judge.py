@@ -1,5 +1,7 @@
 """local_judge + llm_judge: the local judge's available() and error paths."""
+
 import json, os
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
 from untell.detectors.local_judge import LocalJudgeDetector
 from untell.detectors.llm_judge import LLMJudgeDetector

@@ -69,11 +69,14 @@ def test_the_loop_losing_on_bypass_fails_even_with_a_better_mean():
     is *under* the threshold, so every full_loop sample bypassed and the fixture handed the loop a
     100% rate — the test asserted a loss while constructing a win.
     """
-    single_pass = _strategy(0.64, 2)          # 50% bypass, mean max 0.37
-    full_loop = _strategy(0.31, 0)            # 0% bypass, mean max 0.31 — better mean, worse rate
+    single_pass = _strategy(0.64, 2)  # 50% bypass, mean max 0.37
+    full_loop = _strategy(0.31, 0)  # 0% bypass, mean max 0.31 — better mean, worse rate
     s = _run(single_pass, full_loop)
     assert s["strategies"]["full_loop"]["bypass_rate"] == 0.0, "premise: the loop cleared nothing"
-    assert s["strategies"]["full_loop"]["mean_post_max"] < s["strategies"]["single_pass"]["mean_post_max"]
+    assert (
+        s["strategies"]["full_loop"]["mean_post_max"]
+        < s["strategies"]["single_pass"]["mean_post_max"]
+    )
     assert s["thesis_pass"] is False
     assert s["thesis_basis"] == "bypass_rate"
 
@@ -102,7 +105,7 @@ def test_the_loop_must_also_beat_doing_nothing():
     by = {
         "noop": _strategy(0.55, 0),
         "single_pass": _strategy(0.64, 0),
-        "full_loop": _strategy(0.60, 0),     # beats single_pass, LOSES to noop
+        "full_loop": _strategy(0.60, 0),  # beats single_pass, LOSES to noop
     }
     s = summarize(by, THRESHOLD)
     assert s["thesis_pass"] is False

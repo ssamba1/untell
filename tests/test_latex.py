@@ -83,7 +83,9 @@ class TestTheLockAndTheProseExtractorShareOneList:
 
     @pytest.mark.parametrize("env", ["abstract", "theorem", "figure", "verbatim"])
     def test_a_locked_environment_is_dropped_from_the_prose(self, env):
-        body = f"Ordinary prose here.\n\\begin{{{env}}}\nHIDDEN CONTENT\n\\end{{{env}}}\nMore prose."
+        body = (
+            f"Ordinary prose here.\n\\begin{{{env}}}\nHIDDEN CONTENT\n\\end{{{env}}}\nMore prose."
+        )
         out = prose_only(body)
         assert "HIDDEN CONTENT" not in out, f"{env} content reached the score"
         assert "Ordinary prose" in out and "More prose" in out

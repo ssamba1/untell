@@ -146,7 +146,9 @@ class TargetedRewriter(Rewriter):
             # 0.6839 -> 0.5821, 0.7663 -> 0.6978, 0.7504 -> 0.6792. Fifteen of nineteen real
             # improvements thrown away, and not one tie that was neutral or worse.
             if cand and after < before:  # adopt only a genuine per-sentence improvement
-                trailing = sent[len(sent.rstrip()):]  # preserve the original inter-sentence spacing
+                trailing = sent[
+                    len(sent.rstrip()) :
+                ]  # preserve the original inter-sentence spacing
                 out.append(cand + trailing)
                 changed = True
             else:
@@ -220,5 +222,5 @@ class TargetedRewriter(Rewriter):
         except Exception:
             return body
         if cand and after < before:
-            return cand + body[len(body.rstrip()):]  # preserve original trailing whitespace
+            return cand + body[len(body.rstrip()) :]  # preserve original trailing whitespace
         return body

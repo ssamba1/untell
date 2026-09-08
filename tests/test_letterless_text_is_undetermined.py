@@ -44,7 +44,9 @@ def test_letterless_text_is_not_supported(name: str) -> None:
 def test_the_warning_says_there_are_no_letters(name: str) -> None:
     warning = score_tells(LETTERLESS[name]).get("warning") or ""
     assert "no letters" in warning, warning
-    assert "non-Latin script" not in warning, "wrong reason: there is no script here to be non-Latin"
+    assert "non-Latin script" not in warning, (
+        "wrong reason: there is no script here to be non-Latin"
+    )
 
 
 def test_a_non_latin_script_still_says_script() -> None:

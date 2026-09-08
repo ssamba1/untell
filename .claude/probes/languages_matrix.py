@@ -1,5 +1,7 @@
 """languages routing matrix: script detection + catalogue selection for many scripts."""
+
 import json, os
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
 from untell.languages import dominant_script, catalogue_for, registered
 

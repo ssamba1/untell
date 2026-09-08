@@ -32,62 +32,86 @@ from untell.scripts.score import score_text
 
 # (name, document, the substring that must survive verbatim)
 CONSTRUCTS = [
-    ("setext heading",
-     "Results\n=======\n\nMoreover, the framework leverages robust methodologies at scale.",
-     "======="),
-    ("thematic break",
-     "Moreover, this holds robustly.\n\n---\n\nFurthermore, it leverages scale.",
-     "\n---\n"),
-    ("indented code",
-     "Moreover, run this robustly:\n\n    def f():\n        return utilize(x)\n\nIn conclusion, done.",
-     "    def f():\n        return utilize(x)"),
+    (
+        "setext heading",
+        "Results\n=======\n\nMoreover, the framework leverages robust methodologies at scale.",
+        "=======",
+    ),
+    (
+        "thematic break",
+        "Moreover, this holds robustly.\n\n---\n\nFurthermore, it leverages scale.",
+        "\n---\n",
+    ),
+    (
+        "indented code",
+        "Moreover, run this robustly:\n\n    def f():\n        return utilize(x)\n\nIn conclusion, done.",
+        "    def f():\n        return utilize(x)",
+    ),
     # The prose in this case and the link-reference one below used to be a single short sentence.
     # It survived every rewriter, which reads as protection but was three of the four rewriters
     # declining to touch the document at all — a vacuous pass, found by giving every construct the
     # guard that only the indented-code case had. Lengthened until each has purchase.
-    ("html block",
-     'Moreover, the framework leverages robust methodologies to deliver outcomes, as shown below.\n\n'
-     '<div class="note">\n  Additionally, note this.\n</div>\n\n'
-     'In conclusion, it underscores the pivotal integration for every stakeholder involved.',
-     '<div class="note">'),
-    ("yaml front matter",
-     "---\ntitle: Moreover the framework\n---\n\nMoreover, the framework leverages robust methods.",
-     "title: Moreover the framework"),
+    (
+        "html block",
+        "Moreover, the framework leverages robust methodologies to deliver outcomes, as shown below.\n\n"
+        '<div class="note">\n  Additionally, note this.\n</div>\n\n'
+        "In conclusion, it underscores the pivotal integration for every stakeholder involved.",
+        '<div class="note">',
+    ),
+    (
+        "yaml front matter",
+        "---\ntitle: Moreover the framework\n---\n\nMoreover, the framework leverages robust methods.",
+        "title: Moreover the framework",
+    ),
     # The MARKER, not the note text. A footnote's body is prose and rewriting it is the job; only
     # the `[^1]:` label has to survive, or the reference stops resolving. Asserting the whole line
     # was the first version of this and it failed on `composite` — correctly.
-    ("footnote definition",
-     "Moreover, see the note robustly.[^1]\n\n[^1]: Additionally, the authors leverage robust methods.",
-     "[^1]:"),
-    ("link reference definition",
-     "Moreover, the framework leverages robust methodologies to deliver outcomes; see [here][1]. "
-     "In conclusion, it underscores the pivotal integration for every stakeholder involved.\n\n"
-     "[1]: https://example.com/utilize-robust-methodologies",
-     "https://example.com/utilize-robust-methodologies"),
-    ("table",
-     "Moreover, the framework leverages robust methods.\n\n| Method | Score |\n|---|---|\n"
-     "| Ours | 0.91 |\n\nIn conclusion, done.",
-     "| Method | Score |"),
+    (
+        "footnote definition",
+        "Moreover, see the note robustly.[^1]\n\n[^1]: Additionally, the authors leverage robust methods.",
+        "[^1]:",
+    ),
+    (
+        "link reference definition",
+        "Moreover, the framework leverages robust methodologies to deliver outcomes; see [here][1]. "
+        "In conclusion, it underscores the pivotal integration for every stakeholder involved.\n\n"
+        "[1]: https://example.com/utilize-robust-methodologies",
+        "https://example.com/utilize-robust-methodologies",
+    ),
+    (
+        "table",
+        "Moreover, the framework leverages robust methods.\n\n| Method | Score |\n|---|---|\n"
+        "| Ours | 0.91 |\n\nIn conclusion, done.",
+        "| Method | Score |",
+    ),
     # Five constructs this list did not have. The gap worth naming is the first: the fenced block
     # is how code appears in almost every README, and the bug this file exists for was a rewriter
     # renaming an identifier inside INDENTED code. Same damage, commoner syntax, untested.
-    ("fenced code",
-     "Moreover, install it robustly:\n\n```bash\npip install untell --upgrade\n"
-     "export UNTELL_LITE_NO_TORCH=1\n```\n\nIn conclusion, the framework leverages scale.",
-     "```bash\npip install untell --upgrade\nexport UNTELL_LITE_NO_TORCH=1\n```"),
-    ("atx heading",
-     "# Deployment guide\n\nMoreover, the framework leverages robust methodologies at scale.",
-     "# Deployment guide"),
+    (
+        "fenced code",
+        "Moreover, install it robustly:\n\n```bash\npip install untell --upgrade\n"
+        "export UNTELL_LITE_NO_TORCH=1\n```\n\nIn conclusion, the framework leverages scale.",
+        "```bash\npip install untell --upgrade\nexport UNTELL_LITE_NO_TORCH=1\n```",
+    ),
+    (
+        "atx heading",
+        "# Deployment guide\n\nMoreover, the framework leverages robust methodologies at scale.",
+        "# Deployment guide",
+    ),
     # A bare URL is a single token with meaning in every character; the link-reference case above
     # covers one inside a definition, not one sitting in a sentence the rewriter is working on.
-    ("bare url in prose",
-     "Moreover, read the notes at https://example.com/docs/getting-started?ref=guide robustly. "
-     "In conclusion, the framework leverages robust methodologies at scale.",
-     "https://example.com/docs/getting-started?ref=guide"),
-    ("inline code span",
-     "Moreover, set `verdict_threshold` to 0.45 robustly. In conclusion, the framework "
-     "leverages robust methodologies to deliver outcomes at considerable scale.",
-     "`verdict_threshold`"),
+    (
+        "bare url in prose",
+        "Moreover, read the notes at https://example.com/docs/getting-started?ref=guide robustly. "
+        "In conclusion, the framework leverages robust methodologies at scale.",
+        "https://example.com/docs/getting-started?ref=guide",
+    ),
+    (
+        "inline code span",
+        "Moreover, set `verdict_threshold` to 0.45 robustly. In conclusion, the framework "
+        "leverages robust methodologies to deliver outcomes at considerable scale.",
+        "`verdict_threshold`",
+    ),
 ]
 
 # List markers do not belong in the table above, and finding out why is worth recording. Written as

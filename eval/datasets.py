@@ -70,7 +70,10 @@ def _builtin(n: int) -> list[str]:
         "dataset padded: %d requested but only %d unique built-in samples exist, so each is "
         "repeated ~%.0fx. Counts derived from this are NOT %d distinct texts — install .[eval] "
         "and pass --dataset hc3/raid/mage for real data.",
-        n, len(_BUILTIN), n / len(_BUILTIN), n,
+        n,
+        len(_BUILTIN),
+        n / len(_BUILTIN),
+        n,
     )
     out = list(_BUILTIN)
     while len(out) < n:
@@ -150,7 +153,10 @@ def _raid_pairs(n: int, min_words: int, scan_cap: int = 60000) -> list[tuple[str
     if len(pairs) < n:
         logger.warning(
             "RAID yielded %d of %d requested pairs within a %d-row scan (min_words=%d)",
-            len(pairs), n, scan_cap, min_words,
+            len(pairs),
+            n,
+            scan_cap,
+            min_words,
         )
     return pairs[:n]
 
@@ -213,7 +219,9 @@ def _mage_pairs(n: int, min_words: int, scan_cap: int = 260000) -> list[tuple[st
     if len(pairs) < n:
         logger.warning(
             "MAGE yielded %d of %d requested domain-matched pairs within a %d-row scan",
-            len(pairs), n, scan_cap,
+            len(pairs),
+            n,
+            scan_cap,
         )
     return pairs[:n]
 
@@ -297,7 +305,11 @@ def _warn_if_mostly_too_short(dataset: str, texts: list[str]) -> list[str]:
             "%d of %d %r samples are under %d words (median %d) — below untell's own minimum for "
             "a reliable verdict, and the repetition tells need 60. Numbers from this corpus are "
             "dominated by length, not by the property being measured.",
-            short, len(counts), dataset, floor, counts[len(counts) // 2],
+            short,
+            len(counts),
+            dataset,
+            floor,
+            counts[len(counts) // 2],
         )
     return texts
 

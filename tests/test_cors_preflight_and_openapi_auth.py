@@ -22,6 +22,7 @@
    [{}, {HTTPBearer: []}, {APIKeyHeader: []}] — anonymous OR either scheme, which is exactly the
    runtime truth (unset key = open access, set key = either header). /health stays unsecured.
 """
+
 from __future__ import annotations
 
 import importlib
@@ -37,8 +38,9 @@ EVIL = "https://evil.example"
 GOOD = "https://good.example"
 
 
-def _fresh_app(monkeypatch: pytest.MonkeyPatch, *, api_key: str | None = None,
-               origins: str | None = None):
+def _fresh_app(
+    monkeypatch: pytest.MonkeyPatch, *, api_key: str | None = None, origins: str | None = None
+):
     """Reload the module so import-time reads see the patched environment, as in production."""
     if api_key is None:
         monkeypatch.delenv("UNTELL_API_KEY", raising=False)
@@ -69,7 +71,9 @@ def _preflight(client, path: str = "/score", origin: str = EVIL):
 def test_preflight_is_not_401_when_a_key_is_configured(monkeypatch):
     app = _fresh_app(monkeypatch, api_key="secret")
     r = _preflight(TestClient(app))
-    assert r.status_code == 200, f"preflight must pass without credentials: {r.status_code} {r.text[:120]}"
+    assert r.status_code == 200, (
+        f"preflight must pass without credentials: {r.status_code} {r.text[:120]}"
+    )
 
 
 def test_preflight_still_gets_cors_headers_with_a_key_configured(monkeypatch):

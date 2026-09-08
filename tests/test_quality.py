@@ -86,8 +86,11 @@ def test_token_overlap_rejects_unrelated_non_latin_text(label, a, b):
     "label,a,b",
     [
         ("chinese", "人工智能已经改变了许多行业", "人工智能改变了许多的行业"),
-        ("russian", "Искусственный интеллект изменил отрасли",
-         "Искусственный интеллект изменил эти отрасли"),
+        (
+            "russian",
+            "Искусственный интеллект изменил отрасли",
+            "Искусственный интеллект изменил эти отрасли",
+        ),
         ("punctuation identical", "!!!", "!!!"),
     ],
 )
@@ -250,17 +253,13 @@ class TestLongInputIsActuallyCompared:
     def test_an_unrelated_sentence_late_in_a_document_is_not_scored_identical(self):
         padding = self.FILLER * 8  # ~280 words
         score = quality.similarity(padding + self.KEPT, padding + self.SWAPPED)
-        assert score < 0.99, (
-            f"scored {score:.4f} — at 1.0 the changed text was never read at all"
-        )
+        assert score < 0.99, f"scored {score:.4f} — at 1.0 the changed text was never read at all"
 
     def test_position_does_not_decide_the_score(self):
         """Identical edit, identical length; only where it sits differs. The two answers were
         0.8577 and 1.0000."""
         padding = self.FILLER * 8
-        at_start = quality.similarity(
-            self.KEPT + " " + padding, self.SWAPPED + " " + padding
-        )
+        at_start = quality.similarity(self.KEPT + " " + padding, self.SWAPPED + " " + padding)
         at_end = quality.similarity(padding + self.KEPT, padding + self.SWAPPED)
         assert abs(at_start - at_end) < 0.35, (
             f"same edit scored {at_start:.4f} at the start and {at_end:.4f} at the end"

@@ -30,7 +30,14 @@ def test_score_sentences_shape():
 
 
 def test_cli_json(capsys):
-    rc = main(["Furthermore, the formulaic system operates predictably throughout.", "--tier", "lite", "--json"])
+    rc = main(
+        [
+            "Furthermore, the formulaic system operates predictably throughout.",
+            "--tier",
+            "lite",
+            "--json",
+        ]
+    )
     assert rc == 0
     parsed = json.loads(capsys.readouterr().out)
     assert "sentences" in parsed and "flagged" in parsed
@@ -160,14 +167,19 @@ def test_stdlib_path_warns_that_sentence_targeting_is_near_chance(monkeypatch, c
     monkeypatch.setattr(s, "_WARNED_UNINFORMATIVE", False)
     monkeypatch.setattr(PerplexityBurstinessDetector, "_torch_ready", lambda self: False)
 
-    text = ("Furthermore, AI has transformed industry today. I forgot my wallet again this "
-            "morning. Moreover, organizations leverage these tools daily.")
+    text = (
+        "Furthermore, AI has transformed industry today. I forgot my wallet again this "
+        "morning. Moreover, organizations leverage these tools daily."
+    )
     with caplog.at_level(logging.WARNING, logger="untell.scripts.sentences"):
         s.score_sentences(text, tier="lite")
         s.score_sentences(text, tier="lite")
 
-    warnings = [r for r in caplog.records
-                if r.levelno >= logging.WARNING and r.name == "untell.scripts.sentences"]
+    warnings = [
+        r
+        for r in caplog.records
+        if r.levelno >= logging.WARNING and r.name == "untell.scripts.sentences"
+    ]
     assert len(warnings) == 1, f"expected exactly one warning, got {len(warnings)}"
     # "0.513" is the HC3 AUROC in the current warning; updating this when the measurement is
     # re-run is intentional — the warning must say a number a reader can look up.
@@ -193,8 +205,11 @@ def test_no_warning_when_a_model_backed_detector_will_do_the_ranking(monkeypatch
     # from anywhere" — and failed on huggingface_hub's unrelated "set a HF_TOKEN to enable higher
     # rate limits" notice, which fires whenever a model loads without a token. The subject here is
     # the targeting warning, so that is what must be absent.
-    ours = [r for r in caplog.records
-            if r.levelno >= logging.WARNING and r.name == "untell.scripts.sentences"]
+    ours = [
+        r
+        for r in caplog.records
+        if r.levelno >= logging.WARNING and r.name == "untell.scripts.sentences"
+    ]
     assert not ours, [r.getMessage() for r in ours]
 
 

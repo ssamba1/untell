@@ -27,9 +27,7 @@ class TestParallelGate:
                 started["pool"] = True
                 raise AssertionError("pool must not start for workers=1")
 
-        monkeypatch.setattr(
-            "concurrent.futures.ProcessPoolExecutor", _FakePool
-        )
+        monkeypatch.setattr("concurrent.futures.ProcessPoolExecutor", _FakePool)
         # workers=1, 2 texts, name present: original -> serial; mutation -> pool
         gen = _each_text(["a", "b"], "lite", 0.5, 1, "structural", 3, 1)
         try:

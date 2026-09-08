@@ -72,11 +72,7 @@ def _vary_lengths(sentences: list[str], strength: float) -> list[str]:
     merge_period = max(2, merge_period)
     while i < len(sentences):
         s = sentences[i].strip()
-        if (
-            strength > 0
-            and i + 1 < len(sentences)
-            and i % merge_period == 0
-        ):
+        if strength > 0 and i + 1 < len(sentences) and i % merge_period == 0:
             nxt = sentences[i + 1].strip().rstrip(".")
             body = s.rstrip(".")
             out.append(f"{body}, and {nxt[0].lower() + nxt[1:] if nxt else nxt}.")
@@ -142,7 +138,9 @@ def noop(text: str, tier: str = "lite", threshold: float = DEFAULT_THRESHOLD, **
     return LoopResult(text=text, iterations=0, pre=s, post=s, similarity=1.0, history=[s["max"]])
 
 
-def single_pass(text: str, tier: str = "lite", threshold: float = DEFAULT_THRESHOLD, **_kw) -> LoopResult:
+def single_pass(
+    text: str, tier: str = "lite", threshold: float = DEFAULT_THRESHOLD, **_kw
+) -> LoopResult:
     pre = score_text(text, tier=tier, threshold=threshold)
     out = rewrite(text, strength=0.5)
     post = score_text(out, tier=tier, threshold=threshold)
@@ -171,7 +169,9 @@ def full_loop(
     own loop feeds each accepted rewrite back in as the next round's input; this baseline does not,
     and describing it as a closed loop understates the difference the comparison is measuring.
     """
-    if sim_bar is None:  # bar appropriate to the active similarity metric (embedding vs token-overlap)
+    if (
+        sim_bar is None
+    ):  # bar appropriate to the active similarity metric (embedding vs token-overlap)
         sim_bar = recommended_bar()
     pre = score_text(text, tier=tier, threshold=threshold)
     best_text = text

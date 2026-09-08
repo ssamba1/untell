@@ -102,7 +102,8 @@ def _selection_mode() -> str:
 def _live_detectors(score: dict) -> dict[str, float]:
     """Detector name -> value, dropping error keys and non-numeric placeholders."""
     return {
-        k: v for k, v in (score.get("detectors") or {}).items()
+        k: v
+        for k, v in (score.get("detectors") or {}).items()
         if isinstance(v, (int, float)) and not str(k).endswith("__error")
     }
 
@@ -130,6 +131,7 @@ def _objective(score: dict, subset: frozenset[str] | None) -> float:
         if chosen:
             return max(chosen)
     return float(score["max"])
+
 
 # Exception type names already reported for the polish stage. Process-wide so a persistent failure
 # warns once instead of on every call — same pattern as `_MEMBER_FAILED` in rewriter/ensemble.py.
@@ -294,7 +296,8 @@ def _warn_voice_sample_too_short(words: int) -> None:
         "voice sample has %d words, under the %d needed to build a style profile — voice matching "
         "is disabled for this run rather than matched against a near-empty profile, which would "
         "bias the result toward short, comma-free, contraction-free text.",
-        words, _MIN_VOICE_SAMPLE_WORDS,
+        words,
+        _MIN_VOICE_SAMPLE_WORDS,
     )
 
 
@@ -372,7 +375,9 @@ def _browser_scorer(sites: list[str], mapping: dict, threshold: float):
             "threshold": threshold,
             "flagged": mx >= threshold,
         }
-        if not numeric:  # every checker errored this round — 0.5 is a placeholder, not a real signal
+        if (
+            not numeric
+        ):  # every checker errored this round — 0.5 is a placeholder, not a real signal
             out["all_checkers_failed"] = True
         return out
 
@@ -787,11 +792,10 @@ def untell_text(
         # public entry point and a silently aliased seed is worse than a rejected one.
         raise ValueError(f"seed must be 0 or greater, got {seed}")
     effective_seed = (
-        seed if seed is not None
+        seed
+        if seed is not None
         else int.from_bytes(
-            hashlib.blake2b(
-                text.encode("utf-8", errors="replace"), digest_size=8
-            ).digest(),
+            hashlib.blake2b(text.encode("utf-8", errors="replace"), digest_size=8).digest(),
             "big",
         )
     )
@@ -821,9 +825,25 @@ def untell_text(
         random.seed(effective_seed)
         try:
             result = _untell_text(
-                text, tier, threshold, max_iters, sim_bar, rewriter, browser, margin, confirm,
-                scrub, polish, style, best_of, detector_thresholds, veto_contradictions,
-                voice_sample, progress, timings, inspect,
+                text,
+                tier,
+                threshold,
+                max_iters,
+                sim_bar,
+                rewriter,
+                browser,
+                margin,
+                confirm,
+                scrub,
+                polish,
+                style,
+                best_of,
+                detector_thresholds,
+                veto_contradictions,
+                voice_sample,
+                progress,
+                timings,
+                inspect,
             )
         finally:
             random.setstate(_rng_state)
@@ -894,9 +914,7 @@ def _untell_text(
 
         found = [w for w in (_invisible_char_warning(text), _homoglyph_warning(text)) if w]
         if found:
-            carried_payload = (
-                "scrub=False, so these are still in the output: " + " ".join(found)
-            )
+            carried_payload = "scrub=False, so these are still in the output: " + " ".join(found)
 
     # The language gate belongs HERE, not only in the rewriter, and finding that out is the point.
     #
@@ -1168,7 +1186,9 @@ def _untell_text(
                 # Fall back rather than guess an alignment: a wrong pairing would target sentences
                 # the rewriter was not asked about, which is worse than the masked score it replaces.
                 with _timed(phase, "targeting"):
-                    flagged = score_sentences(best_masked, tier="lite", threshold=threshold)["flagged"]
+                    flagged = score_sentences(best_masked, tier="lite", threshold=threshold)[
+                        "flagged"
+                    ]
             best_score = {**best_score, "flagged_sentences": flagged, "style": style}
         except Exception:
             pass
@@ -1207,10 +1227,16 @@ def _untell_text(
             # every sentinel exactly as often as it appears in `masked`: no drop, no alter, no dup.
             if Counter(_SENTINEL_RE.findall(candidate)) != Counter(_SENTINEL_RE.findall(masked)):
                 if inspect_events is not None:
-                    inspect_events.append({
-                        "type": "candidate_rejected", "iter": i, "draw": drew,
-                        "gate": "sentinels", "vetoes": ["sentinels"], "sim": None,
-                    })
+                    inspect_events.append(
+                        {
+                            "type": "candidate_rejected",
+                            "iter": i,
+                            "draw": drew,
+                            "gate": "sentinels",
+                            "vetoes": ["sentinels"],
+                            "sim": None,
+                        }
+                    )
                 sentinel_failed += 1
                 continue  # dropped/altered/DUPLICATED a locked span — reject outright
             # Meaning gate. Cosine similarity alone is wrong in BOTH directions: it penalises
@@ -1245,21 +1271,33 @@ def _untell_text(
                     vetoed += 1
                     if inspect_events is not None:
                         from untell.scripts.entailment import meaning_preserved_vetoes
+
                         _vetoes = meaning_preserved_vetoes(masked, candidate, sim, sim_bar)
-                        inspect_events.append({
-                            "type": "candidate_rejected", "iter": i, "draw": drew,
-                            "gate": _vetoes[0] if _vetoes else "meaning_gate",
-                            "vetoes": _vetoes, "sim": sim,
-                        })
+                        inspect_events.append(
+                            {
+                                "type": "candidate_rejected",
+                                "iter": i,
+                                "draw": drew,
+                                "gate": _vetoes[0] if _vetoes else "meaning_gate",
+                                "vetoes": _vetoes,
+                                "sim": sim,
+                            }
+                        )
                     continue
             elif sim < sim_bar:
                 vetoed += 1
                 if inspect_events is not None:
                     _gate = f"similarity (sim {sim:.3f} < bar {sim_bar:.3f})"
-                    inspect_events.append({
-                        "type": "candidate_rejected", "iter": i, "draw": drew,
-                        "gate": _gate, "vetoes": [_gate], "sim": sim,
-                    })
+                    inspect_events.append(
+                        {
+                            "type": "candidate_rejected",
+                            "iter": i,
+                            "draw": drew,
+                            "gate": _gate,
+                            "vetoes": [_gate],
+                            "sim": sim,
+                        }
+                    )
                 continue  # meaning drifted too far from the source
             with _timed(phase, "rescore"):
                 cscore = score(candidate)
@@ -1465,8 +1503,11 @@ def _untell_text(
             # stopped='passed' together with flagged=True and max at the threshold. The loop said it
             # had succeeded and the same result said the text was still flagged.
             un_passes = _passed(best_score) and not _passed(polished_score)
-            if (better_score or tie_but_more_human) and not un_passes \
-                    and similarity(text, polished) >= sim_bar:
+            if (
+                (better_score or tie_but_more_human)
+                and not un_passes
+                and similarity(text, polished) >= sim_bar
+            ):
                 final, best_score = polished, polished_score
         except Exception as exc:
             # Say it once. Swallowing this silently is correct for a transient failure — polish is
@@ -1487,7 +1528,8 @@ def _untell_text(
                 logging.getLogger(__name__).warning(
                     "polish stage failed and is being skipped (%s: %s); output is the unpolished "
                     "candidate. This is logged once per process.",
-                    _name, str(exc)[:120],
+                    _name,
+                    str(exc)[:120],
                 )
 
     # Final numbers the caller reads, computed AFTER the loop so each lands in the
@@ -1577,20 +1619,33 @@ def _untell_text(
         # improved. Over 80 corpus texts the max reaches >=0.999 on 100% of HC3 AI text against 0%
         # of human text, so this is the ordinary case for the input this tool exists for, not an
         # edge. The CLI says it too; a JSON, MCP or REST caller reads only this field.
-        **({"warning": _merge_warnings(
-            language_warning, carried_payload, best_score.get("warning"),
-            _saturated_max_caveat(pre, best_score), _unknown_style_warning(style),
-            _nothing_adopted_warning(
-                rewrites, adopted, final.strip() != text.strip(), vetoed, sentinel_failed
-            ),
-            _inert_budget_warning(max_iters, best_of),
-        )}
-           if (language_warning or carried_payload or best_score.get("warning")
-               or _saturated_max_caveat(pre, best_score) or _unknown_style_warning(style)
-               or _nothing_adopted_warning(
-                   rewrites, adopted, final.strip() != text.strip(), vetoed, sentinel_failed)
-               or _inert_budget_warning(max_iters, best_of))
-           else {}),
+        **(
+            {
+                "warning": _merge_warnings(
+                    language_warning,
+                    carried_payload,
+                    best_score.get("warning"),
+                    _saturated_max_caveat(pre, best_score),
+                    _unknown_style_warning(style),
+                    _nothing_adopted_warning(
+                        rewrites, adopted, final.strip() != text.strip(), vetoed, sentinel_failed
+                    ),
+                    _inert_budget_warning(max_iters, best_of),
+                )
+            }
+            if (
+                language_warning
+                or carried_payload
+                or best_score.get("warning")
+                or _saturated_max_caveat(pre, best_score)
+                or _unknown_style_warning(style)
+                or _nothing_adopted_warning(
+                    rewrites, adopted, final.strip() != text.strip(), vetoed, sentinel_failed
+                )
+                or _inert_budget_warning(max_iters, best_of)
+            )
+            else {}
+        ),
         "sim_bar": sim_bar,
         "quality_metric": method(),
         # WHICH meaning gate ran. `quality_metric` names the similarity backend but says nothing
@@ -1848,9 +1903,7 @@ def _emit_jsonl(
         args.seed
         if args.seed is not None
         else int.from_bytes(
-            hashlib.blake2b(
-                text.encode("utf-8", errors="replace"), digest_size=8
-            ).digest(),
+            hashlib.blake2b(text.encode("utf-8", errors="replace"), digest_size=8).digest(),
             "big",
         )
     )
@@ -1922,9 +1975,15 @@ def _render(result: dict) -> str:
         return f"ERROR: {result['error']}"
     pre, post = result["pre"], result["post"]
     lines = ["# untell result", ""]
-    lines.append(f"tier={result['tier']}  iterations={result['iterations']}  stopped={result['stopped']}")
-    lines.append(f"max P(AI): {pre['max']:.3f} -> {post['max']:.3f}  (threshold {post['threshold']})")
-    lines.append(f"similarity: {result['similarity']:.3f} (bar {result['sim_bar']}, {result['quality_metric']})")
+    lines.append(
+        f"tier={result['tier']}  iterations={result['iterations']}  stopped={result['stopped']}"
+    )
+    lines.append(
+        f"max P(AI): {pre['max']:.3f} -> {post['max']:.3f}  (threshold {post['threshold']})"
+    )
+    lines.append(
+        f"similarity: {result['similarity']:.3f} (bar {result['sim_bar']}, {result['quality_metric']})"
+    )
     gate = result.get("meaning_gate", "unknown")
     lines.append(f"meaning gate: {gate}")
     if gate.startswith("similarity-only"):
@@ -1934,7 +1993,7 @@ def _render(result: dict) -> str:
         lines.append(
             "  WARNING: the contradiction/entailment/roles checks did NOT run. Quantities and "
             "claim strength were still checked, but semantics rested on similarity alone, which "
-            "admits inversions (measured 0.983 for \"runs faster\" -> \"runs slower\" against a "
+            'admits inversions (measured 0.983 for "runs faster" -> "runs slower" against a '
             "0.76 bar). Install torch + transformers for the full fidelity gate."
         )
     # AI tells and the result's own warning, which this renderer dropped.
@@ -1970,8 +2029,18 @@ def _render(result: dict) -> str:
 
 
 _REWRITER_NAMES = [
-    "auto", "surgical", "structural", "composite", "targeted", "neural", "ensemble",
-    "max", "t5_paraphrase", "mt_pivot", "base", "local",
+    "auto",
+    "surgical",
+    "structural",
+    "composite",
+    "targeted",
+    "neural",
+    "ensemble",
+    "max",
+    "t5_paraphrase",
+    "mt_pivot",
+    "base",
+    "local",
 ]
 
 # Shipped defaults, in one place so the config layer has something to fall back TO and the tests
@@ -2051,7 +2120,6 @@ def _config_defaults() -> dict[str, object]:
                 continue
         out[key] = value
     return out
-
 
 
 # --- argument ranges, shared with the REST surface -----------------------------------------------
@@ -2143,6 +2211,7 @@ _CONFIG_RANGES: dict[str, tuple[float, float]] = {
     "best_of": _bounds("_BestOf", (1, 32)),
 }
 
+
 def build_parser() -> argparse.ArgumentParser:
     """The `untell humanize` argument parser.
 
@@ -2157,10 +2226,14 @@ def build_parser() -> argparse.ArgumentParser:
     # still wins, because argparse only falls back to `default` when the flag is absent.
     cfg = _config_defaults()
 
-    parser = argparse.ArgumentParser(prog="untell-humanize", description="Run the headless untell loop.")
+    parser = argparse.ArgumentParser(
+        prog="untell-humanize", description="Run the headless untell loop."
+    )
     parser.add_argument("text", nargs="?", help="text to untell (or --file / stdin)")
     parser.add_argument("--file", "-f", help="read text from this file")
-    parser.add_argument("--tier", default=cfg["tier"], choices=["lite", "full", "heavy", "commercial"])
+    parser.add_argument(
+        "--tier", default=cfg["tier"], choices=["lite", "full", "heavy", "commercial"]
+    )
     parser.add_argument("--threshold", "-t", type=_PROBABILITY, default=cfg["threshold"])
     parser.add_argument("--max-iters", type=_ITERS, default=cfg["max_iters"])
     parser.add_argument(
@@ -2211,11 +2284,19 @@ def build_parser() -> argparse.ArgumentParser:
         "'t5_paraphrase' = free neural paraphraser alone (needs .[full]); "
         "'mt_pivot' = round-trip machine translation (needs .[full]; best on watermarked input); "
         "'base' = untuned base model, no LoRA adapter (A/B baseline; needs .[full] + UNTELL_POLICY_BASE); "
-                "'local' = trained LoRA policy (single-pass rewriter; needs UNTELL_POLICY_DIR + .[train] for peft); "
-                "'auto' = hosted-LLM / local-policy rewriter (needs a key or UNTELL_POLICY_DIR).",
+        "'local' = trained LoRA policy (single-pass rewriter; needs UNTELL_POLICY_DIR + .[train] for peft); "
+        "'auto' = hosted-LLM / local-policy rewriter (needs a key or UNTELL_POLICY_DIR).",
     )
-    parser.add_argument("--no-scrub", action="store_true", help="skip stripping hidden watermark/unicode chars from input")
-    parser.add_argument("--polish", action="store_true", help="add a cheap surgical word-substitution polish pass at the end")
+    parser.add_argument(
+        "--no-scrub",
+        action="store_true",
+        help="skip stripping hidden watermark/unicode chars from input",
+    )
+    parser.add_argument(
+        "--polish",
+        action="store_true",
+        help="add a cheap surgical word-substitution polish pass at the end",
+    )
     parser.add_argument(
         "--style",
         # Derived from the single source in rewriter/prompts.py rather than restated — this list
@@ -2331,9 +2412,14 @@ _REMOTE_REWRITERS = frozenset({"anthropic", "openai"})
 # CLI's accepted spellings; these are the names a rewriter object reports as `.name`, plus the class
 # names of the two backends that carry one. A name outside this set is caller-supplied, and the
 # manifest says "unknown" rather than vouching for it.
-_KNOWN_REWRITERS = frozenset(_REWRITER_NAMES) | _REMOTE_REWRITERS | {
-    "base-model", "local-policy",
-}
+_KNOWN_REWRITERS = (
+    frozenset(_REWRITER_NAMES)
+    | _REMOTE_REWRITERS
+    | {
+        "base-model",
+        "local-policy",
+    }
+)
 _MANIFEST_VERSION = 1
 
 
@@ -2393,9 +2479,7 @@ def _manifest_payload(
     return {
         "manifest_version": _MANIFEST_VERSION,
         "untell_version": untell.__version__,
-        "input_sha256": hashlib.sha256(
-            text.encode("utf-8", errors="replace")
-        ).hexdigest(),
+        "input_sha256": hashlib.sha256(text.encode("utf-8", errors="replace")).hexdigest(),
         "output_sha256": hashlib.sha256(
             str(result.get("final", "")).encode("utf-8", errors="replace")
         ).hexdigest(),
@@ -2441,9 +2525,9 @@ def main(argv: list[str] | None = None) -> int:
     # stdout carries either a single JSON value or a newline-delimited sequence — not both.
     if getattr(args, "jsonl", False) and args.json:
         print(
-            json.dumps({
-                "error": "--jsonl and --json are mutually exclusive: choose one output mode"
-            }),
+            json.dumps(
+                {"error": "--jsonl and --json are mutually exclusive: choose one output mode"}
+            ),
             file=sys.stderr,
         )
         return 2
@@ -2470,8 +2554,15 @@ def main(argv: list[str] | None = None) -> int:
 
     rewriter = None
     if args.rewriter in (
-        "surgical", "structural", "composite", "targeted", "neural", "ensemble", "max",
-        "t5_paraphrase", "mt_pivot",
+        "surgical",
+        "structural",
+        "composite",
+        "targeted",
+        "neural",
+        "ensemble",
+        "max",
+        "t5_paraphrase",
+        "mt_pivot",
     ):
         from untell.rewriter import get_rewriter
 
@@ -2547,16 +2638,16 @@ def main(argv: list[str] | None = None) -> int:
     detector_thresholds = None
     if args.detector_thresholds:
         try:
-            detector_thresholds = {k: float(v) for k, v in json.loads(args.detector_thresholds).items()}
+            detector_thresholds = {
+                k: float(v) for k, v in json.loads(args.detector_thresholds).items()
+            }
         except (ValueError, AttributeError) as exc:
             # Same contract as every other error this command can return: under `--json` the answer
             # is JSON, because a caller parsing stdout cannot special-case one branch. This printed
             # `ERROR: ...` as plain text on stdout regardless of the flag, so `json.loads(stdout)`
             # raised on a bad `--detector-thresholds` value — the one situation where the caller
             # most needs to read what was wrong with their argument.
-            message = (
-                f"--detector-thresholds must be a JSON object of name:number pairs ({exc})."
-            )
+            message = f"--detector-thresholds must be a JSON object of name:number pairs ({exc})."
             if args.json or getattr(args, "jsonl", False):
                 print(json.dumps({"error": message}))
             else:
@@ -2612,13 +2703,15 @@ def main(argv: list[str] | None = None) -> int:
         _write_manifest(
             args.manifest,
             _manifest_payload(
-                text, result,
+                text,
+                result,
                 browser=args.browser,
                 threshold=args.threshold,
             ),
         )
     if getattr(args, "html", None):
         from untell.html_report import generate_html_report
+
         generate_html_report(text, result, path=args.html)
         print(f"html: {args.html}", file=sys.stderr)
     if args.diff:

@@ -96,9 +96,7 @@ def batch_score_texts(
         one = _score_with_detectors(detectors, _truncate(t), tier, threshold)
         dropped = _truncation_warning(t)
         if dropped:
-            one["warning"] = (
-                f'{dropped} Also: {one["warning"]}' if one.get("warning") else dropped
-            )
+            one["warning"] = f"{dropped} Also: {one['warning']}" if one.get("warning") else dropped
         out.append(one)
     return out
 
@@ -373,7 +371,7 @@ def score_text(text: str, tier: str = "full", threshold: float = DEFAULT_THRESHO
     dropped = _truncation_warning(text)
     if dropped:
         result["warning"] = (
-            f'{dropped} Also: {result["warning"]}' if result.get("warning") else dropped
+            f"{dropped} Also: {result['warning']}" if result.get("warning") else dropped
         )
     return result
 
@@ -737,9 +735,7 @@ def _score_with_detectors(
         # that collision failed (56 failures in one full-suite run). The mode is a pure
         # function of these env vars, so reading them here is cheap and exact.
         mode = tuple(
-            (name, os.environ.get(name))
-            for name in _SCORING_MODE_ENV_VARS
-            if os.environ.get(name)
+            (name, os.environ.get(name)) for name in _SCORING_MODE_ENV_VARS if os.environ.get(name)
         )
         key = (text, tuple(sorted(d.name for d in detectors)), tier, threshold, mode)
         with _score_cache_lock:
@@ -881,7 +877,9 @@ def _score_with_detectors_uncached(
         "detectors": scores,
         "max": round(mx, 4),
         "mean": round(mean, 4),
-        "ai_percent": round(mx * 100, 1),  # 0-100 AI-likelihood (the headline number competitors show)
+        "ai_percent": round(
+            mx * 100, 1
+        ),  # 0-100 AI-likelihood (the headline number competitors show)
         "threshold": threshold,
     }
     # The VERDICT threshold is not always the loop's target. `threshold` is what the rewrite loop
@@ -943,7 +941,9 @@ def _score_with_detectors_uncached(
     # Every one of those 24 misses is against a full-tier score of 1.000 — not borderline text,
     # the ensemble's maximum confidence. The 7x spread between corpora is why the sentence names
     # both: a single figure here would be a property of whichever corpus produced it.
-    elif effective == "lite" and modes.get("perplexity_burstiness") == "stdlib" and len(numeric) == 1:
+    elif (
+        effective == "lite" and modes.get("perplexity_burstiness") == "stdlib" and len(numeric) == 1
+    ):
         tier_note = (
             "lite tier on the stdlib path. Re-measured on 100 HC3 pairs: 64% of HUMAN text scores "
             "above the 0.30 loop threshold, and 30% is FLAGGED — `flagged` uses the 0.45 verdict "
@@ -1049,18 +1049,25 @@ def _score_with_detectors_uncached(
     #
     # Ordering is the whole change. Nothing is dropped, shortened or conditioned; the rare and
     # actionable note simply goes first and the standing one keeps the last word.
-    for extra in (_non_english_warning(text), _threshold_range_warning(threshold),
-                  _short_text_warning(text),
-                  _single_sentence_warning(text, detectors, modes), _invisible_char_warning(text),
-                  _homoglyph_warning(text), _no_prose_warning(text),
-                  _mostly_locked_warning(text), _line_per_sentence_warning(text),
-                  _human_false_positive_warning(result), ensemble_warning, tier_note):
+    for extra in (
+        _non_english_warning(text),
+        _threshold_range_warning(threshold),
+        _short_text_warning(text),
+        _single_sentence_warning(text, detectors, modes),
+        _invisible_char_warning(text),
+        _homoglyph_warning(text),
+        _no_prose_warning(text),
+        _mostly_locked_warning(text),
+        _line_per_sentence_warning(text),
+        _human_false_positive_warning(result),
+        ensemble_warning,
+        tier_note,
+    ):
         if extra:
             result["warning"] = (
-                f'{result["warning"]} Also: {extra}' if result.get("warning") else extra
+                f"{result['warning']} Also: {extra}" if result.get("warning") else extra
             )
     return result
-
 
 
 # A person checking their OWN writing is the input this tool is most likely to be handed by mistake,
@@ -1096,7 +1103,6 @@ _HUMAN_FP_NOTE = (
 def _human_false_positive_warning(result: dict) -> str | None:
     """Say what a flagged verdict is worth, on the tier that was previously silent."""
     return _HUMAN_FP_NOTE if result.get("flagged") else None
-
 
 
 # A document with no prose is one the rewriter provably cannot touch, and the verdict on it describes
@@ -1135,7 +1141,6 @@ def _no_prose_warning(text: str) -> str | None:
     except Exception:  # a caveat must never break the score it qualifies
         return None
     return _NO_PROSE_NOTE if mask and not any(mask) else None
-
 
 
 # Most of a document can be material the rewriter is forbidden to touch, and the verdict then covers
@@ -1397,13 +1402,13 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="suppress the stderr progress/tier notices (stdout JSON is unaffected)",
     )
-        # Range-checked, like `untell humanize` and `untell verify`. A threshold outside [0, 1]
-        # cannot be reached by a probability, so `--threshold 5` reported `flagged: false` on text
-        # this same command rates 0.826 — a verdict that cannot ever be true, delivered without
-        # complaint. The REST and MCP surfaces already refuse it.
-        #
-        # Imported inside the parser rather than at module scope: one definition of the bound, and
-        # `--help` does not pay for loading the loop.
+    # Range-checked, like `untell humanize` and `untell verify`. A threshold outside [0, 1]
+    # cannot be reached by a probability, so `--threshold 5` reported `flagged: false` on text
+    # this same command rates 0.826 — a verdict that cannot ever be true, delivered without
+    # complaint. The REST and MCP surfaces already refuse it.
+    #
+    # Imported inside the parser rather than at module scope: one definition of the bound, and
+    # `--help` does not pay for loading the loop.
     from untell.scripts.run import _PROBABILITY
 
     parser.add_argument(

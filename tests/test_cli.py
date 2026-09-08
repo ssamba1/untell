@@ -102,8 +102,19 @@ def test_style_warns_only_for_backends_with_no_register_knob(capsys):
     returning a fabricated score."""
     from untell.scripts.run import main
 
-    main(["Moreover we utilize robust solutions today.", "--rewriter", "surgical",
-          "--style", "casual", "--tier", "lite", "--max-iters", "1"])
+    main(
+        [
+            "Moreover we utilize robust solutions today.",
+            "--rewriter",
+            "surgical",
+            "--style",
+            "casual",
+            "--tier",
+            "lite",
+            "--max-iters",
+            "1",
+        ]
+    )
     err = capsys.readouterr().err
     assert "--style" in err and "no effect" in err
 
@@ -112,16 +123,36 @@ def test_style_aware_backend_does_not_warn(capsys):
     """composite honours style via structural, so warning there would be false."""
     from untell.scripts.run import main
 
-    main(["Moreover we utilize robust solutions today.", "--rewriter", "composite",
-          "--style", "casual", "--tier", "lite", "--max-iters", "1"])
+    main(
+        [
+            "Moreover we utilize robust solutions today.",
+            "--rewriter",
+            "composite",
+            "--style",
+            "casual",
+            "--tier",
+            "lite",
+            "--max-iters",
+            "1",
+        ]
+    )
     assert "no effect" not in capsys.readouterr().err
 
 
 def test_no_style_warning_when_style_not_requested(capsys):
     from untell.scripts.run import main
 
-    main(["Moreover we utilize robust solutions today.", "--rewriter", "surgical",
-          "--tier", "lite", "--max-iters", "1"])
+    main(
+        [
+            "Moreover we utilize robust solutions today.",
+            "--rewriter",
+            "surgical",
+            "--tier",
+            "lite",
+            "--max-iters",
+            "1",
+        ]
+    )
     assert "no effect" not in capsys.readouterr().err
 
 
@@ -150,7 +181,7 @@ class TestDemoUsesTheStrongestAvailableTier:
         return capsys.readouterr().out
 
     def test_the_tier_that_ran_is_named(self, monkeypatch, capsys):
-        """"mostly human" from the weak heuristic and "likely AI" from the real ensemble are
+        """ "mostly human" from the weak heuristic and "likely AI" from the real ensemble are
         different claims; without the tier a reader cannot tell them apart."""
         out = self._run_demo(monkeypatch, capsys, no_torch=True)
         assert "(tier:" in out

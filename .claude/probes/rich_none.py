@@ -1,4 +1,5 @@
 import io, sys, json, os
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
 from untell.rich_output import print_humanize_result
 
@@ -13,7 +14,8 @@ try:
         final="The system reads the file and processes it.",
         pre_score={"max": None, "tier": "lite"},
         post_score={"max": 0.42, "tier": "lite"},
-        iterations=2, stopped="passed",
+        iterations=2,
+        stopped="passed",
     )
     sys.stdout = old
     txt = buf.getvalue()

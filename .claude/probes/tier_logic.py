@@ -1,5 +1,7 @@
 """tier ordering: _tier_at_most, _TIER_RANK, resolved_tier across all tiers."""
+
 import json, os
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
 from untell.detectors.base import _tier_at_most, _TIER_RANK, resolved_tier, load_detectors
 from untell.detectors.perplexity_burstiness import PerplexityBurstinessDetector

@@ -142,6 +142,7 @@ def _optional_doc(rel: str) -> str | None:
     path = REPO / rel
     return path.read_text(encoding="utf-8") if path.exists() else None
 
+
 # A measured number is attributed when its section says how to reproduce it. These are the phrases
 # the documents actually use.
 _ATTRIBUTION = re.compile(
@@ -209,6 +210,7 @@ class Report:
 # ---------------------------------------------------------------------------
 # Derivable claims
 # ---------------------------------------------------------------------------
+
 
 def _detector_counts() -> tuple[int, int]:
     from untell.detectors.base import all_detectors
@@ -377,8 +379,7 @@ def check_derivable(report: Report) -> None:
 
     report.check(
         "merge connectors and weights line up",
-        len(_MERGE_CONNECTORS) == len(_MERGE_WEIGHTS)
-        and abs(sum(_MERGE_WEIGHTS) - 1.0) < 0.01,
+        len(_MERGE_CONNECTORS) == len(_MERGE_WEIGHTS) and abs(sum(_MERGE_WEIGHTS) - 1.0) < 0.01,
         f"{len(_MERGE_CONNECTORS)} connectors, weights sum {sum(_MERGE_WEIGHTS):.3f}",
     )
     report.check(
@@ -584,7 +585,13 @@ def _tracked_text_files() -> list[str]:
     files.
     """
     result = subprocess.run(
-        ["git", "ls-files"], cwd=REPO, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60
+        ["git", "ls-files"],
+        cwd=REPO,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=60,
     )
     if result.returncode != 0:
         return []
@@ -592,7 +599,8 @@ def _tracked_text_files() -> list[str]:
     return [
         line
         for line in result.stdout.splitlines()
-        if line and Path(line).suffix in suffixes
+        if line
+        and Path(line).suffix in suffixes
         # Tests intentionally contain control characters as test data (e.g. \x01 in
         # test_no_hidden_character_survives_a_scrub.py), so exclude the whole tests/ tree.
         # `git ls-files` emits repo-relative paths WITHOUT a leading slash, so "/tests/" never
@@ -664,27 +672,58 @@ def check_census_counts(report: Report) -> None:
     # read by "does it start by denying one". Using the descriptive rule on this field counts the
     # 28 `unclear` entries as yes and reports 112.
     in_loop = [
-        r for r in records
+        r
+        for r in records
         if re.sub(r"\s+", " ", r.get("detector_in_loop") or "").strip().lower().startswith("yes")
     ]
-    at_inference = [r for r in in_loop if not _TRAINING_ONLY.search(r.get("detector_in_loop") or "")]
+    at_inference = [
+        r for r in in_loop if not _TRAINING_ONLY.search(r.get("detector_in_loop") or "")
+    ]
     counts = {
         "detector-in-loop": len(in_loop),
         "at inference time": len(at_inference),
-        "meaning verification": sum(1 for r in records if _census_says_yes(r.get("meaning_verification"))),
-        "fact preservation": sum(1 for r in records if _census_says_yes(r.get("fact_preservation"))),
+        "meaning verification": sum(
+            1 for r in records if _census_says_yes(r.get("meaning_verification"))
+        ),
+        "fact preservation": sum(
+            1 for r in records if _census_says_yes(r.get("fact_preservation"))
+        ),
     }
     # Each published sentence, and the count it must agree with.
     claims = [
         ("docs/humanizer-census.md", r"\*\*(\d+)\*\* detector-in-loop", "detector-in-loop"),
-        ("docs/humanizer-census.md", r"detector-in-loop \((\d+) at inference time\)", "at inference time"),
-        ("docs/humanizer-census.md", r"(\d+) of 435 put a detector in the loop", "detector-in-loop"),
-        ("docs/humanizer-census.md", r"put a detector in the loop; (\d+) at inference", "at inference time"),
-        ("docs/why-best-open-repo.md", r"(\d+) of 435 profiled repos put a detector", "detector-in-loop"),
+        (
+            "docs/humanizer-census.md",
+            r"detector-in-loop \((\d+) at inference time\)",
+            "at inference time",
+        ),
+        (
+            "docs/humanizer-census.md",
+            r"(\d+) of 435 put a detector in the loop",
+            "detector-in-loop",
+        ),
+        (
+            "docs/humanizer-census.md",
+            r"put a detector in the loop; (\d+) at inference",
+            "at inference time",
+        ),
+        (
+            "docs/why-best-open-repo.md",
+            r"(\d+) of 435 profiled repos put a detector",
+            "detector-in-loop",
+        ),
         ("docs/why-best-open-repo.md", r"(\d+) of them at inference time", "at inference time"),
         ("docs/why-best-open-repo.md", r"(\d+) of 435 verify meaning", "meaning verification"),
-        ("docs/why-best-open-repo.md", r"(\d+) do some[\s>]+form of fact preservation", "fact preservation"),
-        ("docs/humanizer-census.md", r"\*\*(\d+) repos do some fact preservation\*\*", "fact preservation"),
+        (
+            "docs/why-best-open-repo.md",
+            r"(\d+) do some[\s>]+form of fact preservation",
+            "fact preservation",
+        ),
+        (
+            "docs/humanizer-census.md",
+            r"\*\*(\d+) repos do some fact preservation\*\*",
+            "fact preservation",
+        ),
     ]
     wrong: list[str] = []
     checked = 0
@@ -756,7 +795,12 @@ def check_named_repo_stars(report: Report) -> None:
         return
     wrong: list[str] = []
     checked = 0
-    for rel in ("docs/why-best-open-repo.md", "docs/humanizer-census.md", "ROADMAP.md", "README.md"):
+    for rel in (
+        "docs/why-best-open-repo.md",
+        "docs/humanizer-census.md",
+        "ROADMAP.md",
+        "README.md",
+    ):
         text = audited_doc(report, rel) if rel in LIVE_DOCS else _optional_doc(rel)
         if text is None:
             continue
@@ -800,8 +844,16 @@ def check_largest_repo_claims(report: Report) -> None:
             continue
         for match in re.finditer(r"of the (\w+) largest", text):
             word = match.group(1).lower()
-            size = {"three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8,
-                    "nine": 9, "ten": 10}.get(word)
+            size = {
+                "three": 3,
+                "four": 4,
+                "five": 5,
+                "six": 6,
+                "seven": 7,
+                "eight": 8,
+                "nine": 9,
+                "ten": 10,
+            }.get(word)
             if size is None:
                 continue
             top = {r["name"].lower() for r in ranked[:size]}
@@ -810,7 +862,7 @@ def check_largest_repo_claims(report: Report) -> None:
             # after — and the caveats deliberately name repos that are NOT in the top N, together
             # with their real rank, so reading past the clause boundary reports the disclaimer as
             # the very error it exists to record.
-            rest = text[match.end():match.end() + 700]
+            rest = text[match.end() : match.end() + 700]
             stop = min((i for i in (rest.find(";"), rest.find(". ")) if i != -1), default=len(rest))
             window = rest[:stop]
             for name, _value in _STAR_CLAIM.findall(window):
@@ -912,8 +964,13 @@ def _collected_test_count() -> int | None:
     try:
         result = subprocess.run(
             [sys.executable, "-m", "pytest", "--collect-only", "-q", "-p", "no:randomly"],
-            cwd=REPO, capture_output=True, text=True, encoding="utf-8", errors="replace",
-            timeout=600, env=env,
+            cwd=REPO,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=600,
+            env=env,
         )
     except (OSError, subprocess.TimeoutExpired):
         return None
@@ -1000,8 +1057,11 @@ def check_no_shadowed_definitions(report: Report) -> None:
     dupes: list[str] = []
     scanned = 0
     for path in sorted(
-        [*(REPO / "untell").rglob("*.py"), *(REPO / "eval").glob("*.py"),
-         *(REPO / "tests").glob("*.py")]
+        [
+            *(REPO / "untell").rglob("*.py"),
+            *(REPO / "eval").glob("*.py"),
+            *(REPO / "tests").glob("*.py"),
+        ]
     ):
         tree = audited_tree(report, path)
         if tree is None:
@@ -1107,9 +1167,7 @@ def check_selection_does_not_read_a_bare_max(report: Report) -> None:
     report.check(
         "every bare-max comparison is a listed non-selection",
         not problems,
-        "; ".join(problems)
-        if problems
-        else f"{len(found)} sites, all accounted for",
+        "; ".join(problems) if problems else f"{len(found)} sites, all accounted for",
     )
 
 
@@ -1139,8 +1197,13 @@ def check_no_dead_functions(report: Report) -> None:
                 if node.decorator_list:
                     decorated.add(node.name)
 
-    searched = [*sources, *(REPO / "tests").rglob("*.py"),
-                *REPO.glob("*.toml"), *(REPO / "docs").glob("*.md"), *REPO.glob("*.md")]
+    searched = [
+        *sources,
+        *(REPO / "tests").rglob("*.py"),
+        *REPO.glob("*.toml"),
+        *(REPO / "docs").glob("*.md"),
+        *REPO.glob("*.md"),
+    ]
     corpus = "\n".join(p.read_text(encoding="utf-8", errors="replace") for p in searched)
 
     dead: list[str] = []
@@ -1232,7 +1295,7 @@ def check_optional_extras(report: Report) -> None:
     unknown: dict[str, str] = {}
     for path in sources:
         text = path.read_text(encoding="utf-8", errors="replace")
-        for match in re.finditer(r'untell\[([\w,\s]+)\]|pip install[^\n]*?\.\[([\w,\s]+)\]', text):
+        for match in re.finditer(r"untell\[([\w,\s]+)\]|pip install[^\n]*?\.\[([\w,\s]+)\]", text):
             for name in (match.group(1) or match.group(2)).replace(" ", "").split(","):
                 if name and name not in declared:
                     unknown.setdefault(name, path.relative_to(REPO).as_posix())
@@ -1240,7 +1303,8 @@ def check_optional_extras(report: Report) -> None:
     report.check(
         "every extra the docs tell a user to install exists",
         not unknown,
-        f"undeclared: {unknown}" if unknown
+        f"undeclared: {unknown}"
+        if unknown
         else f"{len(declared)} extras declared, all references resolve",
     )
 
@@ -1273,9 +1337,7 @@ def check_version_consistency(report: Report) -> None:
 
     citation = REPO / "CITATION.cff"
     if citation.exists():
-        found = re.search(
-            r'^version:\s*"?([^"\n]+)"?', citation.read_text(encoding="utf-8"), re.M
-        )
+        found = re.search(r'^version:\s*"?([^"\n]+)"?', citation.read_text(encoding="utf-8"), re.M)
         stated["CITATION.cff"] = found.group(1).strip().strip('"') if found else None
 
     disagreeing = {k: v for k, v in stated.items() if v is not None and v != version}
@@ -1346,7 +1408,11 @@ def check_skill_commands(report: Report) -> None:
         try:
             result = subprocess.run(
                 [sys.executable, "-m", module, "--help"],
-                capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=120,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                timeout=120,
             )
         except Exception as exc:  # noqa: BLE001
             unaccepted.append(f"{target}: --help failed ({type(exc).__name__})")
@@ -1357,7 +1423,8 @@ def check_skill_commands(report: Report) -> None:
     report.check(
         "every flag SKILL.md passes is accepted by the script it passes it to",
         not unaccepted,
-        f"rejected: {unaccepted}" if unaccepted
+        f"rejected: {unaccepted}"
+        if unaccepted
         else f"{sum(len(v) for v in wanted.values())} flags across {len(wanted)} commands",
     )
 
@@ -1385,13 +1452,13 @@ def check_dynamic_env_vars(report: Report) -> None:
     if readme is None:
         return
     undocumented = [
-        f"UNTELL_{key.upper()}" for key in _CLI_DEFAULTS
-        if f"UNTELL_{key.upper()}" not in readme
+        f"UNTELL_{key.upper()}" for key in _CLI_DEFAULTS if f"UNTELL_{key.upper()}" not in readme
     ]
     report.check(
         "every config key's UNTELL_* form is documented",
         not undocumented,
-        f"undocumented: {undocumented}" if undocumented
+        f"undocumented: {undocumented}"
+        if undocumented
         else f"{len(_CLI_DEFAULTS)} config keys, all documented",
     )
 
@@ -1506,7 +1573,7 @@ def check_attribution(report: Report) -> None:
                 if re.fullmatch(r"[A-Za-z, ]*\d{4}-\d{2}-\d{2}[.A-Za-z, ]*", claim):
                     continue
                 # Attribution may sit in the surrounding paragraph, not the same line.
-                window = "\n".join(lines[max(0, i - 12): i + 13])
+                window = "\n".join(lines[max(0, i - 12) : i + 13])
                 if _ATTRIBUTION.search(window):
                     report.attributed += 1
                 else:
@@ -1525,7 +1592,12 @@ def _render(report: Report, as_json: bool) -> str:
         return json.dumps(
             {
                 "checks": [
-                    {"name": f.name, "ok": f.ok, "detail": f.detail, "is_count_drift": f.is_count_drift}
+                    {
+                        "name": f.name,
+                        "ok": f.ok,
+                        "detail": f.detail,
+                        "is_count_drift": f.is_count_drift,
+                    }
                     for f in report.findings
                 ],
                 "count_drifts": [{"name": f.name, "detail": f.detail} for f in report.count_drifts],
@@ -1552,9 +1624,7 @@ def _render(report: Report, as_json: bool) -> str:
         for f in report.count_drifts:
             out.append(f"  {f.detail}")
     out.append("")
-    out.append(
-        "Measured claims — cannot run in CI, so provenance is what is enforced:"
-    )
+    out.append("Measured claims — cannot run in CI, so provenance is what is enforced:")
     out.append(f"  {report.attributed} numeric claims carry a stated source")
     if report.unattributed:
         out.append(f"  {len(report.unattributed)} do NOT:")

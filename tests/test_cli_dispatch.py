@@ -9,6 +9,7 @@ def test_no_args_runs_demo_and_exits_zero(capsys):
     """No args runs the guided demo (no error, exits 0)."""
     # Just verify the dispatcher doesn't crash; demo calls full humanize which may time out in CI.
     import sys as _sys
+
     orig = _sys.argv[:]
     _sys.argv = ["untell", "--help"]
     try:
@@ -106,9 +107,7 @@ def test_every_free_backend_is_reachable_from_every_surface():
     from untell.scripts.run import build_parser
 
     accepted = {
-        a.dest: set(a.choices or ())
-        for a in build_parser()._actions
-        if a.dest == "rewriter"
+        a.dest: set(a.choices or ()) for a in build_parser()._actions if a.dest == "rewriter"
     }["rewriter"]
     for name in free:
         assert name in accepted, f"{name} missing from untell humanize --rewriter choices"

@@ -58,9 +58,7 @@ def test_a_raising_browser_checker_is_an_error_row(monkeypatch) -> None:
         def check(self, text):
             raise RuntimeError("playwright died")
 
-    monkeypatch.setattr(
-        "untell.browser_check.get_browser_checker", lambda site: _Boom()
-    )
+    monkeypatch.setattr("untell.browser_check.get_browser_checker", lambda site: _Boom())
     out = verify("hello world", tier=None, browser=["zerogpt"])
     row = out["results"]["zerogpt(web)"]
     assert row["ai"] is None

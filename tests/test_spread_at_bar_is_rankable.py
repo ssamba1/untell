@@ -6,6 +6,7 @@ mutation < -> <= makes a spread of exactly 0.05 unrankable, declaring a
 document's sentence scores too close to order when they sit exactly at the
 usable threshold. Exact float: 0.05 - 0.0 == 0.05.
 """
+
 from untell.scripts.sentences import _targeting_is_unrankable
 
 ROWS = [{"ai": 0.0}, {"ai": 0.025}, {"ai": 0.05}]
@@ -20,4 +21,3 @@ def test_exactly_min_sentences_proceed_to_spread():
     # count guard must NOT short-circuit; the spread decides (unrankable).
     rows = [{"ai": 0.5}, {"ai": 0.5245}, {"ai": 0.549}]
     assert _targeting_is_unrankable(rows) is True
-

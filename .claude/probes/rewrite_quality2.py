@@ -1,5 +1,7 @@
 """Does the rewriter CREATE doubled words / grammar faults from clean inputs?"""
+
 import json, os, re
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
 from untell.rewriter.structural import StructuralRewriter
 from untell.text_split import split_sentences
@@ -19,8 +21,13 @@ for s in sents:
         if out and out != s and doubled_re.search(out):
             m = doubled_re.search(out)
             created.append((s[:50], out[:70], m.group(0), inten))
-print(json.dumps({
-    "clean_inputs_swept": len(sents),
-    "doubled_created": len(created),
-    "samples": created[:5],
-}, indent=1))
+print(
+    json.dumps(
+        {
+            "clean_inputs_swept": len(sents),
+            "doubled_created": len(created),
+            "samples": created[:5],
+        },
+        indent=1,
+    )
+)

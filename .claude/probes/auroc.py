@@ -1,4 +1,5 @@
 """auroc: perfect separation 1.0, inverted 0.0, ties half, empty None."""
+
 import json
 from eval.detector_audit import auroc
 

@@ -129,8 +129,12 @@ class TestCheckPipelineOffline:
     def test_contenteditable_sites_fill_via_js(self, fake_playwright):
         page = fake_playwright(_FakePage(raw="55% AI Generated"))
         cfg = SiteConfig(
-            name="ce", url="https://example.test", input_selector="#ed",
-            input_mode="contenteditable", result_selector="#out", wait_s=2,
+            name="ce",
+            url="https://example.test",
+            input_selector="#ed",
+            input_mode="contenteditable",
+            result_selector="#out",
+            wait_s=2,
         )
         pct = WebUIChecker(cfg).check("text")
         assert pct == 0.55
@@ -143,8 +147,12 @@ class TestCheckPipelineOffline:
         # The fake returns False (no element found) for the JS fill attempt.
         page.eval_result = False
         cfg = SiteConfig(
-            name="ce", url="https://example.test", input_selector="#one, #two",
-            input_mode="contenteditable", result_selector="#out", wait_s=2,
+            name="ce",
+            url="https://example.test",
+            input_selector="#one, #two",
+            input_mode="contenteditable",
+            result_selector="#out",
+            wait_s=2,
         )
         with pytest.raises(Exception) as e:
             WebUIChecker(cfg).check("text")
@@ -153,8 +161,9 @@ class TestCheckPipelineOffline:
 
     def test_input_selector_miss_raises_and_names_every_candidate(self, fake_playwright):
         fake_playwright(_FakePage(fail_fill=("#a", "#b")))
-        cfg = SiteConfig(name="local", url="u", input_selector="#a, #b",
-                         result_selector="#out", wait_s=2)
+        cfg = SiteConfig(
+            name="local", url="u", input_selector="#a, #b", result_selector="#out", wait_s=2
+        )
         with pytest.raises(Exception) as e:
             WebUIChecker(cfg).check("x")
         assert e.value.role == "input"
@@ -163,8 +172,13 @@ class TestCheckPipelineOffline:
 
     def test_result_selector_miss_raises_and_names_every_candidate(self, fake_playwright):
         fake_playwright(_FakePage(fail_wait=(".gone", ".also-gone")))
-        cfg = SiteConfig(name="local", url="u", input_selector="#in",
-                         result_selector=".gone, .also-gone", wait_s=2)
+        cfg = SiteConfig(
+            name="local",
+            url="u",
+            input_selector="#in",
+            result_selector=".gone, .also-gone",
+            wait_s=2,
+        )
         with pytest.raises(Exception) as e:
             WebUIChecker(cfg).check("x")
         assert e.value.role == "result"
@@ -180,8 +194,9 @@ class TestCheckPipelineOffline:
     def test_wait_budget_is_shared_across_candidates(self, fake_playwright):
         """Three candidates must not get three full wait_s each: `per_selector = wait_s / n`."""
         page = fake_playwright(_FakePage(fail_fill=("#a", "#b")))
-        cfg = SiteConfig(name="local", url="u", input_selector="#a, #b, #c",
-                         result_selector="#out", wait_s=3)
+        cfg = SiteConfig(
+            name="local", url="u", input_selector="#a, #b, #c", result_selector="#out", wait_s=3
+        )
         assert WebUIChecker(cfg).check("x") == 0.73
         assert page.filled == [("#c", "x")]
 

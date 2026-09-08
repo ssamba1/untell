@@ -28,8 +28,8 @@ _JUDGE_PROMPT = (
     "read, not any single word, and consider the known AI tells: em-dashes; AI vocabulary (delve, "
     "leverage, robust, seamless, tapestry, testament, pivotal, underscore, multifaceted, meticulous); "
     "formulaic transitions (Moreover, Furthermore, Overall, In conclusion); rule-of-three / tricolons; "
-    "negated contrast (\"not X, it's Y\"); participial trailers (\"..., underscoring its importance\"); "
-    "inflated copula (serves as, boasts); vague attribution (\"studies show\"); uniform sentence length "
+    'negated contrast ("not X, it\'s Y"); participial trailers ("..., underscoring its importance"); '
+    'inflated copula (serves as, boasts); vague attribution ("studies show"); uniform sentence length '
     "(low burstiness); promotional register; sycophancy; over-structured markdown. "
     "Ignore opaque sentinel tokens like ⟦HZ0003⟧ — treat them as neutral placeholders. "
     "Respond with ONLY the number, e.g. 0.73"
@@ -99,6 +99,10 @@ class LLMJudgeDetector:
         if not m:
             return None
         val = float(m.group(0))
-        if val >= 2.0:  # answered as a percentage (e.g. "73"). Values in (1.0, 2.0) are just slightly
-            val /= 100.0  # out-of-range probabilities and should clamp to ~1.0, not become 0.01-0.02.
+        if (
+            val >= 2.0
+        ):  # answered as a percentage (e.g. "73"). Values in (1.0, 2.0) are just slightly
+            val /= (
+                100.0  # out-of-range probabilities and should clamp to ~1.0, not become 0.01-0.02.
+            )
         return clamp01(val)

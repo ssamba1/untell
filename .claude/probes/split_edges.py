@@ -1,4 +1,5 @@
 """split_sentences: abbreviations, quotes, parens, decimals, ellipsis at boundaries."""
+
 import json
 from untell.text_split import split_sentences
 
@@ -20,7 +21,11 @@ out = {}
 for name, t in cases.items():
     try:
         s = split_sentences(t)
-        out[name] = {"n": len(s), "roundtrip_join": " ".join(s).strip() == t.strip(), "parts": [x[:35] for x in s]}
+        out[name] = {
+            "n": len(s),
+            "roundtrip_join": " ".join(s).strip() == t.strip(),
+            "parts": [x[:35] for x in s],
+        }
     except Exception as e:
         out[name] = {"error": f"{type(e).__name__}: {str(e)[:50]}"}
 print(json.dumps(out, indent=1))

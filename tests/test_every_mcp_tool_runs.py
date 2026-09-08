@@ -13,6 +13,7 @@ guard rather than being silently skipped — which is how a list like this norma
 `compare` stayed dead: `test_mcp_server.py` asserts "at least 5 tools registered" and registration
 is exactly what a broken tool still does.
 """
+
 from __future__ import annotations
 
 import sys
@@ -66,8 +67,10 @@ def tools() -> dict:
     # Forced, not setdefault: tests/test_mcp_server.py installs its own mock for these modules, and
     # whichever file ran first used to win — this fixture then captured nothing and errored only
     # when the two ran together.
-    saved = {name: sys.modules.get(name) for name in
-             ("mcp", "mcp.server", "mcp.server.fastmcp", "untell.mcp_server")}
+    saved = {
+        name: sys.modules.get(name)
+        for name in ("mcp", "mcp.server", "mcp.server.fastmcp", "untell.mcp_server")
+    }
     for name, mod in (("mcp", mcp), ("mcp.server", server), ("mcp.server.fastmcp", fastmcp)):
         sys.modules[name] = mod
     sys.modules.pop("untell.mcp_server", None)

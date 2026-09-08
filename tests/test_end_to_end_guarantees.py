@@ -16,6 +16,7 @@ Both were broken this session in ways no component test caught:
 Detectors are stubbed so these stay fast and deterministic; the preserve-lock, rewriter and meaning
 gate are all real, because those are what the guarantees depend on.
 """
+
 from __future__ import annotations
 
 import pytest
@@ -75,8 +76,12 @@ def _stub_detectors(monkeypatch, score_value=0.9, stub_similarity=True):
 
     def _fake(text, tier="full", threshold=0.3):
         return {
-            "tier": tier, "detectors": {"stub": score_value}, "max": score_value,
-            "mean": score_value, "threshold": threshold, "flagged": score_value >= threshold,
+            "tier": tier,
+            "detectors": {"stub": score_value},
+            "max": score_value,
+            "mean": score_value,
+            "threshold": threshold,
+            "flagged": score_value >= threshold,
         }
 
     # Patch the SOURCE module, not just run.py's binding. CompositeRewriter and TargetedRewriter do
@@ -95,8 +100,14 @@ def test_every_locked_fact_survives_a_real_loop_run(monkeypatch, text, must_surv
 
     _stub_detectors(monkeypatch)
     res = untell_text(
-        text, tier="lite", threshold=0.3, max_iters=1, best_of=1, sim_bar=0.0,
-        rewriter=get_rewriter(prefer="composite"), veto_contradictions=False,
+        text,
+        tier="lite",
+        threshold=0.3,
+        max_iters=1,
+        best_of=1,
+        sim_bar=0.0,
+        rewriter=get_rewriter(prefer="composite"),
+        veto_contradictions=False,
     )
     final = res["final"]
     for fact in must_survive:
@@ -113,8 +124,14 @@ def test_facts_survive_the_targeted_rewriter_too(monkeypatch, text, must_survive
 
     _stub_detectors(monkeypatch)
     res = untell_text(
-        text, tier="lite", threshold=0.3, max_iters=1, best_of=1, sim_bar=0.0,
-        rewriter=get_rewriter(prefer="targeted"), veto_contradictions=False,
+        text,
+        tier="lite",
+        threshold=0.3,
+        max_iters=1,
+        best_of=1,
+        sim_bar=0.0,
+        rewriter=get_rewriter(prefer="targeted"),
+        veto_contradictions=False,
     )
     for fact in must_survive:
         assert fact in res["final"], f"{fact!r} lost via the targeted rewriter: {res['final']!r}"
@@ -136,7 +153,12 @@ def test_loop_output_does_not_contradict_its_input(monkeypatch):
         "Furthermore, the team utilized robust monitoring to demonstrate these gains."
     )
     res = untell_text(
-        text, tier="lite", threshold=0.3, max_iters=1, best_of=1, sim_bar=0.0,
+        text,
+        tier="lite",
+        threshold=0.3,
+        max_iters=1,
+        best_of=1,
+        sim_bar=0.0,
         rewriter=get_rewriter(prefer="composite"),
     )
     try:
@@ -164,8 +186,14 @@ def test_loop_never_returns_empty_or_truncated_output(monkeypatch):
         "Overall, the transformative impact continues to expand across various sectors."
     )
     res = untell_text(
-        text, tier="lite", threshold=0.3, max_iters=1, best_of=1, sim_bar=0.0,
-        rewriter=get_rewriter(prefer="composite"), veto_contradictions=False,
+        text,
+        tier="lite",
+        threshold=0.3,
+        max_iters=1,
+        best_of=1,
+        sim_bar=0.0,
+        rewriter=get_rewriter(prefer="composite"),
+        veto_contradictions=False,
     )
     final = res["final"]
     assert final.strip()
@@ -200,8 +228,9 @@ class TestRepeatedHumanizationConverges:
         original = current = self.AI_TEXT
         out = []
         for _ in range(n):
-            r = untell_text(current, tier="lite", rewriter="composite", threshold=0.30,
-                            max_iters=2, best_of=2)
+            r = untell_text(
+                current, tier="lite", rewriter="composite", threshold=0.30, max_iters=2, best_of=2
+            )
             assert "error" not in r, r.get("error")
             current = r["final"]
             out.append((current, similarity(original, current)))
@@ -268,7 +297,7 @@ class TestFactsSurviveAtScaleOnRealProse:
         """
         assert len(self._corpus()) >= len(self.FACTS), (
             f"{len(self.FACTS)} facts but only {len(self._corpus())} corpus items, so "
-            f"{self.FACTS[len(self._corpus()):]} are never used"
+            f"{self.FACTS[len(self._corpus()) :]} are never used"
         )
 
     @pytest.mark.parametrize("seed", [0, 1, 2])
@@ -297,4 +326,6 @@ class TestFactsSurviveAtScaleOnRealProse:
 
             final = restore(out, mapping)
             for literal in mapping.values():
-                assert literal in final, f"fact not restored byte-exact (seed {seed}, text {i}): {literal!r}"
+                assert literal in final, (
+                    f"fact not restored byte-exact (seed {seed}, text {i}): {literal!r}"
+                )

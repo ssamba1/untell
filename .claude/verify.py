@@ -63,11 +63,15 @@ def main() -> int:
         errors="replace",
     )
     if head.returncode != 0:
-        sys.exit(f"REFUSED: {a.fix} is not in HEAD, so there is no 'before' to revert to. "
-                 "Commit the surrounding code first, or verify by hand.")
+        sys.exit(
+            f"REFUSED: {a.fix} is not in HEAD, so there is no 'before' to revert to. "
+            "Commit the surrounding code first, or verify by hand."
+        )
     if head.stdout == fixed:
-        sys.exit(f"REFUSED: {a.fix} is identical to HEAD - there is no fix here to take away. "
-                 "Either the fix is not written yet or it is already committed.")
+        sys.exit(
+            f"REFUSED: {a.fix} is identical to HEAD - there is no fix here to take away. "
+            "Either the fix is not written yet or it is already committed."
+        )
 
     ok_with, tail_with = run(a.tests, a.timeout)
     print(f"with fix     {'PASS' if ok_with else 'FAIL'}  {tail_with}")

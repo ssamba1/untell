@@ -52,7 +52,7 @@ def test_the_guard_judges_each_half(left: str, orphaned: bool) -> None:
 
 
 def test_the_ambiguous_words_are_deliberately_absent_from_the_anywhere_set() -> None:
-    """"as", "since", "while", "before", "until", "once" are prepositions at least as often as they
+    """ "as", "since", "while", "before", "until", "once" are prepositions at least as often as they
     are subordinators. Testing for them anywhere in a segment would reject correct splits — "as many
     HD channels as we have" is the case that motivated the split, not a fragment."""
     for word in ("as", "since", "while", "after", "before", "until", "once"):

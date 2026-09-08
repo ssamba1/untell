@@ -7,6 +7,7 @@ All 4 subprocesses run concurrently to bound wall time (~60s one-time import eac
 
 Run:  PYTHONPATH= UNTELL_LITE_NO_TORCH=1 .venv/Scripts/python.exe .claude/probes/concurrency_seed_repro.py
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -55,19 +56,23 @@ def main() -> int:
     # 2 fresh processes per rewriter, all 4 concurrent
     for rewriter in ("structural", "targeted"):
         for _ in range(2):
-            procs.append((
-                rewriter,
-                subprocess.Popen(
-                    [str(PY), "-c", CHILD, json.dumps(TEXT), rewriter, "42"],
-                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env(),
-                ),
-            ))
+            procs.append(
+                (
+                    rewriter,
+                    subprocess.Popen(
+                        [str(PY), "-c", CHILD, json.dumps(TEXT), rewriter, "42"],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        env=env(),
+                    ),
+                )
+            )
 
     results: dict[str, list[tuple[int, bytes, bytes]]] = {"structural": [], "targeted": []}
     for rewriter, p in procs:
         out, err = p.communicate(timeout=300)
         results[rewriter].append((p.returncode, out, err))
-    print(f"[seed] 4 fresh subprocesses finished in {time.time()-t0:.1f}s")
+    print(f"[seed] 4 fresh subprocesses finished in {time.time() - t0:.1f}s")
 
     for rewriter, runs in results.items():
         codes = {rc for rc, _, _ in runs}
@@ -75,8 +80,7 @@ def main() -> int:
         full = [o for rc, o, _ in runs if rc == 0 and o.strip()]
         if codes != {0}:
             FINDINGS.append(
-                f"subprocess failed for {rewriter}: codes={codes} "
-                f"stderr={runs[0][2][:200]!r}"
+                f"subprocess failed for {rewriter}: codes={codes} stderr={runs[0][2][:200]!r}"
             )
             continue
         if len(finals) != 2:

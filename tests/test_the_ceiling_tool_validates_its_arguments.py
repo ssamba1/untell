@@ -66,9 +66,16 @@ def test_a_threshold_above_one_is_refused() -> None:
     assert "outside [0, 1]" in payload["error"]
 
 
-@pytest.mark.parametrize("override", [
-    {"n": 0}, {"max_iters": 0}, {"best_of": 0}, {"n": 500},
-], ids=lambda o: f"{next(iter(o))}={next(iter(o.values()))}")
+@pytest.mark.parametrize(
+    "override",
+    [
+        {"n": 0},
+        {"max_iters": 0},
+        {"best_of": 0},
+        {"n": 500},
+    ],
+    ids=lambda o: f"{next(iter(o))}={next(iter(o.values()))}",
+)
 def test_an_out_of_range_count_is_refused(override: dict) -> None:
     # Merged into the defaults rather than passed alongside them: `_call(..., n=1, **{"n": 0})`
     # is a duplicate keyword argument, which fails for a reason that has nothing to do with the

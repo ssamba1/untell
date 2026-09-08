@@ -136,10 +136,14 @@ class LocalJudgeDetector:
             # load through `accelerate`, which is not a declared dependency, so every score() call
             # died with "Using a `device_map` ... requires `accelerate`" even though available()
             # had just reported True. `.to()` places the model identically for a single device.
-            model = AutoModelForCausalLM.from_pretrained(
-                self.model_id,
-                dtype=torch.bfloat16 if device != "cpu" else torch.float32,
-            ).to(device).eval()
+            model = (
+                AutoModelForCausalLM.from_pretrained(
+                    self.model_id,
+                    dtype=torch.bfloat16 if device != "cpu" else torch.float32,
+                )
+                .to(device)
+                .eval()
+            )
             LocalJudgeDetector._tokenizer = tok
             LocalJudgeDetector._model = model
             LocalJudgeDetector._loaded_model_id = self.model_id
@@ -150,7 +154,8 @@ class LocalJudgeDetector:
             logger.warning(
                 "LocalJudgeDetector: model_id %r requested but %r is already loaded "
                 "(class-level cache holds one model per process). Using the loaded model.",
-                self.model_id, LocalJudgeDetector._loaded_model_id,
+                self.model_id,
+                LocalJudgeDetector._loaded_model_id,
             )
         return LocalJudgeDetector._tokenizer, LocalJudgeDetector._model
 
@@ -166,7 +171,8 @@ class LocalJudgeDetector:
             logger.warning(
                 "local_judge failed to load and was EXCLUDED from the ensemble "
                 "(%s: %s). Check network access and the HuggingFace cache.",
-                type(exc).__name__, str(exc)[:140],
+                type(exc).__name__,
+                str(exc)[:140],
             )
             raise
         prompt = f"{_JUDGE_PROMPT}\n\n--- TEXT ---\n{text}\n\n--- RATING ---"
@@ -186,7 +192,7 @@ class LocalJudgeDetector:
                 top_p=None,
                 pad_token_id=tok.pad_token_id,
             )
-        gen = out[0][inputs["input_ids"].shape[1]:]
+        gen = out[0][inputs["input_ids"].shape[1] :]
         reply = tok.decode(gen, skip_special_tokens=True).strip()
         m = _NUM.search(reply or "")
         if not m:

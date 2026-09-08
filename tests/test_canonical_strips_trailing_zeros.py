@@ -7,6 +7,7 @@ non-empty trimmed value: "5.50" canonicalizes to "0", so a rewrite that tidied
 a trailing zero compares unequal to its source (the exact false-veto the
 docstring documents).
 """
+
 from untell.scripts.numerals import _canonical
 
 

@@ -1,5 +1,7 @@
 """t5_paraphrase: availability gating, deterministic property."""
+
 import json, os
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
 from untell.rewriter.t5_paraphrase import T5ParaphraseRewriter
 

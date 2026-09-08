@@ -13,6 +13,7 @@ MEASURED when written: 90 of 90 calls returned. This is regression protection, n
 the value is that nothing here was pinned before, and the failure mode is loud but only in
 production.
 """
+
 from __future__ import annotations
 
 import pytest

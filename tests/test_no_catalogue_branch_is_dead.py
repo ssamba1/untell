@@ -82,7 +82,7 @@ def _groups_in_order(src: str) -> list[tuple[int, str]]:
                 elif src[j] == ")":
                     depth -= 1
                 j += 1
-            out.append((idx, src[i + 3:j - 1]))
+            out.append((idx, src[i + 3 : j - 1]))
             i += 3
             continue
         if src[i] == "(" and not src.startswith("(?", i):
@@ -115,7 +115,7 @@ def _audit(name: str, compiled: re.Pattern) -> tuple[int, list[tuple[str, str]]]
             if not _LITERAL_RE.match(alt) or alt.lower() == captured.lower():
                 continue
             checked += 1
-            swapped = probe[:match.start(index)] + alt + probe[match.end(index):]
+            swapped = probe[: match.start(index)] + alt + probe[match.end(index) :]
             # `compiled.search(swapped)` is NOT enough, and the known-positive below is what showed
             # it: a pattern can match somewhere ELSE in the probe, so a live verdict would be
             # spurious. `negated_contrast` did exactly that — replacing its group with nonsense
@@ -130,9 +130,8 @@ def _audit(name: str, compiled: re.Pattern) -> tuple[int, list[tuple[str, str]]]
 @pytest.mark.parametrize("name,compiled", _CATEGORIES, ids=[n for n, _ in _CATEGORIES])
 def test_no_sibling_branch_is_unreachable(name: str, compiled: re.Pattern) -> None:
     _checked, dead = _audit(name, compiled)
-    assert not dead, (
-        f"{name}: branches that cannot match where their sibling does: "
-        + ", ".join(f"{alt!r} (vs {captured!r})" for alt, captured in dead)
+    assert not dead, f"{name}: branches that cannot match where their sibling does: " + ", ".join(
+        f"{alt!r} (vs {captured!r})" for alt, captured in dead
     )
 
 
@@ -148,9 +147,7 @@ def test_the_audit_reaches_enough_branches_to_mean_something() -> None:
 
 def test_a_deliberately_broken_branch_is_caught() -> None:
     """Known positive. Without this, "0 dead" is a claim about the method as much as the catalogue."""
-    name, compiled = next(
-        (n, c) for n, c in _CATEGORIES if _audit(n, c)[0] > 0
-    )
+    name, compiled = next((n, c) for n, c in _CATEGORIES if _audit(n, c)[0] > 0)
     probe = PROBES[name]
     capturing = re.compile(compiled.pattern.replace("(?:", "("), compiled.flags)
     match = capturing.search(probe)
@@ -169,7 +166,7 @@ def test_a_deliberately_broken_branch_is_caught() -> None:
         # Note this is the group-aware check, not a bare `search`: `negated_contrast` still matches
         # a nonsense substitution at a DIFFERENT span, which is precisely the false "live" verdict
         # the audit had to be tightened against.
-        swapped = probe[:match.start(index)] + "zzqqxx" + probe[match.end(index):]
+        swapped = probe[: match.start(index)] + "zzqqxx" + probe[match.end(index) :]
         again = capturing.search(swapped)
         assert not again or (again.group(index) or "").lower() != "zzqqxx", (
             f"{name} reports a nonsense branch as reachable, so the substitution is not actually "

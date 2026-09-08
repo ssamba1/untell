@@ -65,9 +65,7 @@ def test_entailment_resolves_labels_with_a_warmup_call(fresh_nli, monkeypatch) -
     assert len(calls) == 1
 
 
-def test_a_raising_model_disables_the_veto_and_says_so_once(
-    fresh_nli, monkeypatch, caplog
-) -> None:
+def test_a_raising_model_disables_the_veto_and_says_so_once(fresh_nli, monkeypatch, caplog) -> None:
     def boom(a, b):
         raise RuntimeError("model exploded")
 
@@ -87,8 +85,10 @@ def test_meaning_preserved_rejects_a_polarity_flip(fresh_nli, monkeypatch) -> No
     """Negation changes fail the mechanical polarity check before any model runs."""
     assert (
         entailment.meaning_preserved(
-            "The system is not active.", "The system is active.",
-            sim=0.99, strict_sim_bar=0.76,
+            "The system is not active.",
+            "The system is active.",
+            sim=0.99,
+            strict_sim_bar=0.76,
         )
         is False
     )
@@ -97,10 +97,7 @@ def test_meaning_preserved_rejects_a_polarity_flip(fresh_nli, monkeypatch) -> No
 def test_meaning_preserved_rejects_deletion_over_the_allowance(fresh_nli) -> None:
     source = "The committee reviewed the proposal and approved the funding. " * 12
     candidate = "The committee reviewed the proposal."
-    assert (
-        entailment.meaning_preserved(source, candidate, sim=0.9, strict_sim_bar=0.76)
-        is False
-    )
+    assert entailment.meaning_preserved(source, candidate, sim=0.9, strict_sim_bar=0.76) is False
 
 
 def test_cli_unavailable_reports_json_and_exits_zero(fresh_nli, capsys, monkeypatch) -> None:

@@ -1,5 +1,7 @@
 """config: pyproject [tool.untell] and untell.yaml precedence over defaults."""
+
 import json, os, tempfile, pathlib
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
 from untell.config import load, get
 
@@ -15,6 +17,7 @@ out["env_wins"] = get("threshold", 0.3) == 0.55
 del os.environ["UNTELL_THRESHOLD"]
 # 4. pyproject [tool.untell] read (if present in repo)
 import tomllib
+
 try:
     with open("pyproject.toml", "rb") as f:
         pp = tomllib.load(f)

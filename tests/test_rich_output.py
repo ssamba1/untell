@@ -57,8 +57,13 @@ def test_uniform_burstiness_row_is_not_hidden_by_falsy_zero(monkeypatch, capsys)
         rich_output, "_CONSOLE", type("C", (), {"print": lambda self, *a, **k: printed.append(a)})()
     )
     rich_output.print_tells_result(
-        {"tells": 3, "tells_per_100w": 10.0, "burstiness_cv": 0.0, "low_burstiness": True,
-         "by_category": {"ai_vocab": 3}}
+        {
+            "tells": 3,
+            "tells_per_100w": 10.0,
+            "burstiness_cv": 0.0,
+            "low_burstiness": True,
+            "by_category": {"ai_vocab": 3},
+        }
     )
     assert any("Burstiness" in str(a) for args in printed for a in args), (
         "a CV of 0.0 was hidden by a truthiness check"
@@ -78,7 +83,8 @@ def test_a_none_max_score_does_not_crash_the_report(monkeypatch, capsys):
         final="The system reads the file and processes it.",
         pre_score={"max": None, "tier": "lite"},
         post_score={"max": 0.42, "tier": "lite"},
-        iterations=2, stopped="passed",
+        iterations=2,
+        stopped="passed",
     )
     # The bug was a crash (None - None). With the fix, the report prints its table.
     assert printed, "nothing was printed"
@@ -114,24 +120,45 @@ class TestBurstinessReachesThePlainTerminalToo:
         return capsys.readouterr().out
 
     def test_the_cv_is_printed(self, monkeypatch, capsys):
-        out = self._run(monkeypatch, capsys, {
-            "tells": 3, "tells_per_100w": 10.0, "burstiness_cv": 0.42,
-            "low_burstiness": False, "by_category": {"ai_vocab": 3},
-        })
+        out = self._run(
+            monkeypatch,
+            capsys,
+            {
+                "tells": 3,
+                "tells_per_100w": 10.0,
+                "burstiness_cv": 0.42,
+                "low_burstiness": False,
+                "by_category": {"ai_vocab": 3},
+            },
+        )
         assert "Burstiness CV: 0.42" in out
 
     def test_a_cv_of_zero_is_printed_and_marked(self, monkeypatch, capsys):
-        out = self._run(monkeypatch, capsys, {
-            "tells": 3, "tells_per_100w": 10.0, "burstiness_cv": 0.0,
-            "low_burstiness": True, "by_category": {"ai_vocab": 3},
-        })
+        out = self._run(
+            monkeypatch,
+            capsys,
+            {
+                "tells": 3,
+                "tells_per_100w": 10.0,
+                "burstiness_cv": 0.0,
+                "low_burstiness": True,
+                "by_category": {"ai_vocab": 3},
+            },
+        )
         assert "Burstiness CV: 0.0" in out
         assert "uniform = tell" in out
 
     def test_an_undefined_cv_is_still_omitted(self, monkeypatch, capsys):
-        out = self._run(monkeypatch, capsys, {
-            "tells": 0, "tells_per_100w": 0.0, "burstiness_cv": None, "by_category": {},
-        })
+        out = self._run(
+            monkeypatch,
+            capsys,
+            {
+                "tells": 0,
+                "tells_per_100w": 0.0,
+                "burstiness_cv": None,
+                "by_category": {},
+            },
+        )
         assert "Burstiness" not in out
 
     def test_both_paths_agree_on_when_the_row_appears(self, monkeypatch, capsys):
@@ -150,7 +177,8 @@ class TestBurstinessReachesThePlainTerminalToo:
             printed: list = []
             monkeypatch.setattr(rich_output, "_RICH", True)
             monkeypatch.setattr(
-                rich_output, "_CONSOLE",
+                rich_output,
+                "_CONSOLE",
                 # `printed` bound as a default, not captured: monkeypatch.setattr is undone at
                 # TEST teardown, not at the end of an iteration, so the fake console installed
                 # here outlives the loop body that made it. A late-closing capture would then
@@ -173,7 +201,9 @@ def test_plain_text_fallback_needs_no_rich(monkeypatch, capsys):
     rich_output.print_humanize_result(
         "original text", "final text", {"max": 0.86}, {"max": 0.02}, 2, "passed"
     )
-    rich_output.print_tells_result({"tells": 1, "tells_per_100w": 5.0, "by_category": {"cliche": 1}})
+    rich_output.print_tells_result(
+        {"tells": 1, "tells_per_100w": 5.0, "by_category": {"cliche": 1}}
+    )
     rich_output.print_humanness(73.0, "mostly human")
     rich_output.progress_iteration(1, 3, "full", 0.42)
 

@@ -4,6 +4,7 @@ The ceiling command is the measurements engine. Test its arg validation:
 --repeats 0/-1/abc, --n 0/-1/abc, --workers 0/-1/abc, --threshold out of
 range, --best-of 0, and the exit codes for each. No tracebacks allowed.
 """
+
 import subprocess
 from pathlib import Path
 
@@ -32,9 +33,15 @@ CASES = [
 
 for argv, desc in CASES:
     try:
-        proc = subprocess.run([str(PY), "-m", MOD, *argv], capture_output=True,
-                              text=True, errors="replace", timeout=15, env=env,
-                              stdin=subprocess.DEVNULL)
+        proc = subprocess.run(
+            [str(PY), "-m", MOD, *argv],
+            capture_output=True,
+            text=True,
+            errors="replace",
+            timeout=15,
+            env=env,
+            stdin=subprocess.DEVNULL,
+        )
         tb = "Traceback" in (proc.stderr or "")
         out = (proc.stdout or "").strip().replace("\n", " ")[:60]
         print(f"{desc:16} exit={proc.returncode} tb={tb} {out}")

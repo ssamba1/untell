@@ -32,7 +32,9 @@ class TestRegistryCountComparison:
         # avoid the 16s rewriter-model load later in check_derivable
         monkeypatch.setattr("untell.rewriter.get_rewriter", lambda *a, **k: None)
         # avoid importing every console-script module (heavy detector imports)
-        monkeypatch.setattr("importlib.import_module", lambda name: type("M", (), {"main": lambda: None})())
+        monkeypatch.setattr(
+            "importlib.import_module", lambda name: type("M", (), {"main": lambda: None})()
+        )
         A.check_derivable(report)
         reg = [f for f in report.findings if "matches the registry" in f.name]
         assert reg, "registry check must run"

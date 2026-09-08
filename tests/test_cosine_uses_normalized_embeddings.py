@@ -25,9 +25,7 @@ class _FakeModel:
     def encode(self, texts, normalize_embeddings=True):
         if normalize_embeddings:
             a, b = np.array([1.0, 1.0]), np.array([1.0, 0.0])
-            return np.stack(
-                [a / np.linalg.norm(a), b / np.linalg.norm(b)]
-            )
+            return np.stack([a / np.linalg.norm(a), b / np.linalg.norm(b)])
         return np.array([[1.0, 1.0], [1.0, 0.0]])
 
 

@@ -1,18 +1,24 @@
 """humanness vs score/tells: a more-human text scores higher humanness AND lower score/tells."""
+
 import json, os
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
 from untell.humanness import humanness
 from untell.scripts.score import score_text
 from untell.scripts.tells import score_tells
 
-ai = ("Moreover, the framework leverages robust solutions to deliver outcomes at scale. "
-      "It is important to note that the results demonstrate significant improvement in every domain. "
-      "Additionally, the team utilized comprehensive methodologies to facilitate seamless integration. "
-      "The findings underscore pivotal paradigms that reshape the landscape of modern practice.")
-human = ("We tried a few approaches and the last one finally worked. "
-         "The numbers came out better than we hoped, though the first batch was a mess. "
-         "Our intern fixed the parser and everything started passing again. "
-         "It took most of the week but we got there in the end.")
+ai = (
+    "Moreover, the framework leverages robust solutions to deliver outcomes at scale. "
+    "It is important to note that the results demonstrate significant improvement in every domain. "
+    "Additionally, the team utilized comprehensive methodologies to facilitate seamless integration. "
+    "The findings underscore pivotal paradigms that reshape the landscape of modern practice."
+)
+human = (
+    "We tried a few approaches and the last one finally worked. "
+    "The numbers came out better than we hoped, though the first batch was a mess. "
+    "Our intern fixed the parser and everything started passing again. "
+    "It took most of the week but we got there in the end."
+)
 out = {}
 h_ai = humanness(ai, tier="lite")
 h_h = humanness(human, tier="lite")

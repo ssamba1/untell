@@ -18,8 +18,10 @@ import pytest
 
 from untell.scripts.hedges import negation_count, polarity_kept
 
-SRC = ("The trial enrolled 240 patients and the drug reduced mortality by 12% compared with "
-       "placebo, though the effect may not hold in older adults.")
+SRC = (
+    "The trial enrolled 240 patients and the drug reduced mortality by 12% compared with "
+    "placebo, though the effect may not hold in older adults."
+)
 
 
 def test_the_attack_that_passed_every_other_gate_is_blocked() -> None:
@@ -60,12 +62,15 @@ def test_a_contraction_is_not_a_polarity_change() -> None:
 
 
 def test_not_only_becoming_and_is_not_a_polarity_change() -> None:
-    """"Not only X but also Y" is a correlative conjunction — the claim is that BOTH hold — and the
+    """ "Not only X but also Y" is a correlative conjunction — the claim is that BOTH hold — and the
     structural rewriter turns it into "X and Y". MEASURED over 30 RAID texts this was the only
     apparent polarity loss, 1 of 30, and it was this."""
     assert polarity_kept("Not only A but also B happened.", "A and B happened.")
 
 
 def test_a_faithful_paraphrase_passes() -> None:
-    assert polarity_kept(SRC, "Across 240 enrolled patients the drug cut mortality by 12% versus "
-                              "placebo, although that may not carry over to older adults.")
+    assert polarity_kept(
+        SRC,
+        "Across 240 enrolled patients the drug cut mortality by 12% versus "
+        "placebo, although that may not carry over to older adults.",
+    )

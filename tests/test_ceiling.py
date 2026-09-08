@@ -183,8 +183,14 @@ def test_repeats_records_per_run_means_and_spread(monkeypatch):
             m = 0.9
         else:
             m = 0.2 if runs["n"] % 2 else 0.4
-        return {"max": m, "mean": m, "detectors": {"d": m}, "tier": tier,
-                "threshold": threshold, "flagged": m >= threshold}
+        return {
+            "max": m,
+            "mean": m,
+            "detectors": {"d": m},
+            "tier": tier,
+            "threshold": threshold,
+            "flagged": m >= threshold,
+        }
 
     def _fake_untell(t, **kw):
         out = t + " REW"
@@ -199,17 +205,17 @@ def test_repeats_records_per_run_means_and_spread(monkeypatch):
 
     r = C.measure_ceiling(["para one", "para two"], repeats=3)
     assert r["repeats"] == 3
-    assert len(r["run_post_means"]) == 3       # one mean recorded per run
+    assert len(r["run_post_means"]) == 3  # one mean recorded per run
     assert r["post_mean_max_stdev"] is not None
-    assert "across 3 runs" in C._render(r)     # the spread is surfaced, not hidden
+    assert "across 3 runs" in C._render(r)  # the spread is surfaced, not hidden
 
 
 def test_repeats_default_is_single_run_without_spread():
     import eval.ceiling as C
 
-    assert C._stdev([0.5]) is None       # a single sample has no spread
+    assert C._stdev([0.5]) is None  # a single sample has no spread
     assert C._stdev([]) is None
-    assert C._stdev([0.2, 0.4]) == 0.1   # population stdev
+    assert C._stdev([0.2, 0.4]) == 0.1  # population stdev
 
 
 def test_reports_meaning_similarity_alongside_evasion(monkeypatch):
@@ -219,13 +225,24 @@ def test_reports_meaning_similarity_alongside_evasion(monkeypatch):
 
     def _fake_score(t, tier="full", threshold=0.3):
         m = 0.9 if "REW" not in t else 0.1
-        return {"max": m, "mean": m, "detectors": {"d": m}, "tier": tier,
-                "threshold": threshold, "flagged": m >= threshold}
+        return {
+            "max": m,
+            "mean": m,
+            "detectors": {"d": m},
+            "tier": tier,
+            "threshold": threshold,
+            "flagged": m >= threshold,
+        }
 
     def _fake_run(t, **kw):
         out = t + " REW"
-        return {"final": out, "pre": _fake_score(t), "post": _fake_score(out),
-                "similarity": 0.93, "stopped": "passed"}
+        return {
+            "final": out,
+            "pre": _fake_score(t),
+            "post": _fake_score(out),
+            "similarity": 0.93,
+            "stopped": "passed",
+        }
 
     monkeypatch.setattr(C, "score_text", _fake_score)
     monkeypatch.setattr(C, "untell_text", _fake_run)
@@ -244,21 +261,36 @@ def test_rewrote_denominator_counts_every_attempt(monkeypatch):
     import eval.ceiling as C
 
     base = {
-        "n": 3, "tier": "full", "threshold": 0.3, "max_iters": 2, "best_of": 3,
-        "run_post_means": None, "post_mean_max_stdev": None,
-        "mean_similarity": 0.93, "min_similarity": 0.82, "rewriter_available": True,
-        "pre_flagged_rate": 1.0, "post_flagged_rate": 0.148,
-        "pre_mean_max": 0.8587, "post_mean_max": 0.2613,
-        "per_detector_pre": {"d1": 0.6}, "per_detector_post": {"d1": 0.19},
+        "n": 3,
+        "tier": "full",
+        "threshold": 0.3,
+        "max_iters": 2,
+        "best_of": 3,
+        "run_post_means": None,
+        "post_mean_max_stdev": None,
+        "mean_similarity": 0.93,
+        "min_similarity": 0.82,
+        "rewriter_available": True,
+        "pre_flagged_rate": 1.0,
+        "post_flagged_rate": 0.148,
+        "pre_mean_max": 0.8587,
+        "post_mean_max": 0.2613,
+        "per_detector_pre": {"d1": 0.6},
+        "per_detector_post": {"d1": 0.19},
     }
 
     single = C._render({**base, "repeats": 1, "rewrote": 3})
     assert "(rewrote 3/3)" in single
 
-    repeated = C._render({
-        **base, "repeats": 9, "rewrote": 27,
-        "run_post_means": [0.25] * 9, "post_mean_max_stdev": 0.027,
-    })
+    repeated = C._render(
+        {
+            **base,
+            "repeats": 9,
+            "rewrote": 27,
+            "run_post_means": [0.25] * 9,
+            "post_mean_max_stdev": 0.027,
+        }
+    )
     assert "(rewrote 27/27)" in repeated, repeated
     assert "27/3" not in repeated, "the denominator is still one run's corpus size"
 
@@ -268,13 +300,23 @@ def test_render_survives_a_missing_repeats_key():
     crash the report or divide by zero."""
     import eval.ceiling as C
 
-    out = C._render({
-        "n": 2, "tier": "lite", "threshold": 0.3, "max_iters": 1, "best_of": 1,
-        "rewrote": 2, "rewriter_available": True,
-        "pre_flagged_rate": 1.0, "post_flagged_rate": 0.5,
-        "pre_mean_max": 0.8, "post_mean_max": 0.3,
-        "per_detector_pre": {}, "per_detector_post": {},
-    })
+    out = C._render(
+        {
+            "n": 2,
+            "tier": "lite",
+            "threshold": 0.3,
+            "max_iters": 1,
+            "best_of": 1,
+            "rewrote": 2,
+            "rewriter_available": True,
+            "pre_flagged_rate": 1.0,
+            "post_flagged_rate": 0.5,
+            "pre_mean_max": 0.8,
+            "post_mean_max": 0.3,
+            "per_detector_pre": {},
+            "per_detector_post": {},
+        }
+    )
     assert "(rewrote 2/2)" in out
 
 
@@ -294,7 +336,9 @@ class TestTheResultNamesItsRewriter:
     `untell/scripts/run.py::_stronger_rewriter_hint`.
     """
 
-    TEXT = ["Moreover, we leverage robust solutions. Furthermore, this underscores the pivotal role."]
+    TEXT = [
+        "Moreover, we leverage robust solutions. Furthermore, this underscores the pivotal role."
+    ]
 
     def test_rewriter_name_is_recorded(self, monkeypatch):
         monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
@@ -302,8 +346,12 @@ class TestTheResultNamesItsRewriter:
         from untell.rewriter import get_rewriter
 
         r = measure_ceiling(
-            self.TEXT, tier="lite", rewriter=get_rewriter(prefer="composite"),
-            best_of=1, max_iters=1, corpus="probe",
+            self.TEXT,
+            tier="lite",
+            rewriter=get_rewriter(prefer="composite"),
+            best_of=1,
+            max_iters=1,
+            corpus="probe",
         )
         assert r["rewriter"] == "composite"
 
@@ -320,8 +368,12 @@ class TestTheResultNamesItsRewriter:
 
         for alias in ("max", "ensemble"):
             r = measure_ceiling(
-                self.TEXT, tier="lite", rewriter=get_rewriter(prefer=alias),
-                best_of=1, max_iters=1, corpus="probe",
+                self.TEXT,
+                tier="lite",
+                rewriter=get_rewriter(prefer=alias),
+                best_of=1,
+                max_iters=1,
+                corpus="probe",
             )
             assert r["rewriter"] == "ensemble", f"{alias} recorded as {r['rewriter']!r}"
 
@@ -341,8 +393,12 @@ class TestTheResultNamesItsRewriter:
         from untell.rewriter import get_rewriter
 
         r = measure_ceiling(
-            self.TEXT, tier="lite", rewriter=get_rewriter(prefer="composite"),
-            best_of=1, max_iters=1, corpus="probe",
+            self.TEXT,
+            tier="lite",
+            rewriter=get_rewriter(prefer="composite"),
+            best_of=1,
+            max_iters=1,
+            corpus="probe",
         )
         assert "rewriter=composite" in _render(r).splitlines()[0]
 
@@ -429,8 +485,13 @@ class TestParallelWorkers:
         from untell.rewriter import get_rewriter
 
         r = measure_ceiling(
-            self.TEXTS, tier="lite", rewriter=get_rewriter(prefer="surgical"),
-            best_of=1, max_iters=1, corpus="probe", workers=4,
+            self.TEXTS,
+            tier="lite",
+            rewriter=get_rewriter(prefer="surgical"),
+            best_of=1,
+            max_iters=1,
+            corpus="probe",
+            workers=4,
         )
         assert r["n"] == len(self.TEXTS) and r["rewriter"] == "surgical"
 

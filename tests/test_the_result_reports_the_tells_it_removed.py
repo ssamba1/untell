@@ -17,6 +17,7 @@ The repository already treats tells as a first-class signal: `untell tells` is a
 uses them to break ties between candidates inside the detector noise band, and `humanness` is
 built from them. Every surface reported them except the one that does the rewriting.
 """
+
 from __future__ import annotations
 
 import io
@@ -70,15 +71,27 @@ def test_the_table_shows_the_row():
     pytest.importorskip("rich")
     from untell.rich_output import print_humanize_result
 
-    score = {"max": 1.0, "mean": 0.9, "detectors": {"d": 1.0}, "threshold": 0.30,
-             "flagged": True, "verdict_threshold": 0.30, "tier": "full"}
+    score = {
+        "max": 1.0,
+        "mean": 0.9,
+        "detectors": {"d": 1.0},
+        "threshold": 0.30,
+        "flagged": True,
+        "verdict_threshold": 0.30,
+        "tier": "full",
+    }
 
     buffer = io.StringIO()
     with redirect_stdout(buffer):
         print_humanize_result(
             "original text here, long enough to render properly",
             "rewritten text here, long enough to render properly",
-            score, score, 2, "max_iters", tells_before=4, tells_after=0,
+            score,
+            score,
+            2,
+            "max_iters",
+            tells_before=4,
+            tells_after=0,
         )
     output = buffer.getvalue()
 
@@ -91,11 +104,20 @@ def test_the_row_is_absent_when_the_caller_has_no_counts():
     pytest.importorskip("rich")
     from untell.rich_output import print_humanize_result
 
-    score = {"max": 0.5, "mean": 0.4, "detectors": {"d": 0.5}, "threshold": 0.30,
-             "flagged": True, "verdict_threshold": 0.30, "tier": "lite"}
+    score = {
+        "max": 0.5,
+        "mean": 0.4,
+        "detectors": {"d": 0.5},
+        "threshold": 0.30,
+        "flagged": True,
+        "verdict_threshold": 0.30,
+        "tier": "lite",
+    }
 
     buffer = io.StringIO()
     with redirect_stdout(buffer):
-        print_humanize_result("original text here", "rewritten text here", score, score, 1, "passed")
+        print_humanize_result(
+            "original text here", "rewritten text here", score, score, 1, "passed"
+        )
 
     assert "AI tells" not in buffer.getvalue()

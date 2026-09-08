@@ -1,4 +1,4 @@
-""""a lot" is a noun phrase. It can follow what it modifies, and premodify only a comparative.
+""" "a lot" is a noun phrase. It can follow what it modifies, and premodify only a comparative.
 
 FOUND in the `--json` output of the humanize CLI, which is where a caller reads the actual text:
 
@@ -81,7 +81,7 @@ def test_the_slots_where_it_is_correct_still_use_it(text: str) -> None:
         (["improves"], False),
         (["suppressed"], False),
         (["difficult"], False),
-        (["her"], False),   # short -er word that is not a comparative
+        (["her"], False),  # short -er word that is not a comparative
         ([], False),
     ],
     ids=lambda x: str(x)[:20],
@@ -95,10 +95,7 @@ _NOUN_PHRASE_LEAD = frozenset({"a", "an", "the", "all", "no", "some", "every", "
 
 
 def _noun_phrase_substitutes(head: str) -> list[str]:
-    return [
-        s for s in _SYN.get(head, [])
-        if " " in s and s.split()[0].lower() in _NOUN_PHRASE_LEAD
-    ]
+    return [s for s in _SYN.get(head, []) if " " in s and s.split()[0].lower() in _NOUN_PHRASE_LEAD]
 
 
 ADVERBS_AT_RISK = sorted(

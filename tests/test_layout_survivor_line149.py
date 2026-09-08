@@ -8,6 +8,7 @@ The distinction matters for any document starting with ---:
   index <= front_matter_end: line is front matter (layout)
   index <  front_matter_end: with front_matter_end=0, line 0 would NOT be front matter
 """
+
 from untell.layout import _prose_line_mask, _segments
 
 

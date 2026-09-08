@@ -37,7 +37,7 @@ def test_bare_mode_puts_only_text_on_stdout(capsys):
 
 
 def test_clean_text_is_unchanged_and_still_exits_zero(capsys):
-    """"Nothing to remove" is a successful scrub; a non-zero code would break `scrub && next`."""
+    """ "Nothing to remove" is a successful scrub; a non-zero code would break `scrub && next`."""
     assert scrub.main(["Plain clean text."]) == 0
     captured = capsys.readouterr()
     assert captured.out.strip() == "Plain clean text."

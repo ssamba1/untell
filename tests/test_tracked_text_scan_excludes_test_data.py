@@ -15,6 +15,7 @@ U+0001` as an offender.
 Runs against the real repository via `git ls-files`, exactly as the check does, so the test is
 the shipped behaviour — not a mock of it.
 """
+
 from __future__ import annotations
 
 import untell.scripts.audit as audit

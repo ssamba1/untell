@@ -38,17 +38,15 @@ def test_surgical_normalizes_composite_tier_before_scoring(monkeypatch):
     seen = {}
 
     def spy(text, tier="lite", threshold=0.30, max_subs=8, prefer_tells=False):
-        seen.update(tier=tier, threshold=threshold, max_subs=max_subs,
-                    prefer_tells=prefer_tells)
-        return real(text, tier=tier, threshold=threshold, max_subs=max_subs,
-                    prefer_tells=prefer_tells)
+        seen.update(tier=tier, threshold=threshold, max_subs=max_subs, prefer_tells=prefer_tells)
+        return real(
+            text, tier=tier, threshold=threshold, max_subs=max_subs, prefer_tells=prefer_tells
+        )
 
     monkeypatch.setattr(attacks, "surgical_substitute", spy)
 
     rw = SurgicalRewriter()
-    out = rw.rewrite(
-        "Furthermore we utilize robust solutions.", {"tier": "browser:zerogpt"}
-    )
+    out = rw.rewrite("Furthermore we utilize robust solutions.", {"tier": "browser:zerogpt"})
     assert isinstance(out, str) and out.strip()
     assert seen["tier"] == "lite", f"composite tier leaked through: {seen['tier']!r}"
 
@@ -64,14 +62,13 @@ def test_surgical_asks_for_the_tell_removal_objective(monkeypatch):
 
     def spy(text, tier="lite", threshold=0.30, max_subs=8, prefer_tells=False):
         seen["prefer_tells"] = prefer_tells
-        return real(text, tier=tier, threshold=threshold, max_subs=max_subs,
-                    prefer_tells=prefer_tells)
+        return real(
+            text, tier=tier, threshold=threshold, max_subs=max_subs, prefer_tells=prefer_tells
+        )
 
     monkeypatch.setattr(attacks, "surgical_substitute", spy)
 
     rw = SurgicalRewriter()
-    out = rw.rewrite(
-        "Furthermore we utilize robust solutions.", {"tier": "lite"}
-    )
+    out = rw.rewrite("Furthermore we utilize robust solutions.", {"tier": "lite"})
     assert isinstance(out, str)
     assert seen["prefer_tells"] is True, "prefer_tells must be True"

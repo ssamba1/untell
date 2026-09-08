@@ -1,4 +1,4 @@
-""""involves X-ing" and "needs X-ing" are different sentences, and the table treated them as one.
+""" "involves X-ing" and "needs X-ing" are different sentences, and the table treated them as one.
 
 "involves X-ing" means *includes the activity of* X-ing. "needs X-ing" means *requires being* X-ed.
 With an object following, the second reading collapses. FOUND by reading RAID output:

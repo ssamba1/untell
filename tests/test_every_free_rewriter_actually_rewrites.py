@@ -16,6 +16,7 @@ The widest existing sweep, `test_no_new_defects_on_hard_input`, covers three of 
 list here is anchored to `_FREE_REWRITERS` in mcp_server so it cannot quietly shrink: a rewriter
 advertised there and missing here fails the guard.
 """
+
 from __future__ import annotations
 
 import pytest
@@ -79,9 +80,7 @@ def test_the_rewriters_do_not_all_produce_the_same_text():
         outputs[name] = rewriter.rewrite(AI, SCORE, 0.30)
 
     assert len(outputs) >= 4, f"too few rewriters available to compare: {sorted(outputs)}"
-    duplicates = {
-        a: [b for b in outputs if b != a and outputs[b] == outputs[a]] for a in outputs
-    }
+    duplicates = {a: [b for b in outputs if b != a and outputs[b] == outputs[a]] for a in outputs}
     duplicates = {a: b for a, b in duplicates.items() if b}
     assert not duplicates, f"identical output from different backends: {duplicates}"
 

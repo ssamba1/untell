@@ -25,6 +25,7 @@ a tells metric that pointed the wrong way on real text because the aggregate was
 components were not. Checking a component is how this was found; acting on one component alone is
 what these tests prevent.
 """
+
 from __future__ import annotations
 
 import pytest

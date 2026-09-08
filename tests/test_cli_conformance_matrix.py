@@ -23,6 +23,7 @@ completes in <2s; the slow ones are marked ``slow`` and run the real workload
 (``untell-audit`` ~3min, ``untell-compare`` ~2min, ``untell-prove`` ~2min,
 ``untell-surrogate --smoke`` ~1.5min, ``untell-detector-audit`` ~2min).
 """
+
 from __future__ import annotations
 
 import os
@@ -53,8 +54,14 @@ def _console_scripts() -> dict[str, str]:
 MINIMAL: dict[str, dict] = {
     "untell": {"argv": ["tells", TEXT], "expect": 0},
     "untell-score": {"argv": ["--tier", "lite", "-q", TEXT], "expect": 0},
-    "untell-loop": {"argv": [TEXT, "--tier", "lite", "--max-iters", "1", "--best-of", "1"], "expect": 0},
-    "untell-humanize": {"argv": [TEXT, "--tier", "lite", "--max-iters", "1", "--best-of", "1"], "expect": 0},
+    "untell-loop": {
+        "argv": [TEXT, "--tier", "lite", "--max-iters", "1", "--best-of", "1"],
+        "expect": 0,
+    },
+    "untell-humanize": {
+        "argv": [TEXT, "--tier", "lite", "--max-iters", "1", "--best-of", "1"],
+        "expect": 0,
+    },
     "untell-verify": {"argv": ["-q", TEXT, "--tier", "lite"], "expect": 0},
     "untell-prove": {
         "argv": [TEXT, "--max-iters", "1", "--best-of", "1"],
@@ -77,7 +84,18 @@ MINIMAL: dict[str, dict] = {
     "untell-audit": {"argv": [], "expect": (0, 1), "slow": True},
     "untell-latex": {"argv": ["__TEX__"], "expect": 0, "files": ["__TEX__"]},
     "untell-ceiling": {
-        "argv": ["--n", "1", "--max-iters", "1", "--tier", "lite", "--rewriter", "composite", "--best-of", "1"],
+        "argv": [
+            "--n",
+            "1",
+            "--max-iters",
+            "1",
+            "--tier",
+            "lite",
+            "--rewriter",
+            "composite",
+            "--best-of",
+            "1",
+        ],
         "expect": 0,
         "slow": True,
     },
@@ -88,7 +106,12 @@ MINIMAL: dict[str, dict] = {
         "files": ["__OUT__"],
         "slow": True,
     },
-    "untell-surrogate": {"argv": ["--smoke", "--out", "__OUT__"], "expect": 0, "files": ["__OUT__"], "slow": True},
+    "untell-surrogate": {
+        "argv": ["--smoke", "--out", "__OUT__"],
+        "expect": 0,
+        "files": ["__OUT__"],
+        "slow": True,
+    },
     "untell-eval-policy": {
         "argv": [],
         "expect": 2,  # no trained policy in this environment: the documented clean refusal
@@ -102,21 +125,38 @@ MINIMAL: dict[str, dict] = {
     },
     "untell-hedges": {"argv": ["It may be possible.", "It might be possible."], "expect": 0},
     "untell-explain": {"argv": [TEXT], "expect": 0},
-    "untell-batch": {"argv": ["__DIR__", "--dry-run", "--tier", "lite"], "expect": 0, "files": ["__DIR__"]},
+    "untell-batch": {
+        "argv": ["__DIR__", "--dry-run", "--tier", "lite"],
+        "expect": 0,
+        "files": ["__DIR__"],
+    },
     # watch is a long-running loop; a bounded invocation is the documented clean run.
-    "untell-watch": {"argv": ["__DIR__", "--timeout", "2", "--poll-interval", "0.1", "--tier", "lite"], "expect": 0, "files": ["__DIR__"]},
+    "untell-watch": {
+        "argv": ["__DIR__", "--timeout", "2", "--poll-interval", "0.1", "--tier", "lite"],
+        "expect": 0,
+        "files": ["__DIR__"],
+    },
 }
 
 # Commands whose no-args invocation is a documented VALID run (not a missing-argument
 # error): the dispatcher runs the demo, daemons bind, eval scripts run their default
 # workload. Their "missing required args" contract is covered by their minimal check.
 NO_REQUIRED_ARGS = {
-    "untell", "untell-compare", "untell-mcp", "untell-audit", "untell-ceiling",
-    "untell-detector-audit", "untell-distill", "untell-surrogate", "untell-server",
+    "untell",
+    "untell-compare",
+    "untell-mcp",
+    "untell-audit",
+    "untell-ceiling",
+    "untell-detector-audit",
+    "untell-distill",
+    "untell-surrogate",
+    "untell-server",
 }
 
 
-def _run(target: str, argv: list[str], *, timeout: int, stdin_closed: bool = False) -> subprocess.CompletedProcess:
+def _run(
+    target: str, argv: list[str], *, timeout: int, stdin_closed: bool = False
+) -> subprocess.CompletedProcess:
     module, _, fn = target.partition(":")
     code = f"import {module} as m; raise SystemExit(m.{fn}({argv!r}))"
     env = dict(os.environ)
@@ -129,7 +169,13 @@ def _run(target: str, argv: list[str], *, timeout: int, stdin_closed: bool = Fal
     stdin = subprocess.DEVNULL if stdin_closed else None
     return subprocess.run(
         [sys.executable, "-c", code],
-        capture_output=True, text=True, encoding="utf-8", errors="replace", env=env, timeout=timeout, stdin=stdin,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        env=env,
+        timeout=timeout,
+        stdin=stdin,
     )
 
 
@@ -241,8 +287,13 @@ def _assert_minimal(script: str) -> None:
         env["UNTELL_LITE_NO_TORCH"] = "1"
         code = f"import {target.partition(':')[0]} as m; raise SystemExit(m.main({argv!r}))"
         proc = subprocess.Popen(
-            [sys.executable, "-c", code], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-            text=True, encoding="utf-8", errors="replace", env=env,
+            [sys.executable, "-c", code],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            env=env,
         )
         try:
             startup = ""
@@ -259,7 +310,9 @@ def _assert_minimal(script: str) -> None:
                 proc.wait(timeout=15)
             except subprocess.TimeoutExpired:
                 proc.kill()
-        assert "Uvicorn running" in startup, f"{script} did not reach its startup banner:\n{startup[:800]}"
+        assert "Uvicorn running" in startup, (
+            f"{script} did not reach its startup banner:\n{startup[:800]}"
+        )
         return
 
     p = _run(target, argv, timeout=timeout, stdin_closed=spec.get("stdin_closed", False))

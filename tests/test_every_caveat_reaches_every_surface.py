@@ -32,19 +32,25 @@ from untell.scripts.run import untell_text
 from untell.scripts.score import score_text, split_detector_errors
 from untell.scripts.verify import verify
 
-CODE = "```python\n" + "\n".join(f"def f{i}(a, b):\n    return a + b * {i}" for i in range(20)) + "\n```"
+CODE = (
+    "```python\n"
+    + "\n".join(f"def f{i}(a, b):\n    return a + b * {i}" for i in range(20))
+    + "\n```"
+)
 QUOTES = (
     'The witness stated: "I arrived at the building shortly before nine and noticed the main door '
     'had been left open, which struck me as unusual given the hour." She continued: "There was '
     'nobody at the desk, and the lights on the upper floor were still off when I walked past."'
 )
-PER_LINE = "\n\n".join([
-    "Salt lowers the freezing point of water, which is why councils spread it on the roads.",
-    "It works down to about minus nine degrees, below which other chemicals are needed.",
-    "The grit itself does a second job on the surface of the road once it is down.",
-    "It gives tyres something to bite on once the ice has gone soft near the kerb.",
-    "That matters more on a hill than it ever does on the flat part of the route.",
-])
+PER_LINE = "\n\n".join(
+    [
+        "Salt lowers the freezing point of water, which is why councils spread it on the roads.",
+        "It works down to about minus nine degrees, below which other chemicals are needed.",
+        "The grit itself does a second job on the surface of the road once it is down.",
+        "It gives tyres something to bite on once the ice has gone soft near the kerb.",
+        "That matters more on a hill than it ever does on the flat part of the route.",
+    ]
+)
 PROSE = (
     "Salt lowers the freezing point of water, which is why councils spread it on roads in winter. "
     "It works down to about minus nine degrees, below which other chemicals are needed instead."
@@ -74,7 +80,12 @@ def test_score_text_says_it(name: str, mark: str, text: str, kwargs: dict) -> No
 @pytest.mark.parametrize("name,mark,text,kwargs", CAVEATS, ids=IDS)
 def test_untell_text_forwards_it(name: str, mark: str, text: str, kwargs: dict) -> None:
     result = untell_text(
-        text, tier="lite", max_iters=1, rewriter="structural", best_of=1, seed=1,
+        text,
+        tier="lite",
+        max_iters=1,
+        rewriter="structural",
+        best_of=1,
+        seed=1,
         threshold=kwargs.get("threshold", 0.3),
     )
     assert mark in (result.get("warning") or "")

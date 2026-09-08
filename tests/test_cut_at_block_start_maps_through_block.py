@@ -7,6 +7,7 @@ which for a 100-word pair cut at i=50 (block starts at 50) maps to 100: the
 second chunk becomes empty, is filtered, and aligned_chunks falls back to one
 chunk of 50 instead of two of 50. Pinned with a fake difflib matcher.
 """
+
 from unittest.mock import patch
 
 from untell.text_split import aligned_chunks

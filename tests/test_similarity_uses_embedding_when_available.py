@@ -8,15 +8,14 @@ mutant returns 0.0 (token overlap for 'cat' vs 'dog', no shared tokens). The
 0.76 gate bar lives on the raw-cosine scale, so the backend swap is not
 scale-invariant.
 """
+
 from unittest.mock import patch
 
 from untell.scripts.quality import similarity, token_overlap
 
 
 def test_similarity_uses_cosine_when_backend_returns_value():
-    with patch(
-        "untell.scripts.quality._cosine_similarity", return_value=0.5
-    ):
+    with patch("untell.scripts.quality._cosine_similarity", return_value=0.5):
         assert similarity("cat", "dog") == 0.5
 
 

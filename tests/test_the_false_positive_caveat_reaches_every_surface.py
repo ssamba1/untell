@@ -112,8 +112,19 @@ def test_the_humanize_cli_prints_it_when_the_verdict_stands(scored) -> None:
         pytest.skip("the loop cleared this text on the installed tier; no verdict to qualify")
     buffer = io.StringIO()
     with contextlib.redirect_stdout(buffer):
-        mod.main([FLAGGED, "--tier", "lite", "--max-iters", "1",
-                  "--rewriter", "structural", "--best-of", "1"])
+        mod.main(
+            [
+                FLAGGED,
+                "--tier",
+                "lite",
+                "--max-iters",
+                "1",
+                "--rewriter",
+                "structural",
+                "--best-of",
+                "1",
+            ]
+        )
     assert CAVEAT in buffer.getvalue()
 
 
@@ -128,8 +139,13 @@ def test_both_rest_endpoints_carry_it(scored) -> None:
     assert CAVEAT in str(score.get("warning"))
     loop = client.post(
         "/humanize",
-        json={"text": FLAGGED, "tier": "lite", "rewriter": "structural",
-              "max_iters": 1, "best_of": 1},
+        json={
+            "text": FLAGGED,
+            "tier": "lite",
+            "rewriter": "structural",
+            "max_iters": 1,
+            "best_of": 1,
+        },
     ).json()
     # Same contract as the library: the caveat belongs to the verdict being reported, and `pre`
     # keeps its own either way.

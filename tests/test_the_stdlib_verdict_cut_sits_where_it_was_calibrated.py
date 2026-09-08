@@ -15,6 +15,7 @@ The cut is not re-measured here — that needs three corpus downloads and 600 sc
 asserted is that the value shipping today is the one those numbers describe, so a change to it
 has to come with a change to the record.
 """
+
 from __future__ import annotations
 
 from untell.scripts.score import (
@@ -45,9 +46,10 @@ def test_the_raised_cut_applies_only_when_the_heuristic_is_the_whole_verdict():
     """Scoped, or it would soften a verdict that a model-backed detector had earned."""
     assert _verdict_threshold(DEFAULT_THRESHOLD, STDLIB_ONLY, STDLIB) == CALIBRATED
     assert _verdict_threshold(DEFAULT_THRESHOLD, STDLIB_ONLY, GPT2) == DEFAULT_THRESHOLD
-    assert _verdict_threshold(
-        DEFAULT_THRESHOLD, {**STDLIB_ONLY, "hc3_roberta": 0.9}, STDLIB
-    ) == DEFAULT_THRESHOLD
+    assert (
+        _verdict_threshold(DEFAULT_THRESHOLD, {**STDLIB_ONLY, "hc3_roberta": 0.9}, STDLIB)
+        == DEFAULT_THRESHOLD
+    )
 
 
 def test_a_caller_asking_for_a_stricter_cut_is_not_loosened():

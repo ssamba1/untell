@@ -27,6 +27,7 @@ alongside the AI ones. A ranking can have plenty of range and still put the wron
 So `unrankable` answers "can these scores be ordered at all", which is exactly what it claims, and
 not "is the order right". Both tests below exist so the first is not mistaken for the second.
 """
+
 from __future__ import annotations
 
 import pytest

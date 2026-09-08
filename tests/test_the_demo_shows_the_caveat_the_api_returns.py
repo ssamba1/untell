@@ -13,6 +13,7 @@ the same gap `humanness` had, one surface further out.
 This is the reassuring direction, which is the one worth fixing first: a user who sees "12% —
 Human" and no caveat has been told something the tool does not know.
 """
+
 from __future__ import annotations
 
 import re
@@ -43,7 +44,7 @@ def test_there_is_somewhere_to_show_it(html: str):
 
 def test_the_caveat_is_hidden_until_there_is_one(html: str):
     """Always-on caveat text is furniture; users stop reading it."""
-    block = html[html.index('id="scoreCaveat"') - 200: html.index('id="scoreCaveat"') + 200]
+    block = html[html.index('id="scoreCaveat"') - 200 : html.index('id="scoreCaveat"') + 200]
     assert "display:none" in block.replace(" ", ""), block
 
 

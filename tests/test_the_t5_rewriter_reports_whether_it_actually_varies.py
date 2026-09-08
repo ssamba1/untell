@@ -21,6 +21,7 @@ MEASURED on `--rewriter t5_paraphrase`, best_of=3, one paragraph:
 Same answer, a third of the work. `neural` is unaffected: composite.py builds the T5 with
 `sample=True` precisely to get diverse draws, and that construction still reports non-deterministic.
 """
+
 from __future__ import annotations
 
 import pytest
@@ -72,8 +73,12 @@ def test_the_loop_reads_it_off_an_instance():
     failure mode is invisible: every rewriter would look deterministic and best-of would collapse
     everywhere at once.
     """
-    assert bool(T5ParaphraseRewriter.deterministic) is True, "read off the class, this is a property object"
-    assert T5ParaphraseRewriter(sample=True).deterministic is False, "read off an instance, it answers"
+    assert bool(T5ParaphraseRewriter.deterministic) is True, (
+        "read off the class, this is a property object"
+    )
+    assert T5ParaphraseRewriter(sample=True).deterministic is False, (
+        "read off an instance, it answers"
+    )
 
 
 @pytest.mark.slow

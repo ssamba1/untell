@@ -1,4 +1,4 @@
-""""the ensemble is now selecting over N of M members" was arithmetic on the wrong set.
+""" "the ensemble is now selecting over N of M members" was arithmetic on the wrong set.
 
 `_MEMBER_FAILED` is module-level: it accumulates every member name that has failed anywhere in the
 process. The warning subtracted its total length from *this* ensemble's member count, so one

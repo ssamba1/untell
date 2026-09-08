@@ -7,6 +7,7 @@ sentinel whose opener sits exactly 13 characters before the cursor (sentinel
 following sentence-start word is treated as mid-sentence. The mutation
 -12 -> -13 widens the window and catches it. Pinned at the char level.
 """
+
 from untell.rewriter.structural import _at_sentence_start
 
 SENTINEL = "\u27e6HZ0003\u27e7"  # ⟦HZ0003⟧

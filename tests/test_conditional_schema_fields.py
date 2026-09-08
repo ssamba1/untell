@@ -18,6 +18,7 @@ Three defects found by driving paths the standard CALLS table never exercises:
 MEASURED (failing test, then fix): all three drove the paths, found the gaps,
 and the schema / guard additions made them pass.
 """
+
 from __future__ import annotations
 
 from unittest.mock import patch
@@ -41,11 +42,9 @@ TEXT = (
 
 
 def _schema_props(path: str, method: str = "post") -> dict:
-    return (
-        app.openapi()["paths"][path][method]["responses"]["200"]["content"][
-            "application/json"
-        ]["schema"].get("properties", {})
-    )
+    return app.openapi()["paths"][path][method]["responses"]["200"]["content"]["application/json"][
+        "schema"
+    ].get("properties", {})
 
 
 # ---------------------------------------------------------------------------
@@ -99,9 +98,7 @@ def test_out_of_range_detectors_field_is_in_the_score_schema():
         "It is in CONDITIONAL (which allows its absence) but omitted from properties "
         "entirely — a generated client cannot see it."
     )
-    assert "out_of_range_raw" in props, (
-        "out_of_range_raw is not declared in _SCORE_RESPONSES."
-    )
+    assert "out_of_range_raw" in props, "out_of_range_raw is not declared in _SCORE_RESPONSES."
 
 
 def test_out_of_range_raw_has_numeric_values_in_the_schema():
@@ -126,13 +123,30 @@ def _humanize_resp_with_suggestion():
     with patch("untell.api_server.untell_text") as mock_untell:
         mock_untell.return_value = {
             "final": TEXT,
-            "pre": {"max": 0.9, "detectors": {}, "tier": "full", "tier_requested": "full",
-                    "mean": 0.9, "ai_percent": 90.0, "threshold": 0.3,
-                    "verdict_threshold": 0.45, "flagged": True},
-            "post": {"max": 0.85, "detectors": {}, "tier": "full", "tier_requested": "full",
-                     "mean": 0.85, "ai_percent": 85.0, "threshold": 0.3,
-                     "verdict_threshold": 0.45, "flagged": True,
-                     "flagged_sentences": [], "style": None},
+            "pre": {
+                "max": 0.9,
+                "detectors": {},
+                "tier": "full",
+                "tier_requested": "full",
+                "mean": 0.9,
+                "ai_percent": 90.0,
+                "threshold": 0.3,
+                "verdict_threshold": 0.45,
+                "flagged": True,
+            },
+            "post": {
+                "max": 0.85,
+                "detectors": {},
+                "tier": "full",
+                "tier_requested": "full",
+                "mean": 0.85,
+                "ai_percent": 85.0,
+                "threshold": 0.3,
+                "verdict_threshold": 0.45,
+                "flagged": True,
+                "flagged_sentences": [],
+                "style": None,
+            },
             "iterations": 5,
             "rewrites": 5,
             "adopted": 1,
@@ -148,9 +162,7 @@ def _humanize_resp_with_suggestion():
             "seed": 42,
             "tells_before": 3,
             "tells_after": 2,
-            "suggestion": (
-                "still flagged with rewriter='surgical'. Try --rewriter neural."
-            ),
+            "suggestion": ("still flagged with rewriter='surgical'. Try --rewriter neural."),
         }
         return TestClient(app).post(
             "/humanize",
@@ -198,6 +210,7 @@ def _mcp_tools():
             def deco(fn):
                 recorded[fn.__name__] = fn
                 return fn
+
             return deco
 
     fake = types.ModuleType("mcp.server.fastmcp")
@@ -208,6 +221,7 @@ def _mcp_tools():
     sys.modules["mcp.server.fastmcp"] = fake
     try:
         import untell.mcp_server as m
+
         m._server()
     finally:
         for k, v in saved.items():
@@ -234,21 +248,25 @@ class TestMcpDetectorThresholdsValidation:
     def test_a_value_above_one_in_detector_thresholds_is_refused(self):
         fn = _mcp_tools()["untell"]
         result = fn(
-            text=TEXT, tier="lite",
+            text=TEXT,
+            tier="lite",
             detector_thresholds={"hc3_roberta": 50.0},
         )
         assert "error" in result, (
             "detector_thresholds={'hc3_roberta': 50.0} was accepted — "
             "a threshold above 1 can never be reached by a detector score"
         )
-        assert "50" in result["error"] or "outside" in result["error"] or "probability" in result["error"], (
-            f"error message doesn't mention the invalid value: {result['error']!r}"
-        )
+        assert (
+            "50" in result["error"]
+            or "outside" in result["error"]
+            or "probability" in result["error"]
+        ), f"error message doesn't mention the invalid value: {result['error']!r}"
 
     def test_a_negative_value_in_detector_thresholds_is_refused(self):
         fn = _mcp_tools()["untell"]
         result = fn(
-            text=TEXT, tier="lite",
+            text=TEXT,
+            tier="lite",
             detector_thresholds={"perplexity_burstiness": -0.5},
         )
         assert "error" in result, "negative threshold should be refused"
@@ -256,7 +274,8 @@ class TestMcpDetectorThresholdsValidation:
     def test_a_non_numeric_value_in_detector_thresholds_is_refused(self):
         fn = _mcp_tools()["untell"]
         result = fn(
-            text=TEXT, tier="lite",
+            text=TEXT,
+            tier="lite",
             detector_thresholds={"hc3_roberta": "high"},
         )
         assert "error" in result, "a string value should be refused"
@@ -265,7 +284,9 @@ class TestMcpDetectorThresholdsValidation:
         """The guard must not fire on valid inputs."""
         fn = _mcp_tools()["untell"]
         result = fn(
-            text=TEXT, tier="lite", max_iters=1,
+            text=TEXT,
+            tier="lite",
+            max_iters=1,
             detector_thresholds={"perplexity_burstiness": 0.5},
         )
         assert "error" not in result, (

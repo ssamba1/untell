@@ -84,4 +84,6 @@ def test_every_offered_rewriter_is_one_the_cli_accepts(sets) -> None:
                     accepted |= values
     assert accepted, "could not find the --rewriter choices in run.py"
     unknown = sets["untell/mcp_server.py"] - accepted
-    assert not unknown, f"offered by the network surfaces but not a rewriter the CLI knows: {unknown}"
+    assert not unknown, (
+        f"offered by the network surfaces but not a rewriter the CLI knows: {unknown}"
+    )

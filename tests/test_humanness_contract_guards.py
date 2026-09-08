@@ -28,9 +28,14 @@ def test_a_non_str_tier_is_refused_by_name() -> None:
 
 def test_invisible_character_caveat_is_forwarded(monkeypatch, caplog) -> None:
     monkeypatch.setattr(
-        hum, "score_text",
-        lambda text, tier="full": {"warning": "text contains invisible characters",
-                                    "scored": True, "max": 0.1, "tier": tier},
+        hum,
+        "score_text",
+        lambda text, tier="full": {
+            "warning": "text contains invisible characters",
+            "scored": True,
+            "max": 0.1,
+            "tier": tier,
+        },
     )
     with caplog.at_level(logging.WARNING, logger="untell.humanness"):
         hum.humanness(LONG, tier="lite")
@@ -43,7 +48,8 @@ def test_erratic_burstiness_costs_exactly_the_documented_penalty(monkeypatch) ->
 
     def make(cv: float):
         monkeypatch.setattr(
-            hum, "score_tells",
+            hum,
+            "score_tells",
             lambda text, include_matches=False: {
                 "language_supported": True,
                 "tells_per_100w": 0.0,
@@ -52,7 +58,8 @@ def test_erratic_burstiness_costs_exactly_the_documented_penalty(monkeypatch) ->
             },
         )
         monkeypatch.setattr(
-            hum, "score_text",
+            hum,
+            "score_text",
             lambda text, tier="full": {"max": 0.0, "scored": True, "tier": tier},
         )
         return hum.humanness(LONG, tier="lite")

@@ -1,4 +1,5 @@
 import json, os
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
 from untell.detectors.base import windowed_max, WINDOW_WORDS
 
@@ -8,10 +9,12 @@ out = {}
 # score_window stub records every window it is handed
 calls = []
 
+
 def rec_score(text):
     calls.append(text)
     n = len(text.split())
     return 0.1 + n / 1000.0  # monotonic in window size -> max != mean whenever sizes differ
+
 
 W = WINDOW_WORDS
 assert W == 320, W
@@ -38,6 +41,7 @@ out["twoX_640_ncalls"] = len(calls)
 out["twoX_640_window_sizes"] = [len(c.split()) for c in calls]
 out["twoX_640_return"] = round(r, 4)
 
+
 # 1d. MAX not mean: two windows whose scores differ -> must return the higher
 def marker_score(text):
     if "HIGH" in text:
@@ -45,6 +49,8 @@ def marker_score(text):
     if "LOW" in text:
         return 0.1
     return 0.5
+
+
 mixed = " ".join(["LOW"] * 320 + ["HIGH"] * 320)  # 640 words, one run-on -> [320 LOW, 320 HIGH]
 calls.clear()
 r = windowed_max(mixed, marker_score)
@@ -52,22 +58,31 @@ out["max_not_mean_return"] = r
 out["max_not_mean_is_max"] = r == 0.9
 out["max_not_mean_ncalls"] = len(calls)
 
+
 # 1e. empty text: no crash; single-call path hands '' to score_window
 def empty_stub(text):
     return 0.0 if text == "" else 0.5
+
+
 r = windowed_max("", empty_stub)
 out["empty_return"] = r
+
+
 # and the None-drop path: score_window returning None -> windowed_max returns None (not crash, not NaN)
 def none_stub(text):
     return None
+
+
 r = windowed_max("some words here", none_stub)
 out["all_none_return"] = r
 
 # ---------- PROBE 2: _HEDGE_RE substitution ----------
 from untell.rewriter.structural import _HEDGE_RE
 
+
 def sub(t):
     return _HEDGE_RE.sub(r"\1", t)
+
 
 out["hedge_could_potentially"] = sub("This could potentially work.")
 out["hedge_may_eventually"] = sub("It may eventually arrive.")

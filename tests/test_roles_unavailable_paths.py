@@ -42,7 +42,8 @@ def test_lite_env_gate_disables_availability_and_parser_queries(fresh_nlp, monke
 def test_missing_model_disables_the_parser_and_says_so(fresh_nlp, monkeypatch, caplog) -> None:
     """No en_core_web_sm -> parser dead, an info line names the install command."""
     monkeypatch.setattr(
-        importlib.util, "find_spec",
+        importlib.util,
+        "find_spec",
         lambda name: None if name == "en_core_web_sm" else importlib.util.find_spec(name),
     )
     with caplog.at_level(logging.INFO, logger="untell.scripts.roles"):
@@ -57,8 +58,11 @@ def test_a_raising_spacy_import_disables_the_parser(fresh_nlp, monkeypatch, capl
     fake_spacy.load = lambda name, **kw: (_ for _ in ()).throw(RuntimeError("spacy exploded"))
     monkeypatch.setitem(sys.modules, "spacy", fake_spacy)
     monkeypatch.setattr(
-        importlib.util, "find_spec",
-        lambda name: types.SimpleNamespace() if name == "en_core_web_sm" else importlib.util.find_spec(name),
+        importlib.util,
+        "find_spec",
+        lambda name: (
+            types.SimpleNamespace() if name == "en_core_web_sm" else importlib.util.find_spec(name)
+        ),
     )
     with caplog.at_level(logging.WARNING, logger="untell.scripts.roles"):
         assert roles._load() is None
@@ -71,9 +75,7 @@ def test_conditional_pair_without_a_parser_is_unknown(fresh_nlp, monkeypatch) ->
     assert roles._conditional_pair("if it rains, it pours") == (None, None)
 
 
-def test_a_raising_parse_disables_the_veto_and_says_so_once(
-    fresh_nlp, monkeypatch, caplog
-) -> None:
+def test_a_raising_parse_disables_the_veto_and_says_so_once(fresh_nlp, monkeypatch, caplog) -> None:
     def boom(text):
         raise RuntimeError("parse exploded")
 

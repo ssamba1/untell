@@ -22,8 +22,7 @@ def _log(tmp_path: Path, lines: list[str]) -> Path:
     log.write_text(
         "# Audit log\n\n"
         "| # | lane | target | verdict | before | after | commit | note |\n"
-        "| --- | --- | --- | --- | --- | --- | --- | --- |\n"
-        + "\n".join(lines) + "\n",
+        "| --- | --- | --- | --- | --- | --- | --- | --- |\n" + "\n".join(lines) + "\n",
         encoding="utf-8",
     )
     return log
@@ -33,10 +32,13 @@ class TestTakenLines:
     """Pins C.taken_lines() — the set of row lines already in the log."""
 
     def test_returns_stripped_row_lines(self, tmp_path, monkeypatch) -> None:
-        log = _log(tmp_path, [
-            "| 1 | L1 | T01 | clean | 1 | 1 | - | first note |",
-            "| 2 | L2 | T02 | clean | 1 | 1 | - | second note |",
-        ])
+        log = _log(
+            tmp_path,
+            [
+                "| 1 | L1 | T01 | clean | 1 | 1 | - | first note |",
+                "| 2 | L2 | T02 | clean | 1 | 1 | - | second note |",
+            ],
+        )
         monkeypatch.setattr(C, "LOG", log)
         out = C.taken_lines()
         assert "| 1 | L1 | T01 | clean | 1 | 1 | - | first note |" in out
@@ -53,9 +55,12 @@ class TestClassifyRow:
     """The collector's per-row dedupe decision (issue #16 last line of defence)."""
 
     def test_byte_identical_row_is_rejected(self, tmp_path, monkeypatch) -> None:
-        log = _log(tmp_path, [
-            "| 5 | L1 | T12 | clean | 3 | 3 | - | probed X, invariant held |",
-        ])
+        log = _log(
+            tmp_path,
+            [
+                "| 5 | L1 | T12 | clean | 3 | 3 | - | probed X, invariant held |",
+            ],
+        )
         monkeypatch.setattr(C, "LOG", log)
         taken = C.taken_numbers()
         seen = C.taken_lines()
@@ -74,9 +79,12 @@ class TestClassifyRow:
         assert not taken and not seen
 
     def test_fresh_row_is_accepted_with_its_number(self, tmp_path, monkeypatch) -> None:
-        log = _log(tmp_path, [
-            "| 5 | L1 | T12 | clean | 3 | 3 | - | probed X, invariant held |",
-        ])
+        log = _log(
+            tmp_path,
+            [
+                "| 5 | L1 | T12 | clean | 3 | 3 | - | probed X, invariant held |",
+            ],
+        )
         monkeypatch.setattr(C, "LOG", log)
         taken = C.taken_numbers()
         seen = C.taken_lines()
@@ -89,9 +97,12 @@ class TestClassifyRow:
         assert 5 in taken  # existing preserved
 
     def test_number_collision_is_renumbered(self, tmp_path, monkeypatch) -> None:
-        log = _log(tmp_path, [
-            "| 5 | L1 | T12 | clean | 3 | 3 | - | probed X, invariant held |",
-        ])
+        log = _log(
+            tmp_path,
+            [
+                "| 5 | L1 | T12 | clean | 3 | 3 | - | probed X, invariant held |",
+            ],
+        )
         monkeypatch.setattr(C, "LOG", log)
         taken = C.taken_numbers()
         seen = C.taken_lines()
@@ -104,9 +115,12 @@ class TestClassifyRow:
         assert 5 in taken
 
     def test_fresh_row_not_seen_nor_number_taken(self, tmp_path, monkeypatch) -> None:
-        log = _log(tmp_path, [
-            "| 5 | L1 | T12 | clean | 3 | 3 | - | probed X, invariant held |",
-        ])
+        log = _log(
+            tmp_path,
+            [
+                "| 5 | L1 | T12 | clean | 3 | 3 | - | probed X, invariant held |",
+            ],
+        )
         monkeypatch.setattr(C, "LOG", log)
         seen = C.taken_lines()
         fresh = "| 6 | L1 | T12 | clean | 3 | 3 | - | probed Y, new data |"

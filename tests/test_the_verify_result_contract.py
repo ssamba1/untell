@@ -14,6 +14,7 @@ and `score` agreed on every one — no text where verify passed and score flagge
 way. Exit codes check out too, 1 on FAIL and 0 on PASS, once measured without a pipe in the way
 (`$?` after `| tail` is tail's status, which briefly looked like exit 0 on a failing run).
 """
+
 from __future__ import annotations
 
 import pytest
@@ -42,7 +43,9 @@ def test_the_result_carries_every_documented_key(text: str):
     """A renamed key does not raise for a caller using .get() — it returns None forever."""
     result = verify(text, tier="lite")
     missing = REQUIRED - set(result)
-    assert not missing, f"verify() no longer returns {sorted(missing)}; readers using .get() go quiet"
+    assert not missing, (
+        f"verify() no longer returns {sorted(missing)}; readers using .get() go quiet"
+    )
 
 
 @pytest.mark.parametrize("text", [AI, HUMAN], ids=["ai", "human"])

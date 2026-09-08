@@ -1,14 +1,17 @@
 """Slice 10 probe 2: concurrency (10 parallel call_tool), no cross-talk, session isolation,
 malformed payloads, huge strings, and client-disconnect (task cancellation) resilience."""
+
 import asyncio
 import json
 import time
 
 from untell.mcp_server import _server
 
-TEXTS = [f"Furthermore, the system leverages robust methodologies to optimize outcome number {i}. "
-         f"This is sentence two of document {i} with some distinctive words: zebra kiosk umbrella." 
-         for i in range(10)]
+TEXTS = [
+    f"Furthermore, the system leverages robust methodologies to optimize outcome number {i}. "
+    f"This is sentence two of document {i} with some distinctive words: zebra kiosk umbrella."
+    for i in range(10)
+]
 
 
 async def call(srv, name, args):
@@ -80,18 +83,24 @@ async def main():
     # ---- 5) malformed text types ----------------------------------------------------
     for bad_text in (123, None, ["a", "list"], {"a": 1}, 1.5, True):
         status, payload = await call(srv, "tells", {"text": bad_text})
-        print(f"MALFORMED tells text={bad_text!r}: {status} :: {(payload or [''])[0][:140] if payload else ''}")
+        print(
+            f"MALFORMED tells text={bad_text!r}: {status} :: {(payload or [''])[0][:140] if payload else ''}"
+        )
 
     # ---- 6) huge strings -------------------------------------------------------------
     for label, n in (("60KB", 60_000), ("1MB", 1_000_000)):
         huge = ("Furthermore, the system leverages robust methodologies. ") * (n // 55)
         t0 = time.time()
         status, payload = await call(srv, "tells", {"text": huge})
-        print(f"HUGE tells {label} ({len(huge)} chars): {status} {time.time()-t0:.2f}s :: "
-              f"{(payload or [''])[0][:120] if payload else ''}")
+        print(
+            f"HUGE tells {label} ({len(huge)} chars): {status} {time.time() - t0:.2f}s :: "
+            f"{(payload or [''])[0][:120] if payload else ''}"
+        )
 
     # ---- 7) client disconnect: cancel a call mid-flight, server must stay healthy ----
-    long_text = ("Furthermore, the system leverages robust methodologies to optimize outcomes. ") * 3000
+    long_text = (
+        "Furthermore, the system leverages robust methodologies to optimize outcomes. "
+    ) * 3000
 
     async def canceller():
         await asyncio.sleep(0.05)

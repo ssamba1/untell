@@ -52,7 +52,9 @@ def test_the_baseline_is_reported() -> None:
     m = measure([(HUMAN, AI)] * 4)
     assert "auroc_length_baseline" in m
     assert "margin_over_length" in m
-    assert m["margin_over_length"] == pytest.approx(m["auroc"] - m["auroc_length_baseline"], abs=1e-4)
+    assert m["margin_over_length"] == pytest.approx(
+        m["auroc"] - m["auroc_length_baseline"], abs=1e-4
+    )
 
 
 def test_a_pure_length_difference_is_caught_by_the_baseline() -> None:

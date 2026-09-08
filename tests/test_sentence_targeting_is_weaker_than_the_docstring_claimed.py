@@ -23,6 +23,7 @@ These tests pin the CONSEQUENCE, not the AUROC. An exact 0.813 would break on an
 while "human sentences saturate at the ceiling, so ranking them is not reliable" is the property
 the warning decision rests on. They are marked slow: each loads the full ensemble.
 """
+
 from __future__ import annotations
 
 import os
@@ -116,6 +117,7 @@ def test_most_human_sentences_flag_at_the_shipped_cut(scored):
 @pytest.mark.slow
 def test_separation_is_well_below_the_documented_floor(scored):
     """0.886 was the documented floor for model-backed detectors; the ensemble max is near 0.81."""
+
     def auroc(pos, neg):
         return sum((p > n) + 0.5 * (p == n) for p in pos for n in neg) / (len(pos) * len(neg))
 

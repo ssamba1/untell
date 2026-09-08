@@ -1,4 +1,5 @@
 """selection_key edge invariants: NaN max/mean, missing keys, None values."""
+
 import json, math
 from untell.rewriter.base import selection_key
 

@@ -34,7 +34,12 @@ def test_unavailable_without_keys():
 _CASES = [
     ("OriginalityDetector", "ORIGINALITY_API_KEY", {"score": {"ai": 0.91, "original": 0.09}}, 0.91),
     ("SaplingDetector", "SAPLING_API_KEY", {"score": 0.77}, 0.77),
-    ("GPTZeroDetector", "GPTZERO_API_KEY", {"documents": [{"class_probabilities": {"ai": 0.66, "human": 0.3}}]}, 0.66),
+    (
+        "GPTZeroDetector",
+        "GPTZERO_API_KEY",
+        {"documents": [{"class_probabilities": {"ai": 0.66, "human": 0.3}}]},
+        0.66,
+    ),
     ("ZeroGPTDetector", "ZEROGPT_API_KEY", {"data": {"is_gpt_generated": 82}}, 0.82),
     ("WinstonDetector", "WINSTON_API_KEY", {"score": 25}, 0.75),  # 0-100 human -> AI complement
 ]
@@ -51,7 +56,9 @@ def test_detector_parses_ai_probability(monkeypatch, cls, env, resp, expected):
 
 def test_gptzero_falls_back_to_completely_generated_prob(monkeypatch):
     monkeypatch.setenv("GPTZERO_API_KEY", "k")
-    monkeypatch.setattr(C, "_post_json", lambda *a, **k: {"documents": [{"completely_generated_prob": 0.42}]})
+    monkeypatch.setattr(
+        C, "_post_json", lambda *a, **k: {"documents": [{"completely_generated_prob": 0.42}]}
+    )
     assert abs(C.GPTZeroDetector().score("text") - 0.42) < 1e-6
 
 
@@ -105,8 +112,9 @@ def test_gptzero_returns_none_when_no_score_field_present(monkeypatch):
 
     monkeypatch.setenv("GPTZERO_API_KEY", "k")
     # Neither class_probabilities.ai nor completely_generated_prob is present.
-    monkeypatch.setattr(c, "_post_json",
-                        lambda *a, **k: {"documents": [{"class_probabilities": {"human": 0.9}}]})
+    monkeypatch.setattr(
+        c, "_post_json", lambda *a, **k: {"documents": [{"class_probabilities": {"human": 0.9}}]}
+    )
     assert c.GPTZeroDetector().score("some text") is None
 
 
@@ -114,8 +122,9 @@ def test_gptzero_still_reads_the_fallback_field(monkeypatch):
     import untell.detectors.commercial as c
 
     monkeypatch.setenv("GPTZERO_API_KEY", "k")
-    monkeypatch.setattr(c, "_post_json",
-                        lambda *a, **k: {"documents": [{"completely_generated_prob": 0.8}]})
+    monkeypatch.setattr(
+        c, "_post_json", lambda *a, **k: {"documents": [{"completely_generated_prob": 0.8}]}
+    )
     assert c.GPTZeroDetector().score("some text") == 0.8
 
 

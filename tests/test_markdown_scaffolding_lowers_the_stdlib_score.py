@@ -27,6 +27,7 @@ the perplexity midpoints fitted against raw-document distributions — so it nee
 measurement pass. A test that quietly encoded the desired behaviour instead would make that pass
 harder, not easier.
 """
+
 from __future__ import annotations
 
 import pytest
@@ -49,7 +50,7 @@ WRAPPED = (
     "- The first supporting point is listed here.\n"
     "- The second supporting point is listed here.\n"
     "- The third supporting point is listed here.\n\n"
-    "```python\ndef parse(row):\n    return row.strip().split(\",\")\n```\n"
+    '```python\ndef parse(row):\n    return row.strip().split(",")\n```\n'
 )
 
 
@@ -90,8 +91,9 @@ def test_the_structure_itself_survives_a_rewrite():
     """The question this started as, kept because the answer is good and nothing pinned it."""
     from untell.scripts.run import untell_text
 
-    result = untell_text(WRAPPED, tier="lite", threshold=0.0, max_iters=1,
-                         rewriter="composite", seed=4)
+    result = untell_text(
+        WRAPPED, tier="lite", threshold=0.0, max_iters=1, rewriter="composite", seed=4
+    )
     out = result["final"]
 
     assert out.count("```") == WRAPPED.count("```"), "fenced code block lost"

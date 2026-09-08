@@ -12,7 +12,7 @@ def test_builtin_labeled_balanced():
     data = _builtin_labeled(6)
     assert len(data) == 6
     assert any(lbl >= 0.5 for _, lbl in data)  # has AI
-    assert any(lbl < 0.5 for _, lbl in data)   # has human
+    assert any(lbl < 0.5 for _, lbl in data)  # has human
     for text, label in data:
         assert isinstance(text, str) and text
         assert label in (0.0, 1.0)
@@ -92,7 +92,9 @@ def test_reward_uses_surrogate_when_env_set(monkeypatch):
 def test_reward_default_is_local_ensemble(monkeypatch):
     monkeypatch.delenv("UNTELL_SURROGATE_DIR", raising=False)
     reward_mod._SURROGATE = None
-    s = reward_mod.target_ai_score("Furthermore, the system operates predictably and uniformly.", tier="lite")
+    s = reward_mod.target_ai_score(
+        "Furthermore, the system operates predictably and uniformly.", tier="lite"
+    )
     assert 0.0 <= s <= 1.0
 
 
@@ -123,5 +125,7 @@ def test_surrogate_no_signal_is_not_a_reward(monkeypatch):
 def test_humanness_reward_still_works_lite(monkeypatch):
     monkeypatch.delenv("UNTELL_SURROGATE_DIR", raising=False)
     reward_mod._SURROGATE = None
-    r = reward_mod.humanness_reward("The cat sat on the mat.", "A cat was sitting on the mat.", tier="lite")
+    r = reward_mod.humanness_reward(
+        "The cat sat on the mat.", "A cat was sitting on the mat.", tier="lite"
+    )
     assert -1.0 <= r <= 1.0

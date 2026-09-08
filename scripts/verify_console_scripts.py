@@ -3,6 +3,7 @@
 Run with the project venv:  ./.venv/Scripts/python.exe scripts/verify_console_scripts.py
 Exits 0 only if every entry point's module imports and its callable attribute exists.
 """
+
 from __future__ import annotations
 
 import importlib

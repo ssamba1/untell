@@ -62,7 +62,9 @@ _GATE_REWARD = -1.0
 _MIN_SCORED_REWARD = -0.99
 
 
-def free_ensemble_score(text: str, tier: str = "full", weights: dict[str, float] | None = None) -> float:
+def free_ensemble_score(
+    text: str, tier: str = "full", weights: dict[str, float] | None = None
+) -> float:
     """Weighted-mean P(AI) over the FREE open detectors the active tier produced (renormalized).
 
     No commercial API, no surrogate — this is the $0 training target. Detectors absent at the active
@@ -73,9 +75,7 @@ def free_ensemble_score(text: str, tier: str = "full", weights: dict[str, float]
     res = score_text(text, tier=tier)
     dets = res.get("detectors", {})
     present = {
-        k: float(v)
-        for k, v in dets.items()
-        if isinstance(v, (int, float)) and "__" not in k
+        k: float(v) for k, v in dets.items() if isinstance(v, (int, float)) and "__" not in k
     }
     if not present:
         # `res["max"]` is a 0.0 PLACEHOLDER when nothing scored, and 0.0 means "not AI at all" —
@@ -214,7 +214,9 @@ def humanness_reward(
         return _GATE_REWARD
     if len(candidate) < 0.5 * len(original):
         return _GATE_REWARD
-    ai = target_ai_score(candidate, tier=tier)  # surrogate if UNTELL_SURROGATE_DIR set, else free ensemble
+    ai = target_ai_score(
+        candidate, tier=tier
+    )  # surrogate if UNTELL_SURROGATE_DIR set, else free ensemble
     evade = 1.0 - ai
     tells = score_tells(candidate)
     tells_penalty = _TELLS_W * float(tells.get("tells_per_100w", 0.0))

@@ -25,6 +25,7 @@ response would assert that every run has something wrong with it.
 Both directions are checked for every endpoint, so the next field added anywhere fails here rather
 than reaching a client that cannot see it.
 """
+
 from __future__ import annotations
 
 import pytest
@@ -58,9 +59,17 @@ REQUESTS = {
 # absent on ordinary input, so demanding it on every response would assert that every document has
 # an unrankable ranking.
 CONDITIONAL = {
-    "warning", "voice_warning", "rewriter_warning", "error",
-    "detector_errors", "failed_detectors", "matches", "suggestion",
-    "out_of_range_detectors", "out_of_range_raw", "unrankable",
+    "warning",
+    "voice_warning",
+    "rewriter_warning",
+    "error",
+    "detector_errors",
+    "failed_detectors",
+    "matches",
+    "suggestion",
+    "out_of_range_detectors",
+    "out_of_range_raw",
+    "unrankable",
 }
 
 
@@ -85,7 +94,9 @@ def spec(client) -> dict:
 
 def _schema_properties(spec: dict, path: str) -> dict:
     node = spec["paths"].get(path, {}).get("post", {})
-    content = node.get("responses", {}).get("200", {}).get("content", {}).get("application/json", {})
+    content = (
+        node.get("responses", {}).get("200", {}).get("content", {}).get("application/json", {})
+    )
     schema = content.get("schema", {})
     if "$ref" in schema:
         schema = spec["components"]["schemas"][schema["$ref"].rsplit("/", 1)[-1]]
@@ -101,7 +112,8 @@ def _response(client, path: str) -> dict:
 def test_every_post_endpoint_is_covered(spec):
     """The guard. An endpoint added without an entry is one nobody checks the schema of."""
     posts = {
-        path for path, node in spec["paths"].items()
+        path
+        for path, node in spec["paths"].items()
         if "post" in node and not path.startswith(("/docs", "/openapi", "/redoc"))
     }
     assert not posts - set(REQUESTS), f"no request here for {sorted(posts - set(REQUESTS))}"

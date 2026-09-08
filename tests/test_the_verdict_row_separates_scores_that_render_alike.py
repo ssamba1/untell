@@ -16,6 +16,7 @@ The row reads `verdict_threshold` rather than `threshold`, deliberately, because
 lite stdlib path publishes 0.45 where the loop targets 0.30, and a row built from the loop
 threshold would call flagged text clear on exactly the tier a clean install lands on.
 """
+
 from __future__ import annotations
 
 import io

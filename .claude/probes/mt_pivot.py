@@ -1,5 +1,7 @@
 """mt_pivot: sentinel survival + determinism + layout preservation."""
+
 import json, os
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
 from untell.rewriter.mt_pivot import MTPivotRewriter
 from untell.scripts.preserve import lock
@@ -14,10 +16,15 @@ else:
     out2 = rw.rewrite(masked, {"tier": "lite"}, 0.3)
     sentinels = [k for k in mapping]
     survived = all(s in out for s in sentinels)
-    print(json.dumps({
-        "available": True,
-        "deterministic": out == out2,
-        "sentinel_survival": survived,
-        "changed": out != masked,
-        "out_snippet": out[:70],
-    }, indent=1))
+    print(
+        json.dumps(
+            {
+                "available": True,
+                "deterministic": out == out2,
+                "sentinel_survival": survived,
+                "changed": out != masked,
+                "out_snippet": out[:70],
+            },
+            indent=1,
+        )
+    )

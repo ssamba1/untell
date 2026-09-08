@@ -4,6 +4,7 @@ Runs ONE input in a child process; the child prints the pattern label (flushed)
 before scanning it, so when the child is killed the last printed label is the
 culprit. Independent of multiprocessing pool bookkeeping.
 """
+
 from __future__ import annotations
 
 import json

@@ -1,10 +1,18 @@
 """scrub CLI: hidden chars removed, JSON valid, exit 0."""
+
 import json, subprocess, sys, os
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
-env = dict(os.environ); env["PYTHONPATH"] = ""
+env = dict(os.environ)
+env["PYTHONPATH"] = ""
 dirty = "The system works well\u200b here. Clean text after."
-r = subprocess.run([sys.executable, "-m", "untell.scripts.run", "scrub", "--json", dirty],
-                   capture_output=True, text=True, env=env, timeout=60)
+r = subprocess.run(
+    [sys.executable, "-m", "untell.scripts.run", "scrub", "--json", dirty],
+    capture_output=True,
+    text=True,
+    env=env,
+    timeout=60,
+)
 out = {}
 try:
     d = json.loads(r.stdout)

@@ -1,5 +1,7 @@
 """score_text length floor + abstention semantics on the lite path."""
+
 import json, os
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
 from untell.scripts.score import score_text
 
@@ -17,7 +19,10 @@ probes = {
 out = {}
 for name, t in probes.items():
     s = score_text(t, tier="lite")
-    out[name] = {"max": round(s.get("max", -1), 4), "flagged": s.get("flagged"),
-                 "abstained": s.get("abstained", False),
-                 "warning_present": bool(s.get("warning"))}
+    out[name] = {
+        "max": round(s.get("max", -1), 4),
+        "flagged": s.get("flagged"),
+        "abstained": s.get("abstained", False),
+        "warning_present": bool(s.get("warning")),
+    }
 print(json.dumps(out, indent=1))

@@ -59,9 +59,11 @@ def test_full_tier_loads_supervised_detectors():
     dets = load_detectors("full")
     names = {d.name for d in dets}
     assert resolved_tier(dets) == "full", names
-    expected = {"roberta_openai", "fast_detectgpt"} if _MAGE_OFF else {
-        "roberta_openai", "mage", "fast_detectgpt"
-    }
+    expected = (
+        {"roberta_openai", "fast_detectgpt"}
+        if _MAGE_OFF
+        else {"roberta_openai", "mage", "fast_detectgpt"}
+    )
     assert expected <= names, names
     if _MAGE_OFF:
         assert "mage" not in names, "UNTELL_DISABLE_MAGE=1 did not actually exclude mage"
@@ -85,7 +87,9 @@ def test_supervised_detector_scores_in_unit_interval(name):
         # huggingface_hub, or a NumPy 2.x / torch mismatch) now RAISES -> it is EXCLUDED from the
         # ensemble rather than folded in as a fake neutral 0.5. That exclusion is the correct,
         # intended behavior, so a load failure here is a skip, not a test failure.
-        pytest.skip(f"{name} unavailable in this env (excluded from ensemble): {type(exc).__name__}")
+        pytest.skip(
+            f"{name} unavailable in this env (excluded from ensemble): {type(exc).__name__}"
+        )
     for s in scores:
         # None == "no signal" (empty/too-short text) and is excluded upstream; otherwise [0,1].
         assert s is None or 0.0 <= s <= 1.0, (name, s)
@@ -165,8 +169,9 @@ def test_long_document_is_scored_past_the_context_window():
     if not det._torch_ready():
         pytest.skip("torch/transformers not importable")
 
-    long_text = ("The committee reviewed the proposal and asked for three specific changes "
-                 "before the vote. ") * 120  # comfortably over 1024 tokens
+    long_text = (
+        "The committee reviewed the proposal and asked for three specific changes before the vote. "
+    ) * 120  # comfortably over 1024 tokens
     nll, offsets = det._token_nll(long_text)
     assert nll is not None
     assert len(nll) > 1024, f"only {len(nll)} tokens scored — the tail was truncated away"
@@ -180,8 +185,10 @@ def test_score_is_finite_and_in_range_for_a_long_document():
     det = PerplexityBurstinessDetector()
     if not det._torch_ready():
         pytest.skip("torch/transformers not importable")
-    text = ("Regular exercise offers benefits for physical and mental health. "
-            "It reduces the risk of chronic disease and improves mood. ") * 90
+    text = (
+        "Regular exercise offers benefits for physical and mental health. "
+        "It reduces the risk of chronic disease and improves mood. "
+    ) * 90
     s = det.score(text)
     assert s is not None and 0.0 <= s <= 1.0 and s == s
 
@@ -241,11 +248,15 @@ def test_long_document_tail_is_not_invisible(name):
     if det is None:
         pytest.skip(f"{name} unavailable")
 
-    prefix = ("I went to the store yesterday and forgot my wallet again, third time this month. "
-              "The guy at the counter waved me off and said bring it next time. ") * 30
-    ai = ("Furthermore, artificial intelligence has fundamentally transformed numerous industries. "
-          "Moreover, organizations increasingly leverage these technologies to optimize efficiency. "
-          "In conclusion, this represents a pivotal shift in the modern business landscape. ") * 30
+    prefix = (
+        "I went to the store yesterday and forgot my wallet again, third time this month. "
+        "The guy at the counter waved me off and said bring it next time. "
+    ) * 30
+    ai = (
+        "Furthermore, artificial intelligence has fundamentally transformed numerous industries. "
+        "Moreover, organizations increasingly leverage these technologies to optimize efficiency. "
+        "In conclusion, this represents a pivotal shift in the modern business landscape. "
+    ) * 30
 
     # The invariant, independent of how AI-ish the prefix happens to read: a section cannot be
     # hidden by putting other text in front of it. Under truncation the tail scored 0.000 while the

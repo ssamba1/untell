@@ -272,8 +272,15 @@ def test_browser_scoring_loop_converges(monkeypatch):
 
     monkeypatch.setattr(bc, "get_browser_checker", lambda name: _FakeChk())
     # sim_bar=0.0 isolates the browser-scoring behaviour from the lite token-overlap quality gate.
-    res = untell_text(AI, tier="lite", browser="zerogpt", threshold=0.30, max_iters=3, sim_bar=0.0,
-                      veto_contradictions=False)
+    res = untell_text(
+        AI,
+        tier="lite",
+        browser="zerogpt",
+        threshold=0.30,
+        max_iters=3,
+        sim_bar=0.0,
+        veto_contradictions=False,
+    )
     assert "error" not in res
     assert res["tier"] == "browser:zerogpt"
     assert res["post"]["max"] <= 0.30
@@ -300,7 +307,9 @@ def test_browser_scoring_max_across_multiple(monkeypatch):
     # two detectors: one already low, one high -> max is high -> must keep going (drives "beat all")
     fakes = {"zerogpt": _Chk(0.05), "detecting-ai": _Chk(0.10)}
     monkeypatch.setattr(bc, "get_browser_checker", lambda name: fakes.get(name))
-    res = untell_text(AI, tier="lite", browser="zerogpt,detecting-ai", threshold=0.30, max_iters=2, sim_bar=0.0)
+    res = untell_text(
+        AI, tier="lite", browser="zerogpt,detecting-ai", threshold=0.30, max_iters=2, sim_bar=0.0
+    )
     assert "error" not in res
     assert res["tier"] == "browser:zerogpt,detecting-ai"
     assert set(res["post"]["detectors"]) >= {"zerogpt", "detecting-ai"}
@@ -323,10 +332,14 @@ def test_margin_blocks_borderline_pass(monkeypatch):
 
     monkeypatch.setattr(bc, "get_browser_checker", lambda name: _Chk())
     # margin 0: 0.28 < 0.30 -> comfortable enough, passes
-    r0 = untell_text(AI, tier="lite", browser="zerogpt", threshold=0.30, margin=0.0, max_iters=2, sim_bar=0.0)
+    r0 = untell_text(
+        AI, tier="lite", browser="zerogpt", threshold=0.30, margin=0.0, max_iters=2, sim_bar=0.0
+    )
     assert r0["stopped"] == "passed"
     # margin 0.10: needs < 0.20 -> 0.28 is a borderline pass -> keep iterating, hit the cap
-    rm = untell_text(AI, tier="lite", browser="zerogpt", threshold=0.30, margin=0.10, max_iters=2, sim_bar=0.0)
+    rm = untell_text(
+        AI, tier="lite", browser="zerogpt", threshold=0.30, margin=0.10, max_iters=2, sim_bar=0.0
+    )
     assert rm["stopped"] == "max_iters"
 
 
@@ -349,7 +362,14 @@ def test_confirm_demotes_a_noisy_pass(monkeypatch):
 
     monkeypatch.setattr(bc, "get_browser_checker", lambda name: _Chk())
     res = untell_text(
-        AI, tier="lite", browser="zerogpt", threshold=0.30, margin=0.0, max_iters=1, sim_bar=0.0, confirm=2
+        AI,
+        tier="lite",
+        browser="zerogpt",
+        threshold=0.30,
+        margin=0.0,
+        max_iters=1,
+        sim_bar=0.0,
+        confirm=2,
     )
     assert res["stopped"] == "passed_unconfirmed"
 
@@ -416,7 +436,9 @@ def test_best_of_n_draws_multiple_candidates_and_keeps_facts(monkeypatch):
     res = untell_text(AI, tier="lite", threshold=0.0, max_iters=1, best_of=3)
     assert "error" not in res
     assert calls["n"] == 3
-    assert "Smith (2020)" in res["final"] and "47%" in res["final"]  # facts survive best-of selection
+    assert (
+        "Smith (2020)" in res["final"] and "47%" in res["final"]
+    )  # facts survive best-of selection
 
 
 class TestRewriterByName:
@@ -435,11 +457,14 @@ class TestRewriterByName:
         from untell.rewriter import get_rewriter
         from untell.scripts.run import untell_text
 
-        text = ("Furthermore, organizations increasingly leverage these robust technologies to "
-                "optimize operational efficiency across sectors.")
+        text = (
+            "Furthermore, organizations increasingly leverage these robust technologies to "
+            "optimize operational efficiency across sectors."
+        )
         by_name = untell_text(text, tier="lite", rewriter="composite", max_iters=1, best_of=1)
-        by_object = untell_text(text, tier="lite", rewriter=get_rewriter(prefer="composite"),
-                                max_iters=1, best_of=1)
+        by_object = untell_text(
+            text, tier="lite", rewriter=get_rewriter(prefer="composite"), max_iters=1, best_of=1
+        )
         assert "error" not in by_name, by_name.get("error")
         assert "error" not in by_object, by_object.get("error")
         assert by_name["pre"]["max"] == by_object["pre"]["max"]
@@ -464,10 +489,19 @@ class TestRewriterByName:
 
 def _fixed_score(mapping, default=0.5):
     """score_text stand-in keyed on exact text."""
+
     def _s(text, tier="full", threshold=0.3):
         mx = mapping.get(text.strip(), default)
-        return {"tier": tier, "detectors": {"perplexity_burstiness": mx}, "max": mx, "mean": mx,
-                "threshold": threshold, "flagged": mx >= threshold, "scored": True}
+        return {
+            "tier": tier,
+            "detectors": {"perplexity_burstiness": mx},
+            "max": mx,
+            "mean": mx,
+            "threshold": threshold,
+            "flagged": mx >= threshold,
+            "scored": True,
+        }
+
     return _s
 
 
@@ -502,8 +536,16 @@ def test_polish_never_trades_a_pass_for_a_tie(monkeypatch):
         attacks_mod, "surgical_substitute", lambda t, tier=None, threshold=0.3: {"text": polished}
     )
 
-    out = run_mod.untell_text(src, tier="lite", threshold=0.30, max_iters=1, rewriter=_Same(),
-                              polish=True, scrub=False, sim_bar=0.0)
+    out = run_mod.untell_text(
+        src,
+        tier="lite",
+        threshold=0.30,
+        max_iters=1,
+        rewriter=_Same(),
+        polish=True,
+        scrub=False,
+        sim_bar=0.0,
+    )
     assert out["stopped"] == "passed"
     assert out["post"]["max"] < 0.30, "polish pushed the score back over the threshold"
     assert out["final"].strip() != polished
@@ -522,8 +564,16 @@ def test_polish_is_still_adopted_when_it_genuinely_helps(monkeypatch):
         attacks_mod, "surgical_substitute", lambda t, tier=None, threshold=0.3: {"text": polished}
     )
 
-    out = run_mod.untell_text(src, tier="lite", threshold=0.30, max_iters=1, rewriter=_Same(),
-                              polish=True, scrub=False, sim_bar=0.0)
+    out = run_mod.untell_text(
+        src,
+        tier="lite",
+        threshold=0.30,
+        max_iters=1,
+        rewriter=_Same(),
+        polish=True,
+        scrub=False,
+        sim_bar=0.0,
+    )
     assert out["final"].strip() == polished
     assert out["post"]["max"] == 0.10
 
@@ -536,7 +586,12 @@ def test_already_clean_text_reports_zero_iterations(monkeypatch):
     monkeypatch.setattr(run_mod, "score_text", _fixed_score({}, 0.05))
     out = run_mod.untell_text(
         "This sentence is already clean and needs no work at all today.",
-        tier="lite", threshold=0.30, max_iters=5, rewriter=_Same(), scrub=False, sim_bar=0.0,
+        tier="lite",
+        threshold=0.30,
+        max_iters=5,
+        rewriter=_Same(),
+        scrub=False,
+        sim_bar=0.0,
     )
     assert out["stopped"] == "passed"
     assert out["iterations"] == 0
@@ -549,8 +604,9 @@ def test_work_still_counts_its_iterations(monkeypatch):
 
     src = "Furthermore, this text is flagged and will stay flagged throughout the run."
     monkeypatch.setattr(run_mod, "score_text", _fixed_score({}, 0.90))
-    out = run_mod.untell_text(src, tier="lite", threshold=0.30, max_iters=3, rewriter=_Same(),
-                              scrub=False, sim_bar=0.0)
+    out = run_mod.untell_text(
+        src, tier="lite", threshold=0.30, max_iters=3, rewriter=_Same(), scrub=False, sim_bar=0.0
+    )
     assert out["iterations"] >= 1
 
 
@@ -587,8 +643,16 @@ def test_tells_tiebreak_never_costs_a_pass(monkeypatch):
             self.n += 1
             return passing if self.n % 2 else clean
 
-    out = run_mod.untell_text(src, tier="lite", threshold=0.30, max_iters=4, rewriter=_TwoDraws(),
-                              best_of=2, scrub=False, sim_bar=0.0)
+    out = run_mod.untell_text(
+        src,
+        tier="lite",
+        threshold=0.30,
+        max_iters=4,
+        rewriter=_TwoDraws(),
+        best_of=2,
+        scrub=False,
+        sim_bar=0.0,
+    )
     assert out["stopped"] == "passed"
     assert out["post"]["max"] == 0.28
     assert out["final"].strip() == passing
@@ -623,10 +687,18 @@ def test_tells_tiebreak_still_applies_when_neither_passes(monkeypatch):
 
     # veto_contradictions=False isolates the tie-break: with the NLI gate live it rejects the
     # heavily-reworded draw before selection ever sees it, so the test would be measuring the gate.
-    out = run_mod.untell_text(src, tier="lite", threshold=0.30, max_iters=1, rewriter=_TwoDraws(),
-                              best_of=2, scrub=False, sim_bar=0.0, veto_contradictions=False)
+    out = run_mod.untell_text(
+        src,
+        tier="lite",
+        threshold=0.30,
+        max_iters=1,
+        rewriter=_TwoDraws(),
+        best_of=2,
+        scrub=False,
+        sim_bar=0.0,
+        veto_contradictions=False,
+    )
     assert out["final"].strip() == cleaner, "fewer tells should still win among non-passing draws"
-
 
 
 class TestAdoptedAndChangedAreReported:
@@ -667,7 +739,9 @@ class TestAdoptedAndChangedAreReported:
 
     def test_adopted_never_exceeds_draws(self, monkeypatch):
         monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
-        r = self._run("Furthermore, this groundbreaking paradigm underscores the pivotal role.", 0.30)
+        r = self._run(
+            "Furthermore, this groundbreaking paradigm underscores the pivotal role.", 0.30
+        )
         assert r["adopted"] <= r["rewrites"]
 
 
@@ -725,9 +799,14 @@ class TestStrongerRewriterHint:
         result = {
             "pre": {"max": 0.99, "detectors": {}},
             "post": {"max": 0.80, "threshold": 0.30, "detectors": {}},
-            "similarity": 0.98, "sim_bar": 0.76, "quality_metric": "cosine",
-            "tier": "full", "iterations": 5, "stopped": "max_iters",
-            "final": "some text", "suggestion": "try --rewriter neural",
+            "similarity": 0.98,
+            "sim_bar": 0.76,
+            "quality_metric": "cosine",
+            "tier": "full",
+            "iterations": 5,
+            "stopped": "max_iters",
+            "final": "some text",
+            "suggestion": "try --rewriter neural",
         }
         out = _render(result)
         assert "try --rewriter neural" in out
@@ -758,8 +837,12 @@ class TestTheResultNamesTheFidelityGate:
         from untell.scripts.run import untell_text
 
         return untell_text(
-            self.TEXT, tier="lite", threshold=0.30, max_iters=1,
-            rewriter=get_rewriter(prefer="surgical"), **kw
+            self.TEXT,
+            tier="lite",
+            threshold=0.30,
+            max_iters=1,
+            rewriter=get_rewriter(prefer="surgical"),
+            **kw,
         )
 
     def test_the_nli_gate_is_named_when_present(self):
@@ -811,9 +894,7 @@ class TestTheResultNamesTheFidelityGate:
         import untell.scripts.entailment as ent
         from untell.scripts.run import _meaning_gate_mode
 
-        monkeypatch.setattr(
-            ent, "available", lambda: (_ for _ in ()).throw(RuntimeError("boom"))
-        )
+        monkeypatch.setattr(ent, "available", lambda: (_ for _ in ()).throw(RuntimeError("boom")))
         assert _meaning_gate_mode(True) == "unknown"
 
 
@@ -838,8 +919,14 @@ class TestPostDescribesTheDeliveredText:
         from untell.rewriter import get_rewriter
         from untell.scripts.run import untell_text
 
-        return untell_text(text, tier="lite", threshold=0.30, max_iters=2,
-                           rewriter=get_rewriter(prefer="surgical"), **kw)
+        return untell_text(
+            text,
+            tier="lite",
+            threshold=0.30,
+            max_iters=2,
+            rewriter=get_rewriter(prefer="surgical"),
+            **kw,
+        )
 
     def test_post_equals_the_score_of_final_when_facts_are_locked(self):
         from untell.scripts.preserve import SENTINEL_RE, lock
@@ -871,8 +958,14 @@ class TestPostDescribesTheDeliveredText:
             from untell.scripts.preserve import SENTINEL_RE
 
             val = 0.10 if SENTINEL_RE.search(text) else 0.90
-            return {"tier": tier, "detectors": {"stub": val}, "max": val, "mean": val,
-                    "threshold": threshold, "flagged": val >= threshold}
+            return {
+                "tier": tier,
+                "detectors": {"stub": val},
+                "max": val,
+                "mean": val,
+                "threshold": threshold,
+                "flagged": val >= threshold,
+            }
 
         monkeypatch.setattr(run_mod, "score_text", fake)
         try:
@@ -926,8 +1019,15 @@ def test_browser_mode_does_not_pay_an_extra_web_request_to_re_score(monkeypatch)
             return 0.05  # passes immediately, so the loop stops after one check
 
     monkeypatch.setattr(bc, "get_browser_checker", lambda name: _Chk())
-    res = untell_text(AI, tier="lite", browser="zerogpt", threshold=0.30, max_iters=1,
-                      sim_bar=0.0, veto_contradictions=False)
+    res = untell_text(
+        AI,
+        tier="lite",
+        browser="zerogpt",
+        threshold=0.30,
+        max_iters=1,
+        sim_bar=0.0,
+        veto_contradictions=False,
+    )
     # AI locks "Smith (2020)" and "47%", so `mapping` is non-empty — the guard being tested.
     from untell.scripts.preserve import SENTINEL_RE, lock
 

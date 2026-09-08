@@ -22,6 +22,7 @@ class TestBrokenClassification:
         from eval import detector_audit as DA
 
         monkeypatch.setattr(DA, "_SPECS", [("fake-dead", "eval.datasets", "load_pairs")])
+
         # patch audit_detector to return a DEAD sentence row without auroc
         def _audit_detector(name, det, probes=None):
             return {
@@ -37,4 +38,6 @@ class TestBrokenClassification:
         # audit_all with pairs=0 skips the corpus load, uses builtin probes
         out = DA.audit_all(pairs=0, dataset="hc3")
         # the broken list must include the sentence-granularity dead detector
-        assert "fake-dead [sentence]" in out["broken"], f"dead sentence detector must be broken: {out['broken']}"
+        assert "fake-dead [sentence]" in out["broken"], (
+            f"dead sentence detector must be broken: {out['broken']}"
+        )

@@ -98,7 +98,11 @@ class TestMainStartsTheServer:
 
         result = subprocess.run(
             [sys.executable, "-m", "untell.api_server", "--help"],
-            capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=120,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=120,
             cwd=Path(__file__).resolve().parent.parent,
         )
         assert result.returncode == 0

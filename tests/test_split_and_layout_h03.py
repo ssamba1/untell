@@ -2,7 +2,7 @@
 
 Bug 1 (text_split) — emoji or symbol between a sentence terminator and the following space
 hides the boundary from every _SENT_SPLIT alternative, collapsing two sentences into one.
-MEASURED: split_sentences("Done.\U0001F389 Next.") -> ONE sentence.
+MEASURED: split_sentences("Done.\U0001f389 Next.") -> ONE sentence.
 
 Bug 2 (text_split) — "vs." followed by a capitalised word splits incorrectly because "vs" is
 not in _TITLE_PREFIXES and the capital triggers the abbreviation rule's "can open a sentence"
@@ -27,13 +27,14 @@ from untell.text_split import split_sentences
 # Bug 1: emoji / symbol after sentence-terminal period
 # ---------------------------------------------------------------------------
 
+
 class TestEmojiAfterPeriod:
     """An emoji or symbol directly after a period, before a space, must not hide the boundary."""
 
     @pytest.mark.parametrize(
         "text",
         [
-            "Done.\U0001F389 The next sentence starts here.",
+            "Done.\U0001f389 The next sentence starts here.",
             "Task complete.✓ Now proceed.",
             "Step one done.✔ Step two follows.",
             "Error!❌ Please try again.",
@@ -42,21 +43,19 @@ class TestEmojiAfterPeriod:
     )
     def test_emoji_after_terminator_splits_into_two_sentences(self, text):
         result = split_sentences(text)
-        assert len(result) == 2, (
-            f"Expected 2 sentences but got {len(result)}: {result!r}"
-        )
+        assert len(result) == 2, f"Expected 2 sentences but got {len(result)}: {result!r}"
 
     def test_emoji_does_not_consume_content(self):
         """The emoji must stay with the sentence that ends, not disappear from the output."""
-        text = "Done.\U0001F389 The next sentence."
+        text = "Done.\U0001f389 The next sentence."
         parts = split_sentences(text)
         joined = "".join("".join(p.split()) for p in parts)
         assert joined == "".join(text.split())
 
     def test_emoji_stays_on_the_ending_sentence(self):
         """The emoji belongs to the sentence that ends, same as a closing quote or bracket."""
-        parts = split_sentences("Done.\U0001F389 The next sentence.")
-        assert parts[0] == "Done.\U0001F389"
+        parts = split_sentences("Done.\U0001f389 The next sentence.")
+        assert parts[0] == "Done.\U0001f389"
         assert parts[1] == "The next sentence."
 
     def test_plain_sentence_boundary_is_unchanged(self):
@@ -65,8 +64,8 @@ class TestEmojiAfterPeriod:
 
     def test_emoji_mid_sentence_without_period_is_not_a_boundary(self):
         """An emoji in the middle of a sentence with no preceding period is NOT a split point."""
-        assert split_sentences("Great \U0001F389 result. And done.") == [
-            "Great \U0001F389 result.",
+        assert split_sentences("Great \U0001f389 result. And done.") == [
+            "Great \U0001f389 result.",
             "And done.",
         ]
 
@@ -74,6 +73,7 @@ class TestEmojiAfterPeriod:
 # ---------------------------------------------------------------------------
 # Bug 2: "vs." followed by a capitalised continuation
 # ---------------------------------------------------------------------------
+
 
 class TestVsAbbreviation:
     """'vs.' is a comparison preposition, never a sentence terminator."""
@@ -89,9 +89,7 @@ class TestVsAbbreviation:
     )
     def test_vs_before_capital_does_not_split(self, text):
         result = split_sentences(text)
-        assert len(result) == 1, (
-            f"Expected 1 sentence but got {len(result)}: {result!r}"
-        )
+        assert len(result) == 1, f"Expected 1 sentence but got {len(result)}: {result!r}"
 
     def test_vs_before_lowercase_merges_as_before(self):
         """The abbreviation rule already merged lowercase continuations; that must still work."""
@@ -105,6 +103,7 @@ class TestVsAbbreviation:
 # ---------------------------------------------------------------------------
 # Bug 3: hard-break list item loses its list-marker prefix
 # ---------------------------------------------------------------------------
+
 
 class TestHardBreakListItem:
     """A list item whose body ends in a hard break must have its marker extracted."""
@@ -142,12 +141,8 @@ class TestHardBreakListItem:
         # Both segments should be prose with marker prefix "- "
         for kind, prefix, body in segs:
             if kind == "prose":
-                assert prefix == "- ", (
-                    f"Expected prefix='- ', got prefix={prefix!r}, body={body!r}"
-                )
-                assert not body.startswith("-"), (
-                    f"Body should not start with bullet: {body!r}"
-                )
+                assert prefix == "- ", f"Expected prefix='- ', got prefix={prefix!r}, body={body!r}"
+                assert not body.startswith("-"), f"Body should not start with bullet: {body!r}"
 
     def test_numbered_list_item_with_hard_break_also_fixed(self):
         """The same fix applies to ordered-list items like '1. item  '."""
@@ -173,6 +168,7 @@ class TestHardBreakListItem:
 #         variable name — "The answer is X. The formula is Y." -> ONE sentence
 # ---------------------------------------------------------------------------
 
+
 class TestLoneLetterVariableEndOfSentence:
     """A sentence ending in 'variable X.' must split when a new sentence follows."""
 
@@ -186,9 +182,7 @@ class TestLoneLetterVariableEndOfSentence:
     )
     def test_sentence_ending_in_variable_splits(self, text):
         result = split_sentences(text)
-        assert len(result) == 2, (
-            f"Expected 2 sentences but got {len(result)}: {result!r}"
-        )
+        assert len(result) == 2, f"Expected 2 sentences but got {len(result)}: {result!r}"
 
     def test_lone_initial_in_name_still_merges(self):
         """Guard: 'J. Smith arrived.' must remain ONE sentence."""

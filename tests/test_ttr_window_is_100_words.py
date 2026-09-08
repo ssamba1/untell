@@ -8,13 +8,35 @@ the mutant, crossing below the floor and firing the repetition signal that the
 original (25/100 = 0.25, at or above floor) suppresses. Pinned at the pure
 function level.
 """
+
 from untell.detectors.perplexity_burstiness import _repetition_signal
 
 _TYPES = [
-    "alpha", "bravo", "charlie", "delta", "echo", "foxtrot", "golf", "hotel",
-    "india", "juliet", "kilo", "lima", "mike", "november", "oscar", "papa",
-    "quebec", "romeo", "sierra", "tango", "uniform", "victor", "whiskey",
-    "xray", "yankee",
+    "alpha",
+    "bravo",
+    "charlie",
+    "delta",
+    "echo",
+    "foxtrot",
+    "golf",
+    "hotel",
+    "india",
+    "juliet",
+    "kilo",
+    "lima",
+    "mike",
+    "november",
+    "oscar",
+    "papa",
+    "quebec",
+    "romeo",
+    "sierra",
+    "tango",
+    "uniform",
+    "victor",
+    "whiskey",
+    "xray",
+    "yankee",
 ]
 
 TEXT = " ".join([t for t in _TYPES for _ in range(4)] + ["alpha"])  # 101 words

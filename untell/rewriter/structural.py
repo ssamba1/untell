@@ -51,44 +51,238 @@ from untell.text_split import ends_with_abbreviation, split_sentences
 # confirmed" into "nASA confirmed". Fewer merges is a cheap price for never mangling a name.
 _SAFE_TO_LOWERCASE = {
     # function words and determiners
-    "the", "this", "that", "these", "those", "a", "an", "it", "its", "they", "their", "them",
+    "the",
+    "this",
+    "that",
+    "these",
+    "those",
+    "a",
+    "an",
+    "it",
+    "its",
+    "they",
+    "their",
+    "them",
     # "i" was here, in among the other pronouns, and it is the one word in English that is never
     # lowercase. It produced "The system was slow, and i believe the cache was cold." Sitting
     # between "you" and "my" it reads as an oversight rather than a decision — every other pronoun
     # in this row genuinely is safe. `_safe_to_lowercase` now refuses it outright as well, so
     # re-adding it here cannot resurrect the bug.
-    "he", "his", "him", "she", "her", "we", "our", "us", "you", "your", "my", "there",
-    "here", "some", "many", "most", "much", "all", "each", "every", "both", "few", "several",
-    "one", "two", "three", "no", "not", "if", "when", "while", "after", "before", "since",
-    "because", "although", "though", "unless", "until", "as", "but", "and", "or", "so", "yet",
-    "in", "on", "at", "for", "from", "with", "without", "by", "to", "into", "over", "under",
-    "such", "other", "another", "any", "who", "which", "what", "how", "why", "where",
+    "he",
+    "his",
+    "him",
+    "she",
+    "her",
+    "we",
+    "our",
+    "us",
+    "you",
+    "your",
+    "my",
+    "there",
+    "here",
+    "some",
+    "many",
+    "most",
+    "much",
+    "all",
+    "each",
+    "every",
+    "both",
+    "few",
+    "several",
+    "one",
+    "two",
+    "three",
+    "no",
+    "not",
+    "if",
+    "when",
+    "while",
+    "after",
+    "before",
+    "since",
+    "because",
+    "although",
+    "though",
+    "unless",
+    "until",
+    "as",
+    "but",
+    "and",
+    "or",
+    "so",
+    "yet",
+    "in",
+    "on",
+    "at",
+    "for",
+    "from",
+    "with",
+    "without",
+    "by",
+    "to",
+    "into",
+    "over",
+    "under",
+    "such",
+    "other",
+    "another",
+    "any",
+    "who",
+    "which",
+    "what",
+    "how",
+    "why",
+    "where",
     # ordinary nouns that routinely open a sentence in expository prose
-    "people", "operators", "users", "results", "data", "studies", "research", "researchers",
-    "companies", "organizations", "organisations", "businesses", "students", "customers",
-    "patients", "developers", "engineers", "teams", "systems", "models", "tools", "machine",
-    "software", "hardware", "technology", "technologies", "industries", "governments",
-    "scientists", "doctors", "workers", "employees", "managers", "leaders", "experts",
-    "evidence", "analysis", "performance", "efficiency", "productivity", "growth", "costs",
-    "benefits", "risks", "challenges", "problems", "solutions", "changes", "effects",
-    "impact", "adoption", "training", "testing", "development", "production", "demand",
-    "supply", "prices", "revenue", "profits", "sales", "markets", "clients",
-    "documents", "files", "records", "reports", "papers", "articles", "books", "sources",
-    "methods", "approaches", "techniques", "strategies", "policies", "practices", "processes",
-    "exercise", "nutrition", "health", "treatment", "symptoms", "trials",
-    "climate", "energy", "emissions", "pollution", "temperatures", "weather", "sea",
-    "education", "schools", "teachers", "learning", "knowledge", "skills", "experience",
+    "people",
+    "operators",
+    "users",
+    "results",
+    "data",
+    "studies",
+    "research",
+    "researchers",
+    "companies",
+    "organizations",
+    "organisations",
+    "businesses",
+    "students",
+    "customers",
+    "patients",
+    "developers",
+    "engineers",
+    "teams",
+    "systems",
+    "models",
+    "tools",
+    "machine",
+    "software",
+    "hardware",
+    "technology",
+    "technologies",
+    "industries",
+    "governments",
+    "scientists",
+    "doctors",
+    "workers",
+    "employees",
+    "managers",
+    "leaders",
+    "experts",
+    "evidence",
+    "analysis",
+    "performance",
+    "efficiency",
+    "productivity",
+    "growth",
+    "costs",
+    "benefits",
+    "risks",
+    "challenges",
+    "problems",
+    "solutions",
+    "changes",
+    "effects",
+    "impact",
+    "adoption",
+    "training",
+    "testing",
+    "development",
+    "production",
+    "demand",
+    "supply",
+    "prices",
+    "revenue",
+    "profits",
+    "sales",
+    "markets",
+    "clients",
+    "documents",
+    "files",
+    "records",
+    "reports",
+    "papers",
+    "articles",
+    "books",
+    "sources",
+    "methods",
+    "approaches",
+    "techniques",
+    "strategies",
+    "policies",
+    "practices",
+    "processes",
+    "exercise",
+    "nutrition",
+    "health",
+    "treatment",
+    "symptoms",
+    "trials",
+    "climate",
+    "energy",
+    "emissions",
+    "pollution",
+    "temperatures",
+    "weather",
+    "sea",
+    "education",
+    "schools",
+    "teachers",
+    "learning",
+    "knowledge",
+    "skills",
+    "experience",
     # common adjectives and adverbs in the same position
-    "artificial", "regular", "effective", "modern", "current", "recent", "further", "additional",
-    "similar", "different", "specific", "general", "overall", "typical", "common", "important",
-    "significant", "large", "small", "high", "low", "new", "old", "good", "better", "best",
-    "worse", "worst", "early", "late", "fast", "slow", "long", "short", "clear", "likely",
-    "unlike", "despite", "given", "based", "using", "according",
+    "artificial",
+    "regular",
+    "effective",
+    "modern",
+    "current",
+    "recent",
+    "further",
+    "additional",
+    "similar",
+    "different",
+    "specific",
+    "general",
+    "overall",
+    "typical",
+    "common",
+    "important",
+    "significant",
+    "large",
+    "small",
+    "high",
+    "low",
+    "new",
+    "old",
+    "good",
+    "better",
+    "best",
+    "worse",
+    "worst",
+    "early",
+    "late",
+    "fast",
+    "slow",
+    "long",
+    "short",
+    "clear",
+    "likely",
+    "unlike",
+    "despite",
+    "given",
+    "based",
+    "using",
+    "according",
 }
 
 # Capitalisation that is never sentence-position capitalisation: an internal capital (NASA, iPhone,
 # McDonald) always signals a name or acronym, whatever the word list says.
 _INTERNAL_CAPS_RE = re.compile(r"^[A-Za-z][a-z]*[A-Z]")
+
 
 def _safe_to_lowercase(word: str, context: str = "") -> bool:
     """Can this sentence-initial word be lowercased without mangling a name or acronym?
@@ -204,8 +398,15 @@ _LEADING_SUBORDINATOR_RE = re.compile(
 # The guard for this was already written and already correct in intent; it just consulted a list
 # that did not include the transform's own vocabulary.
 _OPENERS = (
-    "Actually,", "In practice,", "In short,", "Put simply,",
-    "Also,", "Now,", "Basically,", "Well,", "Of course,",
+    "Actually,",
+    "In practice,",
+    "In short,",
+    "Put simply,",
+    "Also,",
+    "Now,",
+    "Basically,",
+    "Well,",
+    "Of course,",
 )
 # The three whose meaning depends on something having been said already — see `_opener` for the
 # measurement. Not removed from the pool: they are fine anywhere but the top of a block.
@@ -301,15 +502,24 @@ _PARTICIPIAL_VERBS: dict[str, str] = {
     # `intensity * profile["register"]` — emitting a known tell and relying on a later stochastic
     # pass to remove it is not the same as not emitting it. Same class of bug as the four
     # self-referential synonyms in attacks/word_importance.py.
-    "underscoring": "shows", "underlining": "underlines",
-    "marking": "marks", "reflecting": "reflects",
-    "highlighting": "highlights", "showcasing": "showcases",
-    "emphasizing": "emphasizes", "signaling": "signals",
-    "cementing": "cements", "solidifying": "solidifies",
-    "paving": "paves", "ensuring": "ensures",
-    "demonstrating": "demonstrates", "reinforcing": "reinforces",
-    "suggesting": "suggests", "indicating": "indicates",
-    "revealing": "reveals", "confirming": "confirms",
+    "underscoring": "shows",
+    "underlining": "underlines",
+    "marking": "marks",
+    "reflecting": "reflects",
+    "highlighting": "highlights",
+    "showcasing": "showcases",
+    "emphasizing": "emphasizes",
+    "signaling": "signals",
+    "cementing": "cements",
+    "solidifying": "solidifies",
+    "paving": "paves",
+    "ensuring": "ensures",
+    "demonstrating": "demonstrates",
+    "reinforcing": "reinforces",
+    "suggesting": "suggests",
+    "indicating": "indicates",
+    "revealing": "reveals",
+    "confirming": "confirms",
 }
 _PARTICIPIAL_RE = re.compile(
     r",\s+(" + r"|".join(re.escape(v) for v in _PARTICIPIAL_VERBS) + r")\b[^.!?]*[.!?]",
@@ -412,7 +622,7 @@ _HEDGE_RE = re.compile(
 # capital. Ordered longest-first so "it is not" contracts the negation before "it is". Verb+not forms
 # are safe; ambiguous ones ("she's" = she is / she has) are left out to avoid changing meaning.
 _CONTRACTIONS: list[tuple[re.Pattern, str]] = [
-    (re.compile(r"\b(can)not\b", re.I), r"\1't"),      # cannot -> can't (special: one word)
+    (re.compile(r"\b(can)not\b", re.I), r"\1't"),  # cannot -> can't (special: one word)
     (re.compile(r"\bdo not\b", re.I), "don't"),
     (re.compile(r"\bdoes not\b", re.I), "doesn't"),
     (re.compile(r"\bdid not\b", re.I), "didn't"),
@@ -515,14 +725,26 @@ _LEADING_SENTINEL_RE = re.compile(r"^(?:\s*(?:⟦HZ[0-9a-fA-F]+⟧|\x00\d+\x00))
 # Markers whose whole job is "this ADDS to what came before". When one of these is stripped, the
 # relation it stated is the last record of how the two sentences were joined, and `_merge_sentences`
 # is the transform that would otherwise guess.
-_ADDITIVE_MARKERS = frozenset({
-    "furthermore", "additionally", "moreover", "in addition", "also", "further", "likewise",
-    "similarly", "besides", "what is more", "what's more",
-})
+_ADDITIVE_MARKERS = frozenset(
+    {
+        "furthermore",
+        "additionally",
+        "moreover",
+        "in addition",
+        "also",
+        "further",
+        "likewise",
+        "similarly",
+        "besides",
+        "what is more",
+        "what's more",
+    }
+)
 
 
 _ADDITIVE_OPENER_RE = re.compile(
-    r"^\s*(?:" + "|".join(sorted((re.escape(m) for m in _ADDITIVE_MARKERS), key=len, reverse=True))
+    r"^\s*(?:"
+    + "|".join(sorted((re.escape(m) for m in _ADDITIVE_MARKERS), key=len, reverse=True))
     + r")\s*,?\s+",
     re.IGNORECASE,
 )
@@ -566,7 +788,7 @@ def _strip_transitions(
             body = s
             lead = _LEADING_SENTINEL_RE.match(s)
             if lead:
-                prefix, body = lead.group(0), s[lead.end():]
+                prefix, body = lead.group(0), s[lead.end() :]
             m = _TRANSITIONS_RE.match(body)
             # Capitalise ONLY when a transition was actually removed. `not (m and ...)` is True when
             # `m` is None, so this branch used to run on sentences with no transition at all: the
@@ -765,8 +987,8 @@ def _merge_sentences(
         # system does Y." into one sentence removes the duplicated span outright, and it is the
         # same operation already trusted here for burstiness, so it inherits the existing
         # mergeability and meaning checks rather than adding a new risk.
-        pair_repeats_opening = (
-            i + 1 < len(sentences) and _shares_opening(sentences[i], sentences[i + 1])
+        pair_repeats_opening = i + 1 < len(sentences) and _shares_opening(
+            sentences[i], sentences[i + 1]
         )
         take = 1.0 if pair_repeats_opening else rate
         # A merge that would leave a sentence well past the input's average is declined even when
@@ -779,8 +1001,11 @@ def _merge_sentences(
             or len(sentences[i].split()) + len(sentences[i + 1].split())
             <= max(_budget * 1.5, _ALWAYS_MERGEABLE_WORDS)
         )
-        if i + 1 < len(sentences) and _fits and random.random() < take and _mergeable(
-            sentences[i], sentences[i + 1]
+        if (
+            i + 1 < len(sentences)
+            and _fits
+            and random.random() < take
+            and _mergeable(sentences[i], sentences[i + 1])
         ):
             # rstrip(".!?"), not rstrip("."). Stripping only the period left the other terminators
             # in place and the connector was appended straight after them:
@@ -821,7 +1046,7 @@ def _merge_sentences(
             if b and merged_ok:
                 b = b.rstrip(".!?")
                 b = b[0].lower() + b[1:] if b and b[0].isupper() else b
-                            # No "; " here. This runs AFTER the semicolon strip above, so a semicolon
+                # No "; " here. This runs AFTER the semicolon strip above, so a semicolon
                 # inserted as a connector survives into the output — and semicolon_crutch is a
                 # tell this repo catalogues at 2+ per passage. MEASURED once repetition-aware
                 # merging made merges more frequent: 40 AI texts through the loop went from 0
@@ -898,8 +1123,21 @@ def _terminated(s: str) -> str:
 # better: shifting the split point off "that" in "On top of that, the clause ..." produced
 # "On top of, that." — a comma inserted where the phrase had none. Widened once, measured, reverted.
 _SPLIT_CONJUNCTIONS = frozenset(
-    {"and", "or", "but", "nor", "yet", "while", "because", "since", "although", "though",
-     "whereas", "unless", "until"}
+    {
+        "and",
+        "or",
+        "but",
+        "nor",
+        "yet",
+        "while",
+        "because",
+        "since",
+        "although",
+        "though",
+        "whereas",
+        "unless",
+        "until",
+    }
 )
 
 
@@ -910,10 +1148,40 @@ _SPLIT_CONJUNCTIONS = frozenset(
 # the appositive case is handled positionally below instead.
 _CANNOT_OPEN_A_CLAUSE = frozenset(
     {
-        "which", "who", "whom", "whose", "that", "where", "when",
-        "such", "including", "like", "especially", "particularly", "namely", "e.g.", "i.e.",
-        "with", "without", "from", "by", "of", "as", "than", "via", "per", "among", "between",
-        "rather", "instead", "along", "across", "toward", "towards", "upon", "regarding",
+        "which",
+        "who",
+        "whom",
+        "whose",
+        "that",
+        "where",
+        "when",
+        "such",
+        "including",
+        "like",
+        "especially",
+        "particularly",
+        "namely",
+        "e.g.",
+        "i.e.",
+        "with",
+        "without",
+        "from",
+        "by",
+        "of",
+        "as",
+        "than",
+        "via",
+        "per",
+        "among",
+        "between",
+        "rather",
+        "instead",
+        "along",
+        "across",
+        "toward",
+        "towards",
+        "upon",
+        "regarding",
     }
 )
 
@@ -933,8 +1201,21 @@ _CANNOT_OPEN_A_CLAUSE = frozenset(
 # one is separated from it by a comma. Checked on ten pairs — one fragment and one sentence for each
 # of five leads — the comma rule splits all ten correctly.
 _NEEDS_A_MAIN_CLAUSE = frozenset(
-    {"regardless", "despite", "notwithstanding", "unlike", "throughout", "during",
-     "within", "beyond", "concerning", "versus", "besides", "amid", "amidst"}
+    {
+        "regardless",
+        "despite",
+        "notwithstanding",
+        "unlike",
+        "throughout",
+        "during",
+        "within",
+        "beyond",
+        "concerning",
+        "versus",
+        "besides",
+        "amid",
+        "amidst",
+    }
 )
 _ARTICLES = frozenset({"a", "an", "the"})
 
@@ -943,8 +1224,23 @@ _ARTICLES = frozenset({"a", "an", "the"})
 # next to the fronting transform) because the split guards run before it in the file; the
 # test below asserts the two stay in sync.
 _FRONTABLE_LEADS = frozenset(
-    {"because", "when", "while", "since", "if", "although", "though", "unless",
-     "after", "before", "whereas", "whenever", "wherever", "as", "until"}
+    {
+        "because",
+        "when",
+        "while",
+        "since",
+        "if",
+        "although",
+        "though",
+        "unless",
+        "after",
+        "before",
+        "whereas",
+        "whenever",
+        "wherever",
+        "as",
+        "until",
+    }
 )
 
 # Fewest words either half of a split may have. A discourse marker is one or two words, so
@@ -969,16 +1265,33 @@ def _content_word_count(words: list[str]) -> int:
     text = " ".join(words)
     marker = _ANY_LEADING_MARKER_RE.match(text)
     if marker:
-        text = text[marker.end():]
+        text = text[marker.end() :]
     return len(text.split())
+
 
 # Words that open a subordinate clause, so a half ENDING inside one is a fragment. Wider than
 # `_LEADING_SUBORDINATOR_RE`, which governs a different decision (whether two sentences can be
 # merged) and was measured for that; "if" is absent there and is the one that produced this bug.
-_SUBORDINATORS = frozenset({
-    "if", "when", "whenever", "unless", "although", "though", "because", "since", "while",
-    "whereas", "whether", "after", "before", "until", "once", "as",
-})
+_SUBORDINATORS = frozenset(
+    {
+        "if",
+        "when",
+        "whenever",
+        "unless",
+        "although",
+        "though",
+        "because",
+        "since",
+        "while",
+        "whereas",
+        "whether",
+        "after",
+        "before",
+        "until",
+        "once",
+        "as",
+    }
+)
 # The subset that opens a clause wherever it appears, not only at the head of a segment. Needed
 # because the subordinator is often buried: "this means THAT IF we only had HD channels," splits
 # into a fragment while its segment begins with an innocent "this".
@@ -987,9 +1300,19 @@ _SUBORDINATORS = frozenset({
 # are prepositions at least as often as they are subordinators — "as many HD channels as we have",
 # "before deployment" — so testing for them anywhere would reject correct splits. They stay in the
 # head-of-segment check above, where they are unambiguous.
-_CLAUSE_OPENERS_ANYWHERE = frozenset({
-    "if", "when", "whenever", "unless", "although", "though", "because", "whereas", "whether",
-})
+_CLAUSE_OPENERS_ANYWHERE = frozenset(
+    {
+        "if",
+        "when",
+        "whenever",
+        "unless",
+        "although",
+        "though",
+        "because",
+        "whereas",
+        "whether",
+    }
+)
 # A split half may end on a coordinator plus a subordinate clause — "..., so if we only had X" —
 # and the coordinator must be stepped over to see the subordinator behind it.
 _LEADING_COORDINATORS = frozenset({"so", "and", "but", "or", "yet", "for"})
@@ -1143,15 +1466,15 @@ def _semicolons_to_periods(text: str) -> str:
     out: list[str] = []
     pos = 0
     for m in _SEMICOLON_RE.finditer(text):
-        left = text[pos:m.start()]
-        right = text[m.end():]
+        left = text[pos : m.start()]
+        right = text[m.end() :]
         if _inside_brackets(text, m.start()) or _cannot_start_a_sentence(right, left):
-            out.append(text[pos:m.end()])   # leave the semicolon exactly as it was
+            out.append(text[pos : m.end()])  # leave the semicolon exactly as it was
         else:
             out.append(left + ". ")
             # Capitalise the clause the break exposes; nothing else in the pipeline does it here.
             if right[:1].islower():
-                text = text[:m.end()] + right[0].upper() + right[1:]
+                text = text[: m.end()] + right[0].upper() + right[1:]
         pos = m.end()
     out.append(text[pos:])
     return "".join(out)
@@ -1195,12 +1518,18 @@ def _looks_like_a_serial_list(words: list[str]) -> bool:
     return sum(1 for w in words if w.endswith(",")) >= 3
 
 
-def _split_long_sentences(sentences: list[str], max_words: int = 28, rate: float = 0.25) -> list[str]:
+def _split_long_sentences(
+    sentences: list[str], max_words: int = 28, rate: float = 0.25
+) -> list[str]:
     """Split sentences longer than ``max_words`` words at a suitable break point."""
     out: list[str] = []
     for s in sentences:
         words = s.split()
-        if len(words) > max_words and random.random() < rate and not _looks_like_a_serial_list(words):
+        if (
+            len(words) > max_words
+            and random.random() < rate
+            and not _looks_like_a_serial_list(words)
+        ):
             # Find a good split: after a comma. There is no "natural midpoint" — a word boundary
             # chosen by counting is a clause boundary only by luck.
             mid = len(words) // 2
@@ -1239,7 +1568,7 @@ def _split_long_sentences(sentences: list[str], max_words: int = 28, rate: float
                         # `_split_one` already checks this inside its search; this copy had the
                         # identical divergence and the failed-split counts proved it.
                         and not _cannot_start_a_sentence(
-                            " ".join(words[pos + 1:]), " ".join(words[:pos + 1])
+                            " ".join(words[pos + 1 :]), " ".join(words[: pos + 1])
                         )
                     ):
                         split_at = pos + 1
@@ -1293,7 +1622,9 @@ def _split_long_sentences(sentences: list[str], max_words: int = 28, rate: float
                 if _cannot_start_a_sentence(second, first) or _orphans_a_subordinate_clause(first):
                     out.append(_terminated(f"{first}, {second}"))
                 else:
-                    out.append(f"{_terminated(first)} {_terminated(second[0].upper() + second[1:])}")
+                    out.append(
+                        f"{_terminated(first)} {_terminated(second[0].upper() + second[1:])}"
+                    )
             else:
                 out.append(s)
         else:
@@ -1320,8 +1651,8 @@ def _flatten_participial_trailers(text: str) -> str:
         present = _PARTICIPIAL_VERBS.get(verb_ing, verb_ing.rstrip("ing") + "s")
         # Everything after the participial verb, sliced by the match's own group offsets so any amount
         # of whitespace (", underscoring", ",  underscoring", ",\nunderscoring") is handled correctly.
-        after = m.group(0)[m.end(1) - m.start(0):]  # " its importance." — keeps the leading space
-        after = after.rstrip(".!?")                 # drop the trailing terminator, keep leading space
+        after = m.group(0)[m.end(1) - m.start(0) :]  # " its importance." — keeps the leading space
+        after = after.rstrip(".!?")  # drop the trailing terminator, keep leading space
         # Avoid the subject used last time, so consecutive flattenings never share an opener. Chosen
         # at random among the rest rather than round-robin: a fixed rotation is its own pattern, and
         # best-of-N draws would otherwise all agree.
@@ -1335,6 +1666,7 @@ def _flatten_participial_trailers(text: str) -> str:
 
 def _flatten_negated_contrast(text: str) -> str:
     """Convert 'It's not X, it's Y' → 'It's Y' preserving the positive statement."""
+
     def _replace(m: re.Match) -> str:
         full = m.group(0)
         lower = full.lower()
@@ -1345,7 +1677,7 @@ def _flatten_negated_contrast(text: str) -> str:
         if ("it's not" in lower or "it is not" in lower) and ("it's" in lower or "it is" in lower):
             head = "it's" if "it's" in lower else "it is"
             idx = lower.rindex(head)
-            after = full[idx + len(head):].strip().strip(".,;!?")
+            after = full[idx + len(head) :].strip().strip(".,;!?")
             return f"{head.capitalize()} {after}."
 
         if "not only" in full.lower() and "but also" in full.lower():
@@ -1360,7 +1692,7 @@ def _flatten_negated_contrast(text: str) -> str:
             # flattening: "It's faster and cheaper to run."
             lower = full.lower()
             start = lower.index("not only") + len("not only")
-            x = full[start:lower.rindex("but also")].strip().rstrip(",").strip()
+            x = full[start : lower.rindex("but also")].strip().rstrip(",").strip()
             return f"{x} and" if x else full
 
         if "isn't about" in full.lower():
@@ -1430,6 +1762,7 @@ def _inject_contractions(text: str, rate: float = 1.0) -> str:
         remaining = 1
 
     for pat, repl in _CONTRACTIONS:
+
         def _sub(m: re.Match, _repl: str = repl) -> str:
             nonlocal remaining
             if remaining <= 0:
@@ -1509,6 +1842,7 @@ def _strip_meta_closers(text: str) -> str:
 def _strip_filler_openers(text: str) -> str:
     """Remove low-content AI scaffolding openers ("It is worth noting that ...") and keep the clause,
     re-capitalizing the sentence start that the strip exposes."""
+
     # Capitalise ONLY the clause each strip exposes — never the whole text. The previous
     # implementation ran `re.sub(r"(^|[.!?]\s+)([a-z])", ...)` over the entire string after the
     # strip, which capitalises any lowercase word following ANY sentence-ending punctuation. That
@@ -1532,9 +1866,7 @@ def _strip_filler_openers(text: str) -> str:
 from untell.scripts.preserve import SENTINEL_RE as _SENTINEL_SPAN_RE  # noqa: E402
 
 
-def _plain_register(
-    text: str, intensity: float = 1.0, *, spent: set[str] | None = None
-) -> str:
+def _plain_register(text: str, intensity: float = 1.0, *, spent: set[str] | None = None) -> str:
     """Swap formal / AI-inflected vocabulary for the words people actually use.
 
     A 180-entry formal->plain map already existed, but only the *surgical* rewriter used it, ranked
@@ -1645,7 +1977,7 @@ def _plain_register(
         # before it (the third example has none) but the word after it: a letter means the next
         # token is what "overall" is modifying, and an adverb phrase cannot modify a noun.
         if word.lower() in _ADVERB_SLOT_ONLY:
-            after = (tail or masked[m.end():]).lstrip(" \t")
+            after = (tail or masked[m.end() :]).lstrip(" \t")
             if after[:1].isalpha():
                 return m.group(0)
         # Prefer an option this text has not used yet; fall back to the full list when every option
@@ -1659,7 +1991,7 @@ def _plain_register(
         # same latent bug already. Rather than reorder the object, which needs to know where the
         # object ends, decline and let another option or another pass handle the word.
         if " " in choice and choice.rsplit(" ", 1)[-1].lower() in _SEPARABLE_PARTICLES:
-            after = masked[m.end():].lstrip()
+            after = masked[m.end() :].lstrip()
             if after.split()[:1] and after.split()[0].strip(",.;:").lower() in _PRONOUN_OBJECTS:
                 plain = [o for o in (fresh or options) if " " not in o]
                 if not plain:
@@ -1678,7 +2010,7 @@ def _plain_register(
             # The preposition is usually already inside `tail` — the match pattern captures a
             # following particle as group(3) precisely so this pass can see it — but it is only
             # captured for the particles in that list, so fall back to the next word otherwise.
-            after = (tail or masked[m.end():]).lstrip()
+            after = (tail or masked[m.end() :]).lstrip()
             next_word = after.split()[0].strip(",.;:").lower() if after.split() else ""
             if next_word in _PREPOSITION_BOUND[word.lower()]:
                 return m.group(0)
@@ -1687,8 +2019,12 @@ def _plain_register(
         # same slot and are what the swap should use there.
         postmod = _POSTMODIFIER_ONLY.get(word.lower())
         if postmod:
-            following = (tail or masked[m.end():]).lstrip().split()
-            if following and following[0][:1].isalpha() and not _premodifies_a_comparative(following):
+            following = (tail or masked[m.end() :]).lstrip().split()
+            if (
+                following
+                and following[0][:1].isalpha()
+                and not _premodifies_a_comparative(following)
+            ):
                 usable = [o for o in (fresh or options) if o.lower() not in postmod]
                 if not usable:
                     return m.group(0)
@@ -1696,7 +2032,7 @@ def _plain_register(
         # The headword is followed by a comma and some substitutes cannot precede one — see
         # `_COMMA_UNSAFE`.
         comma_unsafe = _COMMA_UNSAFE.get(word.lower())
-        if comma_unsafe and (tail or masked[m.end():]).lstrip(" \t").startswith(","):
+        if comma_unsafe and (tail or masked[m.end() :]).lstrip(" \t").startswith(","):
             usable = [o for o in (fresh or options) if o.lower() not in comma_unsafe]
             if not usable:
                 return m.group(0)
@@ -1707,7 +2043,7 @@ def _plain_register(
         always = _GERUND_UNSAFE.get(word.lower(), frozenset())
         with_object = _GERUND_OBJECT_UNSAFE.get(word.lower(), frozenset())
         if always or with_object:
-            following = (tail or masked[m.end():]).lstrip().split()
+            following = (tail or masked[m.end() :]).lstrip().split()
             next_word = following[0].strip(",.;:") if following else ""
             if next_word.lower().endswith("ing") and len(next_word) > 4:
                 unsafe = always | (
@@ -1749,9 +2085,7 @@ def _plain_register(
     # table's "cutting-edge" / "state-of-the-art" entries are reachable here too. The optional
     # groups around it are the preceding article and the following particle, matched here so _swap
     # can re-agree the one and drop the other when the replacement already supplies it.
-    masked = re.sub(
-        _ARTICLE + r"([A-Za-z]+(?:-[A-Za-z]+)*)" + _DUP_PARTICLE_TAIL, _swap, masked
-    )
+    masked = re.sub(_ARTICLE + r"([A-Za-z]+(?:-[A-Za-z]+)*)" + _DUP_PARTICLE_TAIL, _swap, masked)
     return re.sub(r"\x00(\d+)\x00", lambda m: spans[int(m.group(1))], masked)
 
 
@@ -1791,7 +2125,10 @@ _CLICHE_FLATTEN: list[tuple[re.Pattern, str]] = [
         re.compile(r"\bplays?\s+an?\s+(?:crucial|pivotal|vital|key|central)\s+role\s+in\b", re.I),
         "is central to",
     ),
-    (re.compile(r"\bplays?\s+an?\s+(?:crucial|pivotal|vital|key|central)\s+role\b", re.I), "matters"),
+    (
+        re.compile(r"\bplays?\s+an?\s+(?:crucial|pivotal|vital|key|central)\s+role\b", re.I),
+        "matters",
+    ),
     (re.compile(r"\bwhen\s+it\s+comes\s+to\b", re.IGNORECASE), "for"),
     # "in the end", not "ultimately": "ultimately" is a catalogued formulaic_transition, so the
     # flatten swapped a `cliche` hit for a transition hit and the tell count did not move. Unlike
@@ -2035,8 +2372,21 @@ def _flatten_vague_attribution(text: str) -> str:
 # comparative) and fronting the comparative one changes the reading, while "so" trailing is usually
 # a result coordinator ("... , so we adopted it"), which cannot front at all.
 _FRONTABLE = (
-    "because", "when", "while", "since", "if", "although", "though", "unless",
-    "after", "before", "whereas", "whenever", "wherever", "even though", "even if",
+    "because",
+    "when",
+    "while",
+    "since",
+    "if",
+    "although",
+    "though",
+    "unless",
+    "after",
+    "before",
+    "whereas",
+    "whenever",
+    "wherever",
+    "even though",
+    "even if",
 )
 _FRONTABLE_RE = re.compile(
     # ReDoS fix: `.{20,}?` without a trailing `\S` created O(n²) backtracking.
@@ -2087,7 +2437,8 @@ def _front_subordinate_clauses(sentences: list[str], rate: float = 0.0) -> list[
     # the O(n²) worst-case of _FRONTABLE_RE even as defense-in-depth against future pattern edits.
     _FRONTABLE_MAX_CHARS = 2000
     eligible = [
-        s for s in sentences
+        s
+        for s in sentences
         if len(s) <= _FRONTABLE_MAX_CHARS and _FRONTABLE_RE.match(s.strip().rstrip())
     ]
     if not eligible:
@@ -2110,12 +2461,16 @@ def _front_subordinate_clauses(sentences: list[str], rate: float = 0.0) -> list[
     out: list[str] = []
     for s in sentences:
         stripped = s.strip()
-        m = _FRONTABLE_RE.match(stripped.rstrip()) if (budget > 0 and len(stripped) <= _FRONTABLE_MAX_CHARS) else None
+        m = (
+            _FRONTABLE_RE.match(stripped.rstrip())
+            if (budget > 0 and len(stripped) <= _FRONTABLE_MAX_CHARS)
+            else None
+        )
         if (
             not m
             or random.random() >= rate
             or stripped.endswith(("?", "!"))
-            or "," in m.group("dep")            # multi-clause tail: not a clean two-part sentence
+            or "," in m.group("dep")  # multi-clause tail: not a clean two-part sentence
             or sum(stripped.lower().count(f" {w} ") for w in _FRONTABLE) != 1
         ):
             out.append(s)
@@ -2269,11 +2624,44 @@ _GERUND_OBJECT_UNSAFE: dict[str, frozenset[str]] = {
 # Words that can follow a gerund WITHOUT being its object: prepositions, conjunctions, and the
 # clause-level words that end the phrase. Anything else after the gerund is a noun phrase, which is
 # what makes the passive "needs X-ing" reading impossible.
-_NOT_AN_OBJECT = frozenset({
-    "before", "after", "under", "over", "with", "without", "for", "from", "into", "onto", "than",
-    "at", "by", "in", "on", "to", "of", "as", "and", "or", "but", "so", "because", "when", "while",
-    "if", "unless", "though", "although", "during", "across", "through", "within", "between",
-})
+_NOT_AN_OBJECT = frozenset(
+    {
+        "before",
+        "after",
+        "under",
+        "over",
+        "with",
+        "without",
+        "for",
+        "from",
+        "into",
+        "onto",
+        "than",
+        "at",
+        "by",
+        "in",
+        "on",
+        "to",
+        "of",
+        "as",
+        "and",
+        "or",
+        "but",
+        "so",
+        "because",
+        "when",
+        "while",
+        "if",
+        "unless",
+        "though",
+        "although",
+        "during",
+        "across",
+        "through",
+        "within",
+        "between",
+    }
+)
 
 # Substitutes that cannot stand in front of the comma the headword is already carrying.
 #
@@ -2322,6 +2710,7 @@ def _premodifies_a_comparative(following: list[str]) -> bool:
         return False
     word = following[0].strip(",.;:!?()").lower()
     return word in _COMPARATIVES or (len(word) > 4 and word.endswith("er"))
+
 
 # Particles that end a separable phrasal verb. A substitute ending in one cannot be followed
 # directly by a pronoun object: "put it to work", not "put to work it".
@@ -2431,9 +2820,11 @@ def _vary_openers(
     #
     # Every entry is screened against score_tells and _TRANSITIONS_RE, so none is a catalogued tell
     # and none would be deleted by the stripper that runs later.
-    openers = list(_OPENERS) if conversational else [
-        o for o in _OPENERS if o not in _CONVERSATIONAL_OPENERS
-    ]
+    openers = (
+        list(_OPENERS)
+        if conversational
+        else [o for o in _OPENERS if o not in _CONVERSATIONAL_OPENERS]
+    )
     context = " ".join(sentences)
     # Openers already spent in this text. Picking independently from an 8-item pool at ~0.3 rate
     # means a long passage reuses one: MEASURED over 60 RAID+HC3 texts, "Looking at this," was the
@@ -2711,11 +3102,11 @@ def _split_one(s: str) -> list[str] | None:
                 # after it closes, so no clause inside can stand alone however well-formed it looks.
                 and not _split_lands_inside_brackets(words, pos + 1)
                 and not _cannot_start_a_sentence(
-                    " ".join(words[pos + 1:]), " ".join(words[:pos + 1])
+                    " ".join(words[pos + 1 :]), " ".join(words[: pos + 1])
                 )
                 # The same question asked of the other half. The guard above rejects a right side
                 # that cannot open a clause; this rejects a left side that cannot close one.
-                and not _orphans_a_subordinate_clause(" ".join(words[:pos + 1]))
+                and not _orphans_a_subordinate_clause(" ".join(words[: pos + 1]))
             ):
                 best = pos + 1
                 break
@@ -2803,7 +3194,9 @@ def _merge_pair(sents: list[str], j: int) -> list[str]:
     return sents[:j] + [f"{a}, and {b}"] + sents[j + 2 :]
 
 
-def _target_burstiness(sentences: list[str], target_cv: float = 0.45, max_moves: int = 12) -> list[str]:
+def _target_burstiness(
+    sentences: list[str], target_cv: float = 0.45, max_moves: int = 12
+) -> list[str]:
     """Raise sentence-length variance toward the human range (CV ~0.45-0.55; AI sits ~0.3).
 
     ``target_cv`` is register-dependent and comes from the style profile. MEASURED coefficient of
@@ -2882,7 +3275,10 @@ def _target_burstiness(sentences: list[str], target_cv: float = 0.45, max_moves:
 # rather than adding transforms: shorter sentences for minimalist and blunt, more connective
 # variation for conversational, longer flowing sentences for storytelling.
 _NEUTRAL = {
-    "contractions": True, "register": 1.0, "sentences": 1.0, "openers": 1.0,
+    "contractions": True,
+    "register": 1.0,
+    "sentences": 1.0,
+    "openers": 1.0,
     # Sentence-length CV to aim at. 0.45 is the previous fixed value and tracks the measured
     # conversational human 0.480. Only "academic" lowers it, to the measured academic 0.352 —
     # the evidence is RAID paper abstracts, so it is not extended to professional/technical
@@ -2909,29 +3305,45 @@ _NEUTRAL = {
 }
 
 _STYLE_PROFILES: dict[str, dict] = {
-    "casual":        {"contractions": True,  "register": 1.0,  "sentences": 1.0, "openers": 1.2},
-    "conversational": {"contractions": True, "register": 1.0,  "sentences": 1.1, "openers": 1.5},
-    "blunt":         {"contractions": True,  "register": 1.0,  "sentences": 1.6, "openers": 0.0},
-    "storytelling":  {"contractions": True,  "register": 0.8,  "sentences": 0.5, "openers": 1.0},
-    "humorous":      {"contractions": True,  "register": 0.9,  "sentences": 1.0, "openers": 1.3},
-    "journalistic":  {"contractions": False, "register": 0.8,  "sentences": 1.3, "openers": 0.5},
-    "persuasive":    {"contractions": True,  "register": 0.7,  "sentences": 1.0, "openers": 1.0},
-    "empathetic":    {"contractions": True,  "register": 0.8,  "sentences": 0.8, "openers": 1.0},
-    "instructional": {"contractions": True,  "register": 0.8,  "sentences": 1.3, "openers": 0.6},
-    "minimalist":    {"contractions": True,  "register": 1.0,  "sentences": 1.8, "openers": 0.0},
+    "casual": {"contractions": True, "register": 1.0, "sentences": 1.0, "openers": 1.2},
+    "conversational": {"contractions": True, "register": 1.0, "sentences": 1.1, "openers": 1.5},
+    "blunt": {"contractions": True, "register": 1.0, "sentences": 1.6, "openers": 0.0},
+    "storytelling": {"contractions": True, "register": 0.8, "sentences": 0.5, "openers": 1.0},
+    "humorous": {"contractions": True, "register": 0.9, "sentences": 1.0, "openers": 1.3},
+    "journalistic": {"contractions": False, "register": 0.8, "sentences": 1.3, "openers": 0.5},
+    "persuasive": {"contractions": True, "register": 0.7, "sentences": 1.0, "openers": 1.0},
+    "empathetic": {"contractions": True, "register": 0.8, "sentences": 0.8, "openers": 1.0},
+    "instructional": {"contractions": True, "register": 0.8, "sentences": 1.3, "openers": 0.6},
+    "minimalist": {"contractions": True, "register": 1.0, "sentences": 1.8, "openers": 0.0},
     # Formal registers: contractions OFF and the plain-word swap held back, because "utilize" ->
     # "use" is the right move for casual prose and the wrong one for a paper.
     # "academic" alone carries the transition exemption. The evidence is RAID paper abstracts,
     # so it is claimed for academic prose and NOT extended to professional/technical, where the
     # same direction is plausible but unmeasured.
-    "academic":      {"contractions": False, "register": 0.15, "sentences": 0.7, "openers": 0.4,
-                      "keep_transitions": _ACADEMIC_HUMAN_TRANSITIONS, "burstiness": 0.35,
-                      "conversational_openers": False},
-    "professional":  {"contractions": False, "register": 0.4,  "sentences": 1.0, "openers": 0.6,
-                      "conversational_openers": False},
-    "technical":     {"contractions": False, "register": 0.3,  "sentences": 1.2, "openers": 0.3,
-                      "conversational_openers": False},
-    "poetic":        {"contractions": True,  "register": 0.5,  "sentences": 0.6, "openers": 0.8},
+    "academic": {
+        "contractions": False,
+        "register": 0.15,
+        "sentences": 0.7,
+        "openers": 0.4,
+        "keep_transitions": _ACADEMIC_HUMAN_TRANSITIONS,
+        "burstiness": 0.35,
+        "conversational_openers": False,
+    },
+    "professional": {
+        "contractions": False,
+        "register": 0.4,
+        "sentences": 1.0,
+        "openers": 0.6,
+        "conversational_openers": False,
+    },
+    "technical": {
+        "contractions": False,
+        "register": 0.3,
+        "sentences": 1.2,
+        "openers": 0.3,
+        "conversational_openers": False,
+    },
+    "poetic": {"contractions": True, "register": 0.5, "sentences": 0.6, "openers": 0.8},
 }
 
 
@@ -3027,16 +3439,19 @@ _SIGNAL_RULES: dict[str, tuple[object, object]] = {
     ),
     "vocab_homogeneity": (
         _detect_vocab_homogeneity,
-        lambda text: _vary_openers(
-            _split_sentences(text), rate=0.5, spent=set(), seen={}
-        ),
+        lambda text: _vary_openers(_split_sentences(text), rate=0.5, spent=set(), seen={}),
     ),
 }
 
 NAMED_SIGNALS = frozenset(_SIGNAL_RULES)
 _SIGNAL_ORDER = (
-    "cliche", "filler", "formulaic_transition", "formality_register",
-    "hedging", "sentence_uniformity", "vocab_homogeneity",
+    "cliche",
+    "filler",
+    "formulaic_transition",
+    "formality_register",
+    "hedging",
+    "sentence_uniformity",
+    "vocab_homogeneity",
 )
 
 
@@ -3064,7 +3479,10 @@ def rewrite_named_signals(text: str, signals: set[str] | None) -> str:
 
 
 def structural_rewrite(
-    text: str, intensity: float = 0.5, seed: int | None = None, style: str | None = None,
+    text: str,
+    intensity: float = 0.5,
+    seed: int | None = None,
+    style: str | None = None,
     signals: set[str] | None = None,
 ) -> str:
     """Run the full structural rewrite pipeline. ``intensity`` in [0, 1].
@@ -3402,7 +3820,10 @@ class StructuralRewriter(Rewriter):
         return True
 
     def rewrite(
-        self, text: str, score_result: dict, threshold: float = 0.30,
+        self,
+        text: str,
+        score_result: dict,
+        threshold: float = 0.30,
         intensity: float | None = None,
     ) -> str:
         """``intensity`` overrides the configured value for this call only.

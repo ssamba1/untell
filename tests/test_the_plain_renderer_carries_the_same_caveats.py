@@ -18,6 +18,7 @@ verdict, and no tell counts. All three were in the result dict the renderer was 
 The meaning-gate warning was already there, which is what made the omission easy to miss: the
 page looked like it warned about things.
 """
+
 from __future__ import annotations
 
 import pytest
@@ -51,7 +52,9 @@ def test_the_tell_counts_are_shown():
 
 
 def test_the_score_warning_is_shown():
-    out = _render(_result(warning="lite tier on the stdlib path. Weak evidence in both directions."))
+    out = _render(
+        _result(warning="lite tier on the stdlib path. Weak evidence in both directions.")
+    )
     assert "stdlib path" in out, out
     assert "NOTE" in out, "the caveat needs a label, or it reads as part of the result"
 
@@ -139,6 +142,4 @@ def test_neither_renderer_invents_a_caveat():
 def test_both_renderers_show_the_tell_counts():
     """The other half of the parity claim, also by rendering."""
     plain = _run_renderer(rich=False, warning=None)
-    assert "AI tells: 5 -> 0" in plain, (
-        f"the plain renderer shows no tell counts: {plain!r}"
-    )
+    assert "AI tells: 5 -> 0" in plain, f"the plain renderer shows no tell counts: {plain!r}"

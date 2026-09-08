@@ -23,7 +23,13 @@ PYPROJECT = (REPO / "pyproject.toml").read_text(encoding="utf-8")
 
 def _tracked(prefix: str) -> list[str]:
     out = subprocess.run(
-        ["git", "ls-files", prefix], cwd=REPO, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=120
+        ["git", "ls-files", prefix],
+        cwd=REPO,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=120,
     )
     return [line.strip() for line in out.stdout.splitlines() if line.strip()]
 
@@ -70,9 +76,7 @@ def test_declared_globs_all_match_something() -> None:
 def _declared_scripts() -> dict[str, str]:
     block = PYPROJECT[PYPROJECT.index("[project.scripts]") :]
     end = block.find("\n[", 1)
-    return dict(
-        re.findall(r'^([\w-]+)\s*=\s*"([^"]+)"', block[:end] if end != -1 else block, re.M)
-    )
+    return dict(re.findall(r'^([\w-]+)\s*=\s*"([^"]+)"', block[:end] if end != -1 else block, re.M))
 
 
 def test_every_console_script_resolves_to_a_callable() -> None:
@@ -120,7 +124,9 @@ def test_every_console_script_points_into_a_declared_package() -> None:
     """
     block = PYPROJECT[PYPROJECT.index("[project.scripts]") :]
     end = block.find("\n[", 1)
-    scripts = dict(re.findall(r'^([\w-]+)\s*=\s*"([^"]+)"', block[:end] if end != -1 else block, re.M))
+    scripts = dict(
+        re.findall(r'^([\w-]+)\s*=\s*"([^"]+)"', block[:end] if end != -1 else block, re.M)
+    )
 
     pkg_block = PYPROJECT[PYPROJECT.index("[tool.setuptools]") :]
     pkg_block = pkg_block[: pkg_block.index("[tool.setuptools.package-data]")]

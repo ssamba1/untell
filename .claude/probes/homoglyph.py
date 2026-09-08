@@ -1,5 +1,7 @@
 """homoglyph_substitute: rate respected, only confusable chars swapped, reversible."""
+
 import json, os
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
 from untell.attacks import homoglyph_substitute
 

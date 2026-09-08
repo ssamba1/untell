@@ -1,4 +1,5 @@
 """_bad_args: refusal semantics for each validation type."""
+
 import json
 from untell.mcp_server import _bad_args
 

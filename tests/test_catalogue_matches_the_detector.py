@@ -46,23 +46,69 @@ def _categories(text: str) -> set[str]:
 
 # (catalogue item, a textbook example of it, the category that must fire)
 DETECTED = [
-    ("em-dash", "The result — which nobody expected — changed everything about the plan.", "em_dash"),
-    ("delve vocabulary", "We delve into the rich tapestry of the evolving landscape today.", "ai_vocab"),
-    ("negated contrast", "It is not just a tool, it is a paradigm shift for everyone here.", "negated_contrast"),
-    ("participial trailer", "The team shipped the release, marking a pivotal moment for them.", "participial_trailer"),
-    ("vague attribution", "Studies show that research suggests experts believe this works.", "vague_attribution"),
-    ("formulaic transition", "Moreover, the plan works well. Furthermore, it scales to any size.", "formulaic_transition"),
-    ("sycophantic opener", "Certainly! Great question! Absolutely, I can help you with that.", "sycophancy"),
-    ("closing meta", "I hope this helps! Let me know if you need anything else today.", "meta_closer"),
-    ("inflated copula", "The building serves as a hub, represents a shift, and boasts more.", "inflated_copula"),
-    ("adverb opener", "Interestingly, it works well. Notably, it scales. Importantly, cheap.", "steering_opener"),
+    (
+        "em-dash",
+        "The result — which nobody expected — changed everything about the plan.",
+        "em_dash",
+    ),
+    (
+        "delve vocabulary",
+        "We delve into the rich tapestry of the evolving landscape today.",
+        "ai_vocab",
+    ),
+    (
+        "negated contrast",
+        "It is not just a tool, it is a paradigm shift for everyone here.",
+        "negated_contrast",
+    ),
+    (
+        "participial trailer",
+        "The team shipped the release, marking a pivotal moment for them.",
+        "participial_trailer",
+    ),
+    (
+        "vague attribution",
+        "Studies show that research suggests experts believe this works.",
+        "vague_attribution",
+    ),
+    (
+        "formulaic transition",
+        "Moreover, the plan works well. Furthermore, it scales to any size.",
+        "formulaic_transition",
+    ),
+    (
+        "sycophantic opener",
+        "Certainly! Great question! Absolutely, I can help you with that.",
+        "sycophancy",
+    ),
+    (
+        "closing meta",
+        "I hope this helps! Let me know if you need anything else today.",
+        "meta_closer",
+    ),
+    (
+        "inflated copula",
+        "The building serves as a hub, represents a shift, and boasts more.",
+        "inflated_copula",
+    ),
+    (
+        "adverb opener",
+        "Interestingly, it works well. Notably, it scales. Importantly, cheap.",
+        "steering_opener",
+    ),
     # The one this file fixed.
-    ("false range", "From ancient civilizations to modern startups, this pattern applies.", "false_range"),
+    (
+        "false range",
+        "From ancient civilizations to modern startups, this pattern applies.",
+        "false_range",
+    ),
 ]
 
 
 @pytest.mark.parametrize(("item", "example", "category"), DETECTED, ids=lambda x: str(x)[:20])
-def test_the_catalogues_example_fires_its_own_category(item: str, example: str, category: str) -> None:
+def test_the_catalogues_example_fires_its_own_category(
+    item: str, example: str, category: str
+) -> None:
     """Its OWN category, not merely some category. Half a dozen of these also trip `cliche` or
     `ai_vocab`, and an "any category fired" check would pass for a detector that is dead."""
     assert category in _categories(example), f"{item}: {sorted(_categories(example))}"

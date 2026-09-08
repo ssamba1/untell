@@ -75,7 +75,11 @@ class AnthropicRewriter:
         prompt = build_rewrite_prompt(text, score_result, threshold)
         resp = retry(
             self._client().messages.create,
-            kw={"model": self.model, "max_tokens": 2048, "messages": [{"role": "user", "content": prompt}]},
+            kw={
+                "model": self.model,
+                "max_tokens": 2048,
+                "messages": [{"role": "user", "content": prompt}],
+            },
             max_attempts=3,
         )
         # content is a list of blocks; concatenate the text blocks.

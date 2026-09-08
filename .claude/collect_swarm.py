@@ -15,6 +15,7 @@ Fleet pattern (audit_fleet.ps1 style) but run by the orchestrator:
 Usage:
     python .claude/collect_swarm.py --workers 8
 """
+
 from __future__ import annotations
 
 import argparse
@@ -28,11 +29,13 @@ QUEUE = ROOT / ".claude" / "human-queue.md"
 RECORDS = ROOT / ".claude" / "records"
 ROW = re.compile(r"^\|\s*(\d+)\s*\|\s*(L\d)\s*\|")
 
+
 def sh(*args: str, cwd: Path | None = None) -> str:
     r = subprocess.run(args, cwd=cwd or ROOT, capture_output=True, text=True)
     if r.returncode != 0:
         print(f"  !! {args[0]} rc={r.returncode}: {r.stderr.strip()[:300]}")
     return r.stdout.strip()
+
 
 def taken_numbers() -> set[int]:
     if not LOG.exists():
@@ -55,8 +58,12 @@ def taken_lines() -> set[str]:
     """
     if not LOG.exists():
         return set()
-    return {line.strip() for line in LOG.read_text(encoding="utf-8").splitlines()
-            if ROW.match(line.strip())}
+    return {
+        line.strip()
+        for line in LOG.read_text(encoding="utf-8").splitlines()
+        if ROW.match(line.strip())
+    }
+
 
 def next_free(n: int, taken: set[int]) -> int:
     while n in taken:
@@ -91,11 +98,15 @@ def classify_row(text: str, taken: set[int], seen: set[str]) -> tuple[str, bool]
     seen.add(new)
     return new, True
 
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--workers", type=int, default=8)
-    ap.add_argument("--merge-only", action="store_true",
-                    help="merge branches but do not append rows (rows stay queued)")
+    ap.add_argument(
+        "--merge-only",
+        action="store_true",
+        help="merge branches but do not append rows (rows stay queued)",
+    )
     a = ap.parse_args()
 
     taken = taken_numbers()
@@ -121,8 +132,12 @@ def main() -> int:
                 dest = RECORDS / rf.name
                 dest.write_text(rf.read_text(encoding="utf-8"), encoding="utf-8")
                 print(f"  swarm{i}: queued row {rf.name}")
-        r = subprocess.run(["git", "merge", "--no-ff", "--no-edit", branch],
-                           cwd=ROOT, capture_output=True, text=True)
+        r = subprocess.run(
+            ["git", "merge", "--no-ff", "--no-edit", branch],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+        )
         if r.returncode != 0:
             subprocess.run(["git", "merge", "--abort"], cwd=ROOT, capture_output=True)
             conflicted.append(branch)
@@ -161,16 +176,17 @@ def main() -> int:
     # 4. Push with retry: the concurrent main agent pushes every ~30s, so a
     # non-fast-forward rejection is the common case, not the exception.
     for attempt in range(5):
-        r = subprocess.run(["git", "push", "origin", "main"], cwd=ROOT,
-                           capture_output=True, text=True)
+        r = subprocess.run(
+            ["git", "push", "origin", "main"], cwd=ROOT, capture_output=True, text=True
+        )
         if r.returncode == 0:
             print("push ok")
             break
-        print(f"  push rejected (attempt {attempt+1}): {r.stderr.strip()[-200:]}")
-        subprocess.run(["git", "fetch", "origin", "main"], cwd=ROOT,
-                       capture_output=True, text=True)
-        rr = subprocess.run(["git", "merge", "origin/main", "--no-edit"], cwd=ROOT,
-                            capture_output=True, text=True)
+        print(f"  push rejected (attempt {attempt + 1}): {r.stderr.strip()[-200:]}")
+        subprocess.run(["git", "fetch", "origin", "main"], cwd=ROOT, capture_output=True, text=True)
+        rr = subprocess.run(
+            ["git", "merge", "origin/main", "--no-edit"], cwd=ROOT, capture_output=True, text=True
+        )
         if rr.returncode != 0:
             print("  merge of origin/main after rejected push FAILED, aborting")
             subprocess.run(["git", "merge", "--abort"], cwd=ROOT, capture_output=True)
@@ -178,11 +194,14 @@ def main() -> int:
 
     if conflicted:
         with QUEUE.open("a", encoding="utf-8") as f:
-            f.write(f"\n## fleet AMBER - swarm merge conflicts ({len(conflicted)})\n\n"
-                    f"WHAT   {', '.join(conflicted)} conflicted with main and were not merged.\n"
-                    "NEXT   merge by hand, or delete the branch if superseded.\n")
+            f.write(
+                f"\n## fleet AMBER - swarm merge conflicts ({len(conflicted)})\n\n"
+                f"WHAT   {', '.join(conflicted)} conflicted with main and were not merged.\n"
+                "NEXT   merge by hand, or delete the branch if superseded.\n"
+            )
     print("done")
     return 0
+
 
 if __name__ == "__main__":
     raise SystemExit(main())

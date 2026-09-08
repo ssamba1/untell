@@ -12,6 +12,7 @@ a fully-cached detector for the whole process. ``_snapshot_dir()`` retries
 cache-only on transport-class errors and only goes dead when nothing is on
 disk (issue #28).
 """
+
 import json
 import os
 import ssl
@@ -65,9 +66,11 @@ def test_transient_ssl_error_falls_back_to_cached_snapshot():
         raise ssl.SSLError("simulated TLS handshake failure")
 
     try:
-        with patch("huggingface_hub.snapshot_download", side_effect=flaky), \
-             patch("transformers.AutoTokenizer", _StubTok), \
-             patch("transformers.AutoModelForSequenceClassification", _StubModel):
+        with (
+            patch("huggingface_hub.snapshot_download", side_effect=flaky),
+            patch("transformers.AutoTokenizer", _StubTok),
+            patch("transformers.AutoModelForSequenceClassification", _StubModel),
+        ):
             mage.MageDetector()._load()
     finally:
         _reset_state()
@@ -84,9 +87,11 @@ def test_transient_reset_error_with_no_cache_still_goes_dead():
         raise ssl.SSLError("simulated TLS handshake failure")
 
     try:
-        with patch("huggingface_hub.snapshot_download", side_effect=dead_net), \
-             patch("transformers.AutoTokenizer", _StubTok), \
-             patch("transformers.AutoModelForSequenceClassification", _StubModel):
+        with (
+            patch("huggingface_hub.snapshot_download", side_effect=dead_net),
+            patch("transformers.AutoTokenizer", _StubTok),
+            patch("transformers.AutoModelForSequenceClassification", _StubModel),
+        ):
             with pytest.raises(ssl.SSLError):
                 mage.MageDetector().score("some text")
         assert mage.MageDetector._dead is True
@@ -108,9 +113,11 @@ def test_non_transport_error_does_not_retry_cache():
         raise RuntimeError("simulated config-level failure")
 
     try:
-        with patch("huggingface_hub.snapshot_download", side_effect=refused), \
-             patch("transformers.AutoTokenizer", _StubTok), \
-             patch("transformers.AutoModelForSequenceClassification", _StubModel):
+        with (
+            patch("huggingface_hub.snapshot_download", side_effect=refused),
+            patch("transformers.AutoTokenizer", _StubTok),
+            patch("transformers.AutoModelForSequenceClassification", _StubModel),
+        ):
             with pytest.raises(RuntimeError):
                 mage.MageDetector()._load()
     finally:

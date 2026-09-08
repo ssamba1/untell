@@ -64,6 +64,7 @@ def _worker(fn, q):
 
 # --- input builders ---------------------------------------------------------
 
+
 def _prose(words: int) -> str:
     sent = "The quick brown fox jumps over the lazy dog while the cat sleeps peacefully on the warm windowsill. "
     n = max(1, words // 12)
@@ -96,6 +97,7 @@ def _huge_table(rows: int, cols: int) -> str:
 
 
 # --- cases ------------------------------------------------------------------
+
 
 def c_score_1mb():
     from untell.scripts.score import score_text

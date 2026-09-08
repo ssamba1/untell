@@ -59,14 +59,26 @@ class TestASubstitutionDoesNotDoubleAParticle:
     """
 
     CASES = [
-        ("The team will navigate through the regulatory complexities.", "navigate", "work through",
-         "The team will work through the regulatory complexities."),
-        ("They are navigating through a difficult transition.", "navigating", "working through",
-         "They are working through a difficult transition."),
+        (
+            "The team will navigate through the regulatory complexities.",
+            "navigate",
+            "work through",
+            "The team will work through the regulatory complexities.",
+        ),
+        (
+            "They are navigating through a difficult transition.",
+            "navigating",
+            "working through",
+            "They are working through a difficult transition.",
+        ),
         # "a myriad of" is a quantifier FRAME, so the whole thing goes — see the class below.
         # Collapsing the doubled "of" alone would leave "a scores of options".
-        ("The report offers a myriad of options to weigh.", "myriad", "scores of",
-         "The report offers scores of options to weigh."),
+        (
+            "The report offers a myriad of options to weigh.",
+            "myriad",
+            "scores of",
+            "The report offers scores of options to weigh.",
+        ),
     ]
 
     @pytest.mark.parametrize(("sentence", "word", "rep", "expected"), CASES)
@@ -76,14 +88,14 @@ class TestASubstitutionDoesNotDoubleAParticle:
         assert substitute_once(sentence, word, rep) == expected
 
     def test_a_different_particle_is_kept(self):
-        """"embark on" -> "set out on": the replacement ends in "out", not "on"; nothing to drop."""
+        """ "embark on" -> "set out on": the replacement ends in "out", not "on"; nothing to drop."""
         from untell.attacks.word_importance import substitute_once
 
         out = substitute_once("The company will embark on a long programme.", "embark", "set out")
         assert out == "The company will set out on a long programme."
 
     def test_a_hyphenated_compound_is_not_a_duplicate(self):
-        """"the reason for for-profit companies": the second "for" starts a compound word."""
+        """ "the reason for for-profit companies": the second "for" starts a compound word."""
         from untell.attacks.word_importance import substitute_once
 
         out = substitute_once("The reason for for-profit firms is margin.", "reason", "case for")
@@ -121,8 +133,26 @@ class TestTheRegisterPassIntroducesNoGrammarFault:
     to the packaged corpora so it needs no download.
     """
 
-    PARTICLES = ("on", "into", "in", "up", "out", "of", "to", "for", "with", "at", "from", "off",
-                 "over", "through", "about", "by", "down", "across")
+    PARTICLES = (
+        "on",
+        "into",
+        "in",
+        "up",
+        "out",
+        "of",
+        "to",
+        "for",
+        "with",
+        "at",
+        "from",
+        "off",
+        "over",
+        "through",
+        "about",
+        "by",
+        "down",
+        "across",
+    )
 
     @staticmethod
     def _faults(text: str) -> dict:
@@ -136,7 +166,9 @@ class TestTheRegisterPassIntroducesNoGrammarFault:
                 if takes_an(w) != (a.lower() == "an")
             },
             "stranded_quantifier": set(
-                re.findall(r"\ban? (many|countless|lots|scores|plenty|several|numerous)\b", text, re.I)
+                re.findall(
+                    r"\ban? (many|countless|lots|scores|plenty|several|numerous)\b", text, re.I
+                )
             ),
             "doubled_particle": set(re.findall(rf"\b({particles})\s+\1\b", text, re.I)),
         }
@@ -180,13 +212,26 @@ class TestTheArticleAgreesWithTheReplacement:
     @pytest.mark.parametrize(
         ("sentence", "word", "rep", "expected"),
         [
-            ("They built an intricate system.", "intricate", "complex",
-             "They built a complex system."),
+            (
+                "They built an intricate system.",
+                "intricate",
+                "complex",
+                "They built a complex system.",
+            ),
             ("It was an innovative approach.", "innovative", "new", "It was a new approach."),
-            ("The team wrote a comprehensive report.", "comprehensive", "extensive",
-             "The team wrote an extensive report."),
+            (
+                "The team wrote a comprehensive report.",
+                "comprehensive",
+                "extensive",
+                "The team wrote an extensive report.",
+            ),
             # No article: nothing to correct.
-            ("They built intricate systems.", "intricate", "complex", "They built complex systems."),
+            (
+                "They built intricate systems.",
+                "intricate",
+                "complex",
+                "They built complex systems.",
+            ),
         ],
     )
     def test_the_article_is_corrected(self, sentence, word, rep, expected):
@@ -203,9 +248,17 @@ class TestTheArticleAgreesWithTheReplacement:
     @pytest.mark.parametrize(
         ("word", "expected"),
         [
-            ("hour", True), ("honest", True), ("heir", True),      # silent h -> "an"
-            ("university", False), ("unique", False), ("use", False), ("one", False),  # /j/, /w/
-            ("apple", True), ("elephant", True), ("system", False), ("complex", False),
+            ("hour", True),
+            ("honest", True),
+            ("heir", True),  # silent h -> "an"
+            ("university", False),
+            ("unique", False),
+            ("use", False),
+            ("one", False),  # /j/, /w/
+            ("apple", True),
+            ("elephant", True),
+            ("system", False),
+            ("complex", False),
         ],
     )
     def test_the_sound_rule_beats_the_letter_rule(self, word, expected):
@@ -239,11 +292,16 @@ class TestTheArticleAgreesWithTheReplacement:
             random.seed(seed)
             out = _plain_register(sentence, intensity=1.0)
             for article, following in re.findall(r"\b([Aa]n?)\s+(\S+)", out):
-                assert takes_an(following) == (article.lower() == "an"), (seed, article, following, out)
+                assert takes_an(following) == (article.lower() == "an"), (
+                    seed,
+                    article,
+                    following,
+                    out,
+                )
 
 
 class TestQuantifierFramesAreRewrittenWhole:
-    """"a myriad of X" carries its article and its "of" as part of the construction.
+    """ "a myriad of X" carries its article and its "of" as part of the construction.
 
     Swapping the middle token alone cannot be grammatical, and the table is single-token by design
     (a test above enforces it), so the frame has to be handled as a unit. MEASURED coming out of
@@ -273,7 +331,7 @@ class TestQuantifierFramesAreRewrittenWhole:
             assert " of of " not in out, (option, out)
 
     def test_a_count_quantifier_is_refused_on_a_mass_noun(self):
-        """"a plethora of evidence" -> "many evidence" is wrong for the same reason "many water"
+        """ "a plethora of evidence" -> "many evidence" is wrong for the same reason "many water"
         is. The frame hides it, because it reads naturally with count and mass heads alike."""
         from untell.attacks.word_importance import substitute_once
 
@@ -351,7 +409,8 @@ def test_surgical_substitute_scores_the_original_once(monkeypatch):
 
     monkeypatch.setattr(wi, "score_text", _spy)
     monkeypatch.setattr(
-        wi, "batch_score_texts",
+        wi,
+        "batch_score_texts",
         lambda texts, **kw: [{"max": 0.9, "mean": 0.9, "detectors": {"fake": 0.9}} for _ in texts],
     )
 
@@ -367,7 +426,8 @@ def test_importance_accepts_a_precomputed_base(monkeypatch):
 
     monkeypatch.setattr(wi, "score_text", _boom)
     monkeypatch.setattr(
-        wi, "batch_score_texts",
+        wi,
+        "batch_score_texts",
         lambda texts, **kw: [{"max": 0.5, "mean": 0.5, "detectors": {"fake": 0.5}} for _ in texts],
     )
     ranks = wi.importance("robust seamless delve utilize", tier="lite", base=0.8)
@@ -394,6 +454,7 @@ def test_surgical_substitute_lowers_or_holds_score():
 
 
 # --- unicode tricks ---
+
 
 def test_homoglyph_then_scrub_roundtrips_to_ascii():
     h = homoglyph_substitute("america cocoa", rate=1.0)  # replace every eligible letter
@@ -453,8 +514,15 @@ class TestScrubDoesWhatItsDocstringSays:
 
     @pytest.mark.parametrize(
         ("label", "space"),
-        [("NBSP", " "), ("narrow NBSP", " "), ("figure", " "),
-         ("en", " "), ("em", " "), ("hair", " "), ("ideographic", "　")],
+        [
+            ("NBSP", " "),
+            ("narrow NBSP", " "),
+            ("figure", " "),
+            ("en", " "),
+            ("em", " "),
+            ("hair", " "),
+            ("ideographic", "　"),
+        ],
     )
     def test_exotic_spaces_normalise_rather_than_disappear(self, label, space):
         """Width-encoded steganography uses exactly these. They are rewritten, not deleted, so the
@@ -470,7 +538,7 @@ def test_scrub_preserves_legitimate_unicode():
     # Regression: scrub must not corrupt legitimate Unicode (emoji ZWJ sequences, variation
     # selectors, superscripts) while still stripping watermark carriers.
     family = "\U0001f468‍\U0001f469‍\U0001f467‍\U0001f466"  # family emoji
-    assert scrub_hidden(family) == family                  # structural ZWJ kept
+    assert scrub_hidden(family) == family  # structural ZWJ kept
     assert scrub_hidden("❤️") == "❤️"  # heart keeps its VS16 emoji presentation
-    assert scrub_hidden("E=mc²") == "E=mc²"      # superscript survives (NFC, not NFKC)
-    assert scrub_hidden("wor‍ld") == "world"          # but an orphan ZWJ watermark is removed
+    assert scrub_hidden("E=mc²") == "E=mc²"  # superscript survives (NFC, not NFKC)
+    assert scrub_hidden("wor‍ld") == "world"  # but an orphan ZWJ watermark is removed

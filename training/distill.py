@@ -80,7 +80,9 @@ def distill(
         # keep it. A raw `similarity >= sim_bar` filter and the loop disagreed on exactly these
         # paraphrases, and this filter decides which examples enter the DISTILLATION SET.
         if not result.get("flagged") and meaning_preserved(src, result["final"], sim, sim_bar):
-            rows.append({"prompt": _PROMPT.format(text=src), "source": src, "humanized": result["final"]})
+            rows.append(
+                {"prompt": _PROMPT.format(text=src), "source": src, "humanized": result["final"]}
+            )
             kept += 1
     return {"kept": kept, "total": len(samples), "requested": n, "rows": rows}
 
@@ -96,20 +98,28 @@ def build_parser() -> argparse.ArgumentParser:
     # two gates deciding which samples enter the training set were unreachable from the command that
     # builds it.
     parser.add_argument(
-        "--threshold", "-t", type=float, default=0.30,
+        "--threshold",
+        "-t",
+        type=float,
+        default=0.30,
         help="max P(AI) a sample must reach to be kept (default 0.30)",
     )
     parser.add_argument(
-        "--margin", type=float, default=0.05,
+        "--margin",
+        type=float,
+        default=0.05,
         help="safety headroom below --threshold, so a borderline pass keeps iterating (default 0.05)",
     )
     parser.add_argument(
-        "--rewriter", default="composite",
+        "--rewriter",
+        default="composite",
         help="free no-key backend (default composite, matching `untell humanize`), or 'auto' for a "
         "hosted LLM if a key is set",
     )
     parser.add_argument(
-        "--best-of", type=int, default=3,
+        "--best-of",
+        type=int,
+        default=3,
         help="candidates per iteration (default 3, matching `untell humanize`). best-of-1 was "
         "measured at 33%% still flagged against 0%% at 3, and a sample the loop fails to clear is "
         "DISCARDED here, so a weak draw shrinks and biases the training set.",
@@ -140,8 +150,13 @@ def main(argv: list[str] | None = None) -> int:
     load_env()
 
     out = distill(
-        dataset=args.dataset, n=args.n, tier=args.tier, threshold=args.threshold,
-        margin=args.margin, rewriter=args.rewriter, best_of=args.best_of,
+        dataset=args.dataset,
+        n=args.n,
+        tier=args.tier,
+        threshold=args.threshold,
+        margin=args.margin,
+        rewriter=args.rewriter,
+        best_of=args.best_of,
     )
     import os
 

@@ -82,15 +82,18 @@ def test_the_rest_of_the_file_still_loads(tmp_path, monkeypatch, no_dotenv) -> N
     assert os.environ.get("TRAIL") == "sk-plain"
 
 
-@pytest.mark.parametrize("body,key,expected", [
-    ('K="quoted value"\n', "K", "quoted value"),
-    ("K='single quoted'\n", "K", "single quoted"),
-    ("K=bare\n", "K", "bare"),
-    ("K=bare # trailing comment\n", "K", "bare"),
-    ('K="keeps # inside quotes"\n', "K", "keeps # inside quotes"),
-    ("export K=exported\n", "K", "exported"),
-    ("K =  spaced  \n", "K", "spaced"),
-])
+@pytest.mark.parametrize(
+    "body,key,expected",
+    [
+        ('K="quoted value"\n', "K", "quoted value"),
+        ("K='single quoted'\n", "K", "single quoted"),
+        ("K=bare\n", "K", "bare"),
+        ("K=bare # trailing comment\n", "K", "bare"),
+        ('K="keeps # inside quotes"\n', "K", "keeps # inside quotes"),
+        ("export K=exported\n", "K", "exported"),
+        ("K =  spaced  \n", "K", "spaced"),
+    ],
+)
 def test_the_shapes_that_already_worked_still_work(
     body: str, key: str, expected: str, tmp_path, monkeypatch, no_dotenv
 ) -> None:

@@ -5,6 +5,7 @@ returns 2 — the same usage-error convention as argparse. The mutation 2 -> 3
 changes the exit code; the docstring documents the -h/--help fix history, so
 the exact code is part of the contract.
 """
+
 from untell.scripts.quality import main
 
 

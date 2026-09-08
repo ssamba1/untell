@@ -1,5 +1,7 @@
 """similarity invariants: symmetry, identity, empty, meaning-change detection."""
+
 import json, os
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
 from untell.scripts.quality import similarity, method
 

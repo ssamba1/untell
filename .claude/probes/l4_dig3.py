@@ -1,4 +1,5 @@
 import untell.rewriter.structural as S
+
 probes = [
     "The method converges, underscoring the importance of the result.",
     "The data was sparse, highlighting the gap in the literature.",

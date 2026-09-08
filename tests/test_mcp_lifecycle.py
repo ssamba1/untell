@@ -16,6 +16,7 @@ real JSON-RPC protocol through the mcp client SDK. Verified live in this slice:
   tool fn runs to completion — an SDK property documented in mcp_server._text_too_long —
   and the next call is correct either way).
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -62,7 +63,9 @@ async def _wire_tools(params) -> list[str]:
 
 def test_the_tools_advertised_over_the_wire_match_the_registry():
     async def _go():
-        params = _stdio_params(os.path.join(tempfile.gettempdir(), f"slice10_wire_{os.getpid()}.err"))
+        params = _stdio_params(
+            os.path.join(tempfile.gettempdir(), f"slice10_wire_{os.getpid()}.err")
+        )
         names = await _wire_tools(params)
         assert names == sorted(_TOOL_NAMES), (names, _TOOL_NAMES)
 
@@ -90,7 +93,10 @@ def test_disconnect_mid_call_leaves_no_traceback_and_the_next_session_works():
     if os.path.exists(err_path):
         os.remove(err_path)
     params = _stdio_params(err_path)
-    big = {"text": ("Furthermore, the system leverages robust methodologies. ") * 600, "tier": "lite"}
+    big = {
+        "text": ("Furthermore, the system leverages robust methodologies. ") * 600,
+        "tier": "lite",
+    }
 
     async def _go():
         try:
@@ -154,7 +160,10 @@ def test_cancel_mid_flight_leaves_the_server_answering_correctly():
     async def _go():
         srv = _server()
         await srv.call_tool("tells", {"text": TEXT})
-        big = {"text": ("Furthermore, the system leverages robust methodologies. ") * 600, "tier": "lite"}
+        big = {
+            "text": ("Furthermore, the system leverages robust methodologies. ") * 600,
+            "tier": "lite",
+        }
         task = asyncio.create_task(srv.call_tool("tells", big))
         await asyncio.sleep(0.05)
         task.cancel()

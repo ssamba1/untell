@@ -6,6 +6,7 @@ metric) and the model-absent path crashed `max(0.0, min(1.0, None))`. This pins
 both sides: a present model must yield the clamped cosine, an absent one must
 yield the token-overlap fallback without raising.
 """
+
 from unittest.mock import patch
 
 import untell.scripts.quality as quality

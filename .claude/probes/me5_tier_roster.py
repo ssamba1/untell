@@ -1,4 +1,5 @@
 """me5 pass probe: score_text tier resolution + roster note (live measurements)."""
+
 import json
 import os
 
@@ -21,20 +22,26 @@ def summarize(label, r):
     live = [k for k in dets if not k.endswith("__error")]
     nones = [k for k in live if r["detectors"][k] is None]
     warn = r.get("warning") or ""
-    roster = "ROSTER-NOTE" if ("ran without" in warn or "short roster" in warn) else "no-roster-note"
-    print(json.dumps({
-        "label": label,
-        "tier": r.get("tier"),
-        "tier_requested": r.get("tier_requested"),
-        "detector_keys": live,
-        "n_detectors": len([k for k in live if k not in nones]),
-        "n_none": len(nones),
-        "max": r.get("max"),
-        "flagged": r.get("flagged"),
-        "scored": r.get("scored", True),
-        roster: True,
-        "warning_head": warn[:160],
-    }))
+    roster = (
+        "ROSTER-NOTE" if ("ran without" in warn or "short roster" in warn) else "no-roster-note"
+    )
+    print(
+        json.dumps(
+            {
+                "label": label,
+                "tier": r.get("tier"),
+                "tier_requested": r.get("tier_requested"),
+                "detector_keys": live,
+                "n_detectors": len([k for k in live if k not in nones]),
+                "n_none": len(nones),
+                "max": r.get("max"),
+                "flagged": r.get("flagged"),
+                "scored": r.get("scored", True),
+                roster: True,
+                "warning_head": warn[:160],
+            }
+        )
+    )
 
 
 # PROBE 1: tier resolution

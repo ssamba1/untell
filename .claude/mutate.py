@@ -175,9 +175,9 @@ def pick_tests(path: Path, explicit: list[str]) -> list[str]:
     dotted = ".".join(path.relative_to(ROOT).with_suffix("").parts)
     package, name = dotted.rsplit(".", 1)
     patterns = (
-        dotted,                          # untell.scripts.scrub
+        dotted,  # untell.scripts.scrub
         f"from {package} import {name}",  # from untell.scripts import scrub
-        f"import {name}",                 # bare, for a conftest-style import
+        f"import {name}",  # bare, for a conftest-style import
     )
     return [
         str(t.relative_to(ROOT))
@@ -248,16 +248,22 @@ def main() -> int:
 
     tests = pick_tests(path, a.tests)
     if not tests:
-        sys.exit(f"REFUSED: no test file mentions '{path.stem}'. That IS the finding - "
-                 "record it as a coverage gap and write the first test.")
+        sys.exit(
+            f"REFUSED: no test file mentions '{path.stem}'. That IS the finding - "
+            "record it as a coverage gap and write the first test."
+        )
     print(f"module   {a.module}")
-    print(f"tests    {len(tests)} file(s): {', '.join(tests[:4])}{' ...' if len(tests) > 4 else ''}")
+    print(
+        f"tests    {len(tests)} file(s): {', '.join(tests[:4])}{' ...' if len(tests) > 4 else ''}"
+    )
     if len(tests) > 6:
         # Every mutant pays for the whole selection. A grep-wide match on a common word drags
         # in files that never exercise the module, and the pass runs out of hour before it
         # runs out of mutants.
-        print(f"WARNING  {len(tests)} test files is a lot to run {a.max} times. Consider "
-              f"--tests with the 2-3 that actually exercise this module.")
+        print(
+            f"WARNING  {len(tests)} test files is a lot to run {a.max} times. Consider "
+            f"--tests with the 2-3 that actually exercise this module."
+        )
 
     backup = Path(tempfile.gettempdir()) / f"{path.name}.mutate-backup"
     shutil.copy2(path, backup)
@@ -267,8 +273,10 @@ def main() -> int:
     try:
         ok, tail = run_tests(tests, a.timeout)
         if not ok:
-            sys.exit(f"REFUSED: the tests are already failing ({tail}). A mutant cannot be "
-                     "distinguished from a pre-existing failure. Fix the red first.")
+            sys.exit(
+                f"REFUSED: the tests are already failing ({tail}). A mutant cannot be "
+                "distinguished from a pre-existing failure. Fix the red first."
+            )
         print(f"baseline green: {tail}\n")
 
         sample = found if len(found) <= a.max else random.Random(a.seed).sample(found, a.max)
@@ -282,7 +290,9 @@ def main() -> int:
             path.write_text("".join(patched), encoding="utf-8")
             killed, tail = run_tests(tests, a.timeout)
             path.write_text(original, encoding="utf-8")
-            verdict = "TIMEOUT " if tail == "TIMEOUT" else ("killed  " if not killed else "SURVIVED")
+            verdict = (
+                "TIMEOUT " if tail == "TIMEOUT" else ("killed  " if not killed else "SURVIVED")
+            )
             print(f"[{i}/{len(sample)}] {verdict} {a.module}:{n}  {label}")
             if killed and tail != "TIMEOUT":
                 survivors.append((n, label, src.strip()))
@@ -292,11 +302,15 @@ def main() -> int:
             print(f"  SURVIVED {a.module}:{n}  {label}")
             print(f"           {src[:100]}")
         if survivors:
-            print("\nEach survivor is a line the suite does not pin. Write ONE test that fails "
-                  "against the mutation and passes against the original.")
+            print(
+                "\nEach survivor is a line the suite does not pin. Write ONE test that fails "
+                "against the mutation and passes against the original."
+            )
             if a.record:
-                print(f"recorded {record_survivors(a.module, survivors)} new survivor(s) in "
-                      f"{LEDGER.relative_to(ROOT)}")
+                print(
+                    f"recorded {record_survivors(a.module, survivors)} new survivor(s) in "
+                    f"{LEDGER.relative_to(ROOT)}"
+                )
         return 0
     finally:
         path.write_text(original, encoding="utf-8")

@@ -29,9 +29,11 @@ class TestFullLoopAcceptance:
         def _score(text, tier="lite", threshold=0.3):
             # source is flagged (0.5); candidates score 0.2 (not flagged)
             flagged = text == "source text"
-            return {"max": 0.5 if flagged else 0.2,
-                    "mean": 0.5 if flagged else 0.2,
-                    "flagged": flagged}
+            return {
+                "max": 0.5 if flagged else 0.2,
+                "mean": 0.5 if flagged else 0.2,
+                "flagged": flagged,
+            }
 
         def _sim(text, cand):
             # first candidate LOW similarity (rejected), second HIGH (accepted)
@@ -61,9 +63,11 @@ class TestAPILoopRewriterDispatch:
 
         def _score(text, tier="lite", threshold=0.3):
             flagged = text == "source text"
-            return {"max": 0.5 if flagged else 0.2,
-                    "mean": 0.5 if flagged else 0.2,
-                    "flagged": flagged}
+            return {
+                "max": 0.5 if flagged else 0.2,
+                "mean": 0.5 if flagged else 0.2,
+                "flagged": flagged,
+            }
 
         def _sim(text, cand):
             return 0.9

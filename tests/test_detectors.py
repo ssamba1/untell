@@ -76,8 +76,8 @@ def test_single_sentence_can_reach_below_the_threshold():
     sat on the decision boundary regardless of content. The lower range must be reachable."""
     plain = lite_score("Mitochondrial ribosomes synthesize hydrophobic peptides.")
     formulaic = lite_score("It is important to note that this is the best way to do the thing.")
-    assert plain < 0.30              # was pinned at exactly 0.30
-    assert formulaic > plain         # and the signal still discriminates on one sentence
+    assert plain < 0.30  # was pinned at exactly 0.30
+    assert formulaic > plain  # and the signal still discriminates on one sentence
 
 
 def test_ai_scores_higher_than_human_lite():
@@ -240,7 +240,9 @@ def test_full_gpt2_path_is_not_inverted_on_single_sentences():
 # A bland, predictable sentence in the HC3 register: zero AI tells, but exactly the kind of text
 # GPT-2 perplexity is good at. It is the case that exposed a regression where a 0.25 cap was
 # applied to the GPT-2 path as well as the lite one.
-_BLAND_AI_SENTENCE = "There are several factors that can affect the performance of a computer system."
+_BLAND_AI_SENTENCE = (
+    "There are several factors that can affect the performance of a computer system."
+)
 
 
 def test_bland_sentence_has_no_tells():
@@ -342,7 +344,9 @@ def test_long_document_scoring_is_stable_not_inflated():
     # asserting the heuristic is good, which it is not and does not claim to be.
     if det._torch_ready():
         for n, s in scores.items():
-            assert s < DEFAULT_THRESHOLD, f"{n} paragraphs of ordinary human prose flagged at {s:.3f}"
+            assert s < DEFAULT_THRESHOLD, (
+                f"{n} paragraphs of ordinary human prose flagged at {s:.3f}"
+            )
 
 
 class TestShortInputAbstentionIsPathIndependent:
@@ -366,9 +370,7 @@ class TestShortInputAbstentionIsPathIndependent:
 
         assert PerplexityBurstinessDetector().score(" ".join(["word"] * n)) is None
 
-    @pytest.mark.parametrize(
-        "text", ["Hi.", "The cat sat.", "Yes!", "No, never.", "Stop -- now."]
-    )
+    @pytest.mark.parametrize("text", ["Hi.", "The cat sat.", "Yes!", "No, never.", "Stop -- now."])
     def test_short_real_fragments_abstain(self, text):
         """Punctuation makes these several TOKENS but still fewer than five words, which is the
         gap the token-count guard left open."""
@@ -413,7 +415,9 @@ class TestWindowingCoversTextWithoutSentenceTerminators:
         "semicolon run-on": "; ".join(f"clause number {i} of the run-on" for i in range(200)),
         "one enormous sentence": " ".join(f"word{i}" for i in range(900)) + ".",
         "headings only": "\n".join(f"## Section {i} heading text" for i in range(200)),
-        "normal prose": " ".join(f"This is sentence number {i} with a few words." for i in range(120)),
+        "normal prose": " ".join(
+            f"This is sentence number {i} with a few words." for i in range(120)
+        ),
     }
 
     @pytest.mark.parametrize("label", sorted(SHAPES))
@@ -586,8 +590,11 @@ class TestLiteTierFalsePositiveRateIsDocumented:
         from pathlib import Path
 
         readme = Path(__file__).resolve().parents[1] / "README.md"
-        row = [ln for ln in readme.read_text(encoding="utf-8").splitlines()
-               if ln.startswith("| **lite**")]
+        row = [
+            ln
+            for ln in readme.read_text(encoding="utf-8").splitlines()
+            if ln.startswith("| **lite**")
+        ]
         assert row, "the lite tier row is missing from the README tier table"
         assert "65%" in row[0], "the measured human false-positive rate is not stated"
 

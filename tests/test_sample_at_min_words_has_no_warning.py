@@ -6,6 +6,7 @@ self-contradictory warning ("sample is 150 words; below 150 the profile...").
 The boundary is the point where the same-author signal becomes usable (per the
 module docstring), so exactly-150 is a valid sample.
 """
+
 from untell.scripts.voice import voice_report
 
 

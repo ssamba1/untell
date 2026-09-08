@@ -36,6 +36,7 @@ def _embedding_path(monkeypatch):
     """
     monkeypatch.delenv("UNTELL_LITE_NO_TORCH", raising=False)
 
+
 DOC = pathlib.Path("untell/references/thresholds.md").read_text(encoding="utf-8")
 
 
@@ -89,7 +90,9 @@ def test_the_check_can_fail() -> None:
     already appear elsewhere in the file, so a threshold drifting to either would have been reported
     as documented. Anchoring to the row that names the constant is what makes the check real.
     """
-    assert not _quotes_near("0.4321", "`threshold`"), "a number not on that row was reported present"
+    assert not _quotes_near("0.4321", "`threshold`"), (
+        "a number not on that row was reported present"
+    )
     assert _quotes_near("0.30", "`threshold`"), "the value on that row was reported absent"
     # The specific weakness that was found: `0.007` is in the file and would have satisfied a
     # whole-document check. It must not satisfy the anchored one.

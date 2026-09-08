@@ -1,5 +1,7 @@
 """Sweep: does ANY (doc, seed, rewriter) output differ across PYTHONHASHSEED?"""
+
 import json, os, hashlib, sys
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
 from untell.scripts.run import untell_text
 

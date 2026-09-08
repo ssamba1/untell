@@ -1,4 +1,5 @@
 import json, os
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
 from untell.text_split import aligned_chunks, CHUNK_WORDS
 
@@ -10,7 +11,9 @@ chunks = aligned_chunks(a, b)
 out["n_chunks"] = len(chunks)
 out["a_covered"] = sum(len(c[0].split()) for c in chunks)
 out["b_covered"] = sum(len(c[1].split()) for c in chunks)
-out["all_under_budget"] = all(len(c[0].split()) <= CHUNK_WORDS and len(c[1].split()) <= CHUNK_WORDS for c in chunks)
+out["all_under_budget"] = all(
+    len(c[0].split()) <= CHUNK_WORDS and len(c[1].split()) <= CHUNK_WORDS for c in chunks
+)
 # realistic pair still aligns
 base = "The system reads the incoming file and processes every record in order. " * 20
 r = base.replace("processes", "handles")

@@ -5,7 +5,9 @@ import sys
 from untell.rewriter.local_policy import LocalPolicyRewriter
 
 
-def test_unavailable_reason_names_the_missing_extra_when_peft_is_absent(monkeypatch, tmp_path) -> None:
+def test_unavailable_reason_names_the_missing_extra_when_peft_is_absent(
+    monkeypatch, tmp_path
+) -> None:
     """A missing optional dep must yield a clean reason naming the package + extra + command,
     never raise the raw ModuleNotFoundError the unguarded import used to leak (issue #34)."""
     (tmp_path / "adapter_config.json").write_text("{}")

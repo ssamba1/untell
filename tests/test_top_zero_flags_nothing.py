@@ -5,6 +5,7 @@ refusal. The mutation < -> <= makes top=0 raise too, turning the documented
 "flag nothing" count into an exception. top=0 is a legitimate request: the
 CLI may pass 0 and the caller expects an empty flagged list.
 """
+
 from untell.scripts.sentences import score_sentences
 
 

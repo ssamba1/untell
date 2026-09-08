@@ -43,13 +43,14 @@ def _torch_path(monkeypatch):
     """
     monkeypatch.delenv("UNTELL_LITE_NO_TORCH", raising=False)
 
+
 NON_ENGLISH = {
     "german": "Die Studie untersuchte den Kohlenstoffgehalt des Bodens an elf Standorten. "
-              "Die Ergebnisse variierten je nach Tiefe der entnommenen Bodenprobe erheblich.",
+    "Die Ergebnisse variierten je nach Tiefe der entnommenen Bodenprobe erheblich.",
     "spanish": "El estudio examinó el carbono del suelo en once sitios durante cuatro años. "
-               "Los resultados variaron según la profundidad de la muestra tomada en cada sitio.",
+    "Los resultados variaron según la profundidad de la muestra tomada en cada sitio.",
     "french": "L'étude a examiné le carbone du sol sur onze sites pendant quatre années entières. "
-              "Les résultats variaient selon la profondeur de l'échantillon prélevé sur le site.",
+    "Les résultats variaient selon la profondeur de l'échantillon prélevé sur le site.",
 }
 ENGLISH = (
     "The study examined soil carbon at eleven sites over four years, sampling to ninety "

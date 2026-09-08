@@ -43,7 +43,9 @@ def _section_marks() -> list[str]:
             continue
         s = line.strip()
         if re.match(r"^#{2,4} ", s) or s.startswith("- "):
-            found = next((k for k in MARKS if s.startswith(f"### {k}") or s.startswith(f"- {k}")), None)
+            found = next(
+                (k for k in MARKS if s.startswith(f"### {k}") or s.startswith(f"- {k}")), None
+            )
             if found:
                 marks.append(found)
     return marks
@@ -92,8 +94,7 @@ def test_every_open_item_names_who_it_is_waiting_on():
     for number, item, mark in ROWS:
         if mark == "✅":
             continue
-        row = next(line for line in BODY.splitlines()
-                   if re.match(rf"\|\s*{number}\s*\|", line))
+        row = next(line for line in BODY.splitlines() if re.match(rf"\|\s*{number}\s*\|", line))
         waiting = row.rsplit("|", 2)[-2].strip()
         assert waiting and waiting != "—", f"row {number} ({item}) is open with no owner"
 
@@ -102,20 +103,28 @@ def test_no_completed_item_claims_to_be_waiting_on_something():
     for number, item, mark in ROWS:
         if mark != "✅":
             continue
-        row = next(line for line in BODY.splitlines()
-                   if re.match(rf"\|\s*{number}\s*\|", line))
+        row = next(line for line in BODY.splitlines() if re.match(rf"\|\s*{number}\s*\|", line))
         waiting = row.rsplit("|", 2)[-2].strip()
         assert waiting == "—", f"row {number} ({item}) is done but lists a blocker: {waiting!r}"
 
 
-@pytest.mark.parametrize("claim", [
-    "untell-audit",
-    "Retire or rehabilitate the dead weight",
-    "Finish the surgical objective",
-])
+@pytest.mark.parametrize(
+    "claim",
+    [
+        "untell-audit",
+        "Retire or rehabilitate the dead weight",
+        "Finish the surgical objective",
+    ],
+)
 def test_items_the_table_calls_done_are_marked_done_in_the_body(claim):
     """Spot-check the direction that misleads: the table saying done while the body says open."""
-    section = next((line for line in BODY.splitlines()
-                    if claim in line and (line.startswith("###") or line.startswith("- "))), None)
+    section = next(
+        (
+            line
+            for line in BODY.splitlines()
+            if claim in line and (line.startswith("###") or line.startswith("- "))
+        ),
+        None,
+    )
     assert section is not None, f"{claim!r} not found in the body"
     assert "✅" in section, f"table calls {claim!r} done; body says: {section.strip()[:90]}"

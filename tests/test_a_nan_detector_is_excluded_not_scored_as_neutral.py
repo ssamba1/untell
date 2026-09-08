@@ -12,6 +12,7 @@ The fix: ``clamp01`` propagates NaN unchanged, so the aggregation's NaN guard re
 NaN windows too, because ``max()`` with a NaN is order-dependent (``max([nan, 0.3])`` is nan,
 ``max([0.3, nan])`` is 0.3). These tests pin the two surfaces end to end.
 """
+
 from __future__ import annotations
 
 import math
@@ -61,14 +62,20 @@ def test_a_nan_detector_is_excluded_with_an_error_not_scored_as_05(monkeypatch):
 def test_windowed_max_drops_nan_windows_instead_of_poisoning_the_max():
     """max() with a NaN is order-dependent: [nan, 0.3] -> nan but [0.3, nan] -> 0.3. One broken
     window must not be able to nuke or fake the windowed score either way."""
-    assert base.windowed_max(
-        "AAA " + "one two three four five six seven eight nine ten " * 40,
-        lambda w: float("nan") if "AAA" in w else 0.3,
-        window_words=40,
-    ) == 0.3
+    assert (
+        base.windowed_max(
+            "AAA " + "one two three four five six seven eight nine ten " * 40,
+            lambda w: float("nan") if "AAA" in w else 0.3,
+            window_words=40,
+        )
+        == 0.3
+    )
 
-    assert base.windowed_max(
-        "one two three four five six seven eight nine ten " * 40,
-        lambda w: float("nan"),
-        window_words=40,
-    ) is None, "all-NaN windows are no signal, not a score"
+    assert (
+        base.windowed_max(
+            "one two three four five six seven eight nine ten " * 40,
+            lambda w: float("nan"),
+            window_words=40,
+        )
+        is None
+    ), "all-NaN windows are no signal, not a score"

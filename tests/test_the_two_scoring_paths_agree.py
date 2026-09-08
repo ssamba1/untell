@@ -55,8 +55,10 @@ def test_the_two_paths_return_the_same_keys(text: str) -> None:
     reading `flagged` from the batch path would get a KeyError the single path never produces."""
     single = set(score_text(text, tier="lite"))
     batched = set(batch_score_texts([text], tier="lite")[0])
-    assert single == batched, {"only single": sorted(single - batched),
-                               "only batch": sorted(batched - single)}
+    assert single == batched, {
+        "only single": sorted(single - batched),
+        "only batch": sorted(batched - single),
+    }
 
 
 @pytest.mark.parametrize("text", TEXTS, ids=["plain", "tell heavy", "contrastive"])

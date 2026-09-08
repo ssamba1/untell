@@ -4,6 +4,7 @@ A password-protected PDF raises an exception whose CLASS name contains "Decrypt"
 (pypdf's PdfReadError for encrypted files) but whose message may not contain
 "decrypted" (or vice versa). The guard must fire when EITHER matches.
 """
+
 import sys
 
 import pytest
@@ -21,6 +22,7 @@ def _install_reader(monkeypatch, exc):
 
 def test_exception_class_name_alone_triggers_password_message(monkeypatch, tmp_path):
     """'Decrypt' in class name, but no 'decrypted' in the message."""
+
     class _DecryptError(Exception):
         pass
 
@@ -34,6 +36,7 @@ def test_exception_class_name_alone_triggers_password_message(monkeypatch, tmp_p
 
 def test_message_alone_triggers_password_message(monkeypatch, tmp_path):
     """'decrypted' in the message, but the class name has no 'Decrypt'."""
+
     class _WeirdError(Exception):
         def __str__(self):
             return "file must be decrypted first"

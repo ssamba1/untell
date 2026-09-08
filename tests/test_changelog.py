@@ -176,9 +176,9 @@ def test_shipped_version_section_names_its_headline_features() -> None:
 
     import tomllib
 
-    version = tomllib.loads(
-        pathlib.Path("pyproject.toml").read_text(encoding="utf-8")
-    )["project"]["version"]
+    version = tomllib.loads(pathlib.Path("pyproject.toml").read_text(encoding="utf-8"))["project"][
+        "version"
+    ]
     headline = {
         "0.3.0": ("untell humanness", "REST API server", "batch_score_texts", "untell-audit"),
     }
@@ -213,7 +213,9 @@ def test_changelog_is_not_stale_relative_to_recent_user_visible_commits() -> Non
     try:
         last_cl = subprocess.check_output(
             ["git", "log", "-1", "--format=%H", "--", "CHANGELOG.md"],
-            text=True, encoding="utf-8", errors="replace",
+            text=True,
+            encoding="utf-8",
+            errors="replace",
             cwd=repo,
             stderr=subprocess.DEVNULL,
         ).strip()
@@ -226,7 +228,9 @@ def test_changelog_is_not_stale_relative_to_recent_user_visible_commits() -> Non
     try:
         log_lines = subprocess.check_output(
             ["git", "log", f"{last_cl}..HEAD", "--oneline", "--no-merges"],
-            text=True, encoding="utf-8", errors="replace",
+            text=True,
+            encoding="utf-8",
+            errors="replace",
             cwd=repo,
             stderr=subprocess.DEVNULL,
         ).splitlines()
@@ -239,16 +243,14 @@ def test_changelog_is_not_stale_relative_to_recent_user_visible_commits() -> Non
     _USER_VISIBLE = re.compile(r"^\w+ (feat|fix|perf)(\(|\: )")
 
     user_visible = [
-        line for line in log_lines
-        if _USER_VISIBLE.match(line) and not _INTERNAL_SCOPE.match(line)
+        line for line in log_lines if _USER_VISIBLE.match(line) and not _INTERNAL_SCOPE.match(line)
     ]
 
     _THRESHOLD = 20
     assert len(user_visible) <= _THRESHOLD, (
         f"CHANGELOG.md last updated at {last_cl[:8]}, but {len(user_visible)} user-visible "
         f"commits have accumulated since then (threshold {_THRESHOLD}). "
-        f"Update CHANGELOG.md. First five: "
-        + "; ".join(c[:60] for c in user_visible[:5])
+        f"Update CHANGELOG.md. First five: " + "; ".join(c[:60] for c in user_visible[:5])
     )
 
 

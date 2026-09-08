@@ -75,9 +75,7 @@ class TestMeaningPreservedVetoes:
         is clearly exceeded by the short candidate.
         """
         candidate = "The results."  # ~2 words vs 30+ in _DELETION_SRC
-        vetoes = meaning_preserved_vetoes(
-            _DELETION_SRC, candidate, sim=0.99, strict_sim_bar=0.76
-        )
+        vetoes = meaning_preserved_vetoes(_DELETION_SRC, candidate, sim=0.99, strict_sim_bar=0.76)
         assert any(v.startswith("deletion") for v in vetoes), f"expected deletion in {vetoes}"
 
     def test_veto_name_starts_with_gate_name(self) -> None:
@@ -118,27 +116,35 @@ class TestInspectEventCollection:
 
     def test_inspect_key_present_when_requested(self) -> None:
         """inspect=True must add result['inspect'] as a list."""
-        result = untell_text(_LOOP_TEXT, tier="lite", max_iters=1, rewriter="surgical", inspect=True)
+        result = untell_text(
+            _LOOP_TEXT, tier="lite", max_iters=1, rewriter="surgical", inspect=True
+        )
         assert "inspect" in result
         assert isinstance(result["inspect"], list)
 
     def test_events_have_required_fields(self) -> None:
         """Every event must carry at minimum 'type' and 'iter'."""
-        result = untell_text(_LOOP_TEXT, tier="lite", max_iters=1, rewriter="surgical", inspect=True)
+        result = untell_text(
+            _LOOP_TEXT, tier="lite", max_iters=1, rewriter="surgical", inspect=True
+        )
         for ev in result["inspect"]:
             assert "type" in ev
             assert "iter" in ev
 
     def test_rejected_events_carry_gate_name(self) -> None:
         """candidate_rejected events must name the gate that fired."""
-        result = untell_text(_LOOP_TEXT, tier="lite", max_iters=1, rewriter="surgical", inspect=True)
+        result = untell_text(
+            _LOOP_TEXT, tier="lite", max_iters=1, rewriter="surgical", inspect=True
+        )
         rejected = [e for e in result["inspect"] if e.get("type") == "candidate_rejected"]
         for ev in rejected:
             assert "gate" in ev and isinstance(ev["gate"], str) and ev["gate"]
 
     def test_accepted_events_carry_draw(self) -> None:
         """candidate_accepted events must carry 'draw'."""
-        result = untell_text(_LOOP_TEXT, tier="lite", max_iters=1, rewriter="surgical", inspect=True)
+        result = untell_text(
+            _LOOP_TEXT, tier="lite", max_iters=1, rewriter="surgical", inspect=True
+        )
         accepted = [e for e in result["inspect"] if e.get("type") == "candidate_accepted"]
         for ev in accepted:
             assert "draw" in ev
@@ -148,11 +154,13 @@ class TestInspectEventCollection:
 # Gate truthfulness: inject a bad candidate and assert the correct gate is named
 # ---------------------------------------------------------------------------
 
+
 class TestGateNamingTruthfulness:
     """Construct a rewriter that returns a specific bad candidate and assert the gate is named."""
 
     def _run_with_fixed_candidate(self, candidate: str) -> list[dict]:
         """Run untell_text with a mock rewriter that always returns ``candidate``."""
+
         class _FixedRewriter:
             name = "fixed"
             deterministic = False
@@ -180,6 +188,7 @@ class TestGateNamingTruthfulness:
         text to avoid tripping the sentinel check.  Flipping "reduced" -> "did not reduce"
         keeps all sentinels intact but breaks polarity, letting the meaning gate fire.
         """
+
         class _PolarityFlipRewriter:
             name = "polarity_flip"
             deterministic = False
@@ -219,6 +228,7 @@ class TestGateNamingTruthfulness:
         # misses ⟦HZ10000⟧ and later). test_sentinel_pattern_is_defined_once enforces
         # single-source-of-truth for this pattern.
         from untell.scripts.preserve import SENTINEL_RE
+
         bad = SENTINEL_RE.sub("", masked)  # drop the sentinel
 
         class _FixedMaskedRewriter:
@@ -243,9 +253,7 @@ class TestGateNamingTruthfulness:
         rejected = [e for e in events if e.get("type") == "candidate_rejected"]
         assert rejected, "expected at least one rejected event"
         gates = [e["gate"] for e in rejected]
-        assert any(g == "sentinels" for g in gates), (
-            f"expected 'sentinels' in gates, got {gates}"
-        )
+        assert any(g == "sentinels" for g in gates), f"expected 'sentinels' in gates, got {gates}"
 
     def test_severe_deletion_names_deletion(self) -> None:
         """A heavily truncated candidate fires the deletion gate.
@@ -290,12 +298,19 @@ class TestGateNamingTruthfulness:
 # render_inspect_report smoke test
 # ---------------------------------------------------------------------------
 
+
 class TestRenderInspectReport:
     def test_renders_without_error(self) -> None:
         """render_inspect_report returns a non-empty string for any valid input."""
         events = [
-            {"type": "candidate_rejected", "iter": 1, "draw": 1,
-             "gate": "numbers_kept", "vetoes": ["numbers_kept"], "sim": 0.95},
+            {
+                "type": "candidate_rejected",
+                "iter": 1,
+                "draw": 1,
+                "gate": "numbers_kept",
+                "vetoes": ["numbers_kept"],
+                "sim": 0.95,
+            },
             {"type": "candidate_accepted", "iter": 1, "draw": 2},
             {"type": "adopted", "iter": 1},
         ]
@@ -305,8 +320,14 @@ class TestRenderInspectReport:
     def test_report_names_the_gate(self) -> None:
         """The rendered text must mention the gate that fired."""
         events = [
-            {"type": "candidate_rejected", "iter": 1, "draw": 1,
-             "gate": "numbers_kept", "vetoes": ["numbers_kept"], "sim": 0.91},
+            {
+                "type": "candidate_rejected",
+                "iter": 1,
+                "draw": 1,
+                "gate": "numbers_kept",
+                "vetoes": ["numbers_kept"],
+                "sim": 0.91,
+            },
         ]
         report = render_inspect_report(SRC, SRC, events)
         assert "numbers_kept" in report, f"expected 'numbers_kept' in report:\n{report}"
@@ -319,10 +340,14 @@ class TestRenderInspectReport:
     def test_report_with_multiple_vetoes_shows_all(self) -> None:
         """When multiple vetoes fired, the report must show the primary and mention others."""
         events = [
-            {"type": "candidate_rejected", "iter": 1, "draw": 1,
-             "gate": "numbers_kept",
-             "vetoes": ["numbers_kept", "polarity_kept"],
-             "sim": 0.91},
+            {
+                "type": "candidate_rejected",
+                "iter": 1,
+                "draw": 1,
+                "gate": "numbers_kept",
+                "vetoes": ["numbers_kept", "polarity_kept"],
+                "sim": 0.91,
+            },
         ]
         report = render_inspect_report(SRC, SRC, events)
         assert "numbers_kept" in report

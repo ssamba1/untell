@@ -96,8 +96,14 @@ def test_loop_scrubs_hidden_characters_a_rewriter_introduces() -> None:
     scores identically (detectors normalise invisible chars), so the loop ADMITS it and the
     assertion really exercises the scrub.
     """
-    result = untell_text(_INJECTOR_SRC, tier="lite", max_iters=2, seed=102,
-                         rewriter=_HiddenInjectingRewriter(), scrub=True)
+    result = untell_text(
+        _INJECTOR_SRC,
+        tier="lite",
+        max_iters=2,
+        seed=102,
+        rewriter=_HiddenInjectingRewriter(),
+        scrub=True,
+    )
     assert "error" not in result
     assert result["adopted"] >= 1, "the injected candidate must be admitted for this test to bite"
     assert count_hidden(result["final"]) == 0
@@ -111,8 +117,14 @@ def test_loop_scrub_false_keeps_rewriter_introduced_hidden_chars() -> None:
     output side too — scrubbing would silently ignore the flag. The characters travel with the
     result and the carried_payload warning says so.
     """
-    result = untell_text(_INJECTOR_SRC, tier="lite", max_iters=2, seed=103,
-                         rewriter=_HiddenInjectingRewriter(), scrub=False)
+    result = untell_text(
+        _INJECTOR_SRC,
+        tier="lite",
+        max_iters=2,
+        seed=103,
+        rewriter=_HiddenInjectingRewriter(),
+        scrub=False,
+    )
     assert "error" not in result
     assert count_hidden(result["final"]) >= 1, "scrub=False must honor the flag and keep the chars"
     assert result.get("warning"), "the carried characters must be reported, not silent"
@@ -163,8 +175,7 @@ def test_polish_stage_reaches_surgical_substitute_on_the_final_text(monkeypatch)
 
     monkeypatch.setattr(attacks_mod, "surgical_substitute", _spy)
 
-    out_on = untell_text(AI, tier="lite", max_iters=2, seed=105, polish=True,
-                         rewriter=_Identity())
+    out_on = untell_text(AI, tier="lite", max_iters=2, seed=105, polish=True, rewriter=_Identity())
     assert "error" not in out_on
     assert calls == [out_on["final"]], (
         "polish=True must invoke surgical_substitute exactly once, on the final text the "
@@ -172,8 +183,9 @@ def test_polish_stage_reaches_surgical_substitute_on_the_final_text(monkeypatch)
     )
 
     calls.clear()
-    out_off = untell_text(AI, tier="lite", max_iters=2, seed=105, polish=False,
-                          rewriter=_Identity())
+    out_off = untell_text(
+        AI, tier="lite", max_iters=2, seed=105, polish=False, rewriter=_Identity()
+    )
     assert "error" not in out_off
     assert calls == [], "polish=False must not invoke surgical_substitute"
 
@@ -189,10 +201,21 @@ def test_cli_wires_polish_and_no_scrub_into_the_loop(monkeypatch, capsys) -> Non
 
     def _fake_untell_text(text, **kwargs):
         captured.update(kwargs)
-        return {"final": text, "pre": {"max": 0.9}, "post": {"max": 0.9},
-                "flagged": True, "changed": False, "iterations": 0, "rewrites": 0,
-                "adopted": 0, "similarity": 1.0, "tier": "lite", "sim_bar": 0.76,
-                "stopped": "passed", "seed": 0}
+        return {
+            "final": text,
+            "pre": {"max": 0.9},
+            "post": {"max": 0.9},
+            "flagged": True,
+            "changed": False,
+            "iterations": 0,
+            "rewrites": 0,
+            "adopted": 0,
+            "similarity": 1.0,
+            "tier": "lite",
+            "sim_bar": 0.76,
+            "stopped": "passed",
+            "seed": 0,
+        }
 
     monkeypatch.setattr(run_mod, "untell_text", _fake_untell_text)
 

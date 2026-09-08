@@ -5,6 +5,7 @@ ai to 4dp. The mutation 4 -> 5 changes the returned value: max = 0.123456
 reports 0.1235 at 4dp but 0.12346 at 5dp. verify()'s result rows are the
 published contract callers read.
 """
+
 from unittest.mock import patch
 
 from untell.scripts.verify import verify
@@ -38,9 +39,7 @@ class _Exact:
 
 
 def test_commercial_ai_rounded_to_four_decimals(monkeypatch):
-    monkeypatch.setattr(
-        "untell.detectors.commercial.commercial_detectors", lambda: [_Exact()]
-    )
+    monkeypatch.setattr("untell.detectors.commercial.commercial_detectors", lambda: [_Exact()])
     r = verify("x", tier=None, threshold=0.30)
     row = r["results"]["rounding_commercial"]
     assert row["ai"] == 0.1235, f"commercial ai not 4dp: {row['ai']!r}"

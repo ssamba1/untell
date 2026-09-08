@@ -1,11 +1,15 @@
 """Probe NER single-token PERSON over-locks on common words."""
+
 import sys
+
 sys.path.insert(0, "C:/Users/Admin/Humanize")
 import importlib.util
+
 if importlib.util.find_spec("en_core_web_sm") is None:
     print("NO NER MODEL")
     sys.exit(0)
 import spacy
+
 nlp = spacy.load("en_core_web_sm")
 
 # Common words in sentence contexts (capitalized at sentence start, like the probe found)

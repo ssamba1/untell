@@ -77,9 +77,14 @@ def test_the_transform_leaves_a_bracketed_semicolon_alone(text: str) -> None:
     assert ";" in _semicolons_to_periods(text)
 
 
-@pytest.mark.parametrize("text", ["The plan passed [the vote was seven to two; two members abstained] here.",
-                                  "The plan passed {the vote was seven to two; two members abstained} here."],
-                         ids=["square", "brace"])
+@pytest.mark.parametrize(
+    "text",
+    [
+        "The plan passed [the vote was seven to two; two members abstained] here.",
+        "The plan passed {the vote was seven to two; two members abstained} here.",
+    ],
+    ids=["square", "brace"],
+)
 def test_other_bracket_shapes_count_too(text: str) -> None:
     assert ";" in _semicolons_to_periods(text)
 

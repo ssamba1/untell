@@ -1,4 +1,5 @@
 """L4 liveness: every compiled pattern in structural.py must fire on its known positive."""
+
 import re, json
 import untell.rewriter.structural as S
 
@@ -6,9 +7,15 @@ import untell.rewriter.structural as S
 CASES = {
     "_INTERNAL_CAPS_RE": (S._INTERNAL_CAPS_RE, "aLtErNaTiNg"),
     "_LEADING_MARKER_RE": (S._LEADING_MARKER_RE, "Nevertheless, the result was clear."),
-    "_LEADING_SUBORDINATOR_RE": (S._LEADING_SUBORDINATOR_RE, "Although the data was sparse, the trend held."),
+    "_LEADING_SUBORDINATOR_RE": (
+        S._LEADING_SUBORDINATOR_RE,
+        "Although the data was sparse, the trend held.",
+    ),
     "_ANY_LEADING_MARKER_RE": (S._ANY_LEADING_MARKER_RE, "However, the team agreed."),
-    "_TRANSITIONS_RE": (S._TRANSITIONS_RE, "the framework not only improves speed but also accuracy"),
+    "_TRANSITIONS_RE": (
+        S._TRANSITIONS_RE,
+        "the framework not only improves speed but also accuracy",
+    ),
     "_PARTICIPIAL_RE": (S._PARTICIPIAL_RE, "Showing great promise, the method converged."),
     "_NEGATED_CONTRAST_RE": (S._NEGATED_CONTRAST_RE, "it is not X, it is Y"),
     "_INFLATED_COPULA_RE": (S._INFLATED_COPULA_RE, "serves as a testament"),
@@ -38,4 +45,14 @@ n_contr = 0
 for item in dir(S):
     if "CONTRACT" in item.upper() or "CONTRACTION" in item.upper():
         n_contr += 1
-print(json.dumps({"dead_patterns": dead, "alive": sum(alive.values()), "total": len(alive), "contraction_tables": n_contr}, indent=1))
+print(
+    json.dumps(
+        {
+            "dead_patterns": dead,
+            "alive": sum(alive.values()),
+            "total": len(alive),
+            "contraction_tables": n_contr,
+        },
+        indent=1,
+    )
+)

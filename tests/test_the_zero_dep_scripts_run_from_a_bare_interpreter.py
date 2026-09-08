@@ -18,6 +18,7 @@ there for hours across commits from more than one session.
 This file checks the ORDER statically rather than spawning interpreters: it is the property that
 broke, it holds for every script at once, and it costs nothing.
 """
+
 from __future__ import annotations
 
 from pathlib import Path

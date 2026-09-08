@@ -55,7 +55,12 @@ def test_the_header_carries_a_commit() -> None:
 def test_the_stamp_matches_git() -> None:
     """Premise plus correctness: in a checkout it must be the real short hash, not a placeholder."""
     out = subprocess.run(
-        ["git", "rev-parse", "--short", "HEAD"], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=30
+        ["git", "rev-parse", "--short", "HEAD"],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=30,
     )
     if out.returncode != 0:  # not a checkout; the fallback path is covered below
         pytest.skip("not a git checkout")
@@ -66,7 +71,12 @@ def test_uncommitted_work_is_marked() -> None:
     """A number measured against edited files is not a number anyone can re-derive from the hash,
     and saying so costs one word."""
     dirty = subprocess.run(
-        ["git", "status", "--porcelain"], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=30
+        ["git", "status", "--porcelain"],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=30,
     )
     if dirty.returncode != 0:
         pytest.skip("not a git checkout")
@@ -76,6 +86,7 @@ def test_uncommitted_work_is_marked() -> None:
 def test_a_missing_git_does_not_break_the_report(monkeypatch) -> None:
     """A provenance stamp must never break the measurement it labels. A number from a pip install
     with no checkout is still a number."""
+
     def _boom(*args, **kwargs):
         raise FileNotFoundError("git")
 

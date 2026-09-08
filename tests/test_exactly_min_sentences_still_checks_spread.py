@@ -6,6 +6,7 @@ document with exactly 3 narrowly-scored sentences reads as "rankable" instead of
 "unrankable" — sending the rewriter to target near-equal sentences. The boundary
 case is the point of the guard.
 """
+
 from untell.scripts.sentences import _targeting_is_unrankable
 
 

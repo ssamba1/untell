@@ -1,11 +1,15 @@
 """Seed determinism: same seed -> byte-identical output; different seeds -> (usually) different."""
+
 import json, os
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
 from untell.scripts.run import untell_text
 
-doc = ("Moreover, the framework leverages robust solutions to deliver outcomes at scale. "
-       "It is important to note that the results demonstrate significant improvement. "
-       "In conclusion, we are excited to share these findings with the community.")
+doc = (
+    "Moreover, the framework leverages robust solutions to deliver outcomes at scale. "
+    "It is important to note that the results demonstrate significant improvement. "
+    "In conclusion, we are excited to share these findings with the community."
+)
 out = {}
 r1 = untell_text(doc, tier="lite", max_iters=3, seed=42)
 r2 = untell_text(doc, tier="lite", max_iters=3, seed=42)

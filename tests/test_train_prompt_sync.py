@@ -31,8 +31,10 @@ def test_no_module_re_types_the_prompt_as_a_literal():
     """Equality today is not the property that matters — a single source of truth is."""
     needle = "Rewrite the following text so it reads as natural human writing"
     offenders = []
-    for path in list(_ROOT.glob("training/*.py")) + list(_ROOT.glob("untell/**/*.py")) + list(
-        _ROOT.glob("eval/*.py")
+    for path in (
+        list(_ROOT.glob("training/*.py"))
+        + list(_ROOT.glob("untell/**/*.py"))
+        + list(_ROOT.glob("eval/*.py"))
     ):
         rel = path.relative_to(_ROOT).as_posix()
         if rel == _CANONICAL:

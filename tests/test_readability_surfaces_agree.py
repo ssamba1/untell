@@ -26,10 +26,22 @@ from untell.scripts.tells import score_tells
 
 # (name, text, can the English catalogue read it)
 INPUTS = [
-    ("plain English", "The committee met on Tuesday and nobody could agree about the budget.", True),
-    ("AI English", "Moreover, the framework leverages robust methodologies to deliver outcomes.", True),
+    (
+        "plain English",
+        "The committee met on Tuesday and nobody could agree about the budget.",
+        True,
+    ),
+    (
+        "AI English",
+        "Moreover, the framework leverages robust methodologies to deliver outcomes.",
+        True,
+    ),
     ("short English", "Hi there.", True),
-    ("English quoting Chinese", "The sign said 你好 which means hello, and the rest is English.", True),
+    (
+        "English quoting Chinese",
+        "The sign said 你好 which means hello, and the rest is English.",
+        True,
+    ),
     ("Chinese", "此外，该框架利用强大的方法在规模上提供成果。", False),
     ("Korean", "이 프레임워크는 규모에 따라 결과를 제공합니다.", False),
     ("Russian", "Эта структура обеспечивает результаты в масштабе для всех.", False),

@@ -3,6 +3,7 @@
 The commercial-tier proof command. Check failure paths don't leak tracebacks
 when commercial keys are absent (the realistic state for most users).
 """
+
 import subprocess
 from pathlib import Path
 
@@ -26,9 +27,15 @@ CASES = [
 
 for argv, desc in CASES:
     try:
-        proc = subprocess.run([str(PY), "-m", MOD, *argv], capture_output=True,
-                              text=True, errors="replace", timeout=180, env=env,
-                              stdin=subprocess.DEVNULL)
+        proc = subprocess.run(
+            [str(PY), "-m", MOD, *argv],
+            capture_output=True,
+            text=True,
+            errors="replace",
+            timeout=180,
+            env=env,
+            stdin=subprocess.DEVNULL,
+        )
         out = (proc.stdout or "").strip().replace("\n", " ")[:100]
         tb = "Traceback" in (proc.stderr or "")
         print(f"{desc:22} exit={proc.returncode} tb={tb} out={out}")

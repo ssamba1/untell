@@ -6,6 +6,7 @@ or -> and requires ALL THREE conditions, so a 100-word vs 1-word pair falls
 through to chunking, which re-cuts the long side (50-word chunk observed) —
 breaking the [(a, b)] whole-pair contract the meaning gates rely on.
 """
+
 from untell.text_split import aligned_chunks
 
 

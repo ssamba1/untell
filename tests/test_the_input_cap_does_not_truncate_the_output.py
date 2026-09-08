@@ -25,6 +25,7 @@ The only existing coverage of this constant is the REST layer rejecting oversize
 a different guarantee: that one is about refusing input, this one is about not silently keeping
 half of it.
 """
+
 from __future__ import annotations
 
 import pytest
@@ -67,8 +68,9 @@ def test_the_fixture_exceeds_the_cap(small_cap):
 
 def test_the_tail_survives_a_run(small_cap):
     small_cap(200)
-    result = untell_text(LONG, tier="lite", threshold=0.0, max_iters=2,
-                         rewriter="composite", seed=5)
+    result = untell_text(
+        LONG, tier="lite", threshold=0.0, max_iters=2, rewriter="composite", seed=5
+    )
 
     assert TAIL.split()[0] in result["final"], (
         "text past the scoring cap was dropped from the returned document — the cap bounds what "
@@ -79,8 +81,9 @@ def test_the_tail_survives_a_run(small_cap):
 def test_the_output_is_not_cut_to_the_cap(small_cap):
     """Length is the blunt check: a truncated result would be about the cap size."""
     small_cap(200)
-    result = untell_text(LONG, tier="lite", threshold=0.0, max_iters=2,
-                         rewriter="composite", seed=5)
+    result = untell_text(
+        LONG, tier="lite", threshold=0.0, max_iters=2, rewriter="composite", seed=5
+    )
 
     # Against the INPUT, not against a multiple of the cap. A rewrite legitimately shortens the
     # text — measured 1.3% on corpus documents — so "much bigger than the cap" was the wrong way to
@@ -108,8 +111,9 @@ def test_a_rewritten_document_keeps_its_tail(small_cap):
     small_cap(200)
     changed = None
     for seed in range(6):
-        result = untell_text(LONG, tier="lite", threshold=0.0, max_iters=2,
-                             rewriter="composite", seed=seed)
+        result = untell_text(
+            LONG, tier="lite", threshold=0.0, max_iters=2, rewriter="composite", seed=seed
+        )
         if result.get("changed"):
             changed = result
             break

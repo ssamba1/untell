@@ -4,6 +4,7 @@ One child per (pattern, input); the child writes the pattern label to stderr
 BEFORE scanning and a watchdog thread os._exit(1)s after 20s. The parent's
 stderr shows exactly which pair hung. No queue, no drain race.
 """
+
 from __future__ import annotations
 
 import multiprocessing as mp
@@ -45,9 +46,7 @@ def main() -> int:
 
     ctx = mp.get_context("spawn")
     tasks = [
-        (label, pat, INPUTS[name])
-        for name, text in INPUTS.items()
-        for label, pat in _PATTERNS
+        (label, pat, INPUTS[name]) for name, text in INPUTS.items() for label, pat in _PATTERNS
     ]
     hung = []
     ok = []

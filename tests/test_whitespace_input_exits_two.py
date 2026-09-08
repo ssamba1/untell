@@ -6,6 +6,7 @@ and a caller distinguishing 1 (checked-and-failed) from 2 (nothing ran) would
 misread 3. The no-results path (line 400) is already pinned by the commercial
 test; this pins the empty-input path.
 """
+
 import contextlib
 import io
 import json

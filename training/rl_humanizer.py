@@ -77,7 +77,7 @@ def _source_resolver(source_by_prompt: dict[str, str]):
         if src is not None:
             return src
         if p.startswith(prefix):
-            return p[len(prefix):].strip() or None
+            return p[len(prefix) :].strip() or None
         if not warned:
             warned = True
             logger.warning(
@@ -126,6 +126,7 @@ def train(
     import warnings
 
     import torch  # noqa: F401  (fail loudly here if the env can't do training)
+
     if not torch.cuda.is_available() and not smoke:
         raise RuntimeError("CUDA is required for training. No GPU detected.")
     from datasets import Dataset
@@ -186,8 +187,12 @@ def train(
         import transformers
         from peft import PeftModel
 
-        base = model if not isinstance(model, str) else transformers.AutoModelForCausalLM.from_pretrained(
-            model, torch_dtype="auto", device_map="auto"
+        base = (
+            model
+            if not isinstance(model, str)
+            else transformers.AutoModelForCausalLM.from_pretrained(
+                model, torch_dtype="auto", device_map="auto"
+            )
         )
         model = PeftModel.from_pretrained(base, dpo_init).merge_and_unload()
         logger.info("merged DPO adapter %s into base before GRPO", dpo_init)
@@ -202,7 +207,9 @@ def train(
         logger.warning(
             "only %d distinct source texts behind %d prompts (dataset=%r). The policy sees the same "
             "few texts over and over; install .[eval] and pass --dataset hc3/raid/mage for real data.",
-            unique, len(rows), dataset,
+            unique,
+            len(rows),
+            dataset,
         )
     source_by_prompt = {r["prompt"]: r["source"] for r in rows}
     dataset = Dataset.from_list([{"prompt": r["prompt"]} for r in rows])
@@ -241,7 +248,9 @@ def train(
         resume_from_checkpoint=resume,
     )
     lora = LoraConfig(r=32, lora_alpha=64, target_modules="all-linear", task_type="CAUSAL_LM")
-    trainer = GRPOTrainer(model=model, reward_funcs=reward_fn, args=cfg, train_dataset=dataset, peft_config=lora)
+    trainer = GRPOTrainer(
+        model=model, reward_funcs=reward_fn, args=cfg, train_dataset=dataset, peft_config=lora
+    )
     # Always attempt the final save, even if training dies mid-way (OOM, KeyboardInterrupt, or the
     # GPU-host wall-clock cap) — a partially-trained adapter on disk beats nothing. The save is itself
     # guarded so a save failure can't mask the original training error.
@@ -262,7 +271,11 @@ def train(
     abs_out = os.path.abspath(out)
     out_dir = pathlib.Path(out)
     adapter = next(
-        (out_dir / n for n in ("adapter_model.safetensors", "adapter_model.bin") if (out_dir / n).exists()),
+        (
+            out_dir / n
+            for n in ("adapter_model.safetensors", "adapter_model.bin")
+            if (out_dir / n).exists()
+        ),
         None,
     )
     size_mb = adapter.stat().st_size / 1e6 if adapter else 0.0
@@ -274,7 +287,9 @@ def train(
             "latest out/checkpoint-* instead if one exists."
         )
 
-    if hub_id:  # auth + repo were validated up-front, so this only fails on a real network/disk error
+    if (
+        hub_id
+    ):  # auth + repo were validated up-front, so this only fails on a real network/disk error
         from huggingface_hub import HfApi
 
         HfApi().upload_folder(folder_path=out, repo_id=hub_id, repo_type="model")
@@ -293,12 +308,32 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--tier", default="full", choices=["lite", "full", "heavy", "commercial"])
     parser.add_argument("--k", type=int, default=6)
     parser.add_argument("--out", default="out/rl-humanizer")
-    parser.add_argument("--smoke", action="store_true", help="tiny model + 2 steps + lite reward (proves it runs)")
-    parser.add_argument("--load-4bit", action="store_true", help="QLoRA 4-bit load so 3B fits a free 16GB T4")
-    parser.add_argument("--hub-id", help="push the adapter to this HF Hub repo after save (needs HF_TOKEN) so an ephemeral host can't lose it")
-    parser.add_argument("--resume", default=None, help="resume from this checkpoint directory (e.g. out/rl-humanizer/checkpoint-125)")
-    parser.add_argument("--steps", type=int, default=300, help="training steps (default 300 to fit Kaggle 9h GPU limit; each step ~100s on T4)")
-    parser.add_argument("--dpo-init", default=None, help="path to a DPO LoRA adapter to merge into the base before GRPO (warm-start)")
+    parser.add_argument(
+        "--smoke", action="store_true", help="tiny model + 2 steps + lite reward (proves it runs)"
+    )
+    parser.add_argument(
+        "--load-4bit", action="store_true", help="QLoRA 4-bit load so 3B fits a free 16GB T4"
+    )
+    parser.add_argument(
+        "--hub-id",
+        help="push the adapter to this HF Hub repo after save (needs HF_TOKEN) so an ephemeral host can't lose it",
+    )
+    parser.add_argument(
+        "--resume",
+        default=None,
+        help="resume from this checkpoint directory (e.g. out/rl-humanizer/checkpoint-125)",
+    )
+    parser.add_argument(
+        "--steps",
+        type=int,
+        default=300,
+        help="training steps (default 300 to fit Kaggle 9h GPU limit; each step ~100s on T4)",
+    )
+    parser.add_argument(
+        "--dpo-init",
+        default=None,
+        help="path to a DPO LoRA adapter to merge into the base before GRPO (warm-start)",
+    )
     parser.add_argument(
         "--dataset",
         default="builtin",
@@ -327,10 +362,19 @@ def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
     args = build_parser().parse_args(argv)
     path = train(
-        model_id=args.model, tier=args.tier, steps=args.steps, k=args.k, out=args.out,
-        smoke=args.smoke, load_4bit=args.load_4bit, hub_id=args.hub_id, resume=args.resume,
-        dpo_init=args.dpo_init, reward_sim_floor=args.reward_sim_floor,
-        dataset=args.dataset, n=args.n,
+        model_id=args.model,
+        tier=args.tier,
+        steps=args.steps,
+        k=args.k,
+        out=args.out,
+        smoke=args.smoke,
+        load_4bit=args.load_4bit,
+        hub_id=args.hub_id,
+        resume=args.resume,
+        dpo_init=args.dpo_init,
+        reward_sim_floor=args.reward_sim_floor,
+        dataset=args.dataset,
+        n=args.n,
     )
     print(f"saved policy -> {path}")
     return 0

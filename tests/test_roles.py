@@ -28,53 +28,119 @@ pytestmark = pytest.mark.skipif(
 )
 
 ROLE_SWAPS = [
-    ("subject/object", "The company sued the regulator over the ruling.",
-     "The regulator sued the company over the ruling."),
-    ("causation", "Smoking causes lung cancer according to the study.",
-     "Lung cancer causes smoking according to the study."),
-    ("predicate reassignment", "Exports rose sharply while imports fell.",
-     "Imports rose sharply while exports fell."),
-    ("conjoined agents", "Alice wrote the report and Bob reviewed it.",
-     "Bob wrote the report and Alice reviewed it."),
-    ("beneficiary", "The teacher praised the student for the essay.",
-     "The student praised the teacher for the essay."),
-    ("conditional dropped", "If the sensor fails, the system shuts down.",
-     "The system shuts down, and then the sensor fails."),
-    ("cause dropped", "The build failed because the cache was stale.",
-     "The build failed and the cache was stale."),
-    ("condition -> cause", "If the request times out, the client retries.",
-     "Because the request times out, the client retries."),
-    ("before -> after", "The policy takes effect before the audit begins.",
-     "The policy takes effect after the audit begins."),
+    (
+        "subject/object",
+        "The company sued the regulator over the ruling.",
+        "The regulator sued the company over the ruling.",
+    ),
+    (
+        "causation",
+        "Smoking causes lung cancer according to the study.",
+        "Lung cancer causes smoking according to the study.",
+    ),
+    (
+        "predicate reassignment",
+        "Exports rose sharply while imports fell.",
+        "Imports rose sharply while exports fell.",
+    ),
+    (
+        "conjoined agents",
+        "Alice wrote the report and Bob reviewed it.",
+        "Bob wrote the report and Alice reviewed it.",
+    ),
+    (
+        "beneficiary",
+        "The teacher praised the student for the essay.",
+        "The student praised the teacher for the essay.",
+    ),
+    (
+        "conditional dropped",
+        "If the sensor fails, the system shuts down.",
+        "The system shuts down, and then the sensor fails.",
+    ),
+    (
+        "cause dropped",
+        "The build failed because the cache was stale.",
+        "The build failed and the cache was stale.",
+    ),
+    (
+        "condition -> cause",
+        "If the request times out, the client retries.",
+        "Because the request times out, the client retries.",
+    ),
+    (
+        "before -> after",
+        "The policy takes effect before the audit begins.",
+        "The policy takes effect after the audit begins.",
+    ),
 ]
 
 FAITHFUL = [
-    ("passive -> active", "The proposal was rejected by the committee last week.",
-     "The committee rejected the proposal last week."),
-    ("active -> passive", "The committee rejected the proposal last week.",
-     "The proposal was rejected by the committee last week."),
-    ("clause reorder", "Because the sensor failed, the system shut down automatically.",
-     "The system shut down automatically because the sensor failed."),
-    ("because -> since", "The build failed because the cache was stale.",
-     "The build failed since the cache was stale."),
-    ("although -> though", "Although the test passed, the coverage dropped.",
-     "Though the test passed, the coverage dropped."),
-    ("if clause moved", "If the sensor fails, the system shuts down.",
-     "The system shuts down if the sensor fails."),
-    ("sentence split", "The trial enrolled 240 patients and reported no serious adverse events.",
-     "The trial enrolled 240 patients. It reported no serious adverse events."),
-    ("synonym swap", "The findings underscore the pivotal role of early intervention.",
-     "The findings highlight how crucial early intervention is."),
-    ("register shift", "It is important to note that the results demonstrate a significant improvement.",
-     "The results show a real improvement, which matters."),
-    ("contraction", "The company did not anticipate the regulatory change.",
-     "The company didn't see the rule change coming."),
-    ("de-AI-ification", "Furthermore, the organization leverages robust methodologies to optimize outcomes.",
-     "The team also uses solid methods to get better results."),
-    ("hedge preserved", "The results suggest the treatment may help some patients.",
-     "The results hint that the treatment could help certain patients."),
-    ("voice change", "The team deployed the fix on Tuesday morning.",
-     "The fix was deployed by the team on Tuesday morning."),
+    (
+        "passive -> active",
+        "The proposal was rejected by the committee last week.",
+        "The committee rejected the proposal last week.",
+    ),
+    (
+        "active -> passive",
+        "The committee rejected the proposal last week.",
+        "The proposal was rejected by the committee last week.",
+    ),
+    (
+        "clause reorder",
+        "Because the sensor failed, the system shut down automatically.",
+        "The system shut down automatically because the sensor failed.",
+    ),
+    (
+        "because -> since",
+        "The build failed because the cache was stale.",
+        "The build failed since the cache was stale.",
+    ),
+    (
+        "although -> though",
+        "Although the test passed, the coverage dropped.",
+        "Though the test passed, the coverage dropped.",
+    ),
+    (
+        "if clause moved",
+        "If the sensor fails, the system shuts down.",
+        "The system shuts down if the sensor fails.",
+    ),
+    (
+        "sentence split",
+        "The trial enrolled 240 patients and reported no serious adverse events.",
+        "The trial enrolled 240 patients. It reported no serious adverse events.",
+    ),
+    (
+        "synonym swap",
+        "The findings underscore the pivotal role of early intervention.",
+        "The findings highlight how crucial early intervention is.",
+    ),
+    (
+        "register shift",
+        "It is important to note that the results demonstrate a significant improvement.",
+        "The results show a real improvement, which matters.",
+    ),
+    (
+        "contraction",
+        "The company did not anticipate the regulatory change.",
+        "The company didn't see the rule change coming.",
+    ),
+    (
+        "de-AI-ification",
+        "Furthermore, the organization leverages robust methodologies to optimize outcomes.",
+        "The team also uses solid methods to get better results.",
+    ),
+    (
+        "hedge preserved",
+        "The results suggest the treatment may help some patients.",
+        "The results hint that the treatment could help certain patients.",
+    ),
+    (
+        "voice change",
+        "The team deployed the fix on Tuesday morning.",
+        "The fix was deployed by the team on Tuesday morning.",
+    ),
 ]
 
 
@@ -154,14 +220,20 @@ class TestRolesCLI:
 
     @pytest.mark.skipif(not available(), reason="spaCy model not installed")
     def test_rejects_swap_that_survives_the_other_gates(self, capsys):
-        assert roles.main(["The cache invalidated the request.",
-                           "The request invalidated the cache."]) == 1
+        assert (
+            roles.main(["The cache invalidated the request.", "The request invalidated the cache."])
+            == 1
+        )
         assert json.loads(capsys.readouterr().out)["role_swap"] is True
 
     @pytest.mark.skipif(not available(), reason="spaCy model not installed")
     def test_passive_voice_is_not_a_swap(self, capsys):
-        assert roles.main(["The cache invalidated the request.",
-                           "The request was invalidated by the cache."]) == 0
+        assert (
+            roles.main(
+                ["The cache invalidated the request.", "The request was invalidated by the cache."]
+            )
+            == 0
+        )
 
 
 class TestPrepositionalObjectSwaps:
@@ -176,7 +248,10 @@ class TestPrepositionalObjectSwaps:
     @pytest.mark.parametrize(
         ("source", "candidate"),
         [
-            ("Organizations may benefit from these tools.", "These tools may benefit from organizations."),
+            (
+                "Organizations may benefit from these tools.",
+                "These tools may benefit from organizations.",
+            ),
             ("The team depends on the vendor.", "The vendor depends on the team."),
             ("The rule applies to contractors.", "Contractors apply to the rule."),
             ("Funding comes from the state.", "The state comes from funding."),
@@ -189,13 +264,33 @@ class TestPrepositionalObjectSwaps:
     @pytest.mark.parametrize(
         ("source", "candidate", "label"),
         [
-            ("Organizations may benefit from these tools.", "These tools may help organizations.", "recast"),
-            ("Organizations may benefit from these tools.", "Companies might gain from this software.", "synonyms"),
+            (
+                "Organizations may benefit from these tools.",
+                "These tools may help organizations.",
+                "recast",
+            ),
+            (
+                "Organizations may benefit from these tools.",
+                "Companies might gain from this software.",
+                "synonyms",
+            ),
             ("The team depends on the vendor.", "The team relies on the vendor.", "verb swap"),
-            ("The rule applies to contractors.", "Contractors are covered by the rule.", "voice recast"),
+            (
+                "The rule applies to contractors.",
+                "Contractors are covered by the rule.",
+                "voice recast",
+            ),
             ("Funding comes from the state.", "The state provides the funding.", "reworded"),
-            ("The proposal was rejected by the committee.", "The committee rejected the proposal.", "passive->active"),
-            ("Sales rose in Europe last year.", "Last year, sales grew across Europe.", "adjunct reorder"),
+            (
+                "The proposal was rejected by the committee.",
+                "The committee rejected the proposal.",
+                "passive->active",
+            ),
+            (
+                "Sales rose in Europe last year.",
+                "Last year, sales grew across Europe.",
+                "adjunct reorder",
+            ),
         ],
     )
     @pytest.mark.skipif(not available(), reason="spaCy model not installed")
@@ -228,7 +323,10 @@ class TestSelfReferentialTripleIsNotASwap:
         ("source", "candidate"),
         [
             ("The cache invalidated the request.", "The request invalidated the cache."),
-            ("Organizations may benefit from these tools.", "These tools may benefit from organizations."),
+            (
+                "Organizations may benefit from these tools.",
+                "These tools may benefit from organizations.",
+            ),
             ("The team depends on the vendor.", "The vendor depends on the team."),
             ("The rule applies to contractors.", "Contractors apply to the rule."),
         ],

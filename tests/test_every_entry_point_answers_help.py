@@ -15,6 +15,7 @@ the entry-point target ``untell.scripts.run:main`` only had an alias (``untell-l
 and no standalone ``untell-humanize`` entry.  This file is the check that makes that
 regression visible immediately.
 """
+
 from __future__ import annotations
 
 import importlib
@@ -138,7 +139,9 @@ def test_entry_point_list_matches_pyproject() -> None:
     test_dict = dict(ENTRY_POINTS)
     missing_in_test = set(toml_entries) - set(test_dict)
     extra_in_test = set(test_dict) - set(toml_entries)
-    mismatched = {k for k in (set(toml_entries) & set(test_dict)) if toml_entries[k] != test_dict[k]}
+    mismatched = {
+        k for k in (set(toml_entries) & set(test_dict)) if toml_entries[k] != test_dict[k]
+    }
 
     errors = []
     if missing_in_test:

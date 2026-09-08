@@ -1,6 +1,12 @@
 import json, os
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
-from untell.rewriter.structural import _flatten_negated_contrast, _flatten_vague_attribution, _flatten_copula, _flatten_cliches
+from untell.rewriter.structural import (
+    _flatten_negated_contrast,
+    _flatten_vague_attribution,
+    _flatten_copula,
+    _flatten_cliches,
+)
 
 out = {}
 # negated contrast -> positive statement kept

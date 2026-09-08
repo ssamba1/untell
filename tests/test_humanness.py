@@ -1,4 +1,5 @@
 """Tests for the humanness score metric."""
+
 from __future__ import annotations
 
 import json
@@ -93,11 +94,20 @@ def test_dead_detectors_do_not_inflate_the_humanness_score(monkeypatch):
     )
     working = h.humanness(ai_text, tier="lite")
 
-    monkeypatch.setattr(h, "score_text", lambda text, tier="full", threshold=0.30: {
-        "detectors": {}, "max": 0.0, "mean": 0.0, "ai_percent": 0.0,
-        "threshold": threshold, "flagged": False, "scored": False,
-        "warning": "no detector produced a score",
-    })
+    monkeypatch.setattr(
+        h,
+        "score_text",
+        lambda text, tier="full", threshold=0.30: {
+            "detectors": {},
+            "max": 0.0,
+            "mean": 0.0,
+            "ai_percent": 0.0,
+            "threshold": threshold,
+            "flagged": False,
+            "scored": False,
+            "warning": "no detector produced a score",
+        },
+    )
     dead = h.humanness(ai_text, tier="lite")
     assert dead <= working, (
         f"a dead detector stack scored {dead} against {working} working — the placeholder is "
@@ -154,7 +164,8 @@ class TestTooShortToScore:
     """
 
     @pytest.mark.parametrize(
-        "text", ["Hello", "It works.", "Yes.", "one two three four"],
+        "text",
+        ["Hello", "It works.", "Yes.", "one two three four"],
         ids=["one-word", "two-words", "single", "four-words"],
     )
     def test_short_text_is_undetermined_not_confident(self, text):
@@ -277,7 +288,7 @@ class TestTheCliSaysWhy:
         assert _dominant_signal(self.VARIED_HUMAN, "lite") is None
 
     def test_the_detector_is_only_named_when_nothing_actionable_is(self):
-        """"The detector says 0.78" is not something a reader can act on, so it is the fallback —
+        """ "The detector says 0.78" is not something a reader can act on, so it is the fallback —
         and in that position it carries real information: the text reads clean and still scores as
         machine-written."""
         from untell.humanness import _dominant_signal

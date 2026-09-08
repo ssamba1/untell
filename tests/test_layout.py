@@ -36,8 +36,17 @@ DOC = (
     "2. Moreover, configure it.\n"
 )
 
-REWRITERS = ["structural", "surgical", "composite", "targeted", "ensemble", "neural", "max",
-             "t5_paraphrase", "mt_pivot"]
+REWRITERS = [
+    "structural",
+    "surgical",
+    "composite",
+    "targeted",
+    "ensemble",
+    "neural",
+    "max",
+    "t5_paraphrase",
+    "mt_pivot",
+]
 
 
 def _shape(t: str) -> dict:
@@ -89,7 +98,7 @@ def test_soft_wrapped_lines_are_one_block():
 
 
 def test_markers_are_reattached_verbatim():
-    """"1. Install it." became "1, and in short, and, install it." — the marker was swallowed into
+    """ "1. Install it." became "1, and in short, and, install it." — the marker was swallowed into
     the sentence as if it were a numeral in the prose."""
     seen = []
     out = apply_per_block(
@@ -168,14 +177,14 @@ class TestAFenceClosesOnlyOnItsOwnMarker:
         assert "x = 1" in out
 
     def test_every_line_survives_verbatim(self):
-        src = 'a\n\n~~~\n```\ncode\n```\n~~~\n\nb\n'
+        src = "a\n\n~~~\n```\ncode\n```\n~~~\n\nb\n"
         assert apply_per_block(src, lambda b: b) == src
 
     def test_blocks_agrees_with_apply_per_block(self):
         """Both entry points are built on one partitioner; pin that they see the same fence."""
         from untell.layout import blocks
 
-        src = 'prose one\n\n~~~\n```\ncode\n```\n~~~\n\nprose two'
+        src = "prose one\n\n~~~\n```\ncode\n```\n~~~\n\nprose two"
         assert blocks(src) == ["prose one", "prose two"]
 
 
@@ -198,9 +207,17 @@ class TestBlocksExposesTheUnits:
     @pytest.mark.parametrize(
         ("label", "doc", "expected_units"),
         [
-            ("bullets", "- leverage robust methods\n- utilize frameworks\n- foster collaboration", 3),
+            (
+                "bullets",
+                "- leverage robust methods\n- utilize frameworks\n- foster collaboration",
+                3,
+            ),
             ("headings", "# Summary\n## Findings\n## Method\n## Conclusion", 4),
-            ("numbered", "1. delve into the data\n2. navigate the landscape\n3. showcase results", 3),
+            (
+                "numbered",
+                "1. delve into the data\n2. navigate the landscape\n3. showcase results",
+                3,
+            ),
             # NOT split, on purpose — one contiguous prose region either way.
             ("transcript", "ALICE: ship it\nBOB: not yet\nALICE: tests passed\nBOB: fine", 1),
             ("semicolon run-on", "It is robust; it scales; it delivers; it fosters innovation", 1),
@@ -236,7 +253,9 @@ class TestBlocksExposesTheUnits:
         from untell.layout import blocks
 
         src = "This sentence is wrapped\nacross two lines but is one\nsentence all the same."
-        assert blocks(src) == ["This sentence is wrapped\nacross two lines but is one\nsentence all the same."]
+        assert blocks(src) == [
+            "This sentence is wrapped\nacross two lines but is one\nsentence all the same."
+        ]
 
     def test_blank_lines_separate_units(self):
         from untell.layout import blocks
@@ -337,5 +356,7 @@ class TestBlockquotedTablesAreLayout:
 
     def test_blockquote_prose_is_still_prose(self):
         seen: list[str] = []
-        apply_per_block("> Some prose here. More prose.\n> And another line.", lambda b: seen.append(b) or b)
+        apply_per_block(
+            "> Some prose here. More prose.\n> And another line.", lambda b: seen.append(b) or b
+        )
         assert seen == ["Some prose here. More prose.", "And another line."]

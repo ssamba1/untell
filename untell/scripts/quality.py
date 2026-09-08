@@ -37,7 +37,9 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_BAR = 0.76  # semantic-cosine bar (P-SP threshold); only meaningful for the embedding metric
 TOKEN_BAR = 0.50  # token-overlap (Dice) bar; faithful paraphrases reword heavily and score lower
-BERTSCORE_BAR = 0.88  # BERTScore-F1 bar (rescaled-with-baseline); faithful paraphrases land ~0.88-0.92
+BERTSCORE_BAR = (
+    0.88  # BERTScore-F1 bar (rescaled-with-baseline); faithful paraphrases land ~0.88-0.92
+)
 # Unicode-aware: the ASCII-only [A-Za-z0-9']+ tokenised every non-Latin script to nothing, and
 # token_overlap then scored two unrelated Russian, Greek or Chinese texts as a perfect 1.0.
 _WORD = re.compile(r"[^\W_]+(?:'[^\W_]+)*", re.UNICODE)
@@ -120,7 +122,7 @@ def _char_bigrams(text: str):
     s = "".join(text.split()).lower()
     if len(s) < 2:
         return Counter(s)
-    return Counter(s[i:i + 2] for i in range(len(s) - 1))
+    return Counter(s[i : i + 2] for i in range(len(s) - 1))
 
 
 def token_overlap(a: str, b: str) -> float:
@@ -310,12 +312,12 @@ def main(argv: list[str] | None = None) -> int:
         print(
             'usage: quality.py "<original>" "<rewrite>"\n\n'
             # `bertscore` was still advertised here long after `method()` stopped being able to return
-        # it — its docstring says so in as many words, and this line said otherwise. A user reading
-        # --help to learn the JSON schema saw an enum value that can never appear, and the history
-        # right above makes that worse than cosmetic: selecting BERTSCORE_BAR is what rejected 19
-        # of 20 real rewrites, so advertising the value invites someone to write a branch for a
-        # path the gate no longer takes.
-        "Prints JSON: similarity, method (embedding|token_overlap), confidence, bar,\n"
+            # it — its docstring says so in as many words, and this line said otherwise. A user reading
+            # --help to learn the JSON schema saw an enum value that can never appear, and the history
+            # right above makes that worse than cosmetic: selecting BERTSCORE_BAR is what rejected 19
+            # of 20 real rewrites, so advertising the value invites someone to write a branch for a
+            # path the gate no longer takes.
+            "Prints JSON: similarity, method (embedding|token_overlap), confidence, bar,\n"
             "and whether the pair passes the bar for the ACTIVE metric (each lives on its own scale).",
         )
         return 0

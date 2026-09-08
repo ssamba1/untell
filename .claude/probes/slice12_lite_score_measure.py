@@ -3,6 +3,7 @@
 Measures whether the full score_text(tier='lite') path (detectors + quality gate +
 preserve re-lock) imports any heavy module, and its wall time. Fresh subprocess.
 """
+
 import json
 import os
 import subprocess
@@ -40,8 +41,9 @@ def run(label: str, env_extra: dict) -> dict:
             del env_extra[k]
     env.update(env_extra)
     t0 = time.perf_counter()
-    out = subprocess.run([sys.executable, "-c", PROBE], capture_output=True,
-                         text=True, env=env, timeout=300)
+    out = subprocess.run(
+        [sys.executable, "-c", PROBE], capture_output=True, text=True, env=env, timeout=300
+    )
     wall = time.perf_counter() - t0
     result = {"label": label, "wall_total": round(wall, 3), "rc": out.returncode}
     if out.returncode != 0:

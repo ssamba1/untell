@@ -7,6 +7,7 @@ uninformative (measured per-sentence AUROC 0.493, 91/100 sentences exactly
 0.250). The mutation != -> == makes the stdlib mode short-circuit to
 "informative", treating a near-constant ranking as trustworthy.
 """
+
 from unittest.mock import patch
 
 from untell.scripts.sentences import _targeting_is_uninformative
@@ -16,6 +17,4 @@ _PB_ONLY = [type("D", (), {"name": "perplexity_burstiness"})()]
 
 def test_stdlib_mode_is_uninformative():
     with patch("untell.detectors.base.load_detectors", return_value=_PB_ONLY):
-        assert _targeting_is_uninformative(
-            "lite", {"perplexity_burstiness": "stdlib"}
-        ) is True
+        assert _targeting_is_uninformative("lite", {"perplexity_burstiness": "stdlib"}) is True

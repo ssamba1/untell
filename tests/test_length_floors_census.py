@@ -28,56 +28,86 @@ REPO = pathlib.Path(__file__).resolve().parent.parent
 # module path -> {constant: (value, why this number)}
 FLOORS: dict[str, dict[str, tuple[float, str]]] = {
     "untell/detectors/perplexity_burstiness.py": {
-        "_MIN_WORDS_FOR_SIGNAL": (5, "burstiness is a variance over sentences; under five words "
-                                     "there is no distribution to take a variance of"),
+        "_MIN_WORDS_FOR_SIGNAL": (
+            5,
+            "burstiness is a variance over sentences; under five words "
+            "there is no distribution to take a variance of",
+        ),
     },
     "untell/humanness.py": {
-        "_MIN_WORDS_FOR_SIGNAL": (5, "matches the detector's own abstention, deliberately — "
-                                     "humanness must not claim a score where its input abstained"),
-        "_MIN_WORDS_FOR_A_BAND": (40, "the same bar `score_text` uses, deliberately: measured on 30 "
-                                      "HC3 pairs truncated to 40 words, AUROC 0.694 against 0.978 "
-                                      "at full length and 0 of 30 genuine HUMAN texts reaching the "
-                                      "'human' bands, so the number is returned and the BAND is "
-                                      "caveated rather than withheld"),
+        "_MIN_WORDS_FOR_SIGNAL": (
+            5,
+            "matches the detector's own abstention, deliberately — "
+            "humanness must not claim a score where its input abstained",
+        ),
+        "_MIN_WORDS_FOR_A_BAND": (
+            40,
+            "the same bar `score_text` uses, deliberately: measured on 30 "
+            "HC3 pairs truncated to 40 words, AUROC 0.694 against 0.978 "
+            "at full length and 0 of 30 genuine HUMAN texts reaching the "
+            "'human' bands, so the number is returned and the BAND is "
+            "caveated rather than withheld",
+        ),
     },
     "untell/scripts/run.py": {
-        "_MIN_VOICE_SAMPLE_WORDS": (20, "below this the style profile is near-flat and the "
-                                        "tie-break inverts toward degenerate output; measured at "
-                                        "2.5225/0.8329/0.1282 on a whitespace-only sample"),
+        "_MIN_VOICE_SAMPLE_WORDS": (
+            20,
+            "below this the style profile is near-flat and the "
+            "tie-break inverts toward degenerate output; measured at "
+            "2.5225/0.8329/0.1282 on a whitespace-only sample",
+        ),
     },
     "untell/scripts/score.py": {
-        "_MIN_WORDS_FOR_A_VERDICT": (40, "the detectors' scores separate at length; under 40 words "
-                                         "the verdict is a coin flip dressed as a probability"),
+        "_MIN_WORDS_FOR_A_VERDICT": (
+            40,
+            "the detectors' scores separate at length; under 40 words "
+            "the verdict is a coin flip dressed as a probability",
+        ),
     },
     "untell/scripts/sentences.py": {
-        "_MIN_SENTENCES_FOR_SPREAD": (3, "the caveat this gates says the per-sentence scores are "
-                                         "too close together to ORDER, and two points are always "
-                                         "orderable — calling a two-sentence document rankable or "
-                                         "not is noise either way. Distinct from the word-count "
-                                         "floors above: those ask whether one text is long enough "
-                                         "to score, this asks whether several scores can be "
-                                         "compared, so it counts sentences and does not contradict "
-                                         "a words-per-text bar"),
+        "_MIN_SENTENCES_FOR_SPREAD": (
+            3,
+            "the caveat this gates says the per-sentence scores are "
+            "too close together to ORDER, and two points are always "
+            "orderable — calling a two-sentence document rankable or "
+            "not is noise either way. Distinct from the word-count "
+            "floors above: those ask whether one text is long enough "
+            "to score, this asks whether several scores can be "
+            "compared, so it counts sentences and does not contradict "
+            "a words-per-text bar",
+        ),
     },
     "untell/scripts/tells.py": {
-        "_MIN_WORDS_FOR_REPETITION": (60, "a repetition rate needs enough text for a repeat to be "
-                                          "evidence rather than coincidence"),
-        "_MIN_WORDS_FOR_A_RATE": (14, "100/14 = 7.1 per-100w, just under the 7.335 AI corpus mean: "
-                                      "at 13 words a single tell already outranks average AI text"),
+        "_MIN_WORDS_FOR_REPETITION": (
+            60,
+            "a repetition rate needs enough text for a repeat to be "
+            "evidence rather than coincidence",
+        ),
+        "_MIN_WORDS_FOR_A_RATE": (
+            14,
+            "100/14 = 7.1 per-100w, just under the 7.335 AI corpus mean: "
+            "at 13 words a single tell already outranks average AI text",
+        ),
         # Added to the census by the full-suite run that found it missing, not by the commit that
         # introduced it — which is what this census exists to catch. The floor carries its own
         # measurement: at 8 words, 0/20 English false positives and 9/10 non-English caught; at 12,
         # 0/20 and 0/10. Below ~8 words a single article decides the function-word ratio.
-        "_LANG_MIN_WORDS": (8, "the shortest text where the English function-word ratio still "
-                               "separates the classes: 0/20 false positives and 9/10 non-English "
-                               "caught, against 0/10 caught at 12 words"),
+        "_LANG_MIN_WORDS": (
+            8,
+            "the shortest text where the English function-word ratio still "
+            "separates the classes: 0/20 false positives and 9/10 non-English "
+            "caught, against 0/10 caught at 12 words",
+        ),
     },
     "untell/scripts/preserve.py": {
-        "_MIN_WORD_CHAR_SHARE": (0.10, "the NER-skip guard for symbol soup (spaCy's tokenizer is "
-                                       "O(n^2) on long non-word runs — MEASURED ~36s on 10k '$' "
-                                       "tokens). Below one word-character in ten there is nothing "
-                                       "worth locking; the ratio check is a single linear regex "
-                                       "pass, cheaper than what it prevents"),
+        "_MIN_WORD_CHAR_SHARE": (
+            0.10,
+            "the NER-skip guard for symbol soup (spaCy's tokenizer is "
+            "O(n^2) on long non-word runs — MEASURED ~36s on 10k '$' "
+            "tokens). Below one word-character in ten there is nothing "
+            "worth locking; the ratio check is a single linear regex "
+            "pass, cheaper than what it prevents",
+        ),
     },
     "untell/scripts/voice.py": {
         "MIN_SAMPLE_WORDS": (150, "where the same-author/cross-author AUROC of 0.680 was measured"),
@@ -116,7 +146,9 @@ def test_the_two_signal_floors_still_agree() -> None:
     `humanness` abstains where its detector abstains. If the detector's floor moved alone, humanness
     would report a score built on an input that had declined to produce one.
     """
-    detector = _module_constants("untell/detectors/perplexity_burstiness.py")["_MIN_WORDS_FOR_SIGNAL"]
+    detector = _module_constants("untell/detectors/perplexity_burstiness.py")[
+        "_MIN_WORDS_FOR_SIGNAL"
+    ]
     wrapper = _module_constants("untell/humanness.py")["_MIN_WORDS_FOR_SIGNAL"]
     assert detector == wrapper, (
         f"humanness abstains at {wrapper} words but its detector abstains at {detector}; between "

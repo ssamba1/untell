@@ -1,5 +1,7 @@
 """_common_ratio + _MIN_WORDS_FOR_SIGNAL boundary: 5 words must be scoreable, 4 must abstain."""
+
 import json, os
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
 from untell.detectors.perplexity_burstiness import _common_ratio, lite_score
 

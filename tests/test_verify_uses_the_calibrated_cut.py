@@ -68,7 +68,9 @@ def test_the_two_surfaces_agree_across_real_corpus_text():
         if DEFAULT_THRESHOLD <= scored["max"] < scored["verdict_threshold"]:
             in_band += 1
         assert _local_max(verify(human, tier="lite"))["passes"] == (not scored["flagged"])
-    assert in_band, "premise: some human text must fall between the two cuts, or this proves nothing"
+    assert in_band, (
+        "premise: some human text must fall between the two cuts, or this proves nothing"
+    )
 
 
 def test_the_calibrated_cut_is_the_one_applied():

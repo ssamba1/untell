@@ -49,6 +49,7 @@ def _embedding_path(monkeypatch):
     """
     monkeypatch.delenv("UNTELL_LITE_NO_TORCH", raising=False)
 
+
 BODY = (
     "Salt lowers the freezing point of water, which is why it is spread on roads in winter. "
     "It works down to about minus nine degrees, below which other chemicals are needed. "
@@ -98,7 +99,7 @@ def test_several_stacked_sign_offs_all_go() -> None:
 
 
 def test_a_sign_off_mid_document_is_not_touched() -> None:
-    """"Let me know if the build fails" early in a document is an instruction to a reader."""
+    """ "Let me know if the build fails" early in a document is an instruction to a reader."""
     text = f"Let me know if the build fails. {BODY}"
     assert _strip_meta_closers(text) == text
 

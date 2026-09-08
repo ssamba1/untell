@@ -101,8 +101,11 @@ def test_no_markdown_form_changes_a_verdict() -> None:
     except Exception as exc:  # noqa: BLE001 - corpus availability is environmental
         pytest.skip(f"hc3 unavailable: {exc}")
     machine = [m for _, m in pairs][:10]
-    scaffold_head, scaffold_tail = "# Overview\n\n", (
-        "\n\n## Detail\n\n- One\n- Two\n\n| a | b |\n|---|---|\n| 1 | 2 |\n\n```bash\nrun --now\n```\n"
+    scaffold_head, scaffold_tail = (
+        "# Overview\n\n",
+        (
+            "\n\n## Detail\n\n- One\n- Two\n\n| a | b |\n|---|---|\n| 1 | 2 |\n\n```bash\nrun --now\n```\n"
+        ),
     )
     dropped = []
     for text in machine:
@@ -110,4 +113,6 @@ def test_no_markdown_form_changes_a_verdict() -> None:
         wrapped = score_text(scaffold_head + text + scaffold_tail, tier="lite")["max"]
         if plain >= 0.30 > wrapped:
             dropped.append((round(plain, 4), round(wrapped, 4)))
-    assert not dropped, f"{len(dropped)} of {len(machine)} crossed below the threshold: {dropped[:3]}"
+    assert not dropped, (
+        f"{len(dropped)} of {len(machine)} crossed below the threshold: {dropped[:3]}"
+    )

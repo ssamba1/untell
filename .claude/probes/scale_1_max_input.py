@@ -6,6 +6,7 @@ and UNTELL_LITE_NO_TORCH=1 (force stdlib lite path, no model downloads).
 
 Usage: python scale_1_max_input.py
 """
+
 import json
 import os
 import subprocess
@@ -49,23 +50,41 @@ def run_attempt(n_chars: int) -> dict:
     try:
         p = subprocess.run(
             [PY, CHILD, str(n_chars)],
-            capture_output=True, text=True, timeout=TIMEOUT, env=env, cwd=REPO,
+            capture_output=True,
+            text=True,
+            timeout=TIMEOUT,
+            env=env,
+            cwd=REPO,
         )
         wall = time.time() - t0
         if p.returncode != 0:
-            return {"size": n_chars, "ok": False, "wall": round(wall, 2),
-                    "reason": f"exit {p.returncode}", "stderr": p.stderr[-300:]}
+            return {
+                "size": n_chars,
+                "ok": False,
+                "wall": round(wall, 2),
+                "reason": f"exit {p.returncode}",
+                "stderr": p.stderr[-300:],
+            }
         try:
             data = json.loads(p.stdout.strip().splitlines()[-1])
         except Exception:
-            return {"size": n_chars, "ok": False, "wall": round(wall, 2),
-                    "reason": "bad child output", "stderr": p.stderr[-300:]}
+            return {
+                "size": n_chars,
+                "ok": False,
+                "wall": round(wall, 2),
+                "reason": "bad child output",
+                "stderr": p.stderr[-300:],
+            }
         data["wall"] = round(wall, 2)
         data["ok"] = True
         return data
     except subprocess.TimeoutExpired:
-        return {"size": n_chars, "ok": False, "wall": round(time.time() - t0, 2),
-                "reason": f"TIMEOUT >{TIMEOUT}s"}
+        return {
+            "size": n_chars,
+            "ok": False,
+            "wall": round(time.time() - t0, 2),
+            "reason": f"TIMEOUT >{TIMEOUT}s",
+        }
 
 
 def main():
@@ -74,26 +93,41 @@ def main():
     for s in SIZES:
         r = run_attempt(s)
         bounds[s] = r["ok"]
-        print(f"[coarse] {s:>9,} chars -> {'OK' if r['ok'] else 'FAIL'}  wall={r['wall']}s  "
-              f"reason={r.get('reason', '')}", flush=True)
+        print(
+            f"[coarse] {s:>9,} chars -> {'OK' if r['ok'] else 'FAIL'}  wall={r['wall']}s  "
+            f"reason={r.get('reason', '')}",
+            flush=True,
+        )
         if not r["ok"]:
-            print("   child stderr tail:", r.get("stderr", "")[-200:].replace("\n", " | "), flush=True)
+            print(
+                "   child stderr tail:", r.get("stderr", "")[-200:].replace("\n", " | "), flush=True
+            )
 
     ok_sizes = [s for s in SIZES if bounds[s]]
     fail_sizes = [s for s in SIZES if not bounds[s]]
     if not ok_sizes or not fail_sizes:
-        print(json.dumps({"max_ok": max(ok_sizes) if ok_sizes else 0,
-                          "bounds": bounds, "note": "no crossing found in coarse pass"}))
+        print(
+            json.dumps(
+                {
+                    "max_ok": max(ok_sizes) if ok_sizes else 0,
+                    "bounds": bounds,
+                    "note": "no crossing found in coarse pass",
+                }
+            )
+        )
         return
 
-    lo = max(ok_sizes)          # known OK
-    hi = min(fail_sizes)        # known FAIL
+    lo = max(ok_sizes)  # known OK
+    hi = min(fail_sizes)  # known FAIL
     # bisect up to 4 refinement steps
     for _ in range(4):
         mid = (lo + hi) // 2
         r = run_attempt(mid)
-        print(f"[bisect] {mid:>9,} chars -> {'OK' if r['ok'] else 'FAIL'}  wall={r['wall']}s  "
-              f"reason={r.get('reason', '')}", flush=True)
+        print(
+            f"[bisect] {mid:>9,} chars -> {'OK' if r['ok'] else 'FAIL'}  wall={r['wall']}s  "
+            f"reason={r.get('reason', '')}",
+            flush=True,
+        )
         if r["ok"]:
             lo = mid
         else:
@@ -101,13 +135,17 @@ def main():
         if hi - lo < 5000:
             break
 
-    print(json.dumps({
-        "max_workable_chars": lo,
-        "first_fail_chars": hi,
-        "bounds": {str(k): v for k, v in bounds.items()},
-        "note": "score_text truncates at 50k chars; untell_text rewrites the WHOLE doc "
+    print(
+        json.dumps(
+            {
+                "max_workable_chars": lo,
+                "first_fail_chars": hi,
+                "bounds": {str(k): v for k, v in bounds.items()},
+                "note": "score_text truncates at 50k chars; untell_text rewrites the WHOLE doc "
                 "(this ceiling is the rewrite+gate path, max_iters=1, best_of=1)",
-    }))
+            }
+        )
+    )
 
 
 if __name__ == "__main__":
@@ -122,14 +160,23 @@ if __name__ == "__main__":
         try:
             res = untell_text(doc, tier="lite", max_iters=1, best_of=1, seed=42)
             dt = time.time() - t0
-            out = {"size": n, "elapsed": round(dt, 3),
-                   "final_len": len(res.get("final", "")), "iterations": res.get("iterations"),
-                   "flagged": res.get("flagged"), "tier": res.get("tier"),
-                   "similarity": res.get("similarity")}
+            out = {
+                "size": n,
+                "elapsed": round(dt, 3),
+                "final_len": len(res.get("final", "")),
+                "iterations": res.get("iterations"),
+                "flagged": res.get("flagged"),
+                "tier": res.get("tier"),
+                "similarity": res.get("similarity"),
+            }
         except MemoryError:
             out = {"size": n, "elapsed": round(time.time() - t0, 3), "error": "MemoryError"}
         except Exception as exc:
-            out = {"size": n, "elapsed": round(time.time() - t0, 3), "error": f"{type(exc).__name__}: {exc}"}
+            out = {
+                "size": n,
+                "elapsed": round(time.time() - t0, 3),
+                "error": f"{type(exc).__name__}: {exc}",
+            }
         print(json.dumps(out), flush=True)
     else:
         main()

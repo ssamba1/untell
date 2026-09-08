@@ -22,7 +22,10 @@ def test_worst_detectors_names_exactly_top_three():
     fourth (lowest) must stay out of the prompt."""
     sr = {
         "detectors": {
-            "alpha": 0.90, "beta": 0.80, "gamma": 0.70, "delta": 0.60,
+            "alpha": 0.90,
+            "beta": 0.80,
+            "gamma": 0.70,
+            "delta": 0.60,
         }
     }
     p = build_rewrite_prompt("Some text.", sr, 0.30)

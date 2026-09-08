@@ -33,20 +33,16 @@ from untell.scripts.score import score_text
 from untell.scripts.tells import score_tells
 
 CLEAN = {
-    "academic":
-        "The study examined soil carbon at eleven sites over four years, sampling to ninety "
-        "centimetres. Mean stocks were 82.4 t/ha in the deepest layer, against 41.7 at the surface.",
-    "informal":
-        "My grandmother kept every birthday card anyone ever sent her, in a shoebox, in date "
-        "order. When she died we found forty years of them. Half were from people none of us could "
-        "place.",
-    "technical":
-        "Implementations must reject frames whose declared length exceeds the negotiated maximum. "
-        "A receiver that encounters an unknown opcode terminates the connection with status 1003.",
+    "academic": "The study examined soil carbon at eleven sites over four years, sampling to ninety "
+    "centimetres. Mean stocks were 82.4 t/ha in the deepest layer, against 41.7 at the surface.",
+    "informal": "My grandmother kept every birthday card anyone ever sent her, in a shoebox, in date "
+    "order. When she died we found forty years of them. Half were from people none of us could "
+    "place.",
+    "technical": "Implementations must reject frames whose declared length exceeds the negotiated maximum. "
+    "A receiver that encounters an unknown opcode terminates the connection with status 1003.",
     "one sentence": "An unsupervised segmentation approach was used throughout the study.",
-    "recollection":
-        "The oven has been dead since March. I keep meaning to call someone about it and then I "
-        "do not. The toaster oven does most of what I need, so roast chicken is off the menu.",
+    "recollection": "The oven has been dead since March. I keep meaning to call someone about it and then I "
+    "do not. The toaster oven does most of what I need, so roast chicken is off the menu.",
 }
 SEEDS = range(24)
 # Detector noise. A hair either way is not a regression; +0.05 and +0.10 are.
@@ -109,10 +105,7 @@ def test_an_unselected_rewriter_does_regress_somewhere() -> None:
     """Guards every case above. If NOTHING ever regressed these fixtures, "composite never
     regresses" would be true of any implementation, including one that does nothing at all. The
     claim only means something because structural alone demonstrably can."""
-    regressing = {
-        name: _regressions("structural", text)
-        for name, text in CLEAN.items()
-    }
+    regressing = {name: _regressions("structural", text) for name, text in CLEAN.items()}
     total = sum(len(v) for v in regressing.values())
     assert total > 0, (
         "structural regressed none of these fixtures at any seed, so the composite assertions "

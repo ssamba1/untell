@@ -29,22 +29,66 @@ import unicodedata
 
 # ASCII -> visually-identical homoglyph (Cyrillic/Greek). Conservative set that renders identically.
 _HOMOGLYPH = {
-    "a": "а", "c": "с", "e": "е", "o": "о", "p": "р", "x": "х",
-    "y": "у", "A": "А", "B": "В", "C": "С", "E": "Е", "H": "Н",
-    "K": "К", "M": "М", "O": "О", "P": "Р", "T": "Т", "X": "Х",
+    "a": "а",
+    "c": "с",
+    "e": "е",
+    "o": "о",
+    "p": "р",
+    "x": "х",
+    "y": "у",
+    "A": "А",
+    "B": "В",
+    "C": "С",
+    "E": "Е",
+    "H": "Н",
+    "K": "К",
+    "M": "М",
+    "O": "О",
+    "P": "Р",
+    "T": "Т",
+    "X": "Х",
 }
 # Reverse map for scrubbing back to ASCII. The SCRUB direction must be wider than the attack
 # direction: we only emit Cyrillic confusables, but an adversary (or another humanizer) can use
 # Greek ones just as easily, and the docstring already promised "Cyrillic/Greek". Measured, the
 # Greek set was entirely absent — "aοc" (Greek omicron) survived scrub_hidden untouched.
 _UNHOMOGLYPH = {v: k for k, v in _HOMOGLYPH.items()}
-_UNHOMOGLYPH.update({
-    "ο": "o", "α": "a", "ε": "e", "ρ": "p", "χ": "x", "υ": "y", "ι": "i", "κ": "k", "ν": "v",
-    "Α": "A", "Β": "B", "Ε": "E", "Ζ": "Z", "Η": "H", "Ι": "I", "Κ": "K", "Μ": "M", "Ν": "N",
-    "Ο": "O", "Ρ": "P", "Τ": "T", "Υ": "Y", "Χ": "X",
-    # Cyrillic confusables we never emit ourselves but must still strip on the way in.
-    "і": "i", "ѕ": "s", "ј": "j", "һ": "h", "ԁ": "d", "Ѕ": "S", "Ј": "J", "І": "I",
-})
+_UNHOMOGLYPH.update(
+    {
+        "ο": "o",
+        "α": "a",
+        "ε": "e",
+        "ρ": "p",
+        "χ": "x",
+        "υ": "y",
+        "ι": "i",
+        "κ": "k",
+        "ν": "v",
+        "Α": "A",
+        "Β": "B",
+        "Ε": "E",
+        "Ζ": "Z",
+        "Η": "H",
+        "Ι": "I",
+        "Κ": "K",
+        "Μ": "M",
+        "Ν": "N",
+        "Ο": "O",
+        "Ρ": "P",
+        "Τ": "T",
+        "Υ": "Y",
+        "Χ": "X",
+        # Cyrillic confusables we never emit ourselves but must still strip on the way in.
+        "і": "i",
+        "ѕ": "s",
+        "ј": "j",
+        "һ": "h",
+        "ԁ": "d",
+        "Ѕ": "S",
+        "Ј": "J",
+        "І": "I",
+    }
+)
 
 # Genuinely invisible watermark/steganography carriers with no legitimate role in prose.
 # NOTE: U+200D (ZWJ) and the variation selectors (incl. U+FE0F) are deliberately NOT listed — they
@@ -67,14 +111,14 @@ _WATERMARK_CHARS = re.compile(
     # generators emit — and none is covered by the bidi/variation-selector rationale above, which is
     # about characters that ARE load-bearing. Measured, all of them passed through scrub_hidden
     # untouched while count_hidden reported 0.
-    "|­"              # SOFT HYPHEN — invisible unless the renderer breaks the line
-    "|͏"              # COMBINING GRAPHEME JOINER — no visible effect anywhere
-    "|؜"              # ARABIC LETTER MARK — bidi-adjacent but invisible in Latin prose
-    "|᠎"              # MONGOLIAN VOWEL SEPARATOR — deprecated, zero width
-    "|⠀"              # BRAILLE PATTERN BLANK — renders as blank, not a space
+    "|­"  # SOFT HYPHEN — invisible unless the renderer breaks the line
+    "|͏"  # COMBINING GRAPHEME JOINER — no visible effect anywhere
+    "|؜"  # ARABIC LETTER MARK — bidi-adjacent but invisible in Latin prose
+    "|᠎"  # MONGOLIAN VOWEL SEPARATOR — deprecated, zero width
+    "|⠀"  # BRAILLE PATTERN BLANK — renders as blank, not a space
     "|[ᅟᅠㅤﾠ]"  # Hangul fillers — render as blank
-    "|[឴឵]"      # Khmer inherent vowels — invisible
-    "|[￹-￻]"     # interlinear annotation anchors
+    "|[឴឵]"  # Khmer inherent vowels — invisible
+    "|[￹-￻]"  # interlinear annotation anchors
 )
 
 # Whitespace variants that render like a space but are distinct codepoints. Width-encoded
@@ -110,12 +154,13 @@ def _is_emoji_adjacent(ch: str) -> bool:
         return False
     o = ord(ch)
     return (
-        0x1F000 <= o <= 0x1FAFF        # pictographic emoji blocks
-        or 0x1F1E6 <= o <= 0x1F1FF     # regional indicators (flags)
-        or 0x2600 <= o <= 0x27BF       # misc symbols + dingbats
-        or 0x2300 <= o <= 0x23FF       # misc technical (⌚ ⏰ …)
-        or 0xFE00 <= o <= 0xFE0F       # variation selectors (sit between an emoji base and the ZWJ)
-        or o in (0x2640, 0x2642, 0x2695, 0x2696, 0x2708, 0x2764, 0x2122, 0x00A9, 0x00AE, 0x203C, 0x2049)
+        0x1F000 <= o <= 0x1FAFF  # pictographic emoji blocks
+        or 0x1F1E6 <= o <= 0x1F1FF  # regional indicators (flags)
+        or 0x2600 <= o <= 0x27BF  # misc symbols + dingbats
+        or 0x2300 <= o <= 0x23FF  # misc technical (⌚ ⏰ …)
+        or 0xFE00 <= o <= 0xFE0F  # variation selectors (sit between an emoji base and the ZWJ)
+        or o
+        in (0x2640, 0x2642, 0x2695, 0x2696, 0x2708, 0x2764, 0x2122, 0x00A9, 0x00AE, 0x203C, 0x2049)
     )
 
 
@@ -124,10 +169,7 @@ def _is_emoji_adjacent(ch: str) -> bool:
 _BIDI_CONTROLS = re.compile("[‎‏‪-‮⁦-⁩]")
 # Ranges whose presence means bidi controls may be doing real layout work: Hebrew, Arabic, Syriac,
 # Thaana, N'Ko, Samaritan, Mandaic, Arabic Supplement/Extended, and the presentation forms.
-_RTL_CHARS = re.compile(
-    "[֐-׿؀-ۿ܀-ݏހ-޿߀-߿"
-    "ࠀ-࠿ࡀ-࡟ࢠ-ࣿיִ-﷿ﹰ-﻿]"
-)
+_RTL_CHARS = re.compile("[֐-׿؀-ۿ܀-ݏހ-޿߀-߿ࠀ-࠿ࡀ-࡟ࢠ-ࣿיִ-﷿ﹰ-﻿]")
 # Variation selectors. VS16 after an emoji base is load-bearing; the same codepoint between two
 # Latin letters is a carrier — the "variation-selector smuggling" trick. Treated exactly like ZWJ:
 # kept when it sits next to something emoji-ish, dropped when it does not.
@@ -184,9 +226,7 @@ _DEPRECATED_FORMAT = re.compile("[⁪-⁯]")
 # cover. Each entry is (the marks, a pattern matching the script that makes them meaningful).
 _SCRIPTED_FORMAT_MARKS: tuple[tuple[re.Pattern, re.Pattern], ...] = (
     # Arabic and Syriac number/ayah/abbreviation signs
-    (re.compile("[؀-؅۝܏࢐࢑࣢]"),
-     re.compile("[؀-ۿ܀-ݏݐ-ݿࢠ-ࣿ"
-                "ﭐ-﷿ﹰ-﻿]")),
+    (re.compile("[؀-؅۝܏࢐࢑࣢]"), re.compile("[؀-ۿ܀-ݏݐ-ݿࢠ-ࣿﭐ-﷿ﹰ-﻿]")),
     # Kaithi number signs
     (re.compile("[𑂽𑃍]"), re.compile("[𑂀-𑃏]")),
     # Egyptian hieroglyph joiners and segment controls
@@ -367,8 +407,7 @@ def _strip_orphan_tags(text: str) -> str:
     for m in _FLAG_TAG_SEQUENCE_RE.finditer(text):
         protected.update(range(m.start(), m.end()))
     return "".join(
-        ch for i, ch in enumerate(text)
-        if i in protected or not _TAG_CHAR_RE.fullmatch(ch)
+        ch for i, ch in enumerate(text) if i in protected or not _TAG_CHAR_RE.fullmatch(ch)
     )
 
 
@@ -651,7 +690,11 @@ def _affected_chars(source: str, cleaned: str) -> int:
         insertion = agreement(i, j + 1)
         best = max(substitution, deletion, insertion)
         # Ties break on what is left: more source than output means a character has to go.
-        if best == substitution and (n - i) == (m - j) or best == substitution > max(deletion, insertion):
+        if (
+            best == substitution
+            and (n - i) == (m - j)
+            or best == substitution > max(deletion, insertion)
+        ):
             affected += 1
             i += 1
             j += 1

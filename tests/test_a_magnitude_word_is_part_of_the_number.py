@@ -19,6 +19,7 @@ notation is not read as dropping a number.
 MEASURED over a 15-case battery of quantity changes: 11 of 15 caught before, 12 of 15 after, with
 0 false flags on 6 faithful rewrites in both runs.
 """
+
 from __future__ import annotations
 
 import pytest
@@ -91,7 +92,9 @@ def test_the_pattern_has_no_stray_control_character():
         ("ordinal", "It ranked third overall.", "It ranked first overall."),
     ],
 )
-@pytest.mark.xfail(reason="out of scope: units, ordinals and fractions are not numerals", strict=True)
+@pytest.mark.xfail(
+    reason="out of scope: units, ordinals and fractions are not numerals", strict=True
+)
 def test_the_remaining_gaps_are_recorded(name: str, source: str, rewrite: str):
     """Pinned as xfail so the scope is visible rather than assumed.
 

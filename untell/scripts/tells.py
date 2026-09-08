@@ -209,18 +209,30 @@ logger = logging.getLogger(__name__)
 #
 # "unmeasured" means exactly that: no evidence either way from this corpus, not "weak".
 _EVIDENCE: dict[str, str] = {
-    "sycophancy": "strong", "meta_closer": "strong", "filler_phrase": "strong",
-    "cliche": "strong", "chatbot_artifact": "strong", "cutoff_disclaimer": "strong",
-    "formulaic_transition": "moderate", "vague_attribution": "moderate",
-    "hedge_stacking": "weak", "negated_contrast": "weak", "ai_vocab": "weak",
-    "false_range": "weak", "em_dash": "weak", "inflated_copula": "weak",
-    "markdown_artifact": "weak", "rule_of_three": "weak", "semicolon_crutch": "weak",
+    "sycophancy": "strong",
+    "meta_closer": "strong",
+    "filler_phrase": "strong",
+    "cliche": "strong",
+    "chatbot_artifact": "strong",
+    "cutoff_disclaimer": "strong",
+    "formulaic_transition": "moderate",
+    "vague_attribution": "moderate",
+    "hedge_stacking": "weak",
+    "negated_contrast": "weak",
+    "ai_vocab": "weak",
+    "false_range": "weak",
+    "em_dash": "weak",
+    "inflated_copula": "weak",
+    "markdown_artifact": "weak",
+    "rule_of_three": "weak",
+    "semicolon_crutch": "weak",
     # Added 2026-08-07 and immediately the strongest entries here — repeated_phrasing at AUROC
     # 0.817 once controlled for length (0.965 raw, and the raw figure over-claims: RAID's AI texts
     # are 45% longer, which inflates any repetition measure), repeated_sentence_openers at
     # 0.901/0.606. Against 0.638-0.705 for the whole tells/100w metric, and ~0.57 for ai_vocab
     # measured twice. Both replicate across corpora, which is what earns "strong" here.
-    "repeated_phrasing": "strong", "repeated_sentence_openers": "moderate",
+    "repeated_phrasing": "strong",
+    "repeated_sentence_openers": "moderate",
 }
 
 _WORD = re.compile(r"[A-Za-z0-9']+")
@@ -230,28 +242,131 @@ _WORD = re.compile(r"[A-Za-z0-9']+")
 
 # High-frequency AI vocabulary (from ai-tells.md §1). Whole-word, case-insensitive.
 _AI_VOCAB = [
-    "ascertain", "relentless",  # documented in ai-tells.md, absent here
-    "delve", "leverage", "utilize", "utilizing", "robust", "seamless", "seamlessly", "tapestry",
-    "testament", "realm", "landscape", "underscore", "underscores", "underscoring", "pivotal",
-    "crucial", "vital", "foster", "fostering", "garner", "garnered", "bolster", "elevate", "embark",
-    "harness", "harnessing", "unlock", "unleash", "spearhead", "paramount", "plethora", "myriad",
-    "multifaceted", "nuanced", "intricate", "intricacies", "meticulous", "meticulously",
-    "comprehensive", "vibrant", "bustling", "noteworthy", "groundbreaking", "transformative",
-    "innovative", "boasts", "nestled", "profound", "holistic", "actionable", "impactful",
-    "streamline", "empower", "empowering", "revolutionize", "resonate", "encompass", "paradigm",
-    "cornerstone", "burgeoning", "quintessential", "overarching", "synergy", "endeavor", "commence",
-    "illuminate", "cultivate", "catalyze", "galvanize", "augment", "elucidate", "interplay",
-    "underpin", "compelling", "unprecedented", "exceptional", "remarkable", "sophisticated",
-    "invaluable", "unwavering", "scalable", "bespoke",
+    "ascertain",
+    "relentless",  # documented in ai-tells.md, absent here
+    "delve",
+    "leverage",
+    "utilize",
+    "utilizing",
+    "robust",
+    "seamless",
+    "seamlessly",
+    "tapestry",
+    "testament",
+    "realm",
+    "landscape",
+    "underscore",
+    "underscores",
+    "underscoring",
+    "pivotal",
+    "crucial",
+    "vital",
+    "foster",
+    "fostering",
+    "garner",
+    "garnered",
+    "bolster",
+    "elevate",
+    "embark",
+    "harness",
+    "harnessing",
+    "unlock",
+    "unleash",
+    "spearhead",
+    "paramount",
+    "plethora",
+    "myriad",
+    "multifaceted",
+    "nuanced",
+    "intricate",
+    "intricacies",
+    "meticulous",
+    "meticulously",
+    "comprehensive",
+    "vibrant",
+    "bustling",
+    "noteworthy",
+    "groundbreaking",
+    "transformative",
+    "innovative",
+    "boasts",
+    "nestled",
+    "profound",
+    "holistic",
+    "actionable",
+    "impactful",
+    "streamline",
+    "empower",
+    "empowering",
+    "revolutionize",
+    "resonate",
+    "encompass",
+    "paradigm",
+    "cornerstone",
+    "burgeoning",
+    "quintessential",
+    "overarching",
+    "synergy",
+    "endeavor",
+    "commence",
+    "illuminate",
+    "cultivate",
+    "catalyze",
+    "galvanize",
+    "augment",
+    "elucidate",
+    "interplay",
+    "underpin",
+    "compelling",
+    "unprecedented",
+    "exceptional",
+    "remarkable",
+    "sophisticated",
+    "invaluable",
+    "unwavering",
+    "scalable",
+    "bespoke",
     # second cluster (ai-tells.md §1/§2 promo set)
-    "showcasing", "showcase", "reimagine", "reimagining", "world-class", "cutting-edge",
-    "state-of-the-art", "best-in-class", "top-tier", "next-level", "turnkey", "supercharge",
-    "unparalleled", "trailblazing",
+    "showcasing",
+    "showcase",
+    "reimagine",
+    "reimagining",
+    "world-class",
+    "cutting-edge",
+    "state-of-the-art",
+    "best-in-class",
+    "top-tier",
+    "next-level",
+    "turnkey",
+    "supercharge",
+    "unparalleled",
+    "trailblazing",
     # third cluster (2024-2026 high-frequency tells)
-    "navigate", "navigating", "grapple", "beacon", "trajectory", "salient", "granular",
-    "orchestrate", "orchestrating", "curate", "curated", "amplify", "ecosystem", "dichotomy",
-    "juxtapose", "trove", "veritable", "aforementioned", "delves", "delving", "penchant",
-    "adept", "prowess", "hallmark", "poised",
+    "navigate",
+    "navigating",
+    "grapple",
+    "beacon",
+    "trajectory",
+    "salient",
+    "granular",
+    "orchestrate",
+    "orchestrating",
+    "curate",
+    "curated",
+    "amplify",
+    "ecosystem",
+    "dichotomy",
+    "juxtapose",
+    "trove",
+    "veritable",
+    "aforementioned",
+    "delves",
+    "delving",
+    "penchant",
+    "adept",
+    "prowess",
+    "hallmark",
+    "poised",
 ]
 _AI_VOCAB_RE = re.compile(r"\b(" + "|".join(_AI_VOCAB) + r")\b", re.IGNORECASE)
 
@@ -259,10 +374,27 @@ _AI_VOCAB_RE = re.compile(r"\b(" + "|".join(_AI_VOCAB) + r")\b", re.IGNORECASE)
 # "Importantly" live in _STEER_RE instead, and "In conclusion"/"In summary" in _CLICHES, so they are
 # NOT repeated here (a single phrase must count in exactly one category, never two).
 _TRANSITIONS = [
-    "Moreover", "Furthermore", "Additionally", "Overall", "Ultimately",
-    "Thus", "Therefore", "Accordingly", "Hence", "Subsequently", "Consequently", "Nevertheless",
-    "Nonetheless", "Similarly", "Alternatively", "Indeed", "Essentially", "Arguably",
-    "In essence", "That said", "On the other hand",
+    "Moreover",
+    "Furthermore",
+    "Additionally",
+    "Overall",
+    "Ultimately",
+    "Thus",
+    "Therefore",
+    "Accordingly",
+    "Hence",
+    "Subsequently",
+    "Consequently",
+    "Nevertheless",
+    "Nonetheless",
+    "Similarly",
+    "Alternatively",
+    "Indeed",
+    "Essentially",
+    "Arguably",
+    "In essence",
+    "That said",
+    "On the other hand",
 ]
 # `[^\S\n]*`, never `\s*`, after a MULTILINE `^`.
 #
@@ -493,21 +625,42 @@ _NOTABILITY_RE = re.compile(
 
 # Banned clichés / phrases (§2) — openers, signposting, action, closings, promo.
 _CLICHES = [
-    r"in today'?s (?:fast-paced|digital|modern|ever-changing) world", r"in the ever-evolving \w+ of",
-    r"in an era where", r"as technology continues to evolve", r"when it comes to", r"at its core",
-    r"at the end of the day", r"in the realm of", r"this is where \w+ comes in",
+    r"in today'?s (?:fast-paced|digital|modern|ever-changing) world",
+    r"in the ever-evolving \w+ of",
+    r"in an era where",
+    r"as technology continues to evolve",
+    r"when it comes to",
+    r"at its core",
+    r"at the end of the day",
+    r"in the realm of",
+    r"this is where \w+ comes in",
     # "it'?s" matches "it's" and "its" but NOT "it is" — so the single most common signpost in AI
     # prose, "It is important to note that ...", scored as perfectly clean. Curly apostrophes are
     # matched too: AI output is full of them, and "it’s" missed the straight-quote-only class.
     r"it(?:['’]?s| is) (?:important|worth|essential|necessary) (?:to note|noting)",
-    r"it should be noted", r"it cannot be overstated",
-    r"one of the most important", r"plays? a (?:crucial|pivotal|vital) role",
-    r"stands? as a testament to", r"underscores? the importance of",
-    r"reflects? a broader (?:trend|shift)", r"marks? a significant shift", r"let'?s dive in",
-    r"dive into", r"deep dive", r"shed light on", r"pave[sd]? the way",
-    r"navigate the complexities of", r"embark on a journey", r"explore the intricacies of",
-    r"in conclusion", r"in summary", r"to summarize", r"the future looks bright",
-    r"only time will tell", r"one thing is certain", r"as we move forward",
+    r"it should be noted",
+    r"it cannot be overstated",
+    r"one of the most important",
+    r"plays? a (?:crucial|pivotal|vital) role",
+    r"stands? as a testament to",
+    r"underscores? the importance of",
+    r"reflects? a broader (?:trend|shift)",
+    r"marks? a significant shift",
+    r"let'?s dive in",
+    r"dive into",
+    r"deep dive",
+    r"shed light on",
+    r"pave[sd]? the way",
+    r"navigate the complexities of",
+    r"embark on a journey",
+    r"explore the intricacies of",
+    r"in conclusion",
+    r"in summary",
+    r"to summarize",
+    r"the future looks bright",
+    r"only time will tell",
+    r"one thing is certain",
+    r"as we move forward",
     # The subject between "challenges," and "continues" is a noun PHRASE, not a bare noun. The
     # original `\w+` matched "Despite challenges, Lisbon continues to thrive" and missed "…, the
     # sector continues to thrive" — the more common shape of the two. Bounded and non-greedy so it
@@ -515,30 +668,49 @@ _CLICHES = [
     r"despite (?:(?:the|these|those|its|their|ongoing|numerous|several|many|significant)\s+){0,2}"
     r"(?:challenges|obstacles|setbacks|difficulties)"
     r"[^.]{0,40}?continues to (?:thrive|grow|flourish|expand)",
-    r"vibrant hub", r"thriving ecosystem",
+    r"vibrant hub",
+    r"thriving ecosystem",
     # `game-?changer` matched "game-changer" and "gamechanger" but not "game changer" (spaced),
     # which is the most common written form in English prose and AI output alike. MEASURED:
     # `_CLICHE_RE.search("This is a game changer.")` returned None. The `?` makes the hyphen
     # optional (so it matches no-hyphen), but it is still a literal hyphen — a space is a
     # different character. `[- ]?` covers all three forms: hyphen, space, or no separator.
-    r"rich tapestry of", r"game[- ]?changer", r"game[- ]?changing",
+    r"rich tapestry of",
+    r"game[- ]?changer",
+    r"game[- ]?changing",
     # 2024-2026 additions — corporate/AI cliché set
-    r"in the age of", r"in the world of", r"it'?s no secret that", r"the bottom line is",
-    r"the possibilities are endless", r"unlock the (?:potential|power) of", r"harness the power of",
-    r"take (?:it|things|your \w+) to the next level", r"a double-edged sword", r"the tip of the iceberg",
-    r"paradigm shift", r"sea change", r"at the forefront of", r"push the boundaries",
-    r"break new ground", r"move the needle", r"low-hanging fruit", r"circle back",
-    r"when we consider", r"look no further", r"the key takeaway",
+    r"in the age of",
+    r"in the world of",
+    r"it'?s no secret that",
+    r"the bottom line is",
+    r"the possibilities are endless",
+    r"unlock the (?:potential|power) of",
+    r"harness the power of",
+    r"take (?:it|things|your \w+) to the next level",
+    r"a double-edged sword",
+    r"the tip of the iceberg",
+    r"paradigm shift",
+    r"sea change",
+    r"at the forefront of",
+    r"push the boundaries",
+    r"break new ground",
+    r"move the needle",
+    r"low-hanging fruit",
+    r"circle back",
+    r"when we consider",
+    r"look no further",
+    r"the key takeaway",
     # Documented in ai-tells.md but never implemented — found by diffing the reference's own
     # quoted examples against what score_tells actually detects. Each was verified uncaught first.
-    r"rich cultural heritage",                      # promo register (§ "Promo")
-    r"the journey doesn'?t end here",               # meta-closer
-    r"here'?s the kicker",                          # fake-suspense opener
-    r"picture this",                                # fake-personal anecdote (§13 list)
-    r"let'?s unpack", r"unpack (?:what|this|how|why)",  # action cliché; bare "unpack" is literal
-    r"unravel the (?:complexit|myster|intricac)\w*",   # same — "unravel the boxes" is not a tell
-    r"represents a broader (?:trend|shift)",        # sibling of the implemented "reflects a broader"
-    r"watershed moment",                            # significance inflation (§19)
+    r"rich cultural heritage",  # promo register (§ "Promo")
+    r"the journey doesn'?t end here",  # meta-closer
+    r"here'?s the kicker",  # fake-suspense opener
+    r"picture this",  # fake-personal anecdote (§13 list)
+    r"let'?s unpack",
+    r"unpack (?:what|this|how|why)",  # action cliché; bare "unpack" is literal
+    r"unravel the (?:complexit|myster|intricac)\w*",  # same — "unravel the boxes" is not a tell
+    r"represents a broader (?:trend|shift)",  # sibling of the implemented "reflects a broader"
+    r"watershed moment",  # significance inflation (§19)
     r"landmark (?:achievement|moment|decision|ruling)",  # not "landmark building", which is literal
 ]
 _CLICHE_RE = re.compile(r"\b(" + "|".join(_CLICHES) + r")\b", re.IGNORECASE)
@@ -978,10 +1150,7 @@ def _burstiness_cv(text: str) -> float | None:
 # Scripts this catalogue cannot read at all: CJK ideographs, Hangul, Hiragana/Katakana, Cyrillic,
 # Arabic, Hebrew, Devanagari, Thai. Deliberately a rough test — the question is only "is this
 # mostly not-Latin", not "which language is it".
-_NON_LATIN_RE = re.compile(
-    "[぀-ヿ㐀-䶿一-鿿가-힯"
-    "Ѐ-ӿ֐-׿؀-ۿऀ-ॿ฀-๿]"
-)
+_NON_LATIN_RE = re.compile("[぀-ヿ㐀-䶿一-鿿가-힯Ѐ-ӿ֐-׿؀-ۿऀ-ॿ฀-๿]")
 
 
 def _by_evidence(by_category: dict[str, int]) -> dict[str, int]:
@@ -999,16 +1168,20 @@ _MIN_WORDS_FOR_A_RATE = 14
 
 # Closed-class English words. Short, and deliberately not a full stopword list — the ratio only has
 # to be stable, not complete.
-_ENGLISH_FUNCTION_WORDS = frozenset("""
+_ENGLISH_FUNCTION_WORDS = frozenset(
+    """
 a an the and or but if then than that this these those of in on at to for with from by about
 is are was were be been being am do does did have has had will would can could should may might
 not no nor as it its he she they them we you i his her their our your my me him us
-""".split())
+""".split()
+)
 
 # The same class for the other major Latin-script languages, MINUS anything that is also an English
 # function word: "a" is a Portuguese and Italian article, "in" is German and Dutch, and a shared
 # token is evidence of nothing.
-_OTHER_FUNCTION_WORDS = frozenset("""
+_OTHER_FUNCTION_WORDS = (
+    frozenset(
+        """
 el la los las un una del al es son fue eran ser estar y o pero si por para con sin sobre entre
 le les des du au aux une est sont était être et ou mais si pour avec sans sur dans chez ce cette
 der die das dem den ein eine einer und oder aber wenn ist sind war waren sein werden nach bei
@@ -1016,7 +1189,10 @@ mit von zu auf aus durch über unter zwischen sich nicht auch noch schon
 il lo gli della dei delle sono era essere senza sopra tra questo questa
 os um uma dos das na pelo pela sao foi mas se sem
 het een van voor met zonder over tussen deze dit zijn worden niet ook al
-""".split()) - _ENGLISH_FUNCTION_WORDS
+""".split()
+    )
+    - _ENGLISH_FUNCTION_WORDS
+)
 
 _WORD_RE = re.compile(r"[A-Za-zÀ-ÿ']+")
 
@@ -1294,7 +1470,9 @@ def score_tells(text: str, *, include_matches: bool = False) -> dict:
         "tells_per_100w": round(total / words * 100, 2) if words else 0.0,
         "by_category": by_category,
         "burstiness_cv": cv,
-        "low_burstiness": (cv is not None and cv < 0.35),  # uniform sentence length is itself a tell
+        "low_burstiness": (
+            cv is not None and cv < 0.35
+        ),  # uniform sentence length is itself a tell
         # Every pattern in this module is an English regex, and ``_WORD`` is ``[A-Za-z0-9']+``, so
         # text in a non-Latin script matches nothing and divides by nothing. MEASURED, before this
         # field existed:

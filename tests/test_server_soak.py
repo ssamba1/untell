@@ -22,6 +22,7 @@ response is never mistaken for a wedge. The server runs on uvicorn 0.49's defaul
 Windows event loop (Proactor), the same configuration the shipped `untell-server`
 uses.
 """
+
 from __future__ import annotations
 
 import http.client
@@ -35,6 +36,7 @@ from concurrent.futures import ThreadPoolExecutor
 import pytest
 
 pytest.importorskip("fastapi")
+
 
 def _set_server_env(monkeypatch) -> None:
     """The soak makes 550 calls in ~a minute; the shipped rate limit is 60/min —
@@ -57,8 +59,7 @@ def start_server(monkeypatch):
     # uvicorn 0.49 runs ProactorEventLoop on Windows by default (the shipped
     # `untell-server` configuration too) — nothing to force; the retried probes and
     # generous timeouts below absorb the CPU-saturated box, not the loop.
-    config = uvicorn.Config(app, host="127.0.0.1", port=0, log_level="error",
-                            lifespan="off")
+    config = uvicorn.Config(app, host="127.0.0.1", port=0, log_level="error", lifespan="off")
     server = uvicorn.Server(config)
     th = threading.Thread(target=server.run, daemon=True)
     th.start()
@@ -76,19 +77,20 @@ def start_server(monkeypatch):
     return port, stop
 
 
-_SOAK_TEXT = ("The committee approved the proposal yesterday, and moreover the framework "
-              "showcases remarkable results across several benchmarks. Dr. Smith and Prof. "
-              "Jones agreed on the analysis, noting that the mean was 3.5 and variance low. "
-              "It works... mostly. Meetings are common at 9:30 p.m. and the deadline is "
-              "Friday, June 14th, 2026, at 5 p.m. precisely.") * 3
+_SOAK_TEXT = (
+    "The committee approved the proposal yesterday, and moreover the framework "
+    "showcases remarkable results across several benchmarks. Dr. Smith and Prof. "
+    "Jones agreed on the analysis, noting that the mean was 3.5 and variance low. "
+    "It works... mostly. Meetings are common at 9:30 p.m. and the deadline is "
+    "Friday, June 14th, 2026, at 5 p.m. precisely."
+) * 3
 _SOAK_BODY = json.dumps({"text": _SOAK_TEXT, "tier": "lite"}).encode()
 
 
 def soak_call(port: int, timeout: float = 120.0) -> tuple[int, float]:
     t0 = time.time()
     conn = http.client.HTTPConnection("127.0.0.1", port, timeout=timeout)
-    conn.request("POST", "/score", body=_SOAK_BODY,
-                 headers={"content-type": "application/json"})
+    conn.request("POST", "/score", body=_SOAK_BODY, headers={"content-type": "application/json"})
     r = conn.getresponse()
     r.read()
     status = r.status
@@ -154,6 +156,7 @@ class TestServerSoak:
 
 # --- transport-level malformed-HTTP contract ---------------------------------------------
 
+
 def send_raw(port: int, raw: bytes, timeout: float = 6.0) -> int | None:
     """Send raw bytes on a fresh connection; return the HTTP status or None if no
     response arrived (the server is waiting for more input).
@@ -212,25 +215,25 @@ class TestMalformedHttpStays4xx:
     @pytest.mark.parametrize(
         "raw",
         [
-            b"BREW /score HTTP/1.1\r\nHost: x\r\nContent-Length: 2\r\n\r\n{}",   # unknown method
-            b"\x00GET /score HTTP/1.1\r\nHost: x\r\n\r\n",                        # NUL method
-            b"GET\r\n /score HTTP/1.1\r\nHost: x\r\n\r\n",                        # CRLF in method
-            b" /score HTTP/1.1\r\nHost: x\r\n\r\n",                               # no method
-            b"GET /score HTTP/9.9\r\nHost: x\r\n\r\n",                            # bad version
-            b"GET /score HTTP/1.1\r\nHost x\r\n\r\n",                             # no colon
-            b"GET /score HTTP/1.1\r\nBad Header: x\r\n\r\n",                      # space in name
-            b"GET /score HTTP/1.1\r\nX-Foo: a\x00b\r\n\r\n",                      # NUL in value
-            b"POST /score HTTP/1.1\r\nHost: x\r\nContent-Length: 5\r\n"           # dup CL
+            b"BREW /score HTTP/1.1\r\nHost: x\r\nContent-Length: 2\r\n\r\n{}",  # unknown method
+            b"\x00GET /score HTTP/1.1\r\nHost: x\r\n\r\n",  # NUL method
+            b"GET\r\n /score HTTP/1.1\r\nHost: x\r\n\r\n",  # CRLF in method
+            b" /score HTTP/1.1\r\nHost: x\r\n\r\n",  # no method
+            b"GET /score HTTP/9.9\r\nHost: x\r\n\r\n",  # bad version
+            b"GET /score HTTP/1.1\r\nHost x\r\n\r\n",  # no colon
+            b"GET /score HTTP/1.1\r\nBad Header: x\r\n\r\n",  # space in name
+            b"GET /score HTTP/1.1\r\nX-Foo: a\x00b\r\n\r\n",  # NUL in value
+            b"POST /score HTTP/1.1\r\nHost: x\r\nContent-Length: 5\r\n"  # dup CL
             b"Content-Length: 6\r\n\r\nhello!",
             b"POST /score HTTP/1.1\r\nHost: x\r\nTransfer-Encoding: chunked\r\n"  # bad chunk size
             b"\r\nzzz\r\nhello",
             b"POST /score HTTP/1.1\r\nHost: x\r\nTransfer-Encoding: chunked\r\n"  # negative size
             b"\r\n-5\r\nhello",
             b"POST /score HTTP/1.1\r\nHost: x\r\nTransfer-Encoding: gzip, chunked\r\n"
-            b"\r\n0\r\n\r\n",                                                     # non-chunked TE
-            b"   GET /score HTTP/1.1\r\nHost: x\r\n\r\n",                         # leading spaces
-            b"\xff\xfe\x00\x01GARBAGE\r\n\r\n",                                   # binary garbage
-            b"\r\nGET /score HTTP/1.1\r\nHost: x\r\n\r\n",                        # stray CRLF
+            b"\r\n0\r\n\r\n",  # non-chunked TE
+            b"   GET /score HTTP/1.1\r\nHost: x\r\n\r\n",  # leading spaces
+            b"\xff\xfe\x00\x01GARBAGE\r\n\r\n",  # binary garbage
+            b"\r\nGET /score HTTP/1.1\r\nHost: x\r\n\r\n",  # stray CRLF
         ],
     )
     def test_malformed_request_draws_4xx_not_5xx(self, monkeypatch, raw):
@@ -238,9 +241,7 @@ class TestMalformedHttpStays4xx:
         try:
             status = send_raw(port, raw)
             assert status is not None, f"no response for {raw[:40]!r}"
-            assert 400 <= status < 500, (
-                f"{raw[:40]!r} answered HTTP {status}, expected 4xx"
-            )
+            assert 400 <= status < 500, f"{raw[:40]!r} answered HTTP {status}, expected 4xx"
             assert probe_health(port), "server wedged after malformed request"
         finally:
             stop()
@@ -248,11 +249,11 @@ class TestMalformedHttpStays4xx:
     @pytest.mark.parametrize(
         "raw",
         [
-            b"GET /sco",                                                          # partial request line
+            b"GET /sco",  # partial request line
             b"POST /score HTTP/1.1\r\nHost: x\r\nTransfer-Encoding: chunked\r\n"  # chunk body never ends
             b"\r\nFFFFFFFFFFFFFFFF\r\nhello",
             b"POST /score HTTP/1.1\r\nHost: x\r\nTransfer-Encoding: chunked\r\n"
-            b"\r\n5\r\nhello\r\n",                                                # no final zero
+            b"\r\n5\r\nhello\r\n",  # no final zero
         ],
     )
     def test_incomplete_request_waits_and_server_stays_alive(self, monkeypatch, raw):
@@ -280,9 +281,9 @@ class TestMalformedHttpStays4xx:
         try:
             for raw in [
                 b"POST /score HTTP/1.1\r\nHost: x\r\nContent-Length: 5\r\n"
-                b"Transfer-Encoding: chunked\r\n\r\n0\r\n\r\n",                    # CL + TE
+                b"Transfer-Encoding: chunked\r\n\r\n0\r\n\r\n",  # CL + TE
                 b"POST /score HTTP/1.1\r\nHost: x\r\nTransfer-Encoding: chunked\r\n"
-                b"Content-Length: 4\r\n\r\n0\r\n\r\n",                             # TE + CL
+                b"Content-Length: 4\r\n\r\n0\r\n\r\n",  # TE + CL
                 b"GET /score HTTP/1.1\r\nHost: x\r\nContent-Length: 2\r\n\r\n{}",  # GET with body
             ]:
                 status = send_raw(port, raw)

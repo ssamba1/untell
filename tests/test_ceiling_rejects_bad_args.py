@@ -7,6 +7,7 @@ Every other CLI (untell/score/loop/verify) rejects these at parse with
 exit 2 — the measurements engine must too, or a quoted number can be
 produced from a degenerate configuration.
 """
+
 import subprocess
 import sys
 from pathlib import Path
@@ -50,16 +51,15 @@ def test_compare_rejects_out_of_range_args():
         proc = subprocess.run(
             [str(PY), "-m", "eval.compare_humanizers", *argv, "--tier", "lite"],
             capture_output=True,
-            text=True, encoding="utf-8",
+            text=True,
+            encoding="utf-8",
             errors="replace",
             timeout=60,
             env=env,
             stdin=subprocess.DEVNULL,
         )
         assert "Traceback" not in (proc.stderr or ""), f"{argv} leaked traceback"
-        assert proc.returncode == 2, (
-            f"{argv} expected exit 2, got {proc.returncode} — silent run"
-        )
+        assert proc.returncode == 2, f"{argv} expected exit 2, got {proc.returncode} — silent run"
 
 
 def test_ceiling_rejects_out_of_range_args():
@@ -68,7 +68,8 @@ def test_ceiling_rejects_out_of_range_args():
             proc = subprocess.run(
                 [str(PY), *cmd, *argv, *extra],
                 capture_output=True,
-                text=True, encoding="utf-8",
+                text=True,
+                encoding="utf-8",
                 errors="replace",
                 timeout=60,
                 env=env,

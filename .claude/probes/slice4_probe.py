@@ -1,4 +1,5 @@
 """Slice 4 probe — sentence/layout round 3 boundary classes."""
+
 import sys
 
 sys.path.insert(0, r"C:/Users/Admin/Humanize")
@@ -47,20 +48,22 @@ print("  ends_with_abbreviation('nb.'):", ends_with_abbreviation("nb."))
 
 print("=" * 70)
 print("3. NESTED QUOTES")
-show("single in double", 'He said "She told me \'no.\' Then she left."', 1)
-show("single in double 2", 'He said "She told me \'no.\'" Then he left.', 2)
+show("single in double", "He said \"She told me 'no.' Then she left.\"", 1)
+show("single in double 2", "He said \"She told me 'no.'\" Then he left.", 2)
 show("double in single", "She said 'He yelled \"Go!\" and ran.'", 1)
 show("quote then lower", '"Stop." he said quietly. Then all was calm.', 2)
 
 print("=" * 70)
 print("4. FOOTNOTE/ENDNOTE MARKERS")
 show("bracket after period", "The result was significant.[1] However, the effect vanished.", 2)
-show("superscript after period", "The result was significant.\u00b9 However, the effect vanished.", 2)
+show(
+    "superscript after period", "The result was significant.\u00b9 However, the effect vanished.", 2
+)
 show("dagger after period", "The result was significant.\u2020 However, the effect vanished.", 2)
 show("bracket before period", "The result was significant[1]. However, the effect vanished.", 2)
 show("two markers", "Both results were significant.[1][2] Yet the story differs.", 2)
 show("marker then lower", "The result was significant.[1] but only marginally.", 2)
-show("marker+closer", "The result was significant.[1]\" He smiled. Then left.", 2)
+show("marker+closer", 'The result was significant.[1]" He smiled. Then left.', 2)
 
 print("=" * 70)
 print("5. TABLE CELL BOUNDARIES (layout)")

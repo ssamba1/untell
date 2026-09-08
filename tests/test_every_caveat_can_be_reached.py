@@ -72,24 +72,29 @@ def warnings_from(caplog):
 def test_humanness_says_when_the_text_is_too_short(warnings_from) -> None:
     import untell.humanness as mod
 
-    out = warnings_from([("untell.humanness", "_WARNED_TOO_SHORT")],
-                        lambda: mod.humanness("Hi there", tier="lite"))
+    out = warnings_from(
+        [("untell.humanness", "_WARNED_TOO_SHORT")], lambda: mod.humanness("Hi there", tier="lite")
+    )
     assert "shorter than" in out
 
 
 def test_humanness_says_when_the_band_is_unreliable(warnings_from) -> None:
     import untell.humanness as mod
 
-    out = warnings_from([("untell.humanness", "_WARNED_SHORT_BAND")],
-                        lambda: mod.humanness(" ".join(["word"] * 20), tier="lite"))
+    out = warnings_from(
+        [("untell.humanness", "_WARNED_SHORT_BAND")],
+        lambda: mod.humanness(" ".join(["word"] * 20), tier="lite"),
+    )
     assert "does not separate the classes" in out
 
 
 def test_humanness_says_when_the_script_is_unsupported(warnings_from) -> None:
     import untell.humanness as mod
 
-    out = warnings_from([("untell.humanness", "_WARNED_UNSUPPORTED_LANGUAGE")],
-                        lambda: mod.humanness(CHINESE, tier="lite"))
+    out = warnings_from(
+        [("untell.humanness", "_WARNED_UNSUPPORTED_LANGUAGE")],
+        lambda: mod.humanness(CHINESE, tier="lite"),
+    )
     assert "English-only catalogue cannot match" in out
 
 
@@ -98,24 +103,29 @@ def test_humanness_forwards_the_weak_path_caveat(stdlib_lite, warnings_from) -> 
     the only channel it has for "this number is weak evidence in both directions"."""
     import untell.humanness as mod
 
-    out = warnings_from([("untell.humanness", "_WARNED_WEAK_PATH")],
-                        lambda: mod.humanness(TELL_HEAVY, tier="lite"))
+    out = warnings_from(
+        [("untell.humanness", "_WARNED_WEAK_PATH")], lambda: mod.humanness(TELL_HEAVY, tier="lite")
+    )
     assert "pure-stdlib lite path" in out
 
 
 def test_sentence_targeting_says_when_it_is_near_chance(stdlib_lite, warnings_from) -> None:
     import untell.scripts.sentences as mod
 
-    out = warnings_from([("untell.scripts.sentences", "_WARNED_UNINFORMATIVE")],
-                        lambda: mod.score_sentences(TELL_HEAVY, tier="lite"))
+    out = warnings_from(
+        [("untell.scripts.sentences", "_WARNED_UNINFORMATIVE")],
+        lambda: mod.score_sentences(TELL_HEAVY, tier="lite"),
+    )
     assert "near-chance" in out
 
 
 def test_a_thin_voice_sample_is_flagged(warnings_from) -> None:
     import untell.scripts.voice as mod
 
-    out = warnings_from([("untell.scripts.voice", "_WARNED_THIN_SAMPLE")],
-                        lambda: mod._warn_if_sample_is_thin("a short sample of only a few words"))
+    out = warnings_from(
+        [("untell.scripts.voice", "_WARNED_THIN_SAMPLE")],
+        lambda: mod._warn_if_sample_is_thin("a short sample of only a few words"),
+    )
     assert "under 150 words" in out
 
 
@@ -123,8 +133,10 @@ def test_a_full_voice_sample_is_not_flagged(warnings_from) -> None:
     """Guards the guard. A caveat that fires on everything says nothing."""
     import untell.scripts.voice as mod
 
-    out = warnings_from([("untell.scripts.voice", "_WARNED_THIN_SAMPLE")],
-                        lambda: mod._warn_if_sample_is_thin(" ".join(["word"] * 200)))
+    out = warnings_from(
+        [("untell.scripts.voice", "_WARNED_THIN_SAMPLE")],
+        lambda: mod._warn_if_sample_is_thin(" ".join(["word"] * 200)),
+    )
     assert not out.strip()
 
 
@@ -134,10 +146,17 @@ def test_the_loop_says_when_a_voice_sample_is_too_short(warnings_from) -> None:
     # The reset this case originally omitted. It passed alone and failed in the full suite, because
     # another test had already spent the once-per-process flag — the exact failure this file's
     # docstring warns about, made in the one place no reset was passed.
-    out = warnings_from([("untell.scripts.run", "_WARNED_VOICE_SAMPLE")], lambda: untell_text(
-        TELL_HEAVY, tier="lite", max_iters=1, rewriter="structural", best_of=1,
-        voice_sample="tiny",
-    ))
+    out = warnings_from(
+        [("untell.scripts.run", "_WARNED_VOICE_SAMPLE")],
+        lambda: untell_text(
+            TELL_HEAVY,
+            tier="lite",
+            max_iters=1,
+            rewriter="structural",
+            best_of=1,
+            voice_sample="tiny",
+        ),
+    )
     assert "voice" in out.lower()
 
 

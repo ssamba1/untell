@@ -111,11 +111,20 @@ def test_the_humanize_endpoint_normalises_both_score_dicts(_broken_models) -> No
 
     from untell.api_server import app
 
-    body = TestClient(app).post(
-        "/humanize",
-        json={"text": TEXT, "tier": "full", "rewriter": "structural",
-              "max_iters": 1, "best_of": 1},
-    ).json()
+    body = (
+        TestClient(app)
+        .post(
+            "/humanize",
+            json={
+                "text": TEXT,
+                "tier": "full",
+                "rewriter": "structural",
+                "max_iters": 1,
+                "best_of": 1,
+            },
+        )
+        .json()
+    )
     for key in ("pre", "post"):
         _assert_clean(body[key]["detectors"], body[key].get("detector_errors"))
 

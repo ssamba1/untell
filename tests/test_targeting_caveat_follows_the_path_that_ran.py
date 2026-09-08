@@ -13,6 +13,7 @@ because of this; `_verdict_threshold` and the single-sentence caveat in score.py
 Consequence here is not cosmetic. A suppressed caveat plus a coin-flip ranking points the rewriter
 at whichever sentences read most human.
 """
+
 from __future__ import annotations
 
 import pytest

@@ -7,6 +7,7 @@ Surgical/composite/targeted then rewrote identifiers inside indented code blocks
 This pins the aligned case directly: a word substituted inside an indented code
 block must be restored from the original.
 """
+
 from untell.layout import restore_layout_lines
 
 DOC = "Prose here.\n\n    def f():\n        return utilize(x)\n\nMore prose."

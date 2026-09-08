@@ -38,7 +38,13 @@ def _run(*args: str) -> tuple[int, str, str]:
     env = {**os.environ, "UNTELL_LITE_NO_TORCH": "1", "PYTHONIOENCODING": "utf-8"}
     proc = subprocess.run(
         [sys.executable, "-m", "untell.scripts.cli", *args],
-        capture_output=True, text=True, encoding="utf-8", errors="replace", env=env, cwd=str(_ROOT), timeout=300,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        env=env,
+        cwd=str(_ROOT),
+        timeout=300,
     )
     return proc.returncode, proc.stdout or "", proc.stderr or ""
 
@@ -72,7 +78,13 @@ def test_the_humanize_shortcut_still_works() -> None:
     refusal that caught ordinary text would break the first thing the README tells anyone to do."""
     code, out, err = _run(
         "Moreover, the framework leverages robust methods.",
-        "--tier", "lite", "--max-iters", "1", "--rewriter", "surgical", "--json",
+        "--tier",
+        "lite",
+        "--max-iters",
+        "1",
+        "--rewriter",
+        "surgical",
+        "--json",
     )
     assert code == 0, f"the humanize shortcut broke: {(out + err)[-250:]}"
     assert "final" in json.loads(out)
@@ -81,7 +93,14 @@ def test_the_humanize_shortcut_still_works() -> None:
 def test_a_single_ordinary_word_is_still_treated_as_text() -> None:
     """The narrowest case the shortcut has to keep: one word that is not a shipped command."""
     code, out, err = _run(
-        "robust", "--tier", "lite", "--max-iters", "1", "--rewriter", "surgical", "--json",
+        "robust",
+        "--tier",
+        "lite",
+        "--max-iters",
+        "1",
+        "--rewriter",
+        "surgical",
+        "--json",
     )
     assert code == 0, f"an ordinary word was refused: {(out + err)[-200:]}"
     assert "final" in json.loads(out)

@@ -3,11 +3,14 @@
 The tool's core promise: rewriting removes AI tells. Measure tells before/after
 untell_text on AI-flavored text with many tells, and per-category.
 """
+
 import sys
 from pathlib import Path
+
 for p in Path(__file__).resolve().parents:
     if (p / "untell" / "__init__.py").exists():
-        sys.path.insert(0, str(p)); break
+        sys.path.insert(0, str(p))
+        break
 
 from untell.scripts.tells import score_tells
 from untell.scripts.run import untell_text
@@ -21,12 +24,16 @@ TEXT = (
     "sustainable growth, and notably, the implications for practice are substantial."
 )
 
+
 def total_tells(res):
-    return res.get("total") or sum(v for k, v in res.items() if isinstance(v, int) and not k.startswith("_"))
+    return res.get("total") or sum(
+        v for k, v in res.items() if isinstance(v, int) and not k.startswith("_")
+    )
+
 
 pre = score_tells(TEXT)
-r = untell_text(TEXT, tier='lite', max_iters=3, progress=False, seed=11)
-post_text = r['final']
+r = untell_text(TEXT, tier="lite", max_iters=3, progress=False, seed=11)
+post_text = r["final"]
 post = score_tells(post_text)
 
 pt, q = total_tells(pre), total_tells(post)

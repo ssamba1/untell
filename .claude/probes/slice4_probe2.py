@@ -1,4 +1,5 @@
 """Slice 4 probe 2 — real-damage demonstration for layout findings + deeper quote probes."""
+
 import sys
 
 sys.path.insert(0, r"C:/Users/Admin/Humanize")
@@ -43,11 +44,11 @@ src = "| Method | Score |\n| A | 0.9 |"
 print("merged:", repr(apply_per_block(src, MERGE)))
 
 print("--- nested quote, lowercase continuation inside outer quote")
-out = split_sentences('He said "She told me \'no.\' and left."')
+out = split_sentences("He said \"She told me 'no.' and left.\"")
 print("n=", len(out), out)
 
 print("--- nested quote, two sentences inside outer quote")
-out = split_sentences('He said "She told me \'no.\' Then she left."')
+out = split_sentences("He said \"She told me 'no.' Then she left.\"")
 print("n=", len(out), out)
 
 print("--- nested quote, period after inner closer + lowercase outside")
@@ -55,12 +56,12 @@ out = split_sentences("He said 'she whispered \"run.\" and froze.' Then all stop
 print("n=", len(out), out)
 
 print("--- quote spanning paragraphs in layout (blank line inside quote)")
-src = 'He said,\n"I\'m leaving.\n\nI can\'t stay here."'
+src = "He said,\n\"I'm leaving.\n\nI can't stay here.\""
 print("blocks:", blocks(src))
 print("identity:", repr(apply_per_block(src, lambda s: s)))
 print("merged:", repr(apply_per_block(src, MERGE)))
 
 print("--- quote opening in one paragraph, content next (no blank)")
-src = 'He said,\n"I\'m leaving.\nI can\'t stay here."'
+src = "He said,\n\"I'm leaving.\nI can't stay here.\""
 print("blocks:", blocks(src))
 print("merged:", repr(apply_per_block(src, MERGE)))

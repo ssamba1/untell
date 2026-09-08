@@ -6,6 +6,7 @@ reaches read_file_or_exit(None) and raises TypeError (os.path.exists(None)),
 instead of the clean SystemExit(2) usage error. The required guard is what
 keeps the CLI's contract.
 """
+
 import os
 import tempfile
 

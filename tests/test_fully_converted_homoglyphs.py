@@ -66,12 +66,12 @@ def test_a_real_foreign_word_is_not_an_attack(language: str, text: str) -> None:
 @pytest.mark.parametrize(
     "word",
     [
-        "cape",     # every letter has a homoglyph -> fully converted
-        "apex",     # same
-        "space",    # 's' has none -> partly converted, must land in the MIXED branch
-        "core",     # 'r' has none -> same
-        "escape",   # 's' has none -> same
-        "rhythm",   # no letter has one -> unchanged, must warn about nothing
+        "cape",  # every letter has a homoglyph -> fully converted
+        "apex",  # same
+        "space",  # 's' has none -> partly converted, must land in the MIXED branch
+        "core",  # 'r' has none -> same
+        "escape",  # 's' has none -> same
+        "rhythm",  # no letter has one -> unchanged, must warn about nothing
     ],
 )
 def test_whatever_the_attack_emits_the_warning_can_see(word: str) -> None:

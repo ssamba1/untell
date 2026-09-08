@@ -5,6 +5,7 @@ raised an uncaught UnicodeDecodeError from sys.stdin.read(). The contract
 (T18) is that no-input paths exit 2 with a clean JSON error; binary stdin
 is an input class that must take the same path, not leak a traceback.
 """
+
 import subprocess
 import sys
 from pathlib import Path
@@ -17,10 +18,10 @@ ROOT = Path(__file__).resolve().parents[1]
 # suite is the one whose environment these tests mean to exercise.
 PYTHON = sys.executable
 BINARY_INPUTS = [
-    b"\x00\x01\x02\xff",        # null bytes + invalid utf-8
-    b"\xff\xfe\xfd\xfc",        # pure invalid
-    b"some text\x80more",       # valid text + trailing invalid byte
-    b"\xed\xa0\x80",            # lone surrogate in utf-8 (CESU-8 style)
+    b"\x00\x01\x02\xff",  # null bytes + invalid utf-8
+    b"\xff\xfe\xfd\xfc",  # pure invalid
+    b"some text\x80more",  # valid text + trailing invalid byte
+    b"\xed\xa0\x80",  # lone surrogate in utf-8 (CESU-8 style)
 ]
 
 COMMANDS = [

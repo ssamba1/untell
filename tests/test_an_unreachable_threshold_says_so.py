@@ -100,7 +100,9 @@ def test_it_reaches_untell_text() -> None:
 def test_it_reaches_verify_which_is_the_one_that_exits_zero() -> None:
     """The case that matters most: a bar no score can reach turns a CI gate green in silence."""
     result = verify(TEXT, tier="lite", threshold=45.0)
-    assert result.get("passes_all") is True, "the premise: this is the silent pass being warned about"
+    assert result.get("passes_all") is True, (
+        "the premise: this is the silent pass being warned about"
+    )
     assert MARK in (result.get("warning") or "")
     assert MARK not in (verify(TEXT, tier="lite", threshold=0.3).get("warning") or "")
 

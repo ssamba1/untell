@@ -27,6 +27,7 @@ rather than quietly changing a verdict, so they are left alone deliberately rath
 One definition per bound: the validators come from `run.py`, which derives them from the API types
 in `api_server.py`. A second copy is how four surfaces came to disagree in the first place.
 """
+
 from __future__ import annotations
 
 import os
@@ -42,7 +43,13 @@ def _run(module: str, args: list[str]) -> subprocess.CompletedProcess:
     env = dict(os.environ, UNTELL_LITE_NO_TORCH="1", PYTHONIOENCODING="utf-8")
     return subprocess.run(
         [sys.executable, "-m", module, *args],
-        capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=300, env=env, input="",
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=300,
+        env=env,
+        input="",
     )
 
 
@@ -62,8 +69,10 @@ UNREACHABLE = [
     "module,args", UNREACHABLE, ids=[f"{m.rsplit('.', 1)[1]}{a}" for m, a in UNREACHABLE]
 )
 def test_an_out_of_range_value_is_refused(module: str, args: list[str]):
-    result = _run(module, [TEXT, "--tier", "lite", *args] if "run" not in module
-                  else [TEXT, "--tier", "lite", *args])
+    result = _run(
+        module,
+        [TEXT, "--tier", "lite", *args] if "run" not in module else [TEXT, "--tier", "lite", *args],
+    )
 
     assert result.returncode == 2, (
         f"{module} {args} exited {result.returncode}; a value outside the range the quantity can "

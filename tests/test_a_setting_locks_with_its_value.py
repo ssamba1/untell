@@ -36,10 +36,17 @@ ASSIGNMENTS = [
     ("boolean false", "Set ENABLE_CACHE=false when debugging the pipeline.", "ENABLE_CACHE=false"),
     ("boolean true", "Export DEBUG_MODE=true before starting the service.", "DEBUG_MODE=true"),
     ("word value", "Use LOG_LEVEL=warning in production environments.", "LOG_LEVEL=warning"),
-    ("digit value", "Set UNTELL_LITE_NO_TORCH=1 to force the stdlib path.", "UNTELL_LITE_NO_TORCH=1"),
+    (
+        "digit value",
+        "Set UNTELL_LITE_NO_TORCH=1 to force the stdlib path.",
+        "UNTELL_LITE_NO_TORCH=1",
+    ),
     ("zero value", "Configure MAX_RETRIES=0 to disable retrying.", "MAX_RETRIES=0"),
-    ("url value", "The variable HTTP_PROXY=http://proxy:8080 must be set.",
-     "HTTP_PROXY=http://proxy:8080"),
+    (
+        "url value",
+        "The variable HTTP_PROXY=http://proxy:8080 must be set.",
+        "HTTP_PROXY=http://proxy:8080",
+    ),
     ("long flag", "Pass --tier=full to the CLI for the real ensemble.", "--tier=full"),
     ("dotted value", "Set VERSION_PIN=1.26.4 before the upgrade runs.", "VERSION_PIN=1.26.4"),
 ]

@@ -34,12 +34,14 @@ class TestFailingGitShow:
         fix = Path("tests/test_verify_guard_placeholder.txt")
         fix.write_text("placeholder\n", encoding="utf-8")
         try:
+
             def _run(*a, **k):
                 return _Result(1)  # git show failed
 
             monkeypatch.setattr(V.subprocess, "run", _run)
             monkeypatch.setattr(
-                sys, "argv",
+                sys,
+                "argv",
                 ["verify", "--fix", str(fix), "tests/test_verify.py"],
             )
             with pytest.raises(SystemExit) as ei:
@@ -60,13 +62,15 @@ class TestIdenticalFileRefuses:
         content = "placeholder\n"
         fix.write_text(content, encoding="utf-8")
         try:
+
             def _run(*a, **k):
                 return _Result(0, content)  # git show returns the SAME content
 
             monkeypatch.setattr(V.subprocess, "run", _run)
             monkeypatch.setattr(V, "run", lambda tests, timeout: (True, "ok"))
             monkeypatch.setattr(
-                sys, "argv",
+                sys,
+                "argv",
                 ["verify", "--fix", str(fix), "tests/test_verify.py"],
             )
             with pytest.raises(SystemExit) as ei:

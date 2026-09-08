@@ -15,6 +15,7 @@ leading `v` makes it an identifier — protection depended on notation rather th
 The rule needs three or more components, so ordinary decimals stay rewritable: `preserve.py`
 deliberately leaves small bare numbers unlocked, and swallowing "3.5" here would change that.
 """
+
 from __future__ import annotations
 
 import pytest

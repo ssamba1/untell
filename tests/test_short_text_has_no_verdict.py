@@ -116,6 +116,7 @@ def test_the_threshold_is_the_documented_one() -> None:
 # a text of N words can report is 100/N. `Moreover.` is one word and one tell and reports 100.0,
 # against measured corpus means of 0.551 human and 7.335 AI (Result 45).
 
+
 def _quantisation_warned(text: str) -> bool:
     return "quantised" in (score_tells(text).get("warning") or "")
 

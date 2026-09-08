@@ -17,13 +17,18 @@ but folds a number into the ensemble. A fake 0.5 therefore enters the numeric li
 ``scored: False`` guards that exist to signal exactly this situation. The loop then optimises
 against, and can declare a pass on, a number no detector ever produced.
 """
+
 from __future__ import annotations
 
 import pytest
 
 # (module path, class name) for every adapter whose failure path we can drive without network/models.
 COMMERCIAL = [
-    ("GPTZeroDetector", "GPTZERO_API_KEY", {"documents": [{"class_probabilities": {"human": 0.9}}]}),
+    (
+        "GPTZeroDetector",
+        "GPTZERO_API_KEY",
+        {"documents": [{"class_probabilities": {"human": 0.9}}]},
+    ),
     ("GPTZeroDetector", "GPTZERO_API_KEY", {"documents": [{}]}),
     ("ZeroGPTDetector", "ZEROGPT_API_KEY", {"data": {"unexpected": 1}}),
     ("ZeroGPTDetector", "ZEROGPT_API_KEY", {"data": {}}),
@@ -31,7 +36,9 @@ COMMERCIAL = [
 
 
 @pytest.mark.parametrize("cls_name,env_var,response", COMMERCIAL)
-def test_commercial_adapter_returns_none_on_unusable_response(monkeypatch, cls_name, env_var, response):
+def test_commercial_adapter_returns_none_on_unusable_response(
+    monkeypatch, cls_name, env_var, response
+):
     """An API response missing its score field has told us NOTHING. Returning a number invents a
     verdict the user is paying for."""
     import untell.detectors.commercial as c
@@ -47,14 +54,19 @@ def test_commercial_adapter_returns_none_on_unusable_response(monkeypatch, cls_n
     )
 
 
-@pytest.mark.parametrize("cls_name,env_var", [
-    ("GPTZeroDetector", "GPTZERO_API_KEY"),
-    ("ZeroGPTDetector", "ZEROGPT_API_KEY"),
-    ("OriginalityDetector", "ORIGINALITY_API_KEY"),
-    ("WinstonDetector", "WINSTON_API_KEY"),
-    ("SaplingDetector", "SAPLING_API_KEY"),
-])
-def test_commercial_adapter_never_returns_a_number_when_the_call_fails(monkeypatch, cls_name, env_var):
+@pytest.mark.parametrize(
+    "cls_name,env_var",
+    [
+        ("GPTZeroDetector", "GPTZERO_API_KEY"),
+        ("ZeroGPTDetector", "ZEROGPT_API_KEY"),
+        ("OriginalityDetector", "ORIGINALITY_API_KEY"),
+        ("WinstonDetector", "WINSTON_API_KEY"),
+        ("SaplingDetector", "SAPLING_API_KEY"),
+    ],
+)
+def test_commercial_adapter_never_returns_a_number_when_the_call_fails(
+    monkeypatch, cls_name, env_var
+):
     """A transport/auth failure must not be reported as a low (or any) AI score."""
     import untell.detectors.commercial as c
 
@@ -162,10 +174,9 @@ def test_local_policy_checks_for_accelerate_before_using_device_map():
 
     src = pathlib.Path(lp.__file__).read_text(encoding="utf-8")
     device_map_line = next(
-        i for i, line in enumerate(src.splitlines())
-        if 'kw["device_map"]' in line
+        i for i, line in enumerate(src.splitlines()) if 'kw["device_map"]' in line
     )
-    preceding = "\n".join(src.splitlines()[max(0, device_map_line - 14): device_map_line])
+    preceding = "\n".join(src.splitlines()[max(0, device_map_line - 14) : device_map_line])
     assert "accelerate" in preceding, (
         "device_map is set without first checking that accelerate is importable"
     )
@@ -201,8 +212,8 @@ def test_nan_score_is_excluded_not_folded_in(monkeypatch):
 
     assert r["detectors"]["d0"] is None
     assert "d0" in r["failed_detectors"]
-    assert r["scored"] is False           # no verdict invented
-    assert r["max"] == r["max"]           # not NaN
+    assert r["scored"] is False  # no verdict invented
+    assert r["max"] == r["max"]  # not NaN
     assert r["flagged"] is False and "warning" in r
 
 

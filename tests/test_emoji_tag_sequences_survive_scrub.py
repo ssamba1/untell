@@ -26,11 +26,11 @@ import pytest
 from untell.attacks.unicode_tricks import count_hidden, scrub_hidden
 
 # U+1F3F4 WAVING BLACK FLAG + tag letters g b e n g + U+E007F CANCEL TAG
-ENGLAND = "\U0001F3F4\U000E0067\U000E0062\U000E0065\U000E006E\U000E0067\U000E007F"
+ENGLAND = "\U0001f3f4\U000e0067\U000e0062\U000e0065\U000e006e\U000e0067\U000e007f"
 # U+1F3F4 + g b s c t + CANCEL TAG
-SCOTLAND = "\U0001F3F4\U000E0067\U000E0062\U000E0073\U000E0063\U000E0074\U000E007F"
+SCOTLAND = "\U0001f3f4\U000e0067\U000e0062\U000e0073\U000e0063\U000e0074\U000e007f"
 # U+1F3F4 + g b a w l + CANCEL TAG
-WALES = "\U0001F3F4\U000E0067\U000E0062\U000E0061\U000E0077\U000E006C\U000E007F"
+WALES = "\U0001f3f4\U000e0067\U000e0062\U000e0061\U000e0077\U000e006c\U000e007f"
 
 
 @pytest.mark.parametrize(
@@ -50,7 +50,7 @@ def test_a_flag_sequence_inside_a_sentence_survives():
 
 def test_a_lone_tag_character_is_still_stripped():
     """The carrier case is unchanged: a tag char outside a sequence is payload."""
-    tag = "\U000E0061"  # TAG LETTER A
+    tag = "\U000e0061"  # TAG LETTER A
     assert scrub_hidden(f"ab{tag}cd") == "abcd"
     assert count_hidden(f"ab{tag}cd") == 1
 
@@ -58,8 +58,10 @@ def test_a_lone_tag_character_is_still_stripped():
 def test_tag_chars_without_the_flag_base_are_still_stripped():
     """Tag chars need the WAVING BLACK FLAG base; letters alone are not a sequence."""
     # g b e n g + CANCEL TAG with no base, and a CANCEL TAG alone
-    assert scrub_hidden("ab\U000E0067\U000E0062\U000E0065\U000E006E\U000E0067\U000E007Fcd") == "abcd"
-    assert scrub_hidden("ab\U000E007Fcd") == "abcd"
+    assert (
+        scrub_hidden("ab\U000e0067\U000e0062\U000e0065\U000e006e\U000e0067\U000e007fcd") == "abcd"
+    )
+    assert scrub_hidden("ab\U000e007fcd") == "abcd"
 
 
 def test_an_incomplete_sequence_is_stripped():
@@ -68,8 +70,8 @@ def test_an_incomplete_sequence_is_stripped():
     The tags are orphan payload and are stripped; the WAVING BLACK FLAG base is itself
     a legitimate emoji and survives.
     """
-    incomplete = "\U0001F3F4\U000E0067\U000E0062\U000E0065\U000E006E\U000E0067"
-    assert scrub_hidden(f"ab{incomplete}cd") == "ab\U0001F3F4cd"
+    incomplete = "\U0001f3f4\U000e0067\U000e0062\U000e0065\U000e006e\U000e0067"
+    assert scrub_hidden(f"ab{incomplete}cd") == "ab\U0001f3f4cd"
 
 
 def test_scrub_is_idempotent_on_a_flag_sequence():

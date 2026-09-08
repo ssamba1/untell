@@ -48,13 +48,27 @@ logger = logging.getLogger(__name__)
 # different classes are not. BEFORE/AFTER/UNTIL are deliberately separate — swapping them inverts
 # the claim, which is the whole point.
 _CONNECTIVES: dict[str, str] = {
-    "because": "CAUSE", "since": "CAUSE", "as": "CAUSE", "given": "CAUSE",
-    "if": "COND", "provided": "COND", "assuming": "COND", "when": "COND", "whenever": "COND",
+    "because": "CAUSE",
+    "since": "CAUSE",
+    "as": "CAUSE",
+    "given": "CAUSE",
+    "if": "COND",
+    "provided": "COND",
+    "assuming": "COND",
+    "when": "COND",
+    "whenever": "COND",
     "unless": "COND_NEG",
-    "although": "CONCESS", "though": "CONCESS", "whereas": "CONCESS", "despite": "CONCESS",
-    "before": "BEFORE", "prior": "BEFORE",
-    "after": "AFTER", "once": "AFTER", "following": "AFTER",
-    "until": "UNTIL", "till": "UNTIL",
+    "although": "CONCESS",
+    "though": "CONCESS",
+    "whereas": "CONCESS",
+    "despite": "CONCESS",
+    "before": "BEFORE",
+    "prior": "BEFORE",
+    "after": "AFTER",
+    "once": "AFTER",
+    "following": "AFTER",
+    "until": "UNTIL",
+    "till": "UNTIL",
 }
 
 _SUBJ = {"nsubj", "csubj", "expl"}
@@ -124,7 +138,8 @@ def _load():
         if not _NLP.warned:
             logger.warning(
                 "predicate-argument veto unavailable (%s: %s); role swaps will NOT be caught.",
-                type(exc).__name__, str(exc)[:140],
+                type(exc).__name__,
+                str(exc)[:140],
             )
             _NLP.warned = True
         return None
@@ -376,9 +391,9 @@ def role_swap(a: str, b: str) -> bool | None:
         pairs_a = {(s, v) for s, v, _ in ta if s}
         pairs_b = {(s, v) for s, v, _ in tb if s}
         if pairs_a != pairs_b:
-            if {s for s, _ in pairs_a} == {s for s, _ in pairs_b} and {
-                v for _, v in pairs_a
-            } == {v for _, v in pairs_b}:
+            if {s for s, _ in pairs_a} == {s for s, _ in pairs_b} and {v for _, v in pairs_a} == {
+                v for _, v in pairs_b
+            }:
                 return True
 
         # 3. A load-bearing connective class present in the source is MISSING from the rewrite.
@@ -420,7 +435,8 @@ def role_swap(a: str, b: str) -> bool | None:
         if not _NLP.warned:
             logger.warning(
                 "predicate-argument veto failed (%s: %s); role swaps will NOT be caught.",
-                type(exc).__name__, str(exc)[:140],
+                type(exc).__name__,
+                str(exc)[:140],
             )
             _NLP.warned = True
         return None
@@ -462,8 +478,16 @@ def main(argv: list[str] | None = None) -> int:
 
     swapped = role_swap(args[0], args[1])
     if swapped is None:
-        print(_json.dumps({"available": False, "role_swap": None, "rejected": False,
-                           "note": "spaCy model unavailable — check skipped, not passed"}))
+        print(
+            _json.dumps(
+                {
+                    "available": False,
+                    "role_swap": None,
+                    "rejected": False,
+                    "note": "spaCy model unavailable — check skipped, not passed",
+                }
+            )
+        )
         return 0
     print(_json.dumps({"available": True, "role_swap": swapped, "rejected": swapped}))
     return 1 if swapped else 0

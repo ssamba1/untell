@@ -47,7 +47,11 @@ from untell.scripts.numerals import missing_numbers, numbers_kept
 CHANGED = [
     ("negative sign", "The temperature was -5 degrees.", "The temperature was 5 degrees."),
     ("negative percent", "Margin fell to -12 percent.", "Margin fell to 12 percent."),
-    ("hundred doubled", "The trial enrolled 100 patients.", "The trial enrolled two hundred patients."),
+    (
+        "hundred doubled",
+        "The trial enrolled 100 patients.",
+        "The trial enrolled two hundred patients.",
+    ),
     ("thousand doubled", "Losses reached 1,000 units.", "Losses reached two thousand units."),
     ("million doubled", "Revenue hit 1,000,000 dollars.", "Revenue hit two million dollars."),
     ("five inside twenty-five", "We found 5 cases.", "We found twenty-five cases."),
@@ -60,7 +64,11 @@ CHANGED = [
 ]
 
 UNCHANGED = [
-    ("spelled faithfully", "The trial enrolled 100 patients.", "The trial enrolled one hundred patients."),
+    (
+        "spelled faithfully",
+        "The trial enrolled 100 patients.",
+        "The trial enrolled one hundred patients.",
+    ),
     ("a hundred", "The trial enrolled 100 patients.", "The trial enrolled a hundred patients."),
     ("a thousand", "Losses reached 1,000 units.", "Losses reached a thousand units."),
     ("small spelled", "We found 5 cases.", "We found five cases."),
@@ -69,7 +77,7 @@ UNCHANGED = [
     ("trailing zero added", "Rate was 5 per 100.", "Rate was 5.0 per 100."),
     ("trailing zero in decimal", "Rate was 5.50 per 100.", "Rate was 5.5 per 100."),
     ("comma expanded", "Revenue hit 1,000,000 dollars.", "Revenue hit 1000000 dollars."),
-    ("magnitude notation", "Losses hit 5 million.", "Losses hit 5,000,000.")
+    ("magnitude notation", "Losses hit 5 million.", "Losses hit 5,000,000."),
 ]
 
 

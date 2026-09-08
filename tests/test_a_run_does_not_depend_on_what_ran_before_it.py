@@ -19,6 +19,7 @@ The seeding is per RUN, not per rewrite, and that distinction is load-bearing: b
 them. Seeding per rewrite would collapse all N draws into one and silently undo best-of, which is
 worth 33% -> 0% still-flagged. The last test here is what tells those two designs apart.
 """
+
 from __future__ import annotations
 
 import random

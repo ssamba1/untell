@@ -38,8 +38,16 @@ TEXT = (
 )
 
 ARGS = [
-    "--tier", "lite", "--threshold", "0.0", "--seed", "42", "--max-iters", "1",
-    "--rewriter", "composite",
+    "--tier",
+    "lite",
+    "--threshold",
+    "0.0",
+    "--seed",
+    "42",
+    "--max-iters",
+    "1",
+    "--rewriter",
+    "composite",
 ]
 
 
@@ -49,8 +57,9 @@ def _run_cli(manifest: Path) -> int:
 
 
 def test_the_result_carries_the_rewriter_that_ran(stdlib_lite) -> None:
-    r = untell_text(TEXT, tier="lite", threshold=0.0, seed=42, max_iters=1,
-                    rewriter="composite", best_of=3)
+    r = untell_text(
+        TEXT, tier="lite", threshold=0.0, seed=42, max_iters=1, rewriter="composite", best_of=3
+    )
     assert r.get("rewriter") == "composite"
     assert r["final"] != TEXT, "the loop left the text untouched"
 
@@ -75,8 +84,9 @@ def test_manifest_records_every_contract_field(stdlib_lite, tmp_path) -> None:
 
     # output_sha256 must equal the sha256 of what untell_text produced at the same seed —
     # the manifest is literally describing the bytes of this run's output.
-    r = untell_text(TEXT, tier="lite", threshold=0.0, seed=42, max_iters=1,
-                    rewriter="composite", best_of=3)
+    r = untell_text(
+        TEXT, tier="lite", threshold=0.0, seed=42, max_iters=1, rewriter="composite", best_of=3
+    )
     assert data["output_sha256"] == hashlib.sha256(r["final"].encode("utf-8")).hexdigest()
 
 
@@ -108,9 +118,17 @@ def test_manifest_confirmation_goes_to_stderr_not_stdout(stdlib_lite, tmp_path, 
 
 def test_local_rewriter_is_reproducible() -> None:
     payload = _manifest_payload(
-        "text", {"rewriter": "composite", "final": "out", "seed": 1, "tier": "lite",
-                 "pre": {"max": 0.5}, "post": {"max": 0.2}},
-        browser=None, threshold=0.3,
+        "text",
+        {
+            "rewriter": "composite",
+            "final": "out",
+            "seed": 1,
+            "tier": "lite",
+            "pre": {"max": 0.5},
+            "post": {"max": 0.2},
+        },
+        browser=None,
+        threshold=0.3,
     )
     assert payload["determinism"] == "reproducible"
 
@@ -118,9 +136,17 @@ def test_local_rewriter_is_reproducible() -> None:
 @pytest.mark.parametrize("rewriter", ["anthropic", "openai"])
 def test_remote_rewriters_are_non_deterministic_by_design(rewriter) -> None:
     payload = _manifest_payload(
-        "text", {"rewriter": rewriter, "final": "out", "seed": 1, "tier": "lite",
-                 "pre": {"max": 0.5}, "post": {"max": 0.2}},
-        browser=None, threshold=0.3,
+        "text",
+        {
+            "rewriter": rewriter,
+            "final": "out",
+            "seed": 1,
+            "tier": "lite",
+            "pre": {"max": 0.5},
+            "post": {"max": 0.2},
+        },
+        browser=None,
+        threshold=0.3,
     )
     assert payload["determinism"] == "non-deterministic by design"
 
@@ -129,9 +155,17 @@ def test_browser_detector_is_non_deterministic_by_design() -> None:
     # An otherwise-reproducible composite run becomes non-deterministic when a live web
     # detector is steering the loop.
     payload = _manifest_payload(
-        "text", {"rewriter": "composite", "final": "out", "seed": 1, "tier": "lite",
-                 "pre": {"max": 0.5}, "post": {"max": 0.2}},
-        browser="zerogpt", threshold=0.3,
+        "text",
+        {
+            "rewriter": "composite",
+            "final": "out",
+            "seed": 1,
+            "tier": "lite",
+            "pre": {"max": 0.5},
+            "post": {"max": 0.2},
+        },
+        browser="zerogpt",
+        threshold=0.3,
     )
     assert payload["determinism"] == "non-deterministic by design"
 
@@ -161,7 +195,10 @@ def _spawn_manifest(manifest: str) -> subprocess.CompletedProcess:
     return subprocess.run(
         [sys.executable, "-c", _PAYLOAD, manifest],
         input=TEXT.encode("utf-8"),
-        capture_output=True, env=env, cwd=str(ROOT), timeout=600,
+        capture_output=True,
+        env=env,
+        cwd=str(ROOT),
+        timeout=600,
     )
 
 

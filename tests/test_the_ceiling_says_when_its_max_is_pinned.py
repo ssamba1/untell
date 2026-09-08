@@ -34,7 +34,11 @@ from eval.ceiling import _PINNED_DELTA, _pinned_note
 
 PINNED = {
     "per_detector_pre": {"hc3_roberta": 0.9992, "roberta_openai": 0.9986, "fast_detectgpt": 0.6563},
-    "per_detector_post": {"hc3_roberta": 0.9992, "roberta_openai": 0.6228, "fast_detectgpt": 0.4782},
+    "per_detector_post": {
+        "hc3_roberta": 0.9992,
+        "roberta_openai": 0.6228,
+        "fast_detectgpt": 0.4782,
+    },
 }
 
 

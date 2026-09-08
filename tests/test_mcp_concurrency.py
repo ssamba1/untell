@@ -13,6 +13,7 @@ same reason — a mock agrees with the code that wrote it). All verified live in
   correctly; the global-RNG race that could have made this dangerous is already solved
   by untell_text's save/seed/restore under a lock (run.py).
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -48,7 +49,9 @@ def test_ten_concurrent_calls_do_not_cross_talk():
         results = await asyncio.gather(*[_call(srv, "tells", {"text": t}) for t in TEXTS])
         for i, texts in enumerate(results):
             body = json.loads(texts[0])
-            assert body["words"] == len(TEXTS[i].split()), f"call {i} answered for a different input"
+            assert body["words"] == len(TEXTS[i].split()), (
+                f"call {i} answered for a different input"
+            )
 
     asyncio.run(_go())
 

@@ -68,7 +68,9 @@ def _run_surface(dep: str, surface: str) -> subprocess.CompletedProcess:
     return subprocess.run(
         [sys.executable, str(runner), dep, surface],
         capture_output=True,
-        text=True, encoding="utf-8", errors="replace",
+        text=True,
+        encoding="utf-8",
+        errors="replace",
         env=env,
         timeout=240,
     )

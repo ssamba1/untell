@@ -24,6 +24,7 @@ The `elif` was not careless: it existed to stop "no catalogued tells found" prin
 input, where that sentence reports the catalogue's blindness as the text's virtue. That suppression
 still holds — it now hangs off the warning rather than replacing it.
 """
+
 from __future__ import annotations
 
 import pytest
@@ -56,7 +57,7 @@ def test_the_warning_still_shows_when_nothing_fired():
 
 
 def test_no_clean_bill_of_health_when_a_warning_applies():
-    """"no catalogued tells found" on non-Latin text reports blindness as virtue."""
+    """ "no catalogued tells found" on non-Latin text reports blindness as virtue."""
     out = _render(score_tells(JAPANESE))
     assert "no catalogued tells found" not in out, out
 

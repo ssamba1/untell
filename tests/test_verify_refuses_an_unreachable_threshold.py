@@ -31,6 +31,7 @@ empty stdin — and comparing the exit codes:
 `verify`'s "good" column is 1 because the sample text genuinely fails, which is correct. The 0 in
 the middle column is the defect.
 """
+
 from __future__ import annotations
 
 import subprocess
@@ -48,7 +49,13 @@ def _run(args: list[str]) -> subprocess.CompletedProcess:
     env = dict(os.environ, UNTELL_LITE_NO_TORCH="1", PYTHONIOENCODING="utf-8")
     return subprocess.run(
         [sys.executable, "-m", "untell.scripts.verify", *args],
-        capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=300, env=env, input="",
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=300,
+        env=env,
+        input="",
     )
 
 

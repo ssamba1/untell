@@ -54,9 +54,7 @@ BASE = (
 )
 # Every Zs character in the BMP. The test below asserts they all move the score identically to a
 # plain U+0020, which is the claim that makes the Zs rows a probe artifact rather than a defect.
-EXOTIC_SPACES = [
-    chr(c) for c in range(0x10000) if unicodedata.category(chr(c)) == "Zs"
-]
+EXOTIC_SPACES = [chr(c) for c in range(0x10000) if unicodedata.category(chr(c)) == "Zs"]
 
 # One representative per family, plus the two that were missing.
 SAMPLE = ["​", "‍", "⁠", "﻿", "­", "؜", "᠎", ""]

@@ -1,4 +1,5 @@
 """me5 follow-up: print FULL warning chains for bogus/None tiers and the roster note."""
+
 import json
 import os
 

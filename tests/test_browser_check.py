@@ -39,8 +39,15 @@ def test_user_sites_honours_the_documented_legacy_alias(tmp_path, monkeypatch):
 
     cfg = tmp_path / "sites.json"
     cfg.write_text(
-        _json.dumps({"mysite": {"url": "https://example.test", "input_selector": "#in",
-                                "result_selector": "#out"}}),
+        _json.dumps(
+            {
+                "mysite": {
+                    "url": "https://example.test",
+                    "input_selector": "#in",
+                    "result_selector": "#out",
+                }
+            }
+        ),
         encoding="utf-8",
     )
     monkeypatch.delenv("UNTELL_BROWSER_SITES", raising=False)
@@ -242,7 +249,10 @@ def test_user_defined_site_from_json(tmp_path, monkeypatch):
 
 def test_malformed_user_site_is_skipped(tmp_path, monkeypatch):
     sites = tmp_path / "sites.json"
-    sites.write_text('{"bad": {"no_url_field": true}, "ok": {"url": "u", "input_selector": "#i"}}', encoding="utf-8")
+    sites.write_text(
+        '{"bad": {"no_url_field": true}, "ok": {"url": "u", "input_selector": "#i"}}',
+        encoding="utf-8",
+    )
     monkeypatch.setenv("UNTELL_BROWSER_SITES", str(sites))
     names = available_browser_checkers()
     assert "ok" in names
@@ -318,8 +328,8 @@ def test_browser_failure_is_excluded_from_the_ensemble_not_averaged_in(monkeypat
     monkeypatch.setattr(bc, "get_browser_checker", lambda name: _Broken())
     scorer = run_mod._browser_scorer(["zerogpt"], {}, 0.30)
     out = scorer("some text")
-    assert out["detectors"]["zerogpt"] is None       # excluded, not 0.5
-    assert out.get("all_checkers_failed") is True    # and the failure is signalled
+    assert out["detectors"]["zerogpt"] is None  # excluded, not 0.5
+    assert out.get("all_checkers_failed") is True  # and the failure is signalled
 
 
 PARSE_CASES = [
@@ -330,21 +340,21 @@ PARSE_CASES = [
     ("AI Score: 87.5%", 0.875),
     ("  73 % ai  ", 0.73),
     ("12.345% AI", 0.12345),
-    ("AI: 60% Human: 40%", 0.60),          # AI figure comes first — use it
+    ("AI: 60% Human: 40%", 0.60),  # AI figure comes first — use it
     # Must refuse rather than guess:
-    ("Human: 45%", None),                   # INVERTED — 45% human is 55% AI
+    ("Human: 45%", None),  # INVERTED — 45% human is 55% AI
     ("45% Human Written", None),
-    ("150% AI", 1.0),                       # clamped — over-stating AI is safe
-    ("-10% AI", None),                      # sign was silently dropped -> read as 0.10
-    ("−10% AI", None),                      # unicode minus, same refusal
+    ("150% AI", 1.0),  # clamped — over-stating AI is safe
+    ("-10% AI", None),  # sign was silently dropped -> read as 0.10
+    ("−10% AI", None),  # unicode minus, same refusal
     # A RANGE is one reading, and its upper bound is the safe one. The dash used to be read as a
     # minus sign, which refused the upper bound and returned the LOW end — under-stating AI, the
     # single direction this parser refuses everywhere else.
     ("AI: 10%-20%", 0.20),
     ("AI: 10% - 20%", 0.20),
-    ("AI: 10 – 20%", 0.20),                 # en dash, percent only on the upper bound
-    ("AI-generated: 65%—80%", 0.80),        # em dash
-    ("Human: 45%-55%", None),               # an inverted range is still inverted
+    ("AI: 10 – 20%", 0.20),  # en dash, percent only on the upper bound
+    ("AI-generated: 65%—80%", 0.80),  # em dash
+    ("Human: 45%-55%", None),  # an inverted range is still inverted
     ("Analyzing...", None),
     ("Hang on while we verify your browser", None),
     ("", None),
@@ -366,7 +376,9 @@ def test_parse_ai_percent_refuses_untrustworthy_readouts(text, expected):
     if expected is None:
         assert got is None, f"{text!r} should be refused, got {got!r}"
     else:
-        assert got is not None and abs(got - expected) < 0.02, f"{text!r} -> {got!r}, want {expected}"
+        assert got is not None and abs(got - expected) < 0.02, (
+            f"{text!r} -> {got!r}, want {expected}"
+        )
 
 
 # Layouts that report BOTH figures. The old parser took the first percentage and asked only whether
@@ -385,7 +397,9 @@ BOTH_FIGURE_LAYOUTS = [
 @pytest.mark.parametrize("readout,expected", BOTH_FIGURE_LAYOUTS)
 def test_both_figures_reported_reads_the_ai_one(readout, expected):
     got = parse_ai_percent(readout)
-    assert got is not None and abs(got - expected) < 1e-9, f"{readout!r} -> {got!r}, want {expected}"
+    assert got is not None and abs(got - expected) < 1e-9, (
+        f"{readout!r} -> {got!r}, want {expected}"
+    )
 
 
 @pytest.mark.parametrize(
@@ -399,8 +413,10 @@ def test_words_containing_ai_or_real_are_not_labels(readout):
     assert got is not None, f"{readout!r} was refused because a word was mistaken for a label"
 
 
-@pytest.mark.parametrize("readout", ["100% Human", "0% Human", "Human: 45%", "Real: 30%",
-                                     "98% Human Written", "Likely human, 20%"])
+@pytest.mark.parametrize(
+    "readout",
+    ["100% Human", "0% Human", "Human: 45%", "Real: 30%", "98% Human Written", "Likely human, 20%"],
+)
 def test_human_only_readout_is_still_refused(readout):
     """A human-labelled percentage is the inverse of what the loop needs, and there is no AI figure
     to fall back to. Refusing excludes the checker; guessing hands the loop a backwards verdict."""
@@ -491,7 +507,10 @@ class TestSelectorFallbackAgainstARealBrowser:
         from untell.browser_check import SelectorMiss, SiteConfig, WebUIChecker
 
         cfg = SiteConfig(
-            name="local", url=_chromium_page, input_selector="#nope", result_selector="#out",
+            name="local",
+            url=_chromium_page,
+            input_selector="#nope",
+            result_selector="#out",
             wait_s=6,
         )
         with pytest.raises(SelectorMiss) as e:
@@ -502,8 +521,11 @@ class TestSelectorFallbackAgainstARealBrowser:
         from untell.browser_check import SelectorMiss, SiteConfig, WebUIChecker
 
         cfg = SiteConfig(
-            name="local", url=_chromium_page, input_selector="#newTextArea",
-            result_selector=".gone, .also-gone", wait_s=6,
+            name="local",
+            url=_chromium_page,
+            input_selector="#newTextArea",
+            result_selector=".gone, .also-gone",
+            wait_s=6,
         )
         with pytest.raises(SelectorMiss) as e:
             WebUIChecker(cfg).check("x", headless=True)

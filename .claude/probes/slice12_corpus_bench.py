@@ -15,6 +15,7 @@ Usage:
   UNTELL_LITE_NO_TORCH=1 .venv/Scripts/python.exe .claude/probes/slice12_corpus_bench.py
   MAX_ITERS=2 .venv/Scripts/python.exe .claude/probes/slice12_corpus_bench.py   # torch path subset
 """
+
 from __future__ import annotations
 
 import json
@@ -49,26 +50,32 @@ def run_corpus(path: Path) -> dict:
         t0 = time.monotonic()
         pre = score_text(t, tier=TIER, threshold=THRESHOLD)
         res = untell_text(
-            t, tier=TIER, threshold=THRESHOLD, max_iters=MAX_ITERS,
-            rewriter=REWRITER, best_of=BEST_OF,
+            t,
+            tier=TIER,
+            threshold=THRESHOLD,
+            max_iters=MAX_ITERS,
+            rewriter=REWRITER,
+            best_of=BEST_OF,
         )
         dt = time.monotonic() - t0
         post = res.get("post") or {}
         pre_max = pre.get("max")
         post_max = post.get("max")
         rewrote = bool(res.get("rewrites")) or res.get("final", t) != t
-        rows.append({
-            "doc": i + 1,
-            "words": len(t.split()),
-            "seconds": round(dt, 2),
-            "pre_max": pre_max,
-            "post_max": post_max,
-            "pre_flagged": bool(pre_max is not None and pre_max >= THRESHOLD),
-            "post_flagged": bool(post_max is not None and post_max >= THRESHOLD),
-            "rewrote": rewrote,
-            "rewrites": res.get("rewrites"),
-            "similarity": res.get("similarity"),
-        })
+        rows.append(
+            {
+                "doc": i + 1,
+                "words": len(t.split()),
+                "seconds": round(dt, 2),
+                "pre_max": pre_max,
+                "post_max": post_max,
+                "pre_flagged": bool(pre_max is not None and pre_max >= THRESHOLD),
+                "post_flagged": bool(post_max is not None and post_max >= THRESHOLD),
+                "rewrote": rewrote,
+                "rewrites": res.get("rewrites"),
+                "similarity": res.get("similarity"),
+            }
+        )
     n = len(rows)
     return {
         "file": path.name,
@@ -83,8 +90,11 @@ def run_corpus(path: Path) -> dict:
         "post_flagged_rate": round(sum(1 for r in rows if r["post_flagged"]) / n, 3),
         "mean_similarity": round(
             sum(r["similarity"] for r in rows if r["similarity"] is not None)
-            / sum(1 for r in rows if r["similarity"] is not None), 3)
-        if any(r["similarity"] is not None for r in rows) else None,
+            / sum(1 for r in rows if r["similarity"] is not None),
+            3,
+        )
+        if any(r["similarity"] is not None for r in rows)
+        else None,
         "rows": rows,
     }
 
@@ -100,7 +110,8 @@ def main() -> int:
         out.append(r)
         print(json.dumps(r, indent=1))
     Path(ROOT / ".claude" / "probes" / "slice12_bench_results.jsonl").write_text(
-        "\n".join(json.dumps(r) for r in out) + "\n", encoding="utf-8")
+        "\n".join(json.dumps(r) for r in out) + "\n", encoding="utf-8"
+    )
     print("\nwrote .claude/probes/slice12_bench_results.jsonl")
     return 0
 

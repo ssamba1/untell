@@ -86,7 +86,7 @@ def load_env(path: str | None = None) -> bool:
             key, _, val = line.partition("=")
             key = key.strip()
             if key.startswith("export "):  # tolerate `export KEY=VALUE` shell syntax
-                key = key[len("export "):].strip()
+                key = key[len("export ") :].strip()
             parsed = _parse_value(val)
             if parsed is None:
                 # Unbalanced quotes. Skipped rather than stored, matching python-dotenv, and
@@ -94,7 +94,9 @@ def load_env(path: str | None = None) -> bool:
                 # through their provider dashboard instead of their .env file.
                 logging.getLogger(__name__).warning(
                     "%s: %s opens a quote that is never closed, so it was skipped. "
-                    "Close the quote or remove it.", p, key,
+                    "Close the quote or remove it.",
+                    p,
+                    key,
                 )
                 continue
             if key and key not in os.environ:  # real env wins

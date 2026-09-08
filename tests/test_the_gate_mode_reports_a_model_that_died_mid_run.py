@@ -15,6 +15,7 @@ Nothing here asserts new behaviour — the ordering already works, because the f
 when the result dict is built rather than before the loop. It was untested, and the failure mode
 is invisible: every value in the field would still be a legal one.
 """
+
 from __future__ import annotations
 
 import pytest

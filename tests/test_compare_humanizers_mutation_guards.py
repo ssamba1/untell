@@ -21,14 +21,16 @@ class TestAiMaxScoredGate:
 
     def test_scored_result_returns_max(self, monkeypatch) -> None:
         monkeypatch.setattr(
-            C, "score_text",
+            C,
+            "score_text",
             lambda text, tier: {"max": 0.42, "scored": True},
         )
         assert C._ai_max("some text", "lite") == 0.42
 
     def test_unscored_result_returns_none(self, monkeypatch) -> None:
         monkeypatch.setattr(
-            C, "score_text",
+            C,
+            "score_text",
             lambda text, tier: {"max": 0.0, "scored": False},
         )
         assert C._ai_max("some text", "lite") is None

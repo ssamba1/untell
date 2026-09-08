@@ -4,6 +4,7 @@ sentences.py:338 `ensure_ascii=True`. The mutation -> False emits literal
 non-ASCII characters, which would crash a cp1252 (Windows) stdout — the same
 portability class as scrub.py:119 and quality.py:304, both killed this way.
 """
+
 import json
 
 from untell.scripts.sentences import main as sentences_main

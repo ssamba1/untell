@@ -58,11 +58,17 @@ def _env() -> dict:
 def _run_jsonl(text: str, extra_args: list[str] | None = None) -> subprocess.CompletedProcess:
     """Run the CLI in --jsonl mode; return the CompletedProcess."""
     cmd = [
-        sys.executable, "-m", "untell.scripts.run",
-        "--tier", "lite",
-        "--threshold", "0.0",
-        "--seed", "42",
-        "--max-iters", "1",
+        sys.executable,
+        "-m",
+        "untell.scripts.run",
+        "--tier",
+        "lite",
+        "--threshold",
+        "0.0",
+        "--seed",
+        "42",
+        "--max-iters",
+        "1",
         "--jsonl",
     ] + (extra_args or [])
     return subprocess.run(
@@ -85,6 +91,7 @@ def _lines(proc: subprocess.CompletedProcess) -> list[dict]:
 # 1. Every output line is valid JSON
 # ---------------------------------------------------------------------------
 
+
 def test_every_line_is_valid_json() -> None:
     proc = _run_jsonl(TWO_PARA)
     assert proc.returncode == 0, proc.stderr.decode("utf-8", "replace")[-500:]
@@ -96,6 +103,7 @@ def test_every_line_is_valid_json() -> None:
 # ---------------------------------------------------------------------------
 # 2. Each block line has the required keys and the summary closes the stream
 # ---------------------------------------------------------------------------
+
 
 def test_block_lines_have_required_keys() -> None:
     proc = _run_jsonl(TWO_PARA)
@@ -131,10 +139,14 @@ def test_summary_line_closes_stream() -> None:
 # 3. --jsonl and --json are mutually exclusive (clean error, no traceback)
 # ---------------------------------------------------------------------------
 
+
 def test_mutual_exclusion_gives_clean_error() -> None:
     cmd = [
-        sys.executable, "-m", "untell.scripts.run",
-        "--tier", "lite",
+        sys.executable,
+        "-m",
+        "untell.scripts.run",
+        "--tier",
+        "lite",
         "--json",
         "--jsonl",
         "some text",
@@ -158,9 +170,7 @@ def test_mutual_exclusion_gives_clean_error() -> None:
 
     # stderr must carry the JSON error object.
     error_lines = [ln for ln in stderr.splitlines() if ln.strip().startswith("{")]
-    assert error_lines, (
-        f"expected a JSON error object on stderr but got: {stderr[-300:]}"
-    )
+    assert error_lines, f"expected a JSON error object on stderr but got: {stderr[-300:]}"
     err = json.loads(error_lines[0])
     assert "error" in err
     assert "mutually exclusive" in err["error"]
@@ -169,6 +179,7 @@ def test_mutual_exclusion_gives_clean_error() -> None:
 # ---------------------------------------------------------------------------
 # 4. Cross-process byte identity (DETERMINISM contract)
 # ---------------------------------------------------------------------------
+
 
 def test_jsonl_is_byte_identical_across_processes() -> None:
     """Two fresh processes with the same input and seed must emit byte-identical JSONL.
@@ -179,8 +190,8 @@ def test_jsonl_is_byte_identical_across_processes() -> None:
     a = _run_jsonl(TWO_PARA)
     b = _run_jsonl(TWO_PARA)
 
-    assert a.returncode == 0, f"first process failed: {a.stderr.decode('utf-8','replace')[-300:]}"
-    assert b.returncode == 0, f"second process failed: {b.stderr.decode('utf-8','replace')[-300:]}"
+    assert a.returncode == 0, f"first process failed: {a.stderr.decode('utf-8', 'replace')[-300:]}"
+    assert b.returncode == 0, f"second process failed: {b.stderr.decode('utf-8', 'replace')[-300:]}"
 
     assert a.stdout == b.stdout, (
         "two fresh processes at the same seed produced different JSONL. "
@@ -199,8 +210,12 @@ def test_different_seed_gives_different_jsonl() -> None:
     a = _run_jsonl(TWO_PARA, ["--seed", "42"])
     b = _run_jsonl(TWO_PARA, ["--seed", "43"])
 
-    assert a.returncode == 0, f"seed-42 process failed: {a.stderr.decode('utf-8','replace')[-300:]}"
-    assert b.returncode == 0, f"seed-43 process failed: {b.stderr.decode('utf-8','replace')[-300:]}"
+    assert a.returncode == 0, (
+        f"seed-42 process failed: {a.stderr.decode('utf-8', 'replace')[-300:]}"
+    )
+    assert b.returncode == 0, (
+        f"seed-43 process failed: {b.stderr.decode('utf-8', 'replace')[-300:]}"
+    )
 
     assert a.stdout != b.stdout, (
         "seeds 42 and 43 produced byte-identical JSONL; the seed is inert in --jsonl mode"
@@ -210,6 +225,7 @@ def test_different_seed_gives_different_jsonl() -> None:
 # ---------------------------------------------------------------------------
 # 5. STREAMING PROPERTY: first line arrives before the process exits
 # ---------------------------------------------------------------------------
+
 
 def test_first_line_arrives_before_process_exits() -> None:
     """Assert the FIRST block line is readable while the process is still running.
@@ -223,11 +239,17 @@ def test_first_line_arrives_before_process_exits() -> None:
     is available, then poll() checks whether the process has exited yet.
     """
     cmd = [
-        sys.executable, "-m", "untell.scripts.run",
-        "--tier", "lite",
-        "--threshold", "0.0",
-        "--seed", "42",
-        "--max-iters", "1",
+        sys.executable,
+        "-m",
+        "untell.scripts.run",
+        "--tier",
+        "lite",
+        "--threshold",
+        "0.0",
+        "--seed",
+        "42",
+        "--max-iters",
+        "1",
         "--jsonl",
     ]
     proc = subprocess.Popen(

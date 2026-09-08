@@ -1,12 +1,18 @@
 import json
 import untell.rich_output as R
+
 R._RICH = True
 
 out = {}
+
+
 def marked_plain(s: str) -> str:
     return s.markup if hasattr(s, "markup") else str(s)
+
+
 def count_green(s: str) -> int:
     return s.markup.count("bold green")
+
 
 a = "the quick brown fox jumps over the lazy dog"
 cases = {
@@ -18,5 +24,9 @@ cases = {
 }
 for name, (x, y) in cases.items():
     d = R._diff_words(x, y)
-    out[name] = {"green_words": count_green(d), "total_b": len(y.split()), "markup_len": len(d.markup)}
+    out[name] = {
+        "green_words": count_green(d),
+        "total_b": len(y.split()),
+        "markup_len": len(d.markup),
+    }
 print(json.dumps(out, indent=1))

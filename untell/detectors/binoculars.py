@@ -32,7 +32,7 @@ class BinocularsDetector:
     _observer = None
     _performer = None
     _tokenizer = None
-    _dead = False   # set once _load() fails so we never re-attempt the 14 GB download per call
+    _dead = False  # set once _load() fails so we never re-attempt the 14 GB download per call
     _warned = False
 
     def available(self) -> bool:
@@ -58,13 +58,19 @@ class BinocularsDetector:
             # a runtime dependency, so available() would report True and every score() call would
             # raise. For a single device the placement is identical. This tier is GPU-gated and so
             # never runs in CI — the guard in tests/test_detector_contract.py is what catches it.
-            BinocularsDetector._observer = AutoModelForCausalLM.from_pretrained(
-                _OBSERVER, dtype=torch.bfloat16
-            ).to(dev).eval()
-            BinocularsDetector._performer = AutoModelForCausalLM.from_pretrained(
-                _PERFORMER, dtype=torch.bfloat16
-            ).to(dev).eval()
-        return BinocularsDetector._tokenizer, BinocularsDetector._observer, BinocularsDetector._performer
+            BinocularsDetector._observer = (
+                AutoModelForCausalLM.from_pretrained(_OBSERVER, dtype=torch.bfloat16).to(dev).eval()
+            )
+            BinocularsDetector._performer = (
+                AutoModelForCausalLM.from_pretrained(_PERFORMER, dtype=torch.bfloat16)
+                .to(dev)
+                .eval()
+            )
+        return (
+            BinocularsDetector._tokenizer,
+            BinocularsDetector._observer,
+            BinocularsDetector._performer,
+        )
 
     def score(self, text: str) -> float | None:
         # None == "no signal" (empty / too short / unavailable): excluded from the aggregate
@@ -82,7 +88,8 @@ class BinocularsDetector:
                 logger.warning(
                     "binoculars failed to load and was EXCLUDED from the ensemble "
                     "(%s: %s). Check CUDA availability and the HuggingFace cache.",
-                    type(exc).__name__, str(exc)[:140],
+                    type(exc).__name__,
+                    str(exc)[:140],
                 )
                 BinocularsDetector._warned = True
             raise

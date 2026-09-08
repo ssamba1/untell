@@ -8,6 +8,7 @@ a VERB-pos antecedent with a non-advcl dep, dropping the conditional entirely
 ((None, None) instead of ('restart', 'is')). Prior 'needs real spaCy parses'
 note wrong — _load is patchable and the token shape is fake-able.
 """
+
 from unittest.mock import patch
 
 from untell.scripts.roles import _conditional_pair

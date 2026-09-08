@@ -55,5 +55,7 @@ class TestBlockquotedTablesAreLayout:
 
     def test_blockquote_prose_is_still_prose(self):
         seen: list[str] = []
-        apply_per_block("> Some prose here. More prose.\n> And another line.", lambda b: seen.append(b) or b)
+        apply_per_block(
+            "> Some prose here. More prose.\n> And another line.", lambda b: seen.append(b) or b
+        )
         assert seen == ["Some prose here. More prose.", "And another line."]

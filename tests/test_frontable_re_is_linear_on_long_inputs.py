@@ -35,6 +35,7 @@ from untell.rewriter.structural import _FRONTABLE_RE  # type-ignore
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _timed_match(text: str, timeout_s: float = 2.0) -> float:
     """Return elapsed seconds, or raise AssertionError on timeout."""
     result: list[float | None] = [None]
@@ -59,6 +60,7 @@ def _timed_match(text: str, timeout_s: float = 2.0) -> float:
 # ---------------------------------------------------------------------------
 # Speed guard (the core regression)
 # ---------------------------------------------------------------------------
+
 
 class TestFrontableReIsLinear:
     """_FRONTABLE_RE must complete in O(n) time on adversarial no-match inputs."""
@@ -86,14 +88,13 @@ class TestFrontableReIsLinear:
         words = "foo bar baz qux quux corge grault garply "
         text = (words * 600)[:20_000]
         elapsed = _timed_match(text, timeout_s=self.TIMEOUT_S)
-        assert elapsed < self.TIMEOUT_S, (
-            f"Match took {elapsed:.2f}s — suspected O(n^2) regression"
-        )
+        assert elapsed < self.TIMEOUT_S, f"Match took {elapsed:.2f}s — suspected O(n^2) regression"
 
 
 # ---------------------------------------------------------------------------
 # Correctness guard (fix must not introduce a regression)
 # ---------------------------------------------------------------------------
+
 
 class TestFrontableReCorrectness:
     """_FRONTABLE_RE must still match (and not match) the right sentences."""

@@ -39,8 +39,16 @@ from untell.scripts.score import MAX_INPUT_CHARS
 pytestmark = pytest.mark.slow
 
 _SUBJECTS = [
-    "climate adaptation", "protein folding", "urban transit", "credit scoring", "soil carbon",
-    "vaccine logistics", "grid storage", "coral restoration", "supply chains", "wildfire modelling",
+    "climate adaptation",
+    "protein folding",
+    "urban transit",
+    "credit scoring",
+    "soil carbon",
+    "vaccine logistics",
+    "grid storage",
+    "coral restoration",
+    "supply chains",
+    "wildfire modelling",
 ]
 _OPENERS = ["Moreover,", "Furthermore,", "Additionally,", "Notably,", "In conclusion,"]
 # Varied verb and noun phrases, NOT one fixed phrasing. Written first with a single hardcoded
@@ -50,8 +58,11 @@ _OPENERS = ["Moreover,", "Furthermore,", "Additionally,", "Notably,", "In conclu
 # This builder is the one that produced the measured table above.
 _VERBS = ["leverages", "underscores", "delves into", "highlights", "showcases"]
 _NOUNS = [
-    "a robust framework", "the pivotal integration", "a multifaceted tapestry",
-    "the comprehensive landscape", "a transformative paradigm",
+    "a robust framework",
+    "the pivotal integration",
+    "a multifaceted tapestry",
+    "the comprehensive landscape",
+    "a transformative paradigm",
 ]
 
 
@@ -96,8 +107,13 @@ def run(oversized: str) -> dict:
 
     os.environ["UNTELL_LITE_NO_TORCH"] = "1"
     return untell_text(
-        oversized, tier="lite", rewriter="composite", max_iters=1, best_of=3,
-        threshold=0.001, seed=3,
+        oversized,
+        tier="lite",
+        rewriter="composite",
+        max_iters=1,
+        best_of=3,
+        threshold=0.001,
+        seed=3,
     )
 
 

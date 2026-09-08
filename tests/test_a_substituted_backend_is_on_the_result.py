@@ -88,8 +88,7 @@ def test_the_rest_surface_documents_it() -> None:
     pytest.importorskip("fastapi")
     from untell.api_server import app
 
-    schema = (
-        app.openapi()["paths"]["/humanize"]["post"]["responses"]["200"]
-        ["content"]["application/json"]["schema"]
-    )
+    schema = app.openapi()["paths"]["/humanize"]["post"]["responses"]["200"]["content"][
+        "application/json"
+    ]["schema"]
     assert "rewriter_warning" in schema.get("properties", {})

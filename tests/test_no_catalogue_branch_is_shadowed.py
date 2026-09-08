@@ -56,7 +56,7 @@ def _alternation_groups(src: str) -> list[tuple[str, int]]:
                 elif src[j] == ")":
                     depth -= 1
                 j += 1
-            body = src[i + 3:j - 1]
+            body = src[i + 3 : j - 1]
             if "(" not in body:
                 out.append((body, j))
             i += 3
@@ -81,18 +81,20 @@ def test_no_literal_appears_twice_in_one_alternation(name: str, compiled: re.Pat
     for body, _end in _alternation_groups(compiled.pattern):
         counts = collections.Counter(a.lower() for a in _literals(body))
         repeated = {lit: n for lit, n in counts.items() if n > 1}
-        assert not repeated, f"{name}: {repeated} — the second copy can never be the branch that matches"
+        assert not repeated, (
+            f"{name}: {repeated} — the second copy can never be the branch that matches"
+        )
 
 
 @pytest.mark.parametrize("name,compiled", _CATEGORIES, ids=[n for n, _ in _CATEGORIES])
 def test_no_branch_is_shadowed_by_an_earlier_prefix(name: str, compiled: re.Pattern) -> None:
     src = compiled.pattern
     for body, end in _alternation_groups(src):
-        if src[end:end + 8].startswith(_BOUNDARY_AFTER):
+        if src[end : end + 8].startswith(_BOUNDARY_AFTER):
             continue  # a boundary after the group forces the engine past the shorter branch
         lits = _literals(body)
         for i, earlier in enumerate(lits):
-            for later in lits[i + 1:]:
+            for later in lits[i + 1 :]:
                 assert not (
                     later.lower().startswith(earlier.lower()) and later.lower() != earlier.lower()
                 ), (

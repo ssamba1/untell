@@ -19,6 +19,7 @@ categories cannot fire at all. The loop was fine; the corpus was short, and noth
 A warning, not a filter: raising the floor would silently change every MAGE figure already
 recorded, and `load_pairs` already takes `min_words` for callers who want one.
 """
+
 from __future__ import annotations
 
 import logging

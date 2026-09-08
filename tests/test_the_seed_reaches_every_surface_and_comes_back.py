@@ -10,6 +10,7 @@ The result also reports the seed it used. Without that, a caller holding an outp
 that output again: the derived value is a blake2b digest of the input, not something anyone can
 work out, so `--seed` would be a knob you can set and never read back.
 """
+
 from __future__ import annotations
 
 import inspect

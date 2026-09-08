@@ -25,7 +25,11 @@ def test_prompt_handles_no_detectors():
 
 
 def test_prompt_includes_flagged_sentences():
-    sr = {"detectors": {"mage": 0.8}, "max": 0.8, "flagged_sentences": ["This sentence reads as AI."]}
+    sr = {
+        "detectors": {"mage": 0.8},
+        "max": 0.8,
+        "flagged_sentences": ["This sentence reads as AI."],
+    }
     p = build_rewrite_prompt("text", sr, threshold=0.30)
     assert "This sentence reads as AI." in p
     assert "REWRITE THESE" in p

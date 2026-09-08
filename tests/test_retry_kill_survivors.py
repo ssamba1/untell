@@ -24,6 +24,7 @@ The fifth (L128, `< 1` -> `<= 1` on the max_attempts clamp) is an equivalent
 mutation: both forms yield max_attempts == 1 for 0, 1 and negatives, and both
 keep any larger value, so no behavioral test can distinguish them.
 """
+
 from __future__ import annotations
 
 import pytest

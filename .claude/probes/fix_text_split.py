@@ -3,6 +3,7 @@
 Every backslash in the target text is built from chr(92) so no layer of
 shell/JSON/tool escaping can double or drop it.
 """
+
 import io
 
 PATH = r"C:/Users/Admin/Humanize/untell/text_split.py"
@@ -54,7 +55,21 @@ new = (
     '    rf"|(?<=[.!?]' + BS + "[" + BS + "d" + BS + "])" + BS + 's+"\n'
     '    rf"|(?<=[.!?]' + BS + "[" + BS + "d" + BS + "d" + BS + "])" + BS + 's+"\n'
     '    rf"|(?<=[.!?]' + BS + "[" + BS + "d" + BS + "d" + BS + "d" + BS + "])" + BS + 's+"\n'
-    '    rf"|(?<=[.!?]' + BS + "[" + BS + "d" + BS + "]" + BS + "[" + BS + "d" + BS + "])" + BS + 's+"\n'
+    '    rf"|(?<=[.!?]'
+    + BS
+    + "["
+    + BS
+    + "d"
+    + BS
+    + "]"
+    + BS
+    + "["
+    + BS
+    + "d"
+    + BS
+    + "])"
+    + BS
+    + 's+"\n'
     '    rf"|(?<=[.!?]' + BS + "[" + BS + "d" + BS + "][{_C}])" + BS + 's+"\n'
     '    rf"|(?<=[.!?][{_FN}])' + BS + 's+"\n'
     '    rf"|(?<=[.!?][{_FN}][{_FN}])' + BS + 's+"\n'
@@ -73,9 +88,21 @@ old = (
     "def split_sentences(text: str) -> list[str]:"
 )
 footnote_re = (
-    "    rf'[.!?](?:" + BS + "[" + BS + "d{{1,3}}" + BS + "]|[{_FN}])+["
-    + BS + '"' + BS + "'\u2019)}}" + BS + "]{_ZERO_WIDTH_CLASS}]*"
-    + BS + "s*$'\n"
+    "    rf'[.!?](?:"
+    + BS
+    + "["
+    + BS
+    + "d{{1,3}}"
+    + BS
+    + "]|[{_FN}])+["
+    + BS
+    + '"'
+    + BS
+    + "'\u2019)}}"
+    + BS
+    + "]{_ZERO_WIDTH_CLASS}]*"
+    + BS
+    + "s*$'\n"
 )
 new = (
     "def _continues_after_a_quoted_period(previous: str, nxt: str) -> bool:\n"
@@ -83,15 +110,13 @@ new = (
     "\n"
     "\n"
     '# A footnote marker between the period and the next fragment: "significant.[1] but only\n'
-    "# marginally.\" \u2014 the marker belongs to the FIRST sentence, and a lowercase continuation\n"
-    '# cannot open a new one, so the split must merge back, exactly like the quoted-period\n'
+    '# marginally." \u2014 the marker belongs to the FIRST sentence, and a lowercase continuation\n'
+    "# cannot open a new one, so the split must merge back, exactly like the quoted-period\n"
     '# rule above. A capitalised continuation ("significant.[1] However") keeps the split.\n'
     "# The marker itself is not a closer, which is why the split rule above exists and why a\n"
-    '# separate end-test is needed here \u2014 `_QUOTED_PERIOD_END_RE` looks for a closer right\n'
+    "# separate end-test is needed here \u2014 `_QUOTED_PERIOD_END_RE` looks for a closer right\n"
     '# after the terminator and does not see through "[1]".\n'
-    "_FOOTNOTE_END_RE = re.compile(\n"
-    + footnote_re
-    + ")\n"
+    "_FOOTNOTE_END_RE = re.compile(\n" + footnote_re + ")\n"
     "\n"
     "\n"
     "def _continues_after_a_footnote(previous: str, nxt: str) -> bool:\n"
@@ -119,7 +144,5 @@ if old in src:
     src = src.replace(old, new, 1)
     changed = True
 
-io.open(PATH, "w", encoding="utf-8", newline="").write(
-    src.replace("\n", "\r\n") if crlf else src
-)
+io.open(PATH, "w", encoding="utf-8", newline="").write(src.replace("\n", "\r\n") if crlf else src)
 print("changed" if changed else "NO CHANGE (already applied?)")

@@ -115,6 +115,7 @@ def test_every_cpu_rewriter_can_change_text(stdlib_lite, name):
 # Meaning gates — the ones where silence is indistinguishable from success
 # ---------------------------------------------------------------------------
 
+
 class TestEveryHedgeClassCanVeto:
     """A hedge class that can never fire is a fidelity guarantee that does not exist.
 

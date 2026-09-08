@@ -35,6 +35,7 @@ def _torch_path(monkeypatch):
     None (unavailable) under UNTELL_LITE_NO_TORCH=1. Pin the env unset for the file."""
     monkeypatch.delenv("UNTELL_LITE_NO_TORCH", raising=False)
 
+
 # Five sentences, ~35 words. Repeated to push the edit past any plausible truncation point.
 FILLER = (
     "The study was conducted at three sites over eighteen months. Recruitment followed the "

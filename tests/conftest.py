@@ -66,9 +66,7 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config) -> None:
     if not active:
         return
     terminalreporter.write_line("")
-    terminalreporter.write_line(
-        "untell scoring env: " + ", ".join(active), yellow=True, bold=True
-    )
+    terminalreporter.write_line("untell scoring env: " + ", ".join(active), yellow=True, bold=True)
     terminalreporter.write_line(
         "  a reduced ensemble moves every numeric full-tier figure — check this before "
         "concluding a measurement is stale"

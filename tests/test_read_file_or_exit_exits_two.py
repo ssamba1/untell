@@ -6,6 +6,7 @@ callers distinguishing usage errors (2) from other failures would misread it.
 The docstring explicitly states exit 2 is the convention, so the exact code is
 part of the contract.
 """
+
 import os
 import tempfile
 
@@ -29,4 +30,3 @@ def test_unanticipated_oserror_exits_two(monkeypatch):
     with pytest.raises(SystemExit) as exc:
         read_file_or_exit("whatever")
     assert exc.value.code == 2
-

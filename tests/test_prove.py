@@ -56,7 +56,11 @@ def test_prove_no_checkers_configured():
 def test_prove_passes_when_checker_low(monkeypatch):
     monkeypatch.setenv("SAPLING_API_KEY", "k")
     monkeypatch.setattr(C, "_post_json", lambda *a, **k: {"score": 0.05})
-    v = prove("A sufficiently long AI-sounding paragraph for the detector to chew on.", threshold=0.30, margin=0.0)
+    v = prove(
+        "A sufficiently long AI-sounding paragraph for the detector to chew on.",
+        threshold=0.30,
+        margin=0.0,
+    )
     assert v["passes_all"] is True
     assert "humanized" in v
     assert v["after"]["results"]["sapling"]["passes"] is True
@@ -108,12 +112,21 @@ class TestProveRunsTheStrongLoop:
 
         seen: dict = {}
         monkeypatch.setattr(
-            prove_mod, "untell_text",
+            prove_mod,
+            "untell_text",
             lambda text, **kw: seen.update(kw) or {"final": text, "iterations": 1},
         )
-        monkeypatch.setattr(prove_mod, "verify", lambda t, **kw: {
-            "configured": [], "results": {}, "passes_all": False, "n_configured": 0, "n_passing": 0,
-        })
+        monkeypatch.setattr(
+            prove_mod,
+            "verify",
+            lambda t, **kw: {
+                "configured": [],
+                "results": {},
+                "passes_all": False,
+                "n_configured": 0,
+                "n_passing": 0,
+            },
+        )
         prove_mod.prove("some text")
         assert seen["best_of"] == 3
         assert seen["tier"] == "commercial"
@@ -122,10 +135,20 @@ class TestProveRunsTheStrongLoop:
         import eval.prove as prove_mod
 
         seen: dict = {}
-        monkeypatch.setattr(prove_mod, "prove", lambda text, **kw: seen.update(kw) or {
-            "passes_all": True, "before": {}, "after": {"configured": []}, "humanized": text,
-            "iterations": 0,
-        })
+        monkeypatch.setattr(
+            prove_mod,
+            "prove",
+            lambda text, **kw: (
+                seen.update(kw)
+                or {
+                    "passes_all": True,
+                    "before": {},
+                    "after": {"configured": []},
+                    "humanized": text,
+                    "iterations": 0,
+                }
+            ),
+        )
         prove_mod.main(["--best-of", "5", "--json", "some text"])
         assert seen["best_of"] == 5
 
@@ -135,10 +158,20 @@ class TestProveRunsTheStrongLoop:
         from untell.scripts.run import build_parser
 
         seen: dict = {}
-        monkeypatch.setattr(prove_mod, "prove", lambda text, **kw: seen.update(kw) or {
-            "passes_all": True, "before": {}, "after": {"configured": []}, "humanized": text,
-            "iterations": 0,
-        })
+        monkeypatch.setattr(
+            prove_mod,
+            "prove",
+            lambda text, **kw: (
+                seen.update(kw)
+                or {
+                    "passes_all": True,
+                    "before": {},
+                    "after": {"configured": []},
+                    "humanized": text,
+                    "iterations": 0,
+                }
+            ),
+        )
         prove_mod.main(["--json", "some text"])
         cli_default = next(a for a in build_parser()._actions if a.dest == "best_of").default
         assert seen["best_of"] == cli_default

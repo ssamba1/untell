@@ -1,9 +1,22 @@
 """tells CLI: JSON output valid, categories match score_tells."""
+
 import json, os, subprocess, sys
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
-env = dict(os.environ); env["PYTHONPATH"] = ""
-r = subprocess.run([sys.executable, "-m", "untell.scripts.tells", "Moreover, the framework leverages robust solutions for every team."],
-                   capture_output=True, text=True, env=env, timeout=60)
+env = dict(os.environ)
+env["PYTHONPATH"] = ""
+r = subprocess.run(
+    [
+        sys.executable,
+        "-m",
+        "untell.scripts.tells",
+        "Moreover, the framework leverages robust solutions for every team.",
+    ],
+    capture_output=True,
+    text=True,
+    env=env,
+    timeout=60,
+)
 out = {}
 try:
     data = json.loads(r.stdout)

@@ -1,4 +1,5 @@
 """Probe v2: real stdio transport — mid-call disconnect; server stderr + second session."""
+
 import asyncio
 import json
 import os
@@ -50,7 +51,10 @@ async def main():
     await full_session(params, "SESSION1")
 
     # Mid-call disconnect: start a call on 46KB (0.5s), drop the pipe while it runs.
-    big = {"text": ("Furthermore, the system leverages robust methodologies. ") * 600, "tier": "lite"}
+    big = {
+        "text": ("Furthermore, the system leverages robust methodologies. ") * 600,
+        "tier": "lite",
+    }
     try:
         async with stdio_client(params) as (read, write):
             async with ClientSession(read, write) as session:

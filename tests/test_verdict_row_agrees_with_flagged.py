@@ -71,7 +71,7 @@ def _report(before: float, after: float, cut: float = 0.45) -> str:
     [
         (0.90, "flagged"),
         (0.46, "flagged"),
-        (0.45, "flagged"),   # at the cut, `flagged` is `max >= threshold`
+        (0.45, "flagged"),  # at the cut, `flagged` is `max >= threshold`
         (0.44, "borderline"),
         (0.36, "borderline"),
         (0.34, "clear"),
@@ -95,10 +95,7 @@ def test_the_row_is_not_constant() -> None:
     """The defect the earlier fix was for: the row printed the same word whatever the numbers.
     A regression to any constant label would pass every equality test above that happens to match
     it, so this asserts the row DISCRIMINATES."""
-    labels = {
-        _report(p, p).split("Verdict")[1].split("\n")[0].strip()
-        for p in (0.02, 0.40, 0.90)
-    }
+    labels = {_report(p, p).split("Verdict")[1].split("\n")[0].strip() for p in (0.02, 0.40, 0.90)}
     assert len(labels) >= 2, labels
 
 

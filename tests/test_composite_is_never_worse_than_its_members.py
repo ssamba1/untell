@@ -31,18 +31,15 @@ from untell.rewriter import get_rewriter
 from untell.scripts.score import score_text
 
 TEXTS = {
-    "ai vocab heavy":
-        "Moreover, the framework leverages robust methodologies to deliver outcomes at scale. "
-        "It significantly improves overall efficiency and accuracy across the evaluated corpus. "
-        "In conclusion, these findings underscore the importance of a comprehensive approach here.",
-    "delve tapestry":
-        "We delve into the rich tapestry of this realm to leverage robust systems. "
-        "The multifaceted landscape underscores a pivotal paradigm for every stakeholder involved. "
-        "Ultimately, the groundbreaking approach showcases seamless integration at considerable scale.",
-    "hedged report":
-        "It is important to note that the results may potentially indicate a possible trend. "
-        "Furthermore, additional research could arguably help clarify these preliminary findings. "
-        "In essence, the comprehensive analysis underscores the pivotal need for further study.",
+    "ai vocab heavy": "Moreover, the framework leverages robust methodologies to deliver outcomes at scale. "
+    "It significantly improves overall efficiency and accuracy across the evaluated corpus. "
+    "In conclusion, these findings underscore the importance of a comprehensive approach here.",
+    "delve tapestry": "We delve into the rich tapestry of this realm to leverage robust systems. "
+    "The multifaceted landscape underscores a pivotal paradigm for every stakeholder involved. "
+    "Ultimately, the groundbreaking approach showcases seamless integration at considerable scale.",
+    "hedged report": "It is important to note that the results may potentially indicate a possible trend. "
+    "Furthermore, additional research could arguably help clarify these preliminary findings. "
+    "In essence, the comprehensive analysis underscores the pivotal need for further study.",
 }
 SEEDS = range(8)
 # The tie band. Composite selects among random draws, so "never worse" is a claim about the mean,

@@ -105,11 +105,15 @@ class TestOneDenominatorPerRow:
             text: str = "x"
             history: list = field(default_factory=list)
 
-        post = ({"max": post_max, "mean": post_max, "detectors": {"d": post_max}, "scored": True}
-                if scored else {"max": 0.0, "mean": 0.0, "detectors": {}, "scored": False})
+        post = (
+            {"max": post_max, "mean": post_max, "detectors": {"d": post_max}, "scored": True}
+            if scored
+            else {"max": 0.0, "mean": 0.0, "detectors": {}, "scored": False}
+        )
         return _R(
             pre={"max": pre_max, "mean": pre_max, "detectors": {"d": pre_max}, "scored": True},
-            post=post, similarity=sim,
+            post=post,
+            similarity=sim,
         )
 
     def test_mean_post_max_excludes_unscored_placeholders(self):
@@ -117,7 +121,9 @@ class TestOneDenominatorPerRow:
         a 0.30 threshold, so the strategy read as succeeding — next to a bypass rate of 0%."""
         from eval.report import summarize
 
-        rows = [self._r(0.9, 0.35) for _ in range(5)] + [self._r(0.9, 0.0, scored=False) for _ in range(5)]
+        rows = [self._r(0.9, 0.35) for _ in range(5)] + [
+            self._r(0.9, 0.0, scored=False) for _ in range(5)
+        ]
         st = summarize({"test": rows}, 0.30)["strategies"]["test"]
         assert abs(st["mean_post_max"] - 0.35) < 1e-9, st["mean_post_max"]
         assert st["n"] == 10 and st["n_scored"] == 5
@@ -130,7 +136,8 @@ class TestOneDenominatorPerRow:
 
         by = {
             "full_loop": [self._r(0.9, 0.1)] + [self._r(0.9, 0.0, scored=False) for _ in range(9)],
-            "single_pass": [self._r(0.9, 0.1) for _ in range(5)] + [self._r(0.9, 0.9) for _ in range(5)],
+            "single_pass": [self._r(0.9, 0.1) for _ in range(5)]
+            + [self._r(0.9, 0.9) for _ in range(5)],
         }
         s = summarize(by, 0.30)
         assert s["thesis_pass"] is False
@@ -141,8 +148,10 @@ class TestOneDenominatorPerRow:
         from eval.report import summarize
 
         by = {
-            "full_loop": [self._r(0.9, 0.1) for _ in range(8)] + [self._r(0.9, 0.9) for _ in range(2)],
-            "single_pass": [self._r(0.9, 0.1) for _ in range(5)] + [self._r(0.9, 0.9) for _ in range(5)],
+            "full_loop": [self._r(0.9, 0.1) for _ in range(8)]
+            + [self._r(0.9, 0.9) for _ in range(2)],
+            "single_pass": [self._r(0.9, 0.1) for _ in range(5)]
+            + [self._r(0.9, 0.9) for _ in range(5)],
         }
         s = summarize(by, 0.30)
         assert s["thesis_pass"] is True
@@ -151,7 +160,9 @@ class TestOneDenominatorPerRow:
     def test_table_shows_the_real_denominator(self):
         from eval.report import render
 
-        rows = [self._r(0.9, 0.35) for _ in range(5)] + [self._r(0.9, 0.0, scored=False) for _ in range(5)]
+        rows = [self._r(0.9, 0.35) for _ in range(5)] + [
+            self._r(0.9, 0.0, scored=False) for _ in range(5)
+        ]
         out = render({"test": rows}, 0.30)
         assert "| 5/10 |" in out, out
         assert "scored/total" in out

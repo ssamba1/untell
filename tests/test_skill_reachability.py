@@ -61,7 +61,9 @@ def test_step_script_has_a_cli(module: Path):
     it had `main()`, ran clean, printed nothing, and returned success on a rewrite it should have
     rejected."""
     src = module.read_text(encoding="utf-8", errors="replace")
-    assert re.search(r"^def main\(", src, re.M), f"{module.name} has no main() — the skill cannot run it"
+    assert re.search(r"^def main\(", src, re.M), (
+        f"{module.name} has no main() — the skill cannot run it"
+    )
     assert re.search(r'^if __name__ == "__main__":', src, re.M), (
         f"{module.name} defines main() but never calls it; `python scripts/{module.name}` would "
         "exit 0 having done nothing"

@@ -6,6 +6,7 @@ The mutation is not None -> is None inverts the guard: an EXISTING tpr now
 takes the placeholder branch, hiding the value. The FPR/TPR columns are what
 caught the two scale-miscalibrated detectors at AUROC 0.999+ (see comment).
 """
+
 from eval.detector_audit import render
 
 ROW = {

@@ -84,7 +84,10 @@ def _try_pyproject(path: Path) -> dict[str, Any]:
         # config should not stop the tool, but it must not be invisible either.
         logger.warning(
             "ignoring %s: it exists but could not be parsed (%s: %s). Its [tool.untell] settings "
-            "are NOT applied.", path, type(exc).__name__, exc,
+            "are NOT applied.",
+            path,
+            type(exc).__name__,
+            exc,
         )
         return {}
 
@@ -99,7 +102,8 @@ def _try_yaml(path: Path) -> dict[str, Any]:
         # informational rather than a warning about correctness.
         logger.warning(
             "ignoring %s: PyYAML is not installed, so its settings are NOT applied "
-            "(pip install pyyaml, or move them to pyproject.toml under [tool.untell]).", path,
+            "(pip install pyyaml, or move them to pyproject.toml under [tool.untell]).",
+            path,
         )
         return {}
     try:
@@ -108,7 +112,10 @@ def _try_yaml(path: Path) -> dict[str, Any]:
     except Exception as exc:
         logger.warning(
             "ignoring %s: it exists but could not be parsed (%s: %s). Its settings are NOT "
-            "applied.", path, type(exc).__name__, exc,
+            "applied.",
+            path,
+            type(exc).__name__,
+            exc,
         )
         return {}
     if data is not None and not isinstance(data, dict):
@@ -116,7 +123,8 @@ def _try_yaml(path: Path) -> dict[str, Any]:
         # for it was as silent as a parse failure.
         logger.warning(
             "ignoring %s: expected a mapping of settings, got %s. Its contents are NOT applied.",
-            path, type(data).__name__,
+            path,
+            type(data).__name__,
         )
         return {}
     return dict(data) if isinstance(data, dict) else {}
@@ -135,7 +143,10 @@ def load() -> dict[str, Any]:
     """
     cwd = Path.cwd()
     dropped: list[Path] = []
-    for path, reader in ((cwd / "untell.yaml", _try_yaml), (cwd / "pyproject.toml", _try_pyproject)):
+    for path, reader in (
+        (cwd / "untell.yaml", _try_yaml),
+        (cwd / "pyproject.toml", _try_pyproject),
+    ):
         if path.is_file():
             data = reader(path)
             if data:
@@ -151,7 +162,8 @@ def load() -> dict[str, Any]:
                         "settings came from %s. %s existed and supplied nothing, so it did not "
                         "override anything — the values in use are the ones below it in the chain, "
                         "not the defaults.",
-                        path, ", ".join(str(p) for p in dropped),
+                        path,
+                        ", ".join(str(p) for p in dropped),
                     )
                 return data
             dropped.append(path)
@@ -173,13 +185,18 @@ def _coerce(value: str, default: Any, key: str = "") -> Any:
     """
     if isinstance(default, bool):
         return value.strip().lower() in ("1", "true", "yes", "on")
-    for caster in ((int,) if isinstance(default, int) else (float,) if isinstance(default, float) else ()):
+    for caster in (
+        (int,) if isinstance(default, int) else (float,) if isinstance(default, float) else ()
+    ):
         try:
             result = caster(value)
         except ValueError:
             logger.warning(
                 "ignoring UNTELL_%s=%r: expected %s, using the default %r instead.",
-                (key or "?").upper(), value, caster.__name__, default,
+                (key or "?").upper(),
+                value,
+                caster.__name__,
+                default,
             )
             return default
         # `float("nan")` and `float("inf")` succeed — no ValueError — so the branch above
@@ -192,7 +209,10 @@ def _coerce(value: str, default: Any, key: str = "") -> Any:
             logger.warning(
                 "ignoring UNTELL_%s=%r: expected a finite number, got %s, "
                 "using the default %r instead.",
-                (key or "?").upper(), value, result, default,
+                (key or "?").upper(),
+                value,
+                result,
+                default,
             )
             return default
         return result

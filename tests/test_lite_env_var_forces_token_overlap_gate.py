@@ -8,6 +8,7 @@ a 309-word flagged doc took 13.19s with embeddings live vs 0.69s on the true
 stdlib path. The env gate must be checked before the cached model, so a test
 that flips the variable mid-process still gets the stdlib gate.
 """
+
 from __future__ import annotations
 
 import untell.scripts.quality as quality

@@ -37,13 +37,11 @@ def test_drafts_refused_before_scoring_are_not_described_as_having_scored_worse(
     assert warning is not None
     assert LOCKED_SPAN_MARK in warning, warning
     assert "None of them was scored" in warning, warning
-    assert SCORED_WORSE_MARK not in warning, (
-        f"claimed a score comparison that never ran: {warning}"
-    )
+    assert SCORED_WORSE_MARK not in warning, f"claimed a score comparison that never ran: {warning}"
 
 
 def test_the_remedy_offered_is_one_that_can_actually_work():
-    """"Try more draws" is the wrong advice here, and being wrong costs the user compute."""
+    """ "Try more draws" is the wrong advice here, and being wrong costs the user compute."""
     warning = _nothing_adopted_warning(
         rewrites=4, adopted=0, changed=False, vetoed=0, sentinel_failed=4
     )
@@ -91,9 +89,10 @@ def test_the_plain_scored_worse_case_still_says_scored_worse():
 
 def test_a_run_that_adopted_something_says_nothing_at_all():
     """A warning that fires when the loop worked is noise on every successful run."""
-    assert _nothing_adopted_warning(
-        rewrites=3, adopted=1, changed=True, vetoed=0, sentinel_failed=2
-    ) is None
+    assert (
+        _nothing_adopted_warning(rewrites=3, adopted=1, changed=True, vetoed=0, sentinel_failed=2)
+        is None
+    )
 
 
 def test_the_loop_counts_sentinel_rejections_at_the_point_it_refuses_them():

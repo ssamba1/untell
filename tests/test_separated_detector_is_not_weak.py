@@ -6,6 +6,7 @@ branch fire whenever au is present (always True), so a detector with AUROC 1.0
 and perfect separation is downgraded from OK_SEPARATED to WEAK — a healthy
 detector reported as barely-responding.
 """
+
 from eval.detector_audit import audit_detector
 
 

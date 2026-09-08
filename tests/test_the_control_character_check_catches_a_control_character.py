@@ -17,6 +17,7 @@ the detection could have regressed to a no-op and both suites would have stayed 
 Runs against a temporary tree rather than the repository, so a failing assertion can never leave a
 control character in a tracked file.
 """
+
 from __future__ import annotations
 
 import pytest

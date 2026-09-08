@@ -13,6 +13,7 @@ The lite path is forced with UNTELL_LITE_NO_TORCH=1 so the assertion does not de
 the machine running the tests happens to have torch — the earlier version of a test in this repo
 asserted something that was only true on the torch path and passed for the wrong reason.
 """
+
 from __future__ import annotations
 
 import re
@@ -47,9 +48,7 @@ def test_the_demo_reports_the_number_of_detectors_that_actually_answered(monkeyp
 
     ran = len(score_text("Furthermore, this is a test of the system.", tier="lite")["detectors"])
     assert ran >= 1
-    assert claimed == ran, (
-        f"demo claims {claimed} detectors, but tier lite loads {ran}"
-    )
+    assert claimed == ran, f"demo claims {claimed} detectors, but tier lite loads {ran}"
 
 
 def test_the_demo_pins_the_tier_it_measured_in_the_command_it_suggests(monkeypatch, capsys):

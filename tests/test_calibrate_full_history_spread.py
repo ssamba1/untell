@@ -10,6 +10,7 @@ uses the min-max spread across ALL runs; this regression pins that logic
 against the real committed history: the spread is non-zero, so the recipe must
 NOT be declared deterministic.
 """
+
 import json
 from pathlib import Path
 
@@ -36,9 +37,7 @@ def test_lite_hc3_full_history_spread_is_nonzero():
     assert len(rows) >= 2, "need the committed lite-hc3 history"
     keys = sorted({k for r in rows for k in r["metrics"]})
     spread = {
-        k: max(r["metrics"][k] for r in rows)
-        - min(r["metrics"][k] for r in rows)
-        for k in keys
+        k: max(r["metrics"][k] for r in rows) - min(r["metrics"][k] for r in rows) for k in keys
     }
     # post_mean_max moved 0.0262 across the committed runs (0.5625 vs 0.5871+)
     assert spread["post_mean_max"] > 0.02, spread

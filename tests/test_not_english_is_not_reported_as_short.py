@@ -1,4 +1,4 @@
-""""Too short" and "not English" are different limits with the same symptom.
+""" "Too short" and "not English" are different limits with the same symptom.
 
 `str.split()` counts whitespace-delimited runs, so a 46-character Chinese paragraph is **one word**
 by that measure. `score_text` reported it as "1 word: too short for a reliable verdict ... Score

@@ -1,5 +1,7 @@
 """config.py: env var precedence, coercion, fallthrough invariants."""
+
 import json, os
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
 from untell.config import load, get
 

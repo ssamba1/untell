@@ -30,7 +30,9 @@ import untell.scripts.score as score_module
 import untell.scripts.sentences as sentences_module
 import untell.scripts.tells as tells_module
 
-ENGLISH = "The cat sat on the mat and then it went outside to look at the birds in the garden today."
+ENGLISH = (
+    "The cat sat on the mat and then it went outside to look at the birds in the garden today."
+)
 CHINESE = "这是一段中文文字，用来测试检测器的行为，看看它会不会给出一个虚假的判断结果。"
 TELL_HEAVY = (
     "It is worth noting that this pivotal approach leverages a robust and comprehensive framework, "
@@ -151,6 +153,6 @@ def test_all_four_commands_agree_on_what_two_means() -> None:
     for module in (score_module, tells_module, humanness_module, sentences_module):
         source = inspect.getsource(module.main)
         assert "return 2" in source, module.__name__
-        assert (
-            "nothing ran" in source or "could not read" in source or "not a verdict" in source
-        ), module.__name__
+        assert "nothing ran" in source or "could not read" in source or "not a verdict" in source, (
+            module.__name__
+        )

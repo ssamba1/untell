@@ -1,5 +1,7 @@
 """config._try_yaml: untell.yaml parsed; bad yaml falls back gracefully."""
+
 import json, os, tempfile, pathlib
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
 from untell.config import _try_yaml
 
@@ -17,5 +19,6 @@ with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False, encodin
     f.write("threshold: [unclosed\n  bad: {yaml\n")
     p2 = f.name
 out["bad_graceful"] = _try_yaml(pathlib.Path(p2)) == {}
-os.unlink(p); os.unlink(p2)
+os.unlink(p)
+os.unlink(p2)
 print(json.dumps(out, indent=1))

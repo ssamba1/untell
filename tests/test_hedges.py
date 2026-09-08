@@ -39,7 +39,11 @@ class TestStrengtheningIsCaught:
             # The class held "alleged"/"allegedly" but not the base form, so dropping the
             # attribution entirely cleared the WHOLE gate — no contradiction, no role swap, no
             # quantity change; removing "Critics allege" does not deny the source, it asserts more.
-            ("Critics allege the firm misled investors.", "The firm misled investors.", "evidential"),
+            (
+                "Critics allege the firm misled investors.",
+                "The firm misled investors.",
+                "evidential",
+            ),
             ("Regulators accuse the bank of fraud.", "The bank committed fraud.", "evidential"),
         ],
     )
@@ -60,16 +64,36 @@ class TestNonHedgesAreNotTreatedAsHedges:
     @pytest.mark.parametrize(
         ("source", "candidate", "label"),
         [
-            ("The delay was due to a supply shortage.",
-             "The delay was because of a supply shortage.", "due to -> because of"),
-            ("Costs rose due to inflation.", "Costs rose owing to inflation.", "due to -> owing to"),
-            ("This function will return a list of results.",
-             "This function returns a list of results.", "will -> present tense"),
-            ("The script will read the file and will print each line.",
-             "The script reads the file and prints each line.", "will -> present tense, twice"),
-            ("The timeout is set to 30 seconds.", "The timeout is 30 seconds.", "set to = assignment"),
-            ("She is going to the conference in Berlin.",
-             "She travels to the conference in Berlin.", "going to = movement"),
+            (
+                "The delay was due to a supply shortage.",
+                "The delay was because of a supply shortage.",
+                "due to -> because of",
+            ),
+            (
+                "Costs rose due to inflation.",
+                "Costs rose owing to inflation.",
+                "due to -> owing to",
+            ),
+            (
+                "This function will return a list of results.",
+                "This function returns a list of results.",
+                "will -> present tense",
+            ),
+            (
+                "The script will read the file and will print each line.",
+                "The script reads the file and prints each line.",
+                "will -> present tense, twice",
+            ),
+            (
+                "The timeout is set to 30 seconds.",
+                "The timeout is 30 seconds.",
+                "set to = assignment",
+            ),
+            (
+                "She is going to the conference in Berlin.",
+                "She travels to the conference in Berlin.",
+                "going to = movement",
+            ),
         ],
     )
     def test_faithful_rewrite_is_not_vetoed(self, source, candidate, label):
@@ -120,7 +144,7 @@ class TestCausalUpgradeBoundaries:
         )
 
     def test_spatial_alongside_does_not_arm_the_check(self):
-        """"alongside" is overwhelmingly spatial in prose, and its presence armed the whole check —
+        """ "alongside" is overwhelmingly spatial in prose, and its presence armed the whole check —
         after which any causal word anywhere in the candidate, including an unrelated clause, read
         as an association-to-causation upgrade."""
         assert not hedges._causal_upgrade(
@@ -136,12 +160,24 @@ class TestFaithfulRewritesPass:
         ("source", "candidate", "label"),
         [
             ("The drug may cause drowsiness.", "The drug might make you drowsy.", "may->might"),
-            ("Some studies found an effect.", "A handful of studies found an effect.", "some->handful"),
+            (
+                "Some studies found an effect.",
+                "A handful of studies found an effect.",
+                "some->handful",
+            ),
             ("The results suggest a link.", "The findings indicate a link.", "suggest->indicate"),
             ("It usually works.", "It tends to work most of the time.", "usually->tends"),
             ("The company plans to expand.", "The company aims to grow.", "plans->aims"),
-            ("She was accused of fraud.", "She was allegedly involved in fraud.", "accused->allegedly"),
-            ("Organizations use these tools.", "Companies rely on this stuff.", "no hedges present"),
+            (
+                "She was accused of fraud.",
+                "She was allegedly involved in fraud.",
+                "accused->allegedly",
+            ),
+            (
+                "Organizations use these tools.",
+                "Companies rely on this stuff.",
+                "no hedges present",
+            ),
             ("The build runs faster now.", "The build is quicker these days.", "plain paraphrase"),
             ("Revenue fell slightly.", "Revenue edged down.", "degree: verb carries smallness"),
             ("Revenue fell slightly.", "Revenue declined a fraction.", "degree: a fraction"),
@@ -263,11 +299,27 @@ class TestCausalUpgrade:
     @pytest.mark.parametrize(
         ("source", "candidate", "label"),
         [
-            ("Screen time is correlated with poor sleep.", "Screen time is linked to poor sleep.", "synonym"),
-            ("Screen time is correlated with poor sleep.", "Poor sleep tracks with screen time.", "tracks with"),
-            ("Income is associated with health outcomes.", "Income and health outcomes go together.", "go together"),
+            (
+                "Screen time is correlated with poor sleep.",
+                "Screen time is linked to poor sleep.",
+                "synonym",
+            ),
+            (
+                "Screen time is correlated with poor sleep.",
+                "Poor sleep tracks with screen time.",
+                "tracks with",
+            ),
+            (
+                "Income is associated with health outcomes.",
+                "Income and health outcomes go together.",
+                "go together",
+            ),
             ("Smoking causes cancer.", "Smoking is a cause of cancer.", "source already causal"),
-            ("The deploy caused the outage.", "The outage was caused by the deploy.", "causal passive"),
+            (
+                "The deploy caused the outage.",
+                "The outage was caused by the deploy.",
+                "causal passive",
+            ),
             ("Rain caused the delay.", "The delay was due to rain.", "causal reworded"),
         ],
     )
@@ -278,7 +330,9 @@ class TestCausalUpgrade:
         r"""Broadening the pattern to `link\w*` made this a false veto: a hyperlink plus any causal
         verb looked like an upgraded claim. "linked"/"link between" are associations; a bare noun
         "link ... to" is a URL."""
-        assert certainty_kept("Click the link to continue.", "Click the link, which leads to the form.")
+        assert certainty_kept(
+            "Click the link to continue.", "Click the link, which leads to the form."
+        )
 
     def test_negated_causation_is_not_an_assertion(self):
         """A rewrite that DENIES causation is more careful than the source, not less."""
@@ -337,7 +391,11 @@ class TestIntensifierAdded:
     @pytest.mark.parametrize(
         ("source", "candidate", "label"),
         [
-            ("The study found a large effect.", "The study found a big effect.", "source already intense"),
+            (
+                "The study found a large effect.",
+                "The study found a big effect.",
+                "source already intense",
+            ),
             ("Revenue collapsed.", "Revenue fell off a cliff.", "intensity preserved"),
             ("The study found an effect.", "The research showed an effect.", "plain reword"),
             ("Sales rose last quarter.", "Revenue went up in the last quarter.", "plain reword 2"),
@@ -382,7 +440,11 @@ class TestAdjectiveFormsAreCoveredNotJustAdverbs:
         ("source", "candidate", "word"),
         [
             ("The study found an effect.", "The study found a significant effect.", "significant"),
-            ("There was an increase in cost.", "There was a substantial increase in cost.", "substantial"),
+            (
+                "There was an increase in cost.",
+                "There was a substantial increase in cost.",
+                "substantial",
+            ),
             ("There was a rise in demand.", "There was a sharp rise in demand.", "sharp"),
             ("The team saw a change.", "The team saw a considerable change.", "considerable"),
             ("Prices moved this week.", "Prices moved steeply this week.", "steep"),
@@ -395,10 +457,26 @@ class TestAdjectiveFormsAreCoveredNotJustAdverbs:
     @pytest.mark.parametrize(
         ("source", "candidate", "word"),
         [
-            ("There was a modest increase in revenue.", "There was an increase in revenue.", "modest"),
-            ("The effect was moderate across the cohort.", "The effect was present across the cohort.", "moderate"),
-            ("The change was minimal in both arms.", "The change was seen in both arms.", "minimal"),
-            ("A partial recovery followed the treatment.", "A recovery followed the treatment.", "partial"),
+            (
+                "There was a modest increase in revenue.",
+                "There was an increase in revenue.",
+                "modest",
+            ),
+            (
+                "The effect was moderate across the cohort.",
+                "The effect was present across the cohort.",
+                "moderate",
+            ),
+            (
+                "The change was minimal in both arms.",
+                "The change was seen in both arms.",
+                "minimal",
+            ),
+            (
+                "A partial recovery followed the treatment.",
+                "A recovery followed the treatment.",
+                "partial",
+            ),
             ("Uptake was limited in the trial.", "Uptake was seen in the trial.", "limited"),
         ],
     )
@@ -466,7 +544,7 @@ class TestIntentionVerbsAreNotSubstituted:
         ],
     )
     def test_suggest_stays_evidential(self, source, candidate):
-        """"suggest" must keep behaving as an evidential hedge, which is what made putting it in
+        """ "suggest" must keep behaving as an evidential hedge, which is what made putting it in
         the intention class untenable."""
         from untell.scripts.hedges import certainty_kept
 

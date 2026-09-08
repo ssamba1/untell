@@ -7,6 +7,7 @@ present, so the validity check fails and the loader rewrites the model's real
 label scheme to the MAGE convention ("AI" -> "machine"), clobbering a shipped
 config. Pinned via the full load path with mocked snapshot/transformers.
 """
+
 import json
 import os
 import tempfile
@@ -40,9 +41,11 @@ def test_valid_id2label_is_preserved():
     mage.MageDetector._model = None
     mage.MageDetector._tok = None
     try:
-        with patch("huggingface_hub.snapshot_download", return_value=d), \
-             patch("transformers.AutoTokenizer", _StubTok), \
-             patch("transformers.AutoModelForSequenceClassification", _StubModel):
+        with (
+            patch("huggingface_hub.snapshot_download", return_value=d),
+            patch("transformers.AutoTokenizer", _StubTok),
+            patch("transformers.AutoModelForSequenceClassification", _StubModel),
+        ):
             mage.MageDetector()._load()
         raw = json.load(open(cfg, encoding="utf-8"))
     finally:

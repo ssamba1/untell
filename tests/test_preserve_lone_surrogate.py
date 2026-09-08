@@ -66,8 +66,10 @@ def test_api_rejects_a_surrogate_body_with_422_not_500():
     from untell.api_server import app
 
     client = TestClient(app, raise_server_exceptions=False)
-    body = b'{"text": "Furthermore, AI \\ud800 transforms industries.", "tier": "lite", ' \
-           b'"rewriter": "surgical", "max_iters": 1, "best_of": 1}'
+    body = (
+        b'{"text": "Furthermore, AI \\ud800 transforms industries.", "tier": "lite", '
+        b'"rewriter": "surgical", "max_iters": 1, "best_of": 1}'
+    )
     resp = client.post("/humanize", content=body, headers={"Content-Type": "application/json"})
     assert resp.status_code == 422, f"expected 422, got {resp.status_code}: {resp.text[:120]}"
     data = resp.json()  # the body must parse

@@ -21,9 +21,15 @@ from untell.scripts.batch import main
 _REAL_UNT_ELL_TEXT = batch_mod.untell_text
 
 
-def _fake_result(text: str = "", final: str = "humanized output",
-                 changed: bool = True, pre_max: float = 0.7,
-                 post_max: float = 0.2, iterations: int = 2, **kwargs) -> dict:
+def _fake_result(
+    text: str = "",
+    final: str = "humanized output",
+    changed: bool = True,
+    pre_max: float = 0.7,
+    post_max: float = 0.2,
+    iterations: int = 2,
+    **kwargs,
+) -> dict:
     """A canned `untell_text` result with the keys batch reads.
 
     The first positional argument is the input text (the loop receives it
@@ -102,9 +108,15 @@ def test_looks_binary_detects_nul_and_accepts_utf16_bom(tmp_path):
 
 def test_process_one_ok_entry(tree):
     entry = batch_mod._process_one(
-        tree / "a.md", tree, tree.parent / "out",
-        rewriter=object(), tier="lite", threshold=0.3,
-        max_iters=5, best_of=3, dry_run=False,
+        tree / "a.md",
+        tree,
+        tree.parent / "out",
+        rewriter=object(),
+        tier="lite",
+        threshold=0.3,
+        max_iters=5,
+        best_of=3,
+        dry_run=False,
     )
     assert entry["status"] == "ok"
     assert entry["input"] == "a.md"
@@ -116,9 +128,15 @@ def test_process_one_ok_entry(tree):
 
 def test_process_one_binary_skipped_without_reading(tree):
     entry = batch_mod._process_one(
-        tree / "pic.png.txt", tree, tree.parent / "out",
-        rewriter=object(), tier="lite", threshold=0.3,
-        max_iters=5, best_of=3, dry_run=False,
+        tree / "pic.png.txt",
+        tree,
+        tree.parent / "out",
+        rewriter=object(),
+        tier="lite",
+        threshold=0.3,
+        max_iters=5,
+        best_of=3,
+        dry_run=False,
     )
     assert entry["status"] == "skipped"
     assert entry["reason"] == "binary"
@@ -127,9 +145,15 @@ def test_process_one_binary_skipped_without_reading(tree):
 
 def test_process_one_empty_skipped(tree):
     entry = batch_mod._process_one(
-        tree / "empty.md", tree, tree.parent / "out",
-        rewriter=object(), tier="lite", threshold=0.3,
-        max_iters=5, best_of=3, dry_run=False,
+        tree / "empty.md",
+        tree,
+        tree.parent / "out",
+        rewriter=object(),
+        tier="lite",
+        threshold=0.3,
+        max_iters=5,
+        best_of=3,
+        dry_run=False,
     )
     assert entry["status"] == "skipped"
     assert entry["reason"] == "empty"
@@ -141,9 +165,15 @@ def test_process_one_read_failure_becomes_failed_not_raised(tree, monkeypatch):
 
     monkeypatch.setattr(batch_mod, "read_file", boom)
     entry = batch_mod._process_one(
-        tree / "a.md", tree, tree.parent / "out",
-        rewriter=object(), tier="lite", threshold=0.3,
-        max_iters=5, best_of=3, dry_run=False,
+        tree / "a.md",
+        tree,
+        tree.parent / "out",
+        rewriter=object(),
+        tier="lite",
+        threshold=0.3,
+        max_iters=5,
+        best_of=3,
+        dry_run=False,
     )
     assert entry["status"] == "failed"
     assert "Permission denied" in entry["error"]
@@ -155,9 +185,15 @@ def test_process_one_rewriter_error_is_failed(tree, monkeypatch):
 
     monkeypatch.setattr(batch_mod, "untell_text", err)
     entry = batch_mod._process_one(
-        tree / "a.md", tree, tree.parent / "out",
-        rewriter=object(), tier="lite", threshold=0.3,
-        max_iters=5, best_of=3, dry_run=False,
+        tree / "a.md",
+        tree,
+        tree.parent / "out",
+        rewriter=object(),
+        tier="lite",
+        threshold=0.3,
+        max_iters=5,
+        best_of=3,
+        dry_run=False,
     )
     assert entry["status"] == "failed"
     assert "no rewriter configured" in entry["error"]

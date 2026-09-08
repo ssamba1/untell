@@ -103,8 +103,13 @@ def run(
     rows = []
     for i, (human, ai) in enumerate(pairs):
         result = untell_text(
-            ai, tier=tier, threshold=threshold, max_iters=max_iters,
-            best_of=best_of, rewriter=rewriter, seed=seed,
+            ai,
+            tier=tier,
+            threshold=threshold,
+            max_iters=max_iters,
+            best_of=best_of,
+            rewriter=rewriter,
+            seed=seed,
         )
         # `untell_text` reports a refusal as {"error": ...} with no `pre`/`post`, and this indexed
         # straight into `result["pre"]`. MEASURED with a typo'd backend name, `--rewriter compsite`:
@@ -121,15 +126,17 @@ def run(
         # which argparse cannot. The fix is to surface its answer, not to duplicate its knowledge.
         if "error" in result:
             raise SystemExit(f"untell_text refused sample {i}: {result['error']}")
-        rows.append({
-            "i": i,
-            "pre_max": result["pre"]["max"],
-            "post_max": result["post"]["max"],
-            "similarity": result["similarity"],
-            "final": result["final"],
-            "source": ai,
-            "human": human,
-        })
+        rows.append(
+            {
+                "i": i,
+                "pre_max": result["pre"]["max"],
+                "post_max": result["post"]["max"],
+                "similarity": result["similarity"],
+                "final": result["final"],
+                "source": ai,
+                "human": human,
+            }
+        )
 
     # Scored only now, on text the loop can no longer influence. Doing this inside the loop would
     # leak the control into selection through nothing more than an ordering mistake.
@@ -184,9 +191,16 @@ def run(
         }
 
     return {
-        "config": {"dataset": dataset, "n": len(rows), "tier": tier, "rewriter": rewriter,
-                   "best_of": best_of, "max_iters": max_iters, "seed": seed,
-                   "holdout": detector.name},
+        "config": {
+            "dataset": dataset,
+            "n": len(rows),
+            "tier": tier,
+            "rewriter": rewriter,
+            "best_of": best_of,
+            "max_iters": max_iters,
+            "seed": seed,
+            "holdout": detector.name,
+        },
         # The premise. `separates` false means every number below is uninterpretable, not bad.
         "control": {
             "holdout_mean_ai": ai_side,
@@ -210,8 +224,9 @@ def run(
         },
         "by_conviction": by_conviction,
         "mean_similarity": statistics.fmean(r["similarity"] for r in scored),
-        "rows": [{k: v for k, v in r.items() if k not in ("final", "source", "human")}
-                 for r in scored],
+        "rows": [
+            {k: v for k, v in r.items() if k not in ("final", "source", "human")} for r in scored
+        ],
     }
 
 
@@ -231,9 +246,12 @@ def render(result: dict) -> str:
         "",
         f"in sample      {ins['mean_pre']:.4f} -> {ins['mean_post']:.4f}   "
         f"flagged {ins['flagged_pre']}/{n} -> {ins['flagged_post']}/{n}"
-        + ("\n  every document is pinned above 0.99 in and out, so nothing cleared the tier and the"
-           "\n  transfer question has no subject — rerun with UNTELL_DISABLE_MAGE=1" if ins["pinned"]
-           else ""),
+        + (
+            "\n  every document is pinned above 0.99 in and out, so nothing cleared the tier and the"
+            "\n  transfer question has no subject — rerun with UNTELL_DISABLE_MAGE=1"
+            if ins["pinned"]
+            else ""
+        ),
         f"held out       {out['mean_pre']:.4f} -> {out['mean_post']:.4f}   "
         f"flagged {out['flagged_pre']}/{n} -> {out['flagged_post']}/{n}   "
         f"improved on {out['improved_on']}/{n}",
@@ -272,8 +290,14 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     result = run(
-        dataset=args.dataset, n=args.n, tier=args.tier, rewriter=args.rewriter,
-        threshold=args.threshold, best_of=args.best_of, max_iters=args.max_iters, seed=args.seed,
+        dataset=args.dataset,
+        n=args.n,
+        tier=args.tier,
+        rewriter=args.rewriter,
+        threshold=args.threshold,
+        best_of=args.best_of,
+        max_iters=args.max_iters,
+        seed=args.seed,
     )
     print(json.dumps(result, indent=2) if args.json else render(result))
     return 1 if "error" in result else 0

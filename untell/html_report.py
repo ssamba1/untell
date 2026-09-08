@@ -45,6 +45,7 @@ from pathlib import Path
 # Security: escaping (DO NOT call any HTML-writing function without this)
 # ---------------------------------------------------------------------------
 
+
 def _e(text: str) -> str:
     """HTML-escape text; ``quote=True`` also escapes \" for safe attribute embedding.
 
@@ -57,6 +58,7 @@ def _e(text: str) -> str:
 # ---------------------------------------------------------------------------
 # Annotation: original text with locked spans
 # ---------------------------------------------------------------------------
+
 
 def _annotate_locked(text: str, locked_spans: list[dict]) -> str:
     """Return HTML where each locked span is wrapped in <mark class="locked">.
@@ -92,9 +94,7 @@ def _annotate_locked(text: str, locked_spans: list[dict]) -> str:
             parts.append(_e(text[prev:start]))
         rules = _e(", ".join(row.get("rules", [])))
         span_text = _e(text[start:end])
-        parts.append(
-            f'<mark class="locked" title="{rules}">{span_text}</mark>'
-        )
+        parts.append(f'<mark class="locked" title="{rules}">{span_text}</mark>')
         prev = end
     if prev < len(text):
         parts.append(_e(text[prev:]))
@@ -104,6 +104,7 @@ def _annotate_locked(text: str, locked_spans: list[dict]) -> str:
 # ---------------------------------------------------------------------------
 # Annotation: final text with changed regions
 # ---------------------------------------------------------------------------
+
 
 def _annotate_diff_final(original: str, final: str) -> str:
     """Return HTML of ``final`` where changed/inserted characters are highlighted.
@@ -133,6 +134,7 @@ def _annotate_diff_final(original: str, final: str) -> str:
 # Per-sentence score bar
 # ---------------------------------------------------------------------------
 
+
 def _score_bar(score: float) -> str:
     """Inline HTML/CSS score bar; no images or external resources.
 
@@ -145,13 +147,14 @@ def _score_bar(score: float) -> str:
     return (
         f'<span class="score-bar" aria-hidden="true">'
         f'<span class="score-fill" style="width:{fill}%;left:{pct}%"></span>'
-        f'</span>'
+        f"</span>"
     )
 
 
 # ---------------------------------------------------------------------------
 # Sentence score table
 # ---------------------------------------------------------------------------
+
 
 def _sentence_table(sentences: list[dict], threshold: float) -> str:
     """Return an HTML <table> of per-sentence AI scores.
@@ -166,7 +169,8 @@ def _sentence_table(sentences: list[dict], threshold: float) -> str:
         cls = ' class="flagged-row"' if flagged else ""
         badge = (
             ' <abbr title="above threshold" style="color:#c0392b;font-weight:bold">▲</abbr>'
-            if flagged else ""
+            if flagged
+            else ""
         )
         rows.append(
             f"<tr{cls}>"
@@ -177,9 +181,7 @@ def _sentence_table(sentences: list[dict], threshold: float) -> str:
     return (
         "<table>"
         "<thead><tr><th>AI Score</th><th>Sentence</th></tr></thead>"
-        "<tbody>"
-        + "".join(rows)
-        + "</tbody></table>"
+        "<tbody>" + "".join(rows) + "</tbody></table>"
     )
 
 
@@ -306,6 +308,7 @@ footer {
 # Main entry point
 # ---------------------------------------------------------------------------
 
+
 def generate_html_report(
     original: str,
     result: dict,
@@ -349,6 +352,7 @@ def generate_html_report(
     # --- Locked spans (exact same spans lock() protects: from explain_spans) ---
     try:
         from untell.scripts.explain import explain_spans
+
         locked_spans = explain_spans(original)
     except Exception:  # always degrade gracefully rather than crashing the report
         locked_spans = []
@@ -356,6 +360,7 @@ def generate_html_report(
     # --- Per-sentence scores (lite tier: fast, stdlib-only on the common path) ---
     try:
         from untell.scripts.sentences import score_sentences
+
         sent = score_sentences(final, tier="lite")
         sentences = sent.get("sentences") or []
         threshold = float(sent.get("threshold") or 0.30)
@@ -391,9 +396,7 @@ def generate_html_report(
     warning = result.get("warning") or result.get("error")
     warn_html = ""
     if warning:
-        warn_html = (
-            f'<div class="warn-box"><strong>Note:</strong> {_e(str(warning))}</div>'
-        )
+        warn_html = f'<div class="warn-box"><strong>Note:</strong> {_e(str(warning))}</div>'
 
     # --- Sentence table and summary ---
     flagged_count = sum(1 for r in sentences if r.get("flagged"))

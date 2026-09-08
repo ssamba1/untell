@@ -1,5 +1,7 @@
 """local_policy availability: no adapter dir -> unavailable (never silently base)."""
+
 import json, os
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
 from untell.rewriter.local_policy import LocalPolicyRewriter
 
@@ -14,5 +16,8 @@ out["missing_dir_unavailable"] = not rw2.available()
 rw3 = LocalPolicyRewriter(use_adapter=False)
 out["base_available_dep_gated"] = isinstance(rw3.available(), bool)
 # 4. name changes with use_adapter
-out["name_switch"] = LocalPolicyRewriter(use_adapter=False).name == "base-model" and LocalPolicyRewriter().name == "local-policy"
+out["name_switch"] = (
+    LocalPolicyRewriter(use_adapter=False).name == "base-model"
+    and LocalPolicyRewriter().name == "local-policy"
+)
 print(json.dumps(out, indent=1))

@@ -165,7 +165,9 @@ def test_polish_changes_the_run_across_seeds() -> None:
         reference = _run(seed=seed, rewriter="targeted")
         polished = _run(seed=seed, rewriter="targeted", polish=True)
         differ += polished["final"] != reference["final"]
-    assert differ > 0, "polish=True cannot change the output at any of 12 seeds, even with a rewriter whose pipeline has no surgical stage"
+    assert differ > 0, (
+        "polish=True cannot change the output at any of 12 seeds, even with a rewriter whose pipeline has no surgical stage"
+    )
 
 
 def test_polish_is_redundant_after_a_surgical_stage() -> None:

@@ -81,7 +81,15 @@ def test_no_single_word_substitute_strands_a_preposition() -> None:
     from untell.attacks.word_importance import _SYN
 
     of_governed = {
-        "proof", "sign", "mark", "hallmark", "indication", "mix", "array", "range", "cornerstone",
+        "proof",
+        "sign",
+        "mark",
+        "hallmark",
+        "indication",
+        "mix",
+        "array",
+        "range",
+        "cornerstone",
     }
     to_governed = {"testament", "tribute", "gateway", "barrier", "alternative", "response"}
     offenders = [
@@ -134,8 +142,14 @@ def test_no_substitute_is_a_clause_where_the_headword_was_a_noun() -> None:
 @pytest.mark.parametrize(
     "text,broken",
     [
-        ("We demonstrate the effectiveness of our benchmark across datasets.", "the how well it works"),
-        ("The effectiveness of the treatment was measured over twelve weeks.", "how well it works of"),
+        (
+            "We demonstrate the effectiveness of our benchmark across datasets.",
+            "the how well it works",
+        ),
+        (
+            "The effectiveness of the treatment was measured over twelve weeks.",
+            "how well it works of",
+        ),
         ("The team revised the schedule accordingly after the review.", " the to match "),
     ],
 )

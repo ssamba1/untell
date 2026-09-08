@@ -16,6 +16,7 @@ Design notes (why these buckets):
   - Bytes inputs are type-malformed (signature says str) — we classify
     whether the resulting error is clean (TypeError) or a raw internal crash.
 """
+
 from __future__ import annotations
 
 import base64
@@ -35,8 +36,24 @@ _LATIN_EXT = list(range(0x100, 0x180))
 _GREEK_CYRILLIC = list(range(0x370, 0x400)) + list(range(0x400, 0x500))
 _HEBREW_ARABIC = list(range(0x590, 0x5F0)) + list(range(0x600, 0x700))
 _COMBINING = list(range(0x300, 0x370))
-_ZERO_WIDTH = [0x200B, 0x200C, 0x200D, 0x200E, 0x200F, 0x202A, 0x202B, 0x202C,
-               0x202D, 0x202E, 0x2066, 0x2067, 0x2068, 0x2069, 0xFEFF, 0x00AD]
+_ZERO_WIDTH = [
+    0x200B,
+    0x200C,
+    0x200D,
+    0x200E,
+    0x200F,
+    0x202A,
+    0x202B,
+    0x202C,
+    0x202D,
+    0x202E,
+    0x2066,
+    0x2067,
+    0x2068,
+    0x2069,
+    0xFEFF,
+    0x00AD,
+]
 _BIDI = [0x05D0, 0x05D1, 0x0627, 0x0644, 0x0639, 0x202E]
 _CJK = list(range(0x4E00, 0x4E80)) + list(range(0x3000, 0x3040))
 _HANGUL = list(range(0xAC00, 0xAC80))
@@ -48,15 +65,31 @@ _FULLWIDTH = list(range(0xFF01, 0xFF60))
 _BOX = list(range(0x2500, 0x2580))
 
 _BUCKETS = [
-    _ASCII_PRINT, _ASCII_CTRL, _LATIN1, _LATIN_EXT, _GREEK_CYRILLIC,
-    _HEBREW_ARABIC, _COMBINING, _ZERO_WIDTH, _BIDI, _CJK, _HANGUL, _EMOJI,
-    _SURROGATES, _PRIVATE, _MATH, _FULLWIDTH, _BOX,
+    _ASCII_PRINT,
+    _ASCII_CTRL,
+    _LATIN1,
+    _LATIN_EXT,
+    _GREEK_CYRILLIC,
+    _HEBREW_ARABIC,
+    _COMBINING,
+    _ZERO_WIDTH,
+    _BIDI,
+    _CJK,
+    _HANGUL,
+    _EMOJI,
+    _SURROGATES,
+    _PRIVATE,
+    _MATH,
+    _FULLWIDTH,
+    _BOX,
 ]
 
-_WORDS = ("the quick brown fox jumps over lazy dog committee proposal "
-          "unanimously approved surprising development following report "
-          "analysis system implementation framework platform leveraging "
-          "showcasing boasts underscores ensuring moreover furthermore").split()
+_WORDS = (
+    "the quick brown fox jumps over lazy dog committee proposal "
+    "unanimously approved surprising development following report "
+    "analysis system implementation framework platform leveraging "
+    "showcasing boasts underscores ensuring moreover furthermore"
+).split()
 
 
 def rand_str(rng: random.Random, max_len: int = 2000) -> str:
@@ -76,8 +109,7 @@ def rand_str(rng: random.Random, max_len: int = 2000) -> str:
         elif r < 0.95:
             parts.append(rng.choice(_WORDS))
         else:
-            parts.append("".join(chr(rng.choice(_COMBINING))
-                                 for _ in range(rng.randint(1, 4))))
+            parts.append("".join(chr(rng.choice(_COMBINING)) for _ in range(rng.randint(1, 4))))
     return "".join(parts[:n])
 
 
@@ -96,14 +128,32 @@ def rand_bytes(rng: random.Random, max_len: int = 2000) -> bytes:
         # utf-16-ish / BOM-heavy
         return b"\xff\xfe" + bytes(rng.randrange(256) for _ in range(max(0, n - 2)))
     # NUL-heavy / control-heavy
-    return bytes(rng.choice([0, 0, 0, 0, 1, 9, 10, 13, 26, 127, 255, 0x80])
-                 for _ in range(n))
+    return bytes(rng.choice([0, 0, 0, 0, 1, 9, 10, 13, 26, 127, 255, 0x80]) for _ in range(n))
 
 
 def weird_types(rng: random.Random) -> object:
-    pool = [None, True, False, 0, 1, -1, 3.14, float("nan"), float("inf"),
-            float("-inf"), [], {}, set(), (), b"", bytearray(b"x"), 1 + 2j,
-            object(), Ellipsis, NotImplemented]
+    pool = [
+        None,
+        True,
+        False,
+        0,
+        1,
+        -1,
+        3.14,
+        float("nan"),
+        float("inf"),
+        float("-inf"),
+        [],
+        {},
+        set(),
+        (),
+        b"",
+        bytearray(b"x"),
+        1 + 2j,
+        object(),
+        Ellipsis,
+        NotImplemented,
+    ]
     return rng.choice(pool)
 
 
@@ -122,6 +172,7 @@ def sentinel_collision_text(rng: random.Random) -> str:
 # ensure_ascii=True); for bytes it is {"b64": ...}; for other types it is a
 # {"type": name} marker the worker re-materialises.
 # ---------------------------------------------------------------------------
+
 
 def case_str(value: str) -> dict:
     return {"v": value}
@@ -147,28 +198,59 @@ def build_score_cases(n_str: int = 300, n_bytes: int = 300, n_type: int = 100) -
         elif r < 0.92:
             text = " ".join(rng.choice(_WORDS) for _ in range(rng.randint(0, 200)))
         elif r < 0.97:
-            text = "".join(rng.choice(".,!?;:()[]{}#*_~`'\"-+=/\\|<>@$%^&")
-                           for _ in range(rng.randint(0, 300)))
+            text = "".join(
+                rng.choice(".,!?;:()[]{}#*_~`'\"-+=/\\|<>@$%^&") for _ in range(rng.randint(0, 300))
+            )
         else:
             text = rand_str(rng, 50000)  # long-run truncation path
-        cases.append({"surface": "score", "kind": "str", "text": case_str(text),
-                      "tier": "lite"})
+        cases.append({"surface": "score", "kind": "str", "text": case_str(text), "tier": "lite"})
     for i in range(n_bytes):
         cases.append({"surface": "score", "kind": "bytes", "text": case_bytes(rand_bytes(rng))})
-    type_pool = ["none", "int", "float", "nan", "inf", "list", "dict", "set",
-                 "tuple", "bytes_empty", "bytearray", "complex", "object", "bool"]
+    type_pool = [
+        "none",
+        "int",
+        "float",
+        "nan",
+        "inf",
+        "list",
+        "dict",
+        "set",
+        "tuple",
+        "bytes_empty",
+        "bytearray",
+        "complex",
+        "object",
+        "bool",
+    ]
     for i in range(n_type):
-        cases.append({"surface": "score", "kind": "type",
-                      "text": case_type(rng.choice(type_pool))})
+        cases.append({"surface": "score", "kind": "type", "text": case_type(rng.choice(type_pool))})
     # tier / threshold variants (valid-ish structured probes)
     for i in range(30):
-        tier = rng.choice(["lite", "full", "heavy", "commercial", "bogus", "",
-                           "LITE", None, 3, ["lite"], "lite\x00"])
-        thr = rng.choice([0.3, 0.0, 1.0, -0.5, 2.0, float("nan"), float("inf"),
-                          "0.5", None, True])
-        cases.append({"surface": "score", "kind": "param",
-                      "text": case_str(rand_str(rng, 500)), "tier": tier,
-                      "threshold": thr})
+        tier = rng.choice(
+            [
+                "lite",
+                "full",
+                "heavy",
+                "commercial",
+                "bogus",
+                "",
+                "LITE",
+                None,
+                3,
+                ["lite"],
+                "lite\x00",
+            ]
+        )
+        thr = rng.choice([0.3, 0.0, 1.0, -0.5, 2.0, float("nan"), float("inf"), "0.5", None, True])
+        cases.append(
+            {
+                "surface": "score",
+                "kind": "param",
+                "text": case_str(rand_str(rng, 500)),
+                "tier": tier,
+                "threshold": thr,
+            }
+        )
     return cases
 
 
@@ -219,26 +301,33 @@ def build_preserve_cases(n: int = 300) -> list[dict]:
             text = rand_str(rng, 20)
         else:
             text = rand_str(rng, 30000)
-        cases.append({"surface": "preserve", "kind": "roundtrip",
-                      "text": case_str(text)})
+        cases.append({"surface": "preserve", "kind": "roundtrip", "text": case_str(text)})
     # adversarial restore: mapping with fake sentinels / wrong values
     for i in range(60):
         fake_map = {}
         for _ in range(rng.randint(1, 8)):
             key = f"⟦HZ{rng.randint(0, 99999):04d}⟧"
-            val = rng.choice([rand_str(rng, 50), 42, None, b"x",
-                              ["a"], {"k": 1}])
+            val = rng.choice([rand_str(rng, 50), 42, None, b"x", ["a"], {"k": 1}])
             fake_map[key] = val
-        cases.append({"surface": "preserve", "kind": "adversarial",
-                      "text": case_str(rand_str(rng, 400)),
-                      "mapping": fake_map})
+        cases.append(
+            {
+                "surface": "preserve",
+                "kind": "adversarial",
+                "text": case_str(rand_str(rng, 400)),
+                "mapping": fake_map,
+            }
+        )
     # type-malformed lock/restore
     for i in range(40):
-        kinds = [("lock", "none"), ("lock", "bytes"), ("restore", "none"),
-                 ("restore", "bytes"), ("restore", "int")]
+        kinds = [
+            ("lock", "none"),
+            ("lock", "bytes"),
+            ("restore", "none"),
+            ("restore", "bytes"),
+            ("restore", "int"),
+        ]
         fn, t = kinds[i % len(kinds)]
-        cases.append({"surface": "preserve", "kind": "type",
-                      "fn": fn, "arg": case_type(t)})
+        cases.append({"surface": "preserve", "kind": "type", "fn": fn, "arg": case_type(t)})
     return cases
 
 
@@ -255,15 +344,26 @@ def build_tells_cases(n: int = 300) -> list[dict]:
             text = sentinel_collision_text(rng)
         else:
             text = rand_str(rng, 60000)
-        cases.append({"surface": "tells", "kind": "str",
-                      "text": case_str(text),
-                      "include_matches": rng.random() < 0.4})
+        cases.append(
+            {
+                "surface": "tells",
+                "kind": "str",
+                "text": case_str(text),
+                "include_matches": rng.random() < 0.4,
+            }
+        )
     for i in range(60):
-        cases.append({"surface": "tells", "kind": "bytes",
-                      "text": case_bytes(rand_bytes(rng, 2000))})
+        cases.append(
+            {"surface": "tells", "kind": "bytes", "text": case_bytes(rand_bytes(rng, 2000))}
+        )
     for i in range(40):
-        cases.append({"surface": "tells", "kind": "type",
-                      "text": case_type(["none", "int", "list", "dict"][i % 4])})
+        cases.append(
+            {
+                "surface": "tells",
+                "kind": "type",
+                "text": case_type(["none", "int", "list", "dict"][i % 4]),
+            }
+        )
     return cases
 
 
@@ -277,33 +377,70 @@ def build_cli_cases(n: int = 300, seed: int = 100) -> list[dict]:
         if r < 0.08:
             pass  # empty argv: `untell` -> demo; score/loop -> no input
         elif r < 0.20:
-            argv = [rng.choice(["--help", "-h", "--bogus", "-x", "--version",
-                                "--check", "--demo", "-d", "help"])]
+            argv = [
+                rng.choice(
+                    [
+                        "--help",
+                        "-h",
+                        "--bogus",
+                        "-x",
+                        "--version",
+                        "--check",
+                        "--demo",
+                        "-d",
+                        "help",
+                    ]
+                )
+            ]
         elif r < 0.35:
             argv = [rand_str(rng, 40)]  # bare text (humanize shortcut for `untell`)
         elif r < 0.55:
-            argv = ["--tier", rng.choice(["lite", "full", "bogus", "", "LITE",
-                                          "lite\x00"])]
+            argv = ["--tier", rng.choice(["lite", "full", "bogus", "", "LITE", "lite\x00"])]
             argv += [rand_str(rng, 60)]
         elif r < 0.65:
-            argv = ["--threshold", rng.choice(["0.5", "abc", "-1", "2", "nan",
-                                               "0.5.5", "\ud800", "1e309"])]
+            argv = [
+                "--threshold",
+                rng.choice(["0.5", "abc", "-1", "2", "nan", "0.5.5", "\ud800", "1e309"]),
+            ]
             argv += [rand_str(rng, 40)]
         elif r < 0.75:
-            argv = ["--file", rng.choice(["nope.txt", "C:\\nope.docx", ".",
-                                          "untell/scripts/score.py",
-                                          "C:\\Windows\\system32", "\ud800x"])]
+            argv = [
+                "--file",
+                rng.choice(
+                    [
+                        "nope.txt",
+                        "C:\\nope.docx",
+                        ".",
+                        "untell/scripts/score.py",
+                        "C:\\Windows\\system32",
+                        "\ud800x",
+                    ]
+                ),
+            ]
         elif r < 0.85:
             argv = ["--json", "--quiet", rand_str(rng, 80)]
         elif r < 0.92:
-            argv = ["--seed", rng.choice(["0", "-1", "abc", "99999999999999999999",
-                                          "1.5", "\ud800"])]
+            argv = [
+                "--seed",
+                rng.choice(["0", "-1", "abc", "99999999999999999999", "1.5", "\ud800"]),
+            ]
             argv += [rand_str(rng, 60)]
         else:
-            argv = [rng.choice(["--max-iters", "--max-rounds", "--best-of",
-                                "--margin", "--confirm", "--polish",
-                                "--no-scrub", "--style"]),
-                    rng.choice(["0", "1", "-3", "abc", "999"])]
+            argv = [
+                rng.choice(
+                    [
+                        "--max-iters",
+                        "--max-rounds",
+                        "--best-of",
+                        "--margin",
+                        "--confirm",
+                        "--polish",
+                        "--no-scrub",
+                        "--style",
+                    ]
+                ),
+                rng.choice(["0", "1", "-3", "abc", "999"]),
+            ]
             argv += [rand_str(rng, 40)]
         cases.append({"surface": "cli", "argv": argv})
     return cases
@@ -316,12 +453,23 @@ def materialise(case: dict) -> tuple:
         if "b" in spec:
             return base64.b64decode(spec["b"])
         if "t" in spec:
-            return {"none": None, "int": 7, "float": 1.5, "nan": float("nan"),
-                    "inf": float("inf"), "list": [1, "x"], "dict": {"k": "v"},
-                    "set": {1, 2}, "tuple": (1, 2), "bytes_empty": b"",
-                    "bytearray": bytearray(b"x"), "complex": 1 + 2j,
-                    "object": object(), "bool": True,
-                    "bytes": b"\xff\x00"}[spec["t"]]
+            return {
+                "none": None,
+                "int": 7,
+                "float": 1.5,
+                "nan": float("nan"),
+                "inf": float("inf"),
+                "list": [1, "x"],
+                "dict": {"k": "v"},
+                "set": {1, 2},
+                "tuple": (1, 2),
+                "bytes_empty": b"",
+                "bytearray": bytearray(b"x"),
+                "complex": 1 + 2j,
+                "object": object(),
+                "bool": True,
+                "bytes": b"\xff\x00",
+            }[spec["t"]]
         if "v" in spec:
             return spec["v"]
     return spec

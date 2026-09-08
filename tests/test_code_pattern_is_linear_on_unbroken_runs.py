@@ -10,6 +10,7 @@ runs. With the `\b` anchor the same scan is linear: 50k 0.08s, 100k 0.16s,
 200k 0.33s, and real identifiers (main.py, parse_json(), UNTELL_ENABLE_RADAR)
 still lock.
 """
+
 from __future__ import annotations
 
 import time
@@ -57,9 +58,15 @@ def test_real_identifiers_still_lock():
     )
     pat = dict((label, p) for label, p in _PATTERNS)["code"]
     locked = [text[m.start() : m.end()] for m in pat.finditer(text)]
-    for needle in ("src/main.py", "tests/check.test.py", "parse_json()",
-                   "UNTELL_ENABLE_RADAR", "--tier"):
+    for needle in (
+        "src/main.py",
+        "tests/check.test.py",
+        "parse_json()",
+        "UNTELL_ENABLE_RADAR",
+        "--tier",
+    ):
         assert needle in locked, f"{needle!r} not locked; got {locked}"
+
 
 def test_symbol_soup_skips_ner_without_loading_the_model(monkeypatch):
     """spaCy's tokenizer is O(n^2) on long punctuation runs and its model passes

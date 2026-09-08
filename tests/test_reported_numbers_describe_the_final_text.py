@@ -53,6 +53,7 @@ def _embedding_path(monkeypatch):
     """
     monkeypatch.delenv("UNTELL_LITE_NO_TORCH", raising=False)
 
+
 PLAIN = (
     "Moreover, the framework leverages a robust approach to delivery at scale across the whole "
     "programme. Furthermore, it is important to note that this underscores the pivotal integration "
@@ -102,8 +103,10 @@ def runs() -> dict[str, tuple[str, dict]]:
     scorer BEFORE the loop runs. Module-scoped, it ran first — pytest sets up wider scopes before
     narrower ones — and `untell_text` scored with the torch-backed lite path while every test
     compared against the stdlib score, a mismatch that surfaced as pre.max 0.0451 vs 0.338."""
-    return {name: (text, untell_text(text, **KWARGS)) for name, text in
-            (("plain", PLAIN), ("dense", DENSE))}
+    return {
+        name: (text, untell_text(text, **KWARGS))
+        for name, text in (("plain", PLAIN), ("dense", DENSE))
+    }
 
 
 def test_the_loop_changed_at_least_one_document(runs) -> None:
@@ -168,4 +171,6 @@ def test_a_masked_comparison_really_would_have_been_higher() -> None:
     assert abs(masked_sim - plain_sim) < 0.01, (
         f"masking distorted the edit's similarity delta: masked {masked_sim:.4f} vs plain {plain_sim:.4f}"
     )
-    assert min(masked_sim, plain_sim) > 0.95, "both pairs are near-identical texts; the floor is the premise"
+    assert min(masked_sim, plain_sim) > 0.95, (
+        "both pairs are near-identical texts; the floor is the premise"
+    )

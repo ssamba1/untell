@@ -20,6 +20,7 @@ What this checks:
     (SKILL.md, references/*.md)
   - untell.egg-info/ is NOT committed to the repo (it would go stale again)
 """
+
 from __future__ import annotations
 
 import pathlib
@@ -30,6 +31,7 @@ import pytest
 
 REPO = pathlib.Path(__file__).resolve().parents[1]
 PYPROJECT = (REPO / "pyproject.toml").read_text(encoding="utf-8")
+
 
 # Extract ONLY the packages list from [tool.setuptools], stopping at the next [section].
 # A naive slice from "[tool.setuptools]" to EOF also captures [tool.pytest.ini_options] whose
@@ -77,12 +79,15 @@ def test_declared_package_directory_exists(pkg: str) -> None:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize("rel", [
-    "untell/SKILL.md",
-    "untell/references/ai-tells.md",
-    "untell/references/prompt-rubric.md",
-    "untell/references/thresholds.md",
-])
+@pytest.mark.parametrize(
+    "rel",
+    [
+        "untell/SKILL.md",
+        "untell/references/ai-tells.md",
+        "untell/references/prompt-rubric.md",
+        "untell/references/thresholds.md",
+    ],
+)
 def test_documented_package_data_exists_on_disk(rel: str) -> None:
     assert (REPO / rel).is_file(), (
         f"{rel} is declared as package-data in pyproject.toml but the file is missing from disk"
@@ -102,7 +107,9 @@ def test_egg_info_is_not_committed_to_git() -> None:
     result = subprocess.run(
         ["git", "ls-files", "untell.egg-info/"],
         capture_output=True,
-        text=True, encoding="utf-8", errors="replace",
+        text=True,
+        encoding="utf-8",
+        errors="replace",
         cwd=REPO,
     )
     tracked = result.stdout.strip()

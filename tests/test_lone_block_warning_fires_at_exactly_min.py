@@ -6,6 +6,7 @@ warning is suppressed only when there are FEWER than 3 blocks. The mutation
 "one sentence per paragraph" note at the boundary where the shape is exactly
 as described.
 """
+
 from untell.scripts.score import _line_per_sentence_warning
 
 

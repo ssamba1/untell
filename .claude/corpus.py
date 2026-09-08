@@ -56,8 +56,10 @@ def build(dataset: str, bucket: str, n: int) -> int:
             break
 
     if not texts:
-        sys.exit(f"REFUSED: no {dataset} text in the {bucket} range ({low}-{high} words). "
-                 "The bucket is empty for this dataset - say so, do not substitute another.")
+        sys.exit(
+            f"REFUSED: no {dataset} text in the {bucket} range ({low}-{high} words). "
+            "The bucket is empty for this dataset - say so, do not substitute another."
+        )
     path = OUT / f"{dataset}-{bucket}.txt"
     OUT.mkdir(parents=True, exist_ok=True)
     path.write_text("\n\n".join(texts) + "\n", encoding="utf-8")
@@ -69,8 +71,10 @@ def build(dataset: str, bucket: str, n: int) -> int:
     if len(texts) < n:
         # Reported, never padded. A corpus quietly topped up from a neighbouring bucket
         # answers a different question than the one on the label.
-        print(f"  SHORT by {n - len(texts)}: this dataset does not hold that much text in "
-              "this range. Quote the count you got, not the count you asked for.")
+        print(
+            f"  SHORT by {n - len(texts)}: this dataset does not hold that much text in "
+            "this range. Quote the count you got, not the count you asked for."
+        )
     return 0
 
 

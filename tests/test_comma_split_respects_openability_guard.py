@@ -9,11 +9,26 @@ guards unreachable whenever the earlier conditions hold), so a comma whose
 continuation cannot open a clause is split anyway — the most common fragment
 class the comment block documents. Original returns None; mutant splits.
 """
+
 from untell.rewriter.structural import _split_one
 
 WORDS = [
-    "the", "manager", "said", "the", "plan", "is", "quite", "good,",
-    "and", "everyone", "agrees", "with", "her", "today", "now", "ok",
+    "the",
+    "manager",
+    "said",
+    "the",
+    "plan",
+    "is",
+    "quite",
+    "good,",
+    "and",
+    "everyone",
+    "agrees",
+    "with",
+    "her",
+    "today",
+    "now",
+    "ok",
 ]
 TEXT = " ".join(WORDS)
 

@@ -1,4 +1,5 @@
 import json, os
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
 from untell.rewriter.ensemble import EnsembleRewriter
 
@@ -9,10 +10,13 @@ out["members"] = rw.member_names
 out["always_available"] = rw.available() is True
 # ensemble runs and returns valid text
 try:
-    r = rw.rewrite("Moreover, the framework leverages robust solutions for every team. "
-                   "The system reads the file and processes the records in order. "
-                   "It is important to note that the results were significant.",
-                   {"tier": "lite"}, 0.3)
+    r = rw.rewrite(
+        "Moreover, the framework leverages robust solutions for every team. "
+        "The system reads the file and processes the records in order. "
+        "It is important to note that the results were significant.",
+        {"tier": "lite"},
+        0.3,
+    )
     out["ran"] = bool(r.strip())
     out["changed"] = "Moreover" not in r
     out["no_sentinel"] = "⟦" not in r

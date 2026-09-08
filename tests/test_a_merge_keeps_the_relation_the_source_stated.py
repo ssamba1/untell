@@ -100,8 +100,10 @@ def test_a_pair_with_no_stated_relation_keeps_its_variety() -> None:
     for seed in range(200):
         random.seed(seed)
         merged = _merge_sentences(
-            ["The trial met its primary endpoint.",
-             "The safety profile raised concerns among reviewers."],
+            [
+                "The trial met its primary endpoint.",
+                "The safety profile raised concerns among reviewers.",
+            ],
             rate=1.0,
         )
         if len(merged) == 1:

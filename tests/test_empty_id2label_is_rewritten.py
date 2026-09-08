@@ -7,6 +7,7 @@ values is True, so the whole thing is False and the rewrite is SKIPPED — the
 config stays broken and the model fails validation at construction. Pinned
 via the full load path with mocked snapshot/transformers.
 """
+
 import json
 import os
 import tempfile
@@ -40,9 +41,11 @@ def test_empty_id2label_is_rewritten():
     mage.MageDetector._model = None
     mage.MageDetector._tok = None
     try:
-        with patch("huggingface_hub.snapshot_download", return_value=d), \
-             patch("transformers.AutoTokenizer", _StubTok), \
-             patch("transformers.AutoModelForSequenceClassification", _StubModel):
+        with (
+            patch("huggingface_hub.snapshot_download", return_value=d),
+            patch("transformers.AutoTokenizer", _StubTok),
+            patch("transformers.AutoModelForSequenceClassification", _StubModel),
+        ):
             mage.MageDetector()._load()
         raw = json.load(open(cfg, encoding="utf-8"))
     finally:

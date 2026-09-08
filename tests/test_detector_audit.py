@@ -4,6 +4,7 @@ The classification logic is tested with fakes (fast, no model downloads). The re
 that no shipped detector is actually DEAD or INVERTED — lives in test_detectors_full.py behind the
 torch guard, since it needs the models.
 """
+
 from __future__ import annotations
 
 from eval.detector_audit import audit_all, audit_detector, render
@@ -74,8 +75,8 @@ def test_responsive_but_non_separating_is_weak_not_broken():
     table.update(zip(AI_PROBES, [0.25, 0.45, 0.65, 0.35, 0.52]))
     r = audit_detector("weak_one", _Fake(table))
     assert r["verdict"] == "WEAK"
-    assert r["range"] > 0.05      # genuinely responsive
-    assert 0 < r["gap"] < 0.05    # but the classes do not separate
+    assert r["range"] > 0.05  # genuinely responsive
+    assert 0 < r["gap"] < 0.05  # but the classes do not separate
 
 
 def test_tiny_spread_is_dead_even_if_direction_is_right():
@@ -154,20 +155,33 @@ def test_near_chance_sentence_row_is_reported_but_not_called_broken():
 
     assert 0.0 < SENTENCE_BROKEN_AUROC < 0.5
     rows = [
-        {"detector": "x [sentence]", "verdict": "INVERTED", "auroc": 0.444, "granularity": "sentence"},
-        {"detector": "y [sentence]", "verdict": "INVERTED", "auroc": 0.000, "granularity": "sentence"},
+        {
+            "detector": "x [sentence]",
+            "verdict": "INVERTED",
+            "auroc": 0.444,
+            "granularity": "sentence",
+        },
+        {
+            "detector": "y [sentence]",
+            "verdict": "INVERTED",
+            "auroc": 0.000,
+            "granularity": "sentence",
+        },
         {"detector": "z", "verdict": "INVERTED", "auroc": 0.444},
     ]
     broken = [
         r["detector"]
         for r in rows
         if r["verdict"] in ("DEAD", "INVERTED")
-        and (r.get("granularity") != "sentence" or r.get("auroc") is None
-             or r["auroc"] <= SENTENCE_BROKEN_AUROC)
+        and (
+            r.get("granularity") != "sentence"
+            or r.get("auroc") is None
+            or r["auroc"] <= SENTENCE_BROKEN_AUROC
+        )
     ]
-    assert "x [sentence]" not in broken   # chance-level: reported, not fatal
-    assert "y [sentence]" in broken       # a true inversion 36 pairs cannot produce by chance
-    assert "z" in broken                  # paragraph rows keep the original, stricter treatment
+    assert "x [sentence]" not in broken  # chance-level: reported, not fatal
+    assert "y [sentence]" in broken  # a true inversion 36 pairs cannot produce by chance
+    assert "z" in broken  # paragraph rows keep the original, stricter treatment
 
 
 def test_pairs_mode_derives_sentence_probes_from_the_labelled_corpus(monkeypatch):
@@ -183,14 +197,14 @@ def test_pairs_mode_derives_sentence_probes_from_the_labelled_corpus(monkeypatch
     import eval.detector_audit as A
 
     human_para = " ".join(
-        f"This is human sentence number {i} and it is comfortably long enough to count." for i in range(12)
+        f"This is human sentence number {i} and it is comfortably long enough to count."
+        for i in range(12)
     )
     ai_para = " ".join(
-        f"Furthermore, this is generated sentence number {i} with ample length to count." for i in range(12)
+        f"Furthermore, this is generated sentence number {i} with ample length to count."
+        for i in range(12)
     )
-    monkeypatch.setattr(
-        "eval.datasets.load_pairs", lambda dataset, n: [(human_para, ai_para)] * 3
-    )
+    monkeypatch.setattr("eval.datasets.load_pairs", lambda dataset, n: [(human_para, ai_para)] * 3)
 
     seen: list[tuple[int, int]] = []
 
@@ -231,7 +245,9 @@ def test_pairs_mode_keeps_packaged_sentence_probes_when_too_few_derive(monkeypat
     the packaged probes is better than a verdict computed on three samples."""
     import eval.detector_audit as A
 
-    monkeypatch.setattr("eval.datasets.load_pairs", lambda dataset, n: [("Too short.", "Also short.")])
+    monkeypatch.setattr(
+        "eval.datasets.load_pairs", lambda dataset, n: [("Too short.", "Also short.")]
+    )
 
     seen: list[int] = []
     real_audit = A.audit_detector

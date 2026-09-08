@@ -18,6 +18,7 @@ NO THRESHOLDS ARE CHANGED. Measurement only; recommendation queued (RED).
 Usage:
     python .claude/probes/mage_calib_probe.py --corpus hc3,raid --pairs 30
 """
+
 from __future__ import annotations
 
 import argparse
@@ -76,8 +77,7 @@ def measure(det, corpus, n):
         "human_ge_0_99": sum(1 for h in hs if h >= 0.99),
         "cut_for_fpr_le_0_20": fpr20,
         "tpr_at_fpr20_cut": tpr_at[fpr20] if fpr20 is not None else None,
-        "curve": [{"cut": c, "fpr": round(fpr_at[c], 4), "tpr": round(tpr_at[c], 4)}
-                  for c in cuts],
+        "curve": [{"cut": c, "fpr": round(fpr_at[c], 4), "tpr": round(tpr_at[c], 4)} for c in cuts],
     }
 
 
@@ -102,7 +102,9 @@ def main():
             f"am={res['ai_mean']:.4f} AUROC={res['auroc']} "
             f"FPR@0.30={res['fpr_at_shipped_0_30']:.4f} "
             f"op_min={res['ai_op_min']} cut(FPR<=0.20)={res['cut_for_fpr_le_0_20']} "
-            f"TPR@that={res['tpr_at_fpr20_cut']}", file=sys.stderr)
+            f"TPR@that={res['tpr_at_fpr20_cut']}",
+            file=sys.stderr,
+        )
     print(json.dumps(out, indent=2))
     return 0
 

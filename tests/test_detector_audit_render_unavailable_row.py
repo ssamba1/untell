@@ -20,8 +20,16 @@ from eval.detector_audit import SENTENCE_BROKEN_AUROC, render
 
 def _scored(name: str, verdict: str, auroc: float, granularity: str | None = None) -> dict:
     row = {
-        "detector": name, "verdict": verdict, "human_mean": 0.1, "ai_mean": 0.9,
-        "gap": 0.8, "range": 0.8, "auroc": auroc, "fpr": 0.0, "tpr": 0.9, "n": 5,
+        "detector": name,
+        "verdict": verdict,
+        "human_mean": 0.1,
+        "ai_mean": 0.9,
+        "gap": 0.8,
+        "range": 0.8,
+        "auroc": auroc,
+        "fpr": 0.0,
+        "tpr": 0.9,
+        "n": 5,
     }
     if granularity:
         row["granularity"] = granularity
@@ -29,20 +37,29 @@ def _scored(name: str, verdict: str, auroc: float, granularity: str | None = Non
 
 
 def _report(rows: list[dict], broken: list[str] | None = None) -> dict:
-    return {"results": rows, "broken": broken or [], "source": "test",
-            "layout_shortcut": None}
+    return {"results": rows, "broken": broken or [], "source": "test", "layout_shortcut": None}
 
 
 def test_an_unavailable_row_does_not_crash_render() -> None:
     """UNAVAILABLE rows carry no 'auroc' key; the excused scan must skip them, not KeyError."""
-    out = render(_report([_scored("roberta_openai", "OK", 0.99), {"detector": "radar", "verdict": "UNAVAILABLE"}]))
+    out = render(
+        _report(
+            [_scored("roberta_openai", "OK", 0.99), {"detector": "radar", "verdict": "UNAVAILABLE"}]
+        )
+    )
     assert "UNAVAILABLE" in out
     assert "Not counted" not in out, out
 
 
 def test_a_score_error_row_does_not_crash_render() -> None:
-    out = render(_report([_scored("roberta_openai", "OK", 0.99),
-                          {"detector": "local_judge", "verdict": "SCORE_ERR:RuntimeError"}]))
+    out = render(
+        _report(
+            [
+                _scored("roberta_openai", "OK", 0.99),
+                {"detector": "local_judge", "verdict": "SCORE_ERR:RuntimeError"},
+            ]
+        )
+    )
     assert "SCORE_ERR" in out
     assert "Not counted" not in out, out
 
@@ -50,8 +67,11 @@ def test_a_score_error_row_does_not_crash_render() -> None:
 def test_healthy_paragraph_rows_are_not_in_the_excused_footnote() -> None:
     """The footnote exists for sentence-granularity small samples; a healthy paragraph
     detector with a high AUROC must not be listed under it."""
-    out = render(_report([_scored("roberta_openai", "OK", 0.9925),
-                          _scored("hc3_roberta", "OK_SEPARATED", 1.0)]))
+    out = render(
+        _report(
+            [_scored("roberta_openai", "OK", 0.9925), _scored("hc3_roberta", "OK_SEPARATED", 1.0)]
+        )
+    )
     assert "BROKEN: none" in out
     assert "Not counted" not in out, out
 
@@ -76,8 +96,9 @@ def test_a_miscalibrated_broken_row_is_labelled_honestly() -> None:
     """MISCALIBRATED is a real member of the broken list (mage ships that way on HC3).
     The BROKEN line must say so, not call it "dead or inverted" — the label must not
     contradict the verdict column of the row it names."""
-    out = render(_report([_scored("mage", "MISCALIBRATED", 1.0),
-                          _scored("ok", "OK", 0.99)], broken=["mage"]))
+    out = render(
+        _report([_scored("mage", "MISCALIBRATED", 1.0), _scored("ok", "OK", 0.99)], broken=["mage"])
+    )
     assert "BROKEN (dead, inverted, or miscalibrated): mage" in out, out
     assert "BROKEN (dead or inverted): mage" not in out, out
 
@@ -85,8 +106,9 @@ def test_a_miscalibrated_broken_row_is_labelled_honestly() -> None:
 def test_a_dead_broken_row_keeps_the_original_label() -> None:
     """The widened label is conditional: a broken list containing only DEAD/INVERTED
     rows keeps the original wording."""
-    out = render(_report([_scored("d", "DEAD", 0.5), _scored("i", "INVERTED", 0.3)],
-                         broken=["d", "i"]))
+    out = render(
+        _report([_scored("d", "DEAD", 0.5), _scored("i", "INVERTED", 0.3)], broken=["d", "i"])
+    )
     assert "BROKEN (dead or inverted): d, i" in out, out
 
 
@@ -96,8 +118,14 @@ def test_derived_sentence_probes_report_the_real_probe_count() -> None:
     were. Hard-coding "six probes per class is 36 pairs" beside a table whose sentence
     rows show n=30 is the summary-contradicts-table defect this module exists to
     prevent — the reader cannot reconcile the two without opening the source."""
-    out = render(_report([_scored("roberta_openai [sentence]", "MISCALIBRATED", 0.8356, "sentence"),
-                          _scored("mage [sentence]", "MISCALIBRATED", 0.9283, "sentence")]))
+    out = render(
+        _report(
+            [
+                _scored("roberta_openai [sentence]", "MISCALIBRATED", 0.8356, "sentence"),
+                _scored("mage [sentence]", "MISCALIBRATED", 0.9283, "sentence"),
+            ]
+        )
+    )
     assert "Not counted: roberta_openai [sentence], mage [sentence]" in out, out
     # the helper sets n=5, which is not > len(SENTENCE_HUMAN_PROBES)=6 -> packaged wording;
     # a real derived run reports its actual count. Pin the packaged wording too:

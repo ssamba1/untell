@@ -7,6 +7,7 @@ broken. The mutation and -> or at that position bypasses the AUROC guard
 whenever auroc is present, excusing a 0.1-AUROC detector. The rendered report
 gains a 'Not counted' line that must not exist.
 """
+
 from eval.detector_audit import render
 
 ROW = {

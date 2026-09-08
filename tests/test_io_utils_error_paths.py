@@ -67,7 +67,9 @@ def test_empty_pdf_is_reported_empty(monkeypatch) -> None:
     monkeypatch.setattr(io_utils, "_has_bytes", lambda path: False)
     import pypdf
 
-    monkeypatch.setattr(pypdf, "PdfReader", lambda path: (_ for _ in ()).throw(RuntimeError("empty")))
+    monkeypatch.setattr(
+        pypdf, "PdfReader", lambda path: (_ for _ in ()).throw(RuntimeError("empty"))
+    )
     with pytest.raises(ValueError, match="is empty"):
         io_utils._read_pdf("zero.pdf")
 
@@ -79,7 +81,11 @@ def test_encrypted_pdf_names_the_password(monkeypatch) -> None:
     class NotDecrypted(Exception):
         pass
 
-    monkeypatch.setattr(pypdf, "PdfReader", lambda path: (_ for _ in ()).throw(NotDecrypted("file has not been decrypted")))
+    monkeypatch.setattr(
+        pypdf,
+        "PdfReader",
+        lambda path: (_ for _ in ()).throw(NotDecrypted("file has not been decrypted")),
+    )
     with pytest.raises(ValueError, match="password-protected"):
         io_utils._read_pdf("locked.pdf")
 
@@ -91,7 +97,9 @@ def test_corrupt_pdf_is_reported_as_unreadable(monkeypatch) -> None:
     class StreamEnded(Exception):
         pass
 
-    monkeypatch.setattr(pypdf, "PdfReader", lambda path: (_ for _ in ()).throw(StreamEnded("stream ended")))
+    monkeypatch.setattr(
+        pypdf, "PdfReader", lambda path: (_ for _ in ()).throw(StreamEnded("stream ended"))
+    )
     with pytest.raises(ValueError, match="not a readable .pdf"):
         io_utils._read_pdf("broken.pdf")
 

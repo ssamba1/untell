@@ -1,4 +1,5 @@
 import json, os
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
 from untell.scripts.quality import token_overlap
 
@@ -6,7 +7,9 @@ out = {}
 # Dice exactness
 out["identical"] = token_overlap("The system reads the file.", "The system reads the file.")
 out["disjoint"] = token_overlap("The system reads the file.", "Weather is lovely today outside.")
-out["partial"] = round(token_overlap("The system reads the file.", "The system writes the file."), 4)
+out["partial"] = round(
+    token_overlap("The system reads the file.", "The system writes the file."), 4
+)
 # both empty
 out["both_empty"] = token_overlap("", "")
 # one empty

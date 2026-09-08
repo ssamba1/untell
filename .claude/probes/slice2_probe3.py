@@ -1,5 +1,7 @@
 """Test range pattern and meridiem second-dot absorption directly."""
+
 import re, sys
+
 sys.path.insert(0, "C:/Users/Admin/Humanize")
 from untell.scripts.preserve import _PATTERNS, lock
 
@@ -14,7 +16,7 @@ print("range search:", m.group(0) if m else None, m.span() if m else None)
 text = "From 9:30-10:30 we work. Then rest."
 for label, pat in _PATTERNS:
     for mm in pat.finditer(text):
-        print(f"  {label:12s} [{mm.start():3d},{mm.end():3d}) {text[mm.start():mm.end()]!r}")
+        print(f"  {label:12s} [{mm.start():3d},{mm.end():3d}) {text[mm.start() : mm.end()]!r}")
 
 print()
 # Meridiem sentence-end behavior

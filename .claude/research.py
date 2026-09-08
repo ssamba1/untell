@@ -42,8 +42,17 @@ PY = sys.executable
 RECIPES: dict[str, dict] = {
     "lite-builtin": {
         "why": "cheap, reproducible, no model download: proves the pipeline still runs end to end",
-        "argv": ["-m", "eval.ceiling", "--rewriter", "composite", "--tier", "lite",
-                 "--repeats", "3", "--json"],
+        "argv": [
+            "-m",
+            "eval.ceiling",
+            "--rewriter",
+            "composite",
+            "--tier",
+            "lite",
+            "--repeats",
+            "3",
+            "--json",
+        ],
         "metrics": ["pre_flagged_rate", "post_flagged_rate", "pre_mean_max", "post_mean_max"],
         "spread": "post_mean_max_stdev",
         "liveness": ["rewriter_available", "rewrote", "n"],
@@ -51,8 +60,21 @@ RECIPES: dict[str, dict] = {
     },
     "lite-hc3": {
         "why": "same cheap tier against REAL generated text; the builtin corpus is measurably easier",
-        "argv": ["-m", "eval.ceiling", "--dataset", "hc3", "--n", "10", "--rewriter", "composite",
-                 "--tier", "lite", "--repeats", "3", "--json"],
+        "argv": [
+            "-m",
+            "eval.ceiling",
+            "--dataset",
+            "hc3",
+            "--n",
+            "10",
+            "--rewriter",
+            "composite",
+            "--tier",
+            "lite",
+            "--repeats",
+            "3",
+            "--json",
+        ],
         "metrics": ["pre_flagged_rate", "post_flagged_rate", "pre_mean_max", "post_mean_max"],
         "spread": "post_mean_max_stdev",
         "liveness": ["rewriter_available", "rewrote", "n"],
@@ -60,8 +82,23 @@ RECIPES: dict[str, dict] = {
     },
     "full-hc3-composite": {
         "why": "the headline number: real detectors, real text, the default rewriter",
-        "argv": ["-m", "eval.ceiling", "--dataset", "hc3", "--n", "6", "--rewriter", "composite",
-                 "--tier", "full", "--repeats", "3", "--workers", "2", "--json"],
+        "argv": [
+            "-m",
+            "eval.ceiling",
+            "--dataset",
+            "hc3",
+            "--n",
+            "6",
+            "--rewriter",
+            "composite",
+            "--tier",
+            "full",
+            "--repeats",
+            "3",
+            "--workers",
+            "2",
+            "--json",
+        ],
         "metrics": ["pre_flagged_rate", "post_flagged_rate", "pre_mean_max", "post_mean_max"],
         "spread": "post_mean_max_stdev",
         "liveness": ["rewriter_available", "rewrote", "n"],
@@ -69,8 +106,23 @@ RECIPES: dict[str, dict] = {
     },
     "full-hc3-neural": {
         "why": "the frontier, and four times as variable as composite - never quote it from one run",
-        "argv": ["-m", "eval.ceiling", "--dataset", "hc3", "--n", "6", "--rewriter", "neural",
-                 "--tier", "full", "--repeats", "3", "--workers", "2", "--json"],
+        "argv": [
+            "-m",
+            "eval.ceiling",
+            "--dataset",
+            "hc3",
+            "--n",
+            "6",
+            "--rewriter",
+            "neural",
+            "--tier",
+            "full",
+            "--repeats",
+            "3",
+            "--workers",
+            "2",
+            "--json",
+        ],
         "metrics": ["pre_flagged_rate", "post_flagged_rate", "pre_mean_max", "post_mean_max"],
         "spread": "post_mean_max_stdev",
         "liveness": ["rewriter_available", "rewrote", "n"],
@@ -78,9 +130,24 @@ RECIPES: dict[str, dict] = {
     },
     "full-hc3-max": {
         "why": "best-of-all-backends; the selector here once shipped as a no-op because a "
-               "detector saturated at exactly 1.0 and `cand < best` never fired",
-        "argv": ["-m", "eval.ceiling", "--dataset", "hc3", "--n", "6", "--rewriter", "max",
-                 "--tier", "full", "--repeats", "3", "--workers", "2", "--json"],
+        "detector saturated at exactly 1.0 and `cand < best` never fired",
+        "argv": [
+            "-m",
+            "eval.ceiling",
+            "--dataset",
+            "hc3",
+            "--n",
+            "6",
+            "--rewriter",
+            "max",
+            "--tier",
+            "full",
+            "--repeats",
+            "3",
+            "--workers",
+            "2",
+            "--json",
+        ],
         "metrics": ["pre_flagged_rate", "post_flagged_rate", "pre_mean_max", "post_mean_max"],
         "spread": "post_mean_max_stdev",
         "liveness": ["rewriter_available", "rewrote", "n"],
@@ -88,9 +155,22 @@ RECIPES: dict[str, dict] = {
     },
     "lite-raid": {
         "why": "same settings, different corpus. Nine results in this project's history "
-               "generalised from one corpus before anyone varied it",
-        "argv": ["-m", "eval.ceiling", "--dataset", "raid", "--n", "10", "--rewriter",
-                 "composite", "--tier", "lite", "--repeats", "3", "--json"],
+        "generalised from one corpus before anyone varied it",
+        "argv": [
+            "-m",
+            "eval.ceiling",
+            "--dataset",
+            "raid",
+            "--n",
+            "10",
+            "--rewriter",
+            "composite",
+            "--tier",
+            "lite",
+            "--repeats",
+            "3",
+            "--json",
+        ],
         "metrics": ["pre_flagged_rate", "post_flagged_rate", "pre_mean_max", "post_mean_max"],
         "spread": "post_mean_max_stdev",
         "liveness": ["rewriter_available", "rewrote", "n"],
@@ -98,8 +178,21 @@ RECIPES: dict[str, dict] = {
     },
     "lite-mage": {
         "why": "a third corpus, so a claim can be checked against three rather than argued from one",
-        "argv": ["-m", "eval.ceiling", "--dataset", "mage", "--n", "10", "--rewriter",
-                 "composite", "--tier", "lite", "--repeats", "3", "--json"],
+        "argv": [
+            "-m",
+            "eval.ceiling",
+            "--dataset",
+            "mage",
+            "--n",
+            "10",
+            "--rewriter",
+            "composite",
+            "--tier",
+            "lite",
+            "--repeats",
+            "3",
+            "--json",
+        ],
         "metrics": ["pre_flagged_rate", "post_flagged_rate", "pre_mean_max", "post_mean_max"],
         "spread": "post_mean_max_stdev",
         "liveness": ["rewriter_available", "rewrote", "n"],
@@ -107,8 +200,21 @@ RECIPES: dict[str, dict] = {
     },
     "lite-hc3-surgical": {
         "why": "rewriter sweep: the cheapest backend, as the floor to measure the others against",
-        "argv": ["-m", "eval.ceiling", "--dataset", "hc3", "--n", "10", "--rewriter", "surgical",
-                 "--tier", "lite", "--repeats", "3", "--json"],
+        "argv": [
+            "-m",
+            "eval.ceiling",
+            "--dataset",
+            "hc3",
+            "--n",
+            "10",
+            "--rewriter",
+            "surgical",
+            "--tier",
+            "lite",
+            "--repeats",
+            "3",
+            "--json",
+        ],
         "metrics": ["pre_flagged_rate", "post_flagged_rate", "pre_mean_max", "post_mean_max"],
         "spread": "post_mean_max_stdev",
         "liveness": ["rewriter_available", "rewrote", "n"],
@@ -116,9 +222,22 @@ RECIPES: dict[str, dict] = {
     },
     "lite-hc3-structural": {
         "why": "rewriter sweep: the one whose clause-joining once tripped the contradiction veto "
-               "on every candidate it produced",
-        "argv": ["-m", "eval.ceiling", "--dataset", "hc3", "--n", "10", "--rewriter", "structural",
-                 "--tier", "lite", "--repeats", "3", "--json"],
+        "on every candidate it produced",
+        "argv": [
+            "-m",
+            "eval.ceiling",
+            "--dataset",
+            "hc3",
+            "--n",
+            "10",
+            "--rewriter",
+            "structural",
+            "--tier",
+            "lite",
+            "--repeats",
+            "3",
+            "--json",
+        ],
         "metrics": ["pre_flagged_rate", "post_flagged_rate", "pre_mean_max", "post_mean_max"],
         "spread": "post_mean_max_stdev",
         "liveness": ["rewriter_available", "rewrote", "n"],
@@ -126,9 +245,22 @@ RECIPES: dict[str, dict] = {
     },
     "lite-hc3-targeted": {
         "why": "rewriter sweep: detector-directed rewriting, the one whose leverage the tell "
-               "catalogue predicts but has never been measured against composite",
-        "argv": ["-m", "eval.ceiling", "--dataset", "hc3", "--n", "10", "--rewriter", "targeted",
-                 "--tier", "lite", "--repeats", "3", "--json"],
+        "catalogue predicts but has never been measured against composite",
+        "argv": [
+            "-m",
+            "eval.ceiling",
+            "--dataset",
+            "hc3",
+            "--n",
+            "10",
+            "--rewriter",
+            "targeted",
+            "--tier",
+            "lite",
+            "--repeats",
+            "3",
+            "--json",
+        ],
         "metrics": ["pre_flagged_rate", "post_flagged_rate", "pre_mean_max", "post_mean_max"],
         "spread": "post_mean_max_stdev",
         "liveness": ["rewriter_available", "rewrote", "n"],
@@ -136,9 +268,22 @@ RECIPES: dict[str, dict] = {
     },
     "lite-hc3-ensemble": {
         "why": "rewriter sweep: all free backends, selection included - the lane where a "
-               "saturating detector once made selection a no-op",
-        "argv": ["-m", "eval.ceiling", "--dataset", "hc3", "--n", "10", "--rewriter", "ensemble",
-                 "--tier", "lite", "--repeats", "3", "--json"],
+        "saturating detector once made selection a no-op",
+        "argv": [
+            "-m",
+            "eval.ceiling",
+            "--dataset",
+            "hc3",
+            "--n",
+            "10",
+            "--rewriter",
+            "ensemble",
+            "--tier",
+            "lite",
+            "--repeats",
+            "3",
+            "--json",
+        ],
         "metrics": ["pre_flagged_rate", "post_flagged_rate", "pre_mean_max", "post_mean_max"],
         "spread": "post_mean_max_stdev",
         "liveness": ["rewriter_available", "rewrote", "n"],
@@ -157,9 +302,18 @@ RECIPES: dict[str, dict] = {
     },
     "compare-hc3": {
         "why": "this pipeline against the other humanizers on the same text - the only "
-               "measurement that says whether the wall is ours or everyone's",
-        "argv": ["-m", "eval.compare_humanizers", "--dataset", "hc3", "--n", "10",
-                 "--tier", "lite", "--json"],
+        "measurement that says whether the wall is ours or everyone's",
+        "argv": [
+            "-m",
+            "eval.compare_humanizers",
+            "--dataset",
+            "hc3",
+            "--n",
+            "10",
+            "--tier",
+            "lite",
+            "--json",
+        ],
         "metrics": [],
         "spread": "",
         "liveness": [],
@@ -173,7 +327,7 @@ RECIPES: dict[str, dict] = {
     },
     "claims-audit": {
         "why": "re-checks every documented claim that CAN be re-checked, and reports how many "
-               "cannot - the drift lane, mechanised",
+        "cannot - the drift lane, mechanised",
         "argv": ["-m", "untell.scripts.audit", "--json"],
         "metrics": [],
         "spread": "",
@@ -186,9 +340,20 @@ RECIPES: dict[str, dict] = {
     },
     "length-short": {
         "why": "openings only. Detectors used to read the first few hundred words and nothing "
-               "else, so this is the length every old result was really about",
-        "argv": ["-m", "eval.ceiling", "--file", ".claude/corpora/hc3-short.txt",
-                 "--rewriter", "composite", "--tier", "lite", "--repeats", "3", "--json"],
+        "else, so this is the length every old result was really about",
+        "argv": [
+            "-m",
+            "eval.ceiling",
+            "--file",
+            ".claude/corpora/hc3-short.txt",
+            "--rewriter",
+            "composite",
+            "--tier",
+            "lite",
+            "--repeats",
+            "3",
+            "--json",
+        ],
         "needs": [".claude/corpora/hc3-short.txt"],
         "metrics": ["pre_flagged_rate", "post_flagged_rate", "pre_mean_max", "post_mean_max"],
         "spread": "post_mean_max_stdev",
@@ -197,10 +362,21 @@ RECIPES: dict[str, dict] = {
     },
     "length-long": {
         "why": "past where detectors used to stop reading. If windowed scoring holds, this "
-               "should not be systematically easier than the short bucket - and nothing has "
-               "re-checked that by length since the fix",
-        "argv": ["-m", "eval.ceiling", "--file", ".claude/corpora/hc3-long.txt",
-                 "--rewriter", "composite", "--tier", "lite", "--repeats", "3", "--json"],
+        "should not be systematically easier than the short bucket - and nothing has "
+        "re-checked that by length since the fix",
+        "argv": [
+            "-m",
+            "eval.ceiling",
+            "--file",
+            ".claude/corpora/hc3-long.txt",
+            "--rewriter",
+            "composite",
+            "--tier",
+            "lite",
+            "--repeats",
+            "3",
+            "--json",
+        ],
         "needs": [".claude/corpora/hc3-long.txt"],
         "metrics": ["pre_flagged_rate", "post_flagged_rate", "pre_mean_max", "post_mean_max"],
         "spread": "post_mean_max_stdev",
@@ -209,10 +385,21 @@ RECIPES: dict[str, dict] = {
     },
     "human-false-positives": {
         "why": "HUMAN text only, scored at the shipped threshold. An audit once reported AUROC "
-               "0.999 while that threshold flagged 95% of human writing - separation is not "
-               "calibration, and only this recipe can see the difference",
-        "argv": ["-m", "eval.ceiling", "--file", ".claude/corpora/hc3-human.txt",
-                 "--rewriter", "composite", "--tier", "lite", "--repeats", "3", "--json"],
+        "0.999 while that threshold flagged 95% of human writing - separation is not "
+        "calibration, and only this recipe can see the difference",
+        "argv": [
+            "-m",
+            "eval.ceiling",
+            "--file",
+            ".claude/corpora/hc3-human.txt",
+            "--rewriter",
+            "composite",
+            "--tier",
+            "lite",
+            "--repeats",
+            "3",
+            "--json",
+        ],
         "needs": [".claude/corpora/hc3-human.txt"],
         "metrics": ["pre_flagged_rate", "pre_mean_max"],
         "spread": "post_mean_max_stdev",
@@ -221,7 +408,7 @@ RECIPES: dict[str, dict] = {
     },
     "detector-audit": {
         "why": "detectors AT the shipped threshold, on labelled pairs - AUROC hides calibration, "
-               "and a detector flagging most HUMAN text can still separate the classes",
+        "and a detector flagging most HUMAN text can still separate the classes",
         "argv": ["-m", "eval.detector_audit", "--pairs", "20", "--dataset", "hc3", "--json"],
         "metrics": [],
         "spread": "",
@@ -230,7 +417,7 @@ RECIPES: dict[str, dict] = {
     },
     "tells-auroc": {
         "why": "per-tell discrimination on paired text; one category once pointed the wrong way "
-               "and inverted the aggregate",
+        "and inverted the aggregate",
         "argv": ["-m", "eval.tells_auroc", "--dataset", "hc3", "--pairs", "40", "--json"],
         "metrics": [],
         "spread": "",
@@ -247,8 +434,13 @@ RECIPES: dict[str, dict] = {
 # them means something. Sweeping one is the only way to answer "which rewriter is the wall"
 # or "does this number survive a change of corpus" — questions no single run can address.
 FAMILIES: dict[str, list[str]] = {
-    "rewriters": ["lite-hc3", "lite-hc3-surgical", "lite-hc3-structural",
-                  "lite-hc3-targeted", "lite-hc3-ensemble"],
+    "rewriters": [
+        "lite-hc3",
+        "lite-hc3-surgical",
+        "lite-hc3-structural",
+        "lite-hc3-targeted",
+        "lite-hc3-ensemble",
+    ],
     "corpora": ["lite-hc3", "lite-raid", "lite-mage"],
     "tiers": ["lite-hc3", "full-hc3-composite"],
     "lengths": ["length-short", "lite-hc3", "length-long"],
@@ -271,6 +463,7 @@ def load(recipe: str | None = None) -> list[dict]:
             out.append(row)
     return out
 
+
 def duplicate_rows(row: dict) -> int:
     """How many byte-identical lines the ledger already holds for this exact row.
 
@@ -284,9 +477,7 @@ def duplicate_rows(row: dict) -> int:
     line = json.dumps(row)
     if not LEDGER.exists():
         return 0
-    return sum(1 for ln in LEDGER.read_text(encoding="utf-8").splitlines()
-               if ln.strip() == line)
-
+    return sum(1 for ln in LEDGER.read_text(encoding="utf-8").splitlines() if ln.strip() == line)
 
 
 def flat_numbers(obj, prefix: str = "") -> dict[str, float]:
@@ -332,9 +523,20 @@ INSTRUMENTS = ROOT / ".claude" / "instruments.json"
 # something. The full-tier recipes are excluded by default: each is one to two hours, and a
 # chain of them would occupy the machine for a working day without being asked.
 PROGRAM_ORDER = [
-    "lite-hc3", "lite-hc3-surgical", "lite-hc3-structural", "lite-hc3-targeted",
-    "lite-hc3-ensemble", "length-short", "length-long", "human-false-positives",
-    "lite-raid", "lite-mage", "claims-audit", "detector-audit", "tells-auroc", "compare-hc3",
+    "lite-hc3",
+    "lite-hc3-surgical",
+    "lite-hc3-structural",
+    "lite-hc3-targeted",
+    "lite-hc3-ensemble",
+    "length-short",
+    "length-long",
+    "human-false-positives",
+    "lite-raid",
+    "lite-mage",
+    "claims-audit",
+    "detector-audit",
+    "tells-auroc",
+    "compare-hc3",
 ]
 PROGRAM_FULL = ["full-hc3-composite", "full-hc3-max", "full-hc3-neural"]
 
@@ -372,8 +574,10 @@ def cmd_program(include_full: bool, budget_multiplier: float) -> int:
             print(f"[{i}/{len(queue)}] {name} did not record: {exc}")
             failed.append(name)
             if len(failed) >= 2 and failed[-2:] == [queue[i - 2], name]:
-                print("\nTwo consecutive failures - stopping. Fix the cause before burning "
-                      "hours on the rest.")
+                print(
+                    "\nTwo consecutive failures - stopping. Fix the cause before burning "
+                    "hours on the rest."
+                )
                 break
 
     print(f"\n{'=' * 70}\nprogram finished: {len(done)} recorded, {len(failed)} refused")
@@ -406,8 +610,11 @@ def cmd_calibrate(name: str) -> int:
         sys.exit("REFUSED: fewer than two runs completed; nothing to compare.")
 
     a, b = runs[-2]["metrics"], runs[-1]["metrics"]
-    moved = {k: round(float(b[k]) - float(a[k]), 6)
-             for k in a if k in b and a[k] is not None and b[k] is not None}
+    moved = {
+        k: round(float(b[k]) - float(a[k]), 6)
+        for k in a
+        if k in b and a[k] is not None and b[k] is not None
+    }
     print("\nrun-to-run, nothing changed in between:")
     for k, v in moved.items():
         print(f"  {k:22} {v:+.6f}")
@@ -420,10 +627,13 @@ def cmd_calibrate(name: str) -> int:
     # runs is zero, not just the latest pair.
     history = load(name)
     if len(history) >= 2:
-        keys = sorted({k for r in history for k in r.get("metrics", {})
-                       if r["metrics"][k] is not None})
-        spread = {k: max(r["metrics"][k] for r in history) -
-                  min(r["metrics"][k] for r in history) for k in keys}
+        keys = sorted(
+            {k for r in history for k in r.get("metrics", {}) if r["metrics"][k] is not None}
+        )
+        spread = {
+            k: max(r["metrics"][k] for r in history) - min(r["metrics"][k] for r in history)
+            for k in keys
+        }
         print("\nfull-history min-max spread (all runs):")
         for k, v in spread.items():
             print(f"  {k:22} {v:.6f}")
@@ -432,22 +642,30 @@ def cmd_calibrate(name: str) -> int:
         deterministic = all(v == 0 for v in moved.values())
 
     record = json.loads(INSTRUMENTS.read_text(encoding="utf-8")) if INSTRUMENTS.exists() else {}
-    record[name] = {"deterministic": deterministic, "run_to_run": moved,
-                    "reported_spread": runs[-1]["raw"].get(spec["spread"])}
+    record[name] = {
+        "deterministic": deterministic,
+        "run_to_run": moved,
+        "reported_spread": runs[-1]["raw"].get(spec["spread"]),
+    }
     INSTRUMENTS.write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
 
     if deterministic:
-        print(f"\n{name} is DETERMINISTIC: identical output with nothing changed. Good for "
-              "liveness, useless for comparison - a real effect and no effect look the same "
-              "through it. Recorded, and the experiment lane will now refuse it.")
+        print(
+            f"\n{name} is DETERMINISTIC: identical output with nothing changed. Good for "
+            "liveness, useless for comparison - a real effect and no effect look the same "
+            "through it. Recorded, and the experiment lane will now refuse it."
+        )
     else:
-        print(f"\n{name} moves on its own. Any claimed effect must clear that, not just the "
-              "spread reported within a single run.")
+        print(
+            f"\n{name} moves on its own. Any claimed effect must clear that, not just the "
+            "spread reported within a single run."
+        )
     return 0
 
 
 def cmd_report() -> int:
     """Everything the loop knows, in one screen, so 24/7 work stays readable."""
+
     def count(path: Path) -> int:
         """Data rows in a markdown table. The header and the separator are not findings, and
         a digest that counts them reports one more of everything than exists."""
@@ -475,13 +693,18 @@ def cmd_report() -> int:
         print(f"  not measured yet ({len(unmeasured)}): {', '.join(unmeasured)}")
 
     exp = base / "experiments.jsonl"
-    rows = [json.loads(x) for x in exp.read_text(encoding="utf-8").splitlines()
-            if x.strip()] if exp.exists() else []
+    rows = (
+        [json.loads(x) for x in exp.read_text(encoding="utf-8").splitlines() if x.strip()]
+        if exp.exists()
+        else []
+    )
     print(f"\nEXPERIMENTS  {len(rows)} run(s)")
     for r in rows:
         real = [k for k, v in r["deltas"].items() if abs(v) > r["band"]]
-        print(f"  {r['knob']:24} {r['recipe']:14} "
-              f"{'MOVED: ' + ', '.join(real) if real else 'nothing beyond noise'}")
+        print(
+            f"  {r['knob']:24} {r['recipe']:14} "
+            f"{'MOVED: ' + ', '.join(real) if real else 'nothing beyond noise'}"
+        )
 
     print(f"\nSURVIVORS    {count(base / 'survivors.md')} unpinned line(s)")
     print(f"PASSES       {count(base / 'audit-log.md')} recorded")
@@ -489,8 +712,11 @@ def cmd_report() -> int:
     if (base / "human-queue.md").exists():
         # The file's own format example is a `## ` heading too; counting it would report a
         # backlog of one on a queue that is empty.
-        queued = sum(1 for line in (base / "human-queue.md").read_text(encoding="utf-8").splitlines()
-                     if line.startswith("## ") and "<date>" not in line)
+        queued = sum(
+            1
+            for line in (base / "human-queue.md").read_text(encoding="utf-8").splitlines()
+            if line.startswith("## ") and "<date>" not in line
+        )
     print(f"FOR A HUMAN  {queued} queue entr(y/ies)")
     return 0
 
@@ -524,13 +750,17 @@ def cmd_run(name: str, timeout_minutes: int | None) -> int:
             timeout=budget,
         )
     except subprocess.TimeoutExpired:
-        sys.exit(f"REFUSED to record: {name} did not finish inside {budget // 60} minutes. "
-                 "A partial measurement is not a measurement.")
+        sys.exit(
+            f"REFUSED to record: {name} did not finish inside {budget // 60} minutes. "
+            "A partial measurement is not a measurement."
+        )
     took = time.monotonic() - start
     if p.returncode != 0:
         print((p.stderr or "")[-1500:])
-        sys.exit(f"REFUSED to record: {name} exited {p.returncode}. Record the pass as 'clean' "
-                 "with a note naming the failure; do not invent numbers for it.")
+        sys.exit(
+            f"REFUSED to record: {name} exited {p.returncode}. Record the pass as 'clean' "
+            "with a note naming the failure; do not invent numbers for it."
+        )
 
     text = (p.stdout or "").strip()
     start_brace = text.find("{")
@@ -545,8 +775,10 @@ def cmd_run(name: str, timeout_minutes: int | None) -> int:
     for field in spec["liveness"]:
         value = result.get(field)
         if not value:
-            sys.exit(f"REFUSED to record: {field}={value!r} - these numbers describe nothing. "
-                     "That is itself the finding: write it to the queue.")
+            sys.exit(
+                f"REFUSED to record: {field}={value!r} - these numbers describe nothing. "
+                "That is itself the finding: write it to the queue."
+            )
 
     numbers = flat_numbers(result)
     metrics = {k: numbers.get(k, result.get(k)) for k in spec["metrics"]}
@@ -567,14 +799,18 @@ def cmd_run(name: str, timeout_minutes: int | None) -> int:
 
     dup = duplicate_rows(row)
     if dup:
-        print(f"WARNING: a byte-identical {name} row is already in "
-              f"{LEDGER.relative_to(ROOT)} ({dup} time(s)). Append-only policy retains "
-              "both (issue #17), but check you did not double-append a single run.")
+        print(
+            f"WARNING: a byte-identical {name} row is already in "
+            f"{LEDGER.relative_to(ROOT)} ({dup} time(s)). Append-only policy retains "
+            "both (issue #17), but check you did not double-append a single run."
+        )
     with LEDGER.open("a", encoding="utf-8") as f:
         f.write(json.dumps(row) + "\n")
     print(f"\nappended to {LEDGER.relative_to(ROOT)} ({len(load(name))} run(s) of {name})")
-    print("If something MOVED, write it to .claude/human-queue.md with this output. Do not "
-          "edit any document that quotes a number.")
+    print(
+        "If something MOVED, write it to .claude/human-queue.md with this output. Do not "
+        "edit any document that quotes a number."
+    )
     return 0
 
 
@@ -599,9 +835,13 @@ def main() -> int:
     sub.add_parser("report", help="every ledger, one screen")
     g = sub.add_parser("program", help="run every unmeasured recipe, in order, resumably")
     g.add_argument("--full", action="store_true", help="include the 1-2 hour full-tier recipes")
-    g.add_argument("--budget", type=float, default=3.0,
-                   help="multiple of a recipe's estimate before it is killed. The estimates "
-                        "were guesses until the first real runs; 3x leaves room for that.")
+    g.add_argument(
+        "--budget",
+        type=float,
+        default=3.0,
+        help="multiple of a recipe's estimate before it is killed. The estimates "
+        "were guesses until the first real runs; 3x leaves room for that.",
+    )
     a = ap.parse_args()
 
     if a.cmd == "run":
@@ -631,11 +871,14 @@ def main() -> int:
                 print(f"{name:24} {'not measured yet':>54}")
                 continue
             m = history[-1]["metrics"]
-            cells = " ".join(f"{(m.get(k) if m.get(k) is not None else float('nan')):>12.3f}"
-                             for k in keys)
+            cells = " ".join(
+                f"{(m.get(k) if m.get(k) is not None else float('nan')):>12.3f}" for k in keys
+            )
             print(f"{name:24} {cells}   {len(history)}")
-        print("\nOne run each is a sketch, not a finding. A difference is only real if it "
-              "clears both runs' spread.")
+        print(
+            "\nOne run each is a sketch, not a finding. A difference is only real if it "
+            "clears both runs' spread."
+        )
         return 0
     if a.cmd == "show":
         for row in load(a.recipe):

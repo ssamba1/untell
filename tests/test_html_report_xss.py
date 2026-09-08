@@ -25,11 +25,12 @@ from untell.html_report import generate_html_report
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _result(text: str) -> dict:
     """Minimal result dict that exercises the report without running a real loop."""
     return {
         "final": text,
-        "pre":  {"max": 0.80, "tier": "lite"},
+        "pre": {"max": 0.80, "tier": "lite"},
         "post": {"max": 0.50, "tier": "lite"},
         "iterations": 1,
         "stopped": "passed",
@@ -45,23 +46,15 @@ def _result(text: str) -> dict:
 # All four payloads combined in one document, including a <a href="javascript:">
 # element to check that the href is not blindly mirrored into the output.
 _XSS_DOC = (
-    '<script>alert(1)</script> '
-    '"double-quote" '
-    "'single-quote' "
-    '& ampersand '
-    'javascript:alert(1)'
+    "<script>alert(1)</script> \"double-quote\" 'single-quote' & ampersand javascript:alert(1)"
 )
 
 
 def test_script_tag_does_not_appear_verbatim() -> None:
     """<script>alert(1)</script> must be escaped; a live tag in the output is a defect."""
     html = generate_html_report(_XSS_DOC, _result(_XSS_DOC))
-    assert "<script>" not in html, (
-        "unescaped <script> open-tag survived into the report HTML"
-    )
-    assert "</script>" not in html, (
-        "unescaped </script> close-tag survived into the report HTML"
-    )
+    assert "<script>" not in html, "unescaped <script> open-tag survived into the report HTML"
+    assert "</script>" not in html, "unescaped </script> close-tag survived into the report HTML"
     # The escape round-trip must produce the entities, not vanish the text.
     assert "&lt;script&gt;" in html, (
         "expected &lt;script&gt; entity in output (text must be visible, just escaped)"
@@ -104,21 +97,17 @@ def test_double_quote_is_escaped_in_attribute_context() -> None:
     # No title attribute must contain a raw unescaped " — that would break the attribute.
     for m in re.finditer(r'title="([^"]*)"', html):
         inner = m.group(1)
-        assert '"' not in inner, (
-            f"raw unescaped \" inside title attribute: {m.group(0)!r}"
-        )
+        assert '"' not in inner, f'raw unescaped " inside title attribute: {m.group(0)!r}'
     # In element text content, " is escaped to &quot; by html.escape(quote=True).
     # Assert the user's " does not appear as a bare " in the element content of a <mark>.
     # The safest proxy: any mark element content is escaped.
-    for m in re.finditer(r'<mark[^>]*>([^<]*)</mark>', html):
+    for m in re.finditer(r"<mark[^>]*>([^<]*)</mark>", html):
         content = m.group(1)
         # If the user text that's inside the mark contained ", it must be &quot;
         if "&quot;" in content or '"' not in content:
             pass  # correct
         else:
-            pytest.fail(
-                f"unescaped \" in <mark> element content: {m.group(0)!r}"
-            )
+            pytest.fail(f'unescaped " in <mark> element content: {m.group(0)!r}')
 
 
 def test_single_quote_is_safe_in_double_quoted_attributes() -> None:
@@ -131,9 +120,7 @@ def test_single_quote_is_safe_in_double_quoted_attributes() -> None:
     for m in re.finditer(r'title="([^"]*)"', html):
         # The attribute value is well-formed as long as it closes with "
         # (which the regex guarantees by not allowing " inside).
-        assert m.group(0).endswith('"'), (
-            f"title attribute not closed properly: {m.group(0)!r}"
-        )
+        assert m.group(0).endswith('"'), f"title attribute not closed properly: {m.group(0)!r}"
     # The text should still be present (not silently dropped).
     assert "results" in html
 
@@ -183,9 +170,7 @@ def test_xss_payload_in_rewriter_name_is_escaped() -> None:
     """Metadata fields (rewriter, tier, stopped) are also user-controlled and must be escaped."""
     doc = "Normal text."
     res = _result(doc)
-    res["rewriter"] = '<img src=x onerror=alert(1)>'
+    res["rewriter"] = "<img src=x onerror=alert(1)>"
     html = generate_html_report(doc, res)
-    assert '<img src=x onerror=alert(1)>' not in html, (
-        "unescaped HTML in rewriter metadata field"
-    )
+    assert "<img src=x onerror=alert(1)>" not in html, "unescaped HTML in rewriter metadata field"
     assert "&lt;img" in html, "rewriter field not HTML-escaped"

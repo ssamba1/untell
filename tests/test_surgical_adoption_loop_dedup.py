@@ -9,6 +9,7 @@ waste with the text. The dedup is behavior-preserving; these tests pin both halv
 * output is byte-identical to the pre-dedup algorithm (reference loop inlined below), and
 * each candidate text is passed to `_tell_count` exactly once.
 """
+
 from __future__ import annotations
 
 from unittest.mock import patch
@@ -40,11 +41,18 @@ _OLD_HEADER = """        cur_tells = _tell_count(cur)
         )
         for cand, s in ranked:
 """
-_OLD_ACCEPT = "if score < cur_score or (_tell_count(cand) < cur_tells and score <= floor + _TELLS_EPS):"
+_OLD_ACCEPT = (
+    "if score < cur_score or (_tell_count(cand) < cur_tells and score <= floor + _TELLS_EPS):"
+)
 
 
-def _reference_substitute(text: str, tier: str = "lite", threshold: float = 0.30,
-                          max_subs: int = 8, prefer_tells: bool = False) -> dict:
+def _reference_substitute(
+    text: str,
+    tier: str = "lite",
+    threshold: float = 0.30,
+    max_subs: int = 8,
+    prefer_tells: bool = False,
+) -> dict:
     """Copy of `surgical_substitute` with the OLD (double-counting) adoption loop.
 
     Built from the current source so the reference tracks the surrounding code; only the
@@ -64,17 +72,21 @@ def _reference_substitute(text: str, tier: str = "lite", threshold: float = 0.30
     old_src = src.replace(new_header, _OLD_HEADER, 1).replace(new_accept, _OLD_ACCEPT, 1)
     namespace: dict = {}
     exec(compile(old_src, "<reference surgical_substitute>", "exec"), dict(wi.__dict__), namespace)
-    return namespace["surgical_substitute"](text, tier=tier, threshold=threshold,
-                                            max_subs=max_subs, prefer_tells=prefer_tells)
+    return namespace["surgical_substitute"](
+        text, tier=tier, threshold=threshold, max_subs=max_subs, prefer_tells=prefer_tells
+    )
 
 
 @pytest.mark.parametrize(
     "text",
-    [TELL_HEAVY, PLAIN,
-     "Fast. Simple. Effective. Clean. Sharp. Direct. Bold. Quick.",
-     "Furthermore, the implementation of this strategy will utilize state-of-the-art techniques "
-     "to facilitate the seamless integration of multiple components, thereby ensuring a robust "
-     "and comprehensive solution."],
+    [
+        TELL_HEAVY,
+        PLAIN,
+        "Fast. Simple. Effective. Clean. Sharp. Direct. Bold. Quick.",
+        "Furthermore, the implementation of this strategy will utilize state-of-the-art techniques "
+        "to facilitate the seamless integration of multiple components, thereby ensuring a robust "
+        "and comprehensive solution.",
+    ],
 )
 def test_deduped_adoption_loop_changes_no_decisions(text: str) -> None:
     kwargs = dict(tier="lite", threshold=0.30, max_subs=12, prefer_tells=True)

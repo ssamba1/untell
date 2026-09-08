@@ -25,6 +25,7 @@ Findings pinned here:
      (scrub's output path; argparse's stderr message path) — configure_utf8_io
      reconfigured encoding but not errors, so a surrogate killed the process.
 """
+
 from __future__ import annotations
 
 import json
@@ -50,8 +51,13 @@ class TestBadArgsRefusesNonFiniteCounts:
 
     @pytest.mark.parametrize(
         "name,kind",
-        [("max_iters", "count"), ("best_of", "count"), ("confirm", "count_or_zero"),
-         ("top", "top"), ("seed", "seed")],
+        [
+            ("max_iters", "count"),
+            ("best_of", "count"),
+            ("confirm", "count_or_zero"),
+            ("top", "top"),
+            ("seed", "seed"),
+        ],
     )
     def test_positive_infinity_is_a_refusal_dict(self, name, kind):
         out = _bad_args(**{name: (float("inf"), kind)})
@@ -60,8 +66,13 @@ class TestBadArgsRefusesNonFiniteCounts:
 
     @pytest.mark.parametrize(
         "name,kind",
-        [("max_iters", "count"), ("best_of", "count"), ("confirm", "count_or_zero"),
-         ("top", "top"), ("seed", "seed")],
+        [
+            ("max_iters", "count"),
+            ("best_of", "count"),
+            ("confirm", "count_or_zero"),
+            ("top", "top"),
+            ("seed", "seed"),
+        ],
     )
     def test_negative_infinity_is_a_refusal_dict(self, name, kind):
         out = _bad_args(**{name: (float("-inf"), kind)})
@@ -108,11 +119,9 @@ class TestNonFiniteRequestBodyIsA422:
             from untell.api_server import app
 
             client = TestClient(app, raise_server_exceptions=False)
-            resp = client.post(endpoint, content=body,
-                               headers={"content-type": "application/json"})
+            resp = client.post(endpoint, content=body, headers={"content-type": "application/json"})
             assert resp.status_code == 422, (
-                f"{endpoint} with {body[:40]!r} answered {resp.status_code}: "
-                f"{resp.text[:120]}"
+                f"{endpoint} with {body[:40]!r} answered {resp.status_code}: {resp.text[:120]}"
             )
             # the detail must still be parseable JSON
             detail = resp.json()
@@ -125,8 +134,11 @@ class TestNonFiniteRequestBodyIsA422:
             from untell.api_server import app
 
             client = TestClient(app, raise_server_exceptions=False)
-            resp = client.post("/score", content='{"text": "hello world"}',
-                               headers={"content-type": "application/json"})
+            resp = client.post(
+                "/score",
+                content='{"text": "hello world"}',
+                headers={"content-type": "application/json"},
+            )
             assert resp.status_code == 200
 
 
@@ -139,7 +151,7 @@ class TestLockSurvivesLoneSurrogates:
     def test_lock_and_restore_on_surrogate_text(self):
         from untell.scripts.preserve import lock, restore
 
-        text = "punderscoresle.x4h\r!y\u2067A6\n\r4brown\u200b\uD800\uDFFF tail"
+        text = "punderscoresle.x4h\r!y\u2067A6\n\r4brown\u200b\ud800\udfff tail"
         masked, mapping = lock(text)
         back = restore(masked, mapping)
         # lone surrogates cannot survive a round trip through any encoder; the
@@ -169,8 +181,9 @@ class TestTellsHumannessSentencesRejectNonStr:
     """bytes input leaked internal re errors on HEAD instead of the clean contract
     TypeError that score_text / untell_text already raise."""
 
-    @pytest.mark.parametrize("bad", [b"hello world", b"\xff\x00", bytearray(b"x"),
-                                     None, 123, ["list"], {"d": 1}])
+    @pytest.mark.parametrize(
+        "bad", [b"hello world", b"\xff\x00", bytearray(b"x"), None, 123, ["list"], {"d": 1}]
+    )
     def test_score_tells(self, bad):
         from untell.scripts.tells import score_tells
 
@@ -243,8 +256,7 @@ class TestThresholdMustBeNumeric:
         from untell.scripts.score import score_text
 
         with pytest.raises(TypeError, match="threshold must be a number"):
-            score_text("The committee approved the proposal yesterday.", tier="lite",
-                       threshold=bad)
+            score_text("The committee approved the proposal yesterday.", tier="lite", threshold=bad)
 
     @pytest.mark.parametrize("bad", ["0.5", None])
     def test_untell_text_rejects_non_numeric_threshold(self, bad):
@@ -258,8 +270,9 @@ class TestThresholdMustBeNumeric:
         from untell.scripts.sentences import score_sentences
 
         with pytest.raises(TypeError, match="threshold must be a number"):
-            score_sentences("The committee approved the proposal yesterday.",
-                            tier="lite", threshold=bad)
+            score_sentences(
+                "The committee approved the proposal yesterday.", tier="lite", threshold=bad
+            )
 
     def test_numeric_thresholds_still_work(self):
         from untell.scripts.score import score_text
@@ -307,8 +320,14 @@ class TestCliPrintingSurvivesSurrogates:
         # both the runnable test and the realistic one, and it still covers Windows.
         proc = subprocess.run(
             [str(py), "-m", "untell.scripts.scrub", "text with \udcff surrogate"],
-            capture_output=True, text=True, encoding="utf-8", errors="replace",
-            timeout=30, cwd=repo, stdin=subprocess.DEVNULL, env=env,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=30,
+            cwd=repo,
+            stdin=subprocess.DEVNULL,
+            env=env,
         )
         assert "Traceback" not in (proc.stderr or ""), proc.stderr
         assert proc.returncode in (0, 2)
@@ -330,8 +349,14 @@ class TestCliPrintingSurvivesSurrogates:
             # U+DCFF for the reason given in the test above: on POSIX only U+DC80..U+DCFF survive
             # argv encoding, so "lite\udb87" could never reach the child on Linux.
             [str(py), "-m", "untell.scripts.score", "--tier", "lite\udcff", "hello"],
-            capture_output=True, text=True, encoding="utf-8", errors="replace",
-            timeout=30, cwd=repo, stdin=subprocess.DEVNULL, env=env,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=30,
+            cwd=repo,
+            stdin=subprocess.DEVNULL,
+            env=env,
         )
         assert "Traceback" not in (proc.stderr or ""), proc.stderr
         assert proc.returncode == 2

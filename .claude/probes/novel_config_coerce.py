@@ -4,11 +4,14 @@ _try_yaml parses anything; load() is where defaults/coercion apply. Does a
 hostile value for a KNOWN key (threshold: 'abc') get coerced to default, and
 does an out-of-range value (threshold: 999999) get clamped or pass through?
 """
+
 import sys, tempfile, os
 from pathlib import Path
+
 for p in Path(__file__).resolve().parents:
     if (p / "untell" / "__init__.py").exists():
-        sys.path.insert(0, str(p)); break
+        sys.path.insert(0, str(p))
+        break
 
 import untell.config as C
 

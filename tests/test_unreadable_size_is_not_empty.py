@@ -6,6 +6,7 @@ True -> False makes an unreadable file read as empty, sending the reader to the
 wrong diagnostic ("there is nothing here" for a file that may be full but
 unreadable). Forced with a monkeypatched getsize that raises.
 """
+
 import os
 
 from untell.scripts.io_utils import _has_bytes

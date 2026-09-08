@@ -1,5 +1,7 @@
 """binoculars + radar: availability and score contract."""
+
 import json, os
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
 from untell.detectors.binoculars import BinocularsDetector
 from untell.detectors.radar import RadarDetector

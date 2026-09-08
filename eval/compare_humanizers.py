@@ -89,8 +89,12 @@ def _techniques(tier: str, threshold: float):
             from untell.scripts.run import untell_text
 
             res = untell_text(
-                t, tier=tier, threshold=threshold, max_iters=5,
-                rewriter=get_rewriter(prefer=prefer), best_of=best_of,
+                t,
+                tier=tier,
+                threshold=threshold,
+                max_iters=5,
+                rewriter=get_rewriter(prefer=prefer),
+                best_of=best_of,
             )
             # `untell_text` reports a configuration failure — an unavailable rewriter, a missing
             # key — as {"error": ..., "final": <the input, unchanged>}. Reading `final` without
@@ -200,7 +204,8 @@ def compare(
                 "sim_mean": round(sum(sims) / n, 3),
                 "flagged_rate": (
                     round(sum(1 for s in measured if s >= threshold) / len(measured), 3)
-                    if measured else None
+                    if measured
+                    else None
                 ),
                 "unscored": n - len(measured),
             }
@@ -291,7 +296,11 @@ def main(argv: list[str] | None = None) -> int:
 
         pairs = load_pairs(args.dataset, args.n)
         if not pairs:
-            print(json.dumps({"error": f"no pairs available from {args.dataset}; pip install .[eval]"}))
+            print(
+                json.dumps(
+                    {"error": f"no pairs available from {args.dataset}; pip install .[eval]"}
+                )
+            )
             return 2
         texts = [ai for _human, ai in pairs][: args.n]
         corpus = f"{args.dataset} n={len(texts)}"

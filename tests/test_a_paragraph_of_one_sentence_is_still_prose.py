@@ -142,9 +142,7 @@ def test_the_dose_stays_near_the_human_share() -> None:
         "Notably, the system utilizes a comprehensive methodology across the teams.",
     ] * 3
     for size in (18, 3, 1):
-        doc = "\n\n".join(
-            " ".join(sentences[i : i + size]) for i in range(0, len(sentences), size)
-        )
+        doc = "\n\n".join(" ".join(sentences[i : i + size]) for i in range(0, len(sentences), size))
         opened = total = 0
         for seed in range(12):
             random.seed(seed)

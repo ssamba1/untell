@@ -1,4 +1,5 @@
 import re
+
 tests = [
     (r'[.!?["\]]', 'at 3."'),
     (r'[.!?]["\']', 'at 3."'),
@@ -8,4 +9,4 @@ tests = [
     (r'\."$', 'at 3."'),
 ]
 for pat, s in tests:
-    print(repr(pat), '->', bool(re.search(pat, s)))
+    print(repr(pat), "->", bool(re.search(pat, s)))

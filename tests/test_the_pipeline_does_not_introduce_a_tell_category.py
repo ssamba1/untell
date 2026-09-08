@@ -19,6 +19,7 @@ neither asks whether the pipeline emits one.
 Run on short fixtures rather than a corpus so this stays a unit test. The corpus figures above are
 the evidence; this is the tripwire.
 """
+
 from __future__ import annotations
 
 import pytest
@@ -83,6 +84,6 @@ def test_no_category_comes_out_higher_than_it_went_in(name):
 @pytest.mark.parametrize("name", sorted(FIXTURES))
 def test_the_fixture_actually_carries_tells(name):
     """Guards the guard. A fixture with no tells passes the test above without exercising it."""
-    assert (score_tells(FIXTURES[name]).get("by_category") or {}), (
+    assert score_tells(FIXTURES[name]).get("by_category") or {}, (
         f"the {name!r} fixture no longer fires any category, so the check above proves nothing"
     )

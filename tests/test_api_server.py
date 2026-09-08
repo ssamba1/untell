@@ -1,4 +1,5 @@
 """Tests for the REST API server — offline, no network."""
+
 from __future__ import annotations
 
 import os
@@ -88,7 +89,9 @@ def test_auth_allows_with_valid_key(monkeypatch):
         from untell.api_server import app
 
         client = TestClient(app)
-        resp = client.post("/score", json={"text": "test", "tier": "lite"}, headers={"X-API-Key": "secret123"})
+        resp = client.post(
+            "/score", json={"text": "test", "tier": "lite"}, headers={"X-API-Key": "secret123"}
+        )
         assert resp.status_code == 200
 
 
@@ -113,12 +116,20 @@ def test_auth_honours_a_key_set_only_in_dotenv(tmp_path, monkeypatch):
         os.environ.pop("UNTELL_API_KEY", None)
         with TestClient(app) as client:  # `with` runs the lifespan hook
             assert client.post("/score", json={"text": "test", "tier": "lite"}).status_code == 401
-            assert client.post(
-                "/score", json={"text": "test", "tier": "lite"}, headers={"X-API-Key": "wrong"}
-            ).status_code == 401
-            assert client.post(
-                "/score", json={"text": "test", "tier": "lite"}, headers={"X-API-Key": "from-dotenv"}
-            ).status_code == 200
+            assert (
+                client.post(
+                    "/score", json={"text": "test", "tier": "lite"}, headers={"X-API-Key": "wrong"}
+                ).status_code
+                == 401
+            )
+            assert (
+                client.post(
+                    "/score",
+                    json={"text": "test", "tier": "lite"},
+                    headers={"X-API-Key": "from-dotenv"},
+                ).status_code
+                == 200
+            )
 
 
 def test_empty_text_returns_422():
@@ -142,7 +153,9 @@ def test_sentences_endpoint():
         from untell.api_server import app
 
         client = TestClient(app)
-        resp = client.post("/sentences", json={"text": "First sentence here. Second one here.", "tier": "lite"})
+        resp = client.post(
+            "/sentences", json={"text": "First sentence here. Second one here.", "tier": "lite"}
+        )
         assert resp.status_code == 200
         data = resp.json()
         assert "sentences" in data
@@ -157,7 +170,9 @@ def test_verify_endpoint():
         from untell.api_server import app
 
         client = TestClient(app)
-        resp = client.post("/verify", json={"text": "Test text here for verification checks today."})
+        resp = client.post(
+            "/verify", json={"text": "Test text here for verification checks today."}
+        )
         assert resp.status_code == 200
         data = resp.json()
         assert "results" in data
@@ -179,7 +194,9 @@ def test_humanize_endpoint():
             from untell.api_server import app
 
             client = TestClient(app)
-            resp = client.post("/humanize", json={"text": "AI generated text here.", "tier": "lite"})
+            resp = client.post(
+                "/humanize", json={"text": "AI generated text here.", "tier": "lite"}
+            )
             assert resp.status_code == 200
             data = resp.json()
             assert data["final"] == "Humanized text."
@@ -436,8 +453,10 @@ class TestRateLimiting:
         api._rate_buckets.clear()
         client = TestClient(api.app)
         hdr = {"X-API-Key": "key-a"}
-        codes = [client.post("/tells", json={"text": self.TEXT}, headers=hdr).status_code
-                 for _n in range(5)]
+        codes = [
+            client.post("/tells", json={"text": self.TEXT}, headers=hdr).status_code
+            for _n in range(5)
+        ]
         assert codes[:3] == [200] * 3 and codes[3:] == [429] * 2, codes
         # A different bucket key is unaffected by the exhausted one.
         api._rate_buckets["someone-else"] = (0.0, 0)
@@ -641,7 +660,9 @@ class TestAnUnmodelledFieldIsAnError(_Unlimited):
         models = [
             obj
             for _, obj in inspect.getmembers(api, inspect.isclass)
-            if issubclass(obj, BaseModel) and obj is not BaseModel and obj.__name__.endswith("Request")
+            if issubclass(obj, BaseModel)
+            and obj is not BaseModel
+            and obj.__name__.endswith("Request")
         ]
         assert models, "no request models found — the discovery is wrong, not the models"
         lax = [m.__name__ for m in models if m.model_config.get("extra") != "forbid"]
@@ -666,7 +687,9 @@ class TestAnUnmodelledFieldIsAnError(_Unlimited):
 
         seen: dict = {}
         monkeypatch.setattr(
-            api, "untell_text", lambda text, **kw: seen.update(kw) or {"final": text, "post": {"max": 0.1}}
+            api,
+            "untell_text",
+            lambda text, **kw: seen.update(kw) or {"final": text, "post": {"max": 0.1}},
         )
         resp = TestClient(api.app).post(
             "/humanize",
@@ -686,7 +709,9 @@ class TestAnUnmodelledFieldIsAnError(_Unlimited):
 
         seen: dict = {}
         monkeypatch.setattr(
-            api, "untell_text", lambda text, **kw: seen.update(kw) or {"final": text, "post": {"max": 0.1}}
+            api,
+            "untell_text",
+            lambda text, **kw: seen.update(kw) or {"final": text, "post": {"max": 0.1}},
         )
         TestClient(api.app).post(
             "/humanize", json={"text": "Some text.", "tier": "lite", "rewriter": "surgical"}
@@ -695,7 +720,9 @@ class TestAnUnmodelledFieldIsAnError(_Unlimited):
         # `rewriter` is resolved from a name to an object, so it is forwarded under the same key.
         modelled = set(api.HumanizeRequest.model_fields) - {"text"}
         assert modelled <= loop_params, sorted(modelled - loop_params)
-        assert modelled <= set(seen), f"modelled but never forwarded: {sorted(modelled - set(seen))}"
+        assert modelled <= set(seen), (
+            f"modelled but never forwarded: {sorted(modelled - set(seen))}"
+        )
 
 
 def test_score_response_names_the_scoring_path(monkeypatch):
@@ -709,9 +736,14 @@ def test_score_response_names_the_scoring_path(monkeypatch):
 
         from untell.api_server import app
 
-        body = TestClient(app).post(
-            "/score", json={"text": "A sufficiently long sentence for the heuristic.", "tier": "lite"}
-        ).json()
+        body = (
+            TestClient(app)
+            .post(
+                "/score",
+                json={"text": "A sufficiently long sentence for the heuristic.", "tier": "lite"},
+            )
+            .json()
+        )
         assert body["detector_modes"]["perplexity_burstiness"] == "stdlib"
 
 
@@ -745,8 +777,13 @@ class TestStyleIsValidated(_Unlimited):
         for style in STYLE_NAMES:
             resp = client.post(
                 "/humanize",
-                json={"text": "Some text here.", "tier": "lite", "rewriter": "surgical",
-                      "max_iters": 1, "style": style},
+                json={
+                    "text": "Some text here.",
+                    "tier": "lite",
+                    "rewriter": "surgical",
+                    "max_iters": 1,
+                    "style": style,
+                },
             )
             assert resp.status_code == 200, style
 
@@ -768,7 +805,9 @@ class TestStyleIsValidated(_Unlimited):
 
         seen: dict = {}
         monkeypatch.setattr(
-            api, "untell_text", lambda text, **kw: seen.update(kw) or {"final": text, "post": {"max": 0.1}}
+            api,
+            "untell_text",
+            lambda text, **kw: seen.update(kw) or {"final": text, "post": {"max": 0.1}},
         )
         TestClient(api.app).post(
             "/humanize",
@@ -973,8 +1012,10 @@ class TestTheScoreResponseIsSafeToConsume:
         try:
             return client.post(
                 "/score",
-                json={"text": "Moreover, the framework leverages a robust approach here.",
-                      "tier": "full"},
+                json={
+                    "text": "Moreover, the framework leverages a robust approach here.",
+                    "tier": "full",
+                },
             ).json()
         finally:
             cls.score = original
@@ -1004,10 +1045,14 @@ class TestTheScoreResponseIsSafeToConsume:
 
         from untell.api_server import app
 
-        body = TestClient(app).post(
-            "/score", json={"text": "The kettle boiled while I read the last few pages.",
-                            "tier": "lite"},
-        ).json()
+        body = (
+            TestClient(app)
+            .post(
+                "/score",
+                json={"text": "The kettle boiled while I read the last few pages.", "tier": "lite"},
+            )
+            .json()
+        )
         assert "detector_errors" not in body
 
     def test_the_internal_convention_is_untouched(self):
@@ -1030,8 +1075,9 @@ class TestTheScoreResponseIsSafeToConsume:
 
         cls.score = boom
         try:
-            result = score_text("Moreover, the framework leverages a robust approach here.",
-                                tier="full")
+            result = score_text(
+                "Moreover, the framework leverages a robust approach here.", tier="full"
+            )
         finally:
             cls.score = original
         assert "hc3_roberta__error" in result["detectors"], (
@@ -1100,19 +1146,33 @@ class TestTheOpenApiSchemaDescribesTheRealResponse:
         # The first attempt at this entry simply added a third sentence, on the theory that three
         # was the minimum. It spread 0.7577 too, and the guard-the-guard caught it: with the schema
         # entry deleted the check still passed.
-        ("/sentences", "post",
-         {"text": "Moreover, the framework leverages a robust approach. Furthermore, it underscores "
-                  "the pivotal integration. In conclusion, organizations must harness these "
-                  "seamless solutions today. Additionally, the holistic methodology empowers teams.",
-          "tier": "lite"}),
+        (
+            "/sentences",
+            "post",
+            {
+                "text": "Moreover, the framework leverages a robust approach. Furthermore, it underscores "
+                "the pivotal integration. In conclusion, organizations must harness these "
+                "seamless solutions today. Additionally, the holistic methodology empowers teams.",
+                "tier": "lite",
+            },
+        ),
         ("/verify", "post", {"text": TEXT}),
         # /humanize was absent from this table entirely — the busiest endpoint, 19 response keys,
         # and the payload -> schema check had never looked at it. The voice sample is two words on
         # purpose: under the 20-word floor it produces `voice_warning`, one of the eleven
         # conditional fields, of which this table produced TWO before these entries.
-        ("/humanize", "post",
-         {"text": TEXT, "tier": "lite", "rewriter": "structural", "max_iters": 1, "best_of": 1,
-          "voice_sample": "tiny sample"}),
+        (
+            "/humanize",
+            "post",
+            {
+                "text": TEXT,
+                "tier": "lite",
+                "rewriter": "structural",
+                "max_iters": 1,
+                "best_of": 1,
+                "voice_sample": "tiny sample",
+            },
+        ),
         # include_matches is false by default, so `matches` — documented, conditional — had never
         # appeared in a response this check inspected.
         ("/tells", "post", {"text": TEXT, "include_matches": True}),
@@ -1148,6 +1208,7 @@ class TestTheOpenApiSchemaDescribesTheRealResponse:
         # it is conditional and correctly absent. Two vocabularies for one API is the defect this
         # repository has now hit at four different layers.
         from tests.test_the_openapi_schema_matches_the_response import CONDITIONAL as conditional
+
         client = self._client()
         response = client.get(path) if method == "get" else client.post(path, json=body)
         payload = response.json()
@@ -1185,8 +1246,11 @@ class TestTheOpenApiSchemaDescribesTheRealResponse:
         for path, ops in app.openapi()["paths"].items():
             for method, op in ops.items():
                 schema = (
-                    op.get("responses", {}).get("200", {})
-                    .get("content", {}).get("application/json", {}).get("schema", {})
+                    op.get("responses", {})
+                    .get("200", {})
+                    .get("content", {})
+                    .get("application/json", {})
+                    .get("schema", {})
                 )
                 if not schema.get("properties"):
                     undescribed.append(f"{method.upper()} {path}")
@@ -1195,8 +1259,6 @@ class TestTheOpenApiSchemaDescribesTheRealResponse:
     def test_describing_does_not_filter(self):
         """The reason for `responses=` over `response_model=`. `detector_modes` is returned but not
         required; if a response model were introduced it would vanish and this would catch it."""
-        payload = self._client().post(
-            "/score", json={"text": self.TEXT, "tier": "lite"}
-        ).json()
+        payload = self._client().post("/score", json={"text": self.TEXT, "tier": "lite"}).json()
         assert "detector_modes" in payload
         assert "verdict_threshold" in payload

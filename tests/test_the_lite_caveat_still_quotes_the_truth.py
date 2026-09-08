@@ -148,4 +148,7 @@ def test_every_number_in_the_caveat_is_covered(stdlib_lite_env) -> None:
     # listed the figures I remembered it quoting and missed `1.000` and the two `n=30` denominators.
     expected = {"0.30", "0.45", "1.000", "10%", "100", "3", "30", "30%", "64%", "70%"}
     numbers = set(re.findall(r"\d+(?:\.\d+)?%?", sentence))
-    assert numbers == expected, {"new": sorted(numbers - expected), "gone": sorted(expected - numbers)}
+    assert numbers == expected, {
+        "new": sorted(numbers - expected),
+        "gone": sorted(expected - numbers),
+    }

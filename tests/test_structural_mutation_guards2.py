@@ -22,16 +22,16 @@ class TestInsideQuotes:
     as balanced."""
 
     def test_two_quotes_is_balanced(self) -> None:
-        words = ['He', 'said', '"', 'the', 'result', 'is', 'robust', '"', 'and']
+        words = ["He", "said", '"', "the", "result", "is", "robust", '"', "and"]
         # break before 'and': exactly 2 quotes to the left -> not inside
         assert S._inside_quotes(words, 8) is False
 
     def test_one_quote_is_inside(self) -> None:
-        words = ['He', 'said', '"', 'the', 'result', 'is']
+        words = ["He", "said", '"', "the", "result", "is"]
         # break before 'the' (index 3): 1 quote to the left -> inside
         assert S._inside_quotes(words, 3) is True
 
     def test_three_quotes_is_inside(self) -> None:
-        words = ['"', 'a', '"', 'then', '"', 'b', 'c']
+        words = ['"', "a", '"', "then", '"', "b", "c"]
         # break before 'b' (index 5): 3 quotes to the left -> inside (odd)
         assert S._inside_quotes(words, 5) is True

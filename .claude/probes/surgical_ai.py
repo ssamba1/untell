@@ -1,5 +1,7 @@
 """surgical on AI-flavored text: fires, and never increases tells."""
+
 import json, os
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
 from untell.rewriter.surgical import SurgicalRewriter
 from untell.scripts.tells import score_tells
@@ -19,5 +21,15 @@ for s in docs:
         before = score_tells(s).get("tells_per_100w", 0)
         after = score_tells(out).get("tells_per_100w", 0)
         if after > before + 1.0:
-            emitted.append((s[:40], out[:60], round(before,1), round(after,1)))
-print(json.dumps({"changed": changed, "of": len(docs), "tell_increasing": len(emitted), "samples": emitted[:3]}, indent=1))
+            emitted.append((s[:40], out[:60], round(before, 1), round(after, 1)))
+print(
+    json.dumps(
+        {
+            "changed": changed,
+            "of": len(docs),
+            "tell_increasing": len(emitted),
+            "samples": emitted[:3],
+        },
+        indent=1,
+    )
+)

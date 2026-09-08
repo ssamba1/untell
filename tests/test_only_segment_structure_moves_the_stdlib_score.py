@@ -22,6 +22,7 @@ These tests pin both halves: the invariances, which are a real guarantee worth k
 one sensitivity, which is a known limitation of the stdlib path and is documented rather than
 silently fixed — see the note beside `_STDLIB_PERPLEXITY_VERDICT_THRESHOLD`.
 """
+
 from __future__ import annotations
 
 import pytest

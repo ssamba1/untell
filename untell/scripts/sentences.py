@@ -121,7 +121,6 @@ def _warn_if_targeting_is_uninformative(tier: str) -> None:
     logger.warning(UNINFORMATIVE_TARGETING_WARNING)
 
 
-
 # Whether THIS document's sentence scores can be ranked at all, which is a different question from
 # whether the detector that produced them is any good.
 #
@@ -242,11 +241,7 @@ def score_sentences(
         "sentences to rewrite first, not an absolute verdict",
         # The caveat that matters most is the one a machine client could not see: the log line
         # above fires once per PROCESS, so an API server tells its first caller and nobody else.
-        **(
-            {"unrankable": True}
-            if _targeting_is_unrankable(rows)
-            else {}
-        ),
+        **({"unrankable": True} if _targeting_is_unrankable(rows) else {}),
         **(
             {"warning": _warning_for(text, tier, results, rows)}
             if _warning_for(text, tier, results, rows)
@@ -304,7 +299,9 @@ def main(argv: list[str] | None = None) -> int:
     from untell.scripts.io_utils import configure_utf8_io
 
     configure_utf8_io()  # UTF-8 stdin/stdout/stderr (Windows defaults to cp1252)
-    parser = argparse.ArgumentParser(prog="untell-sentences", description="Per-sentence AI scoring.")
+    parser = argparse.ArgumentParser(
+        prog="untell-sentences", description="Per-sentence AI scoring."
+    )
     parser.add_argument("text", nargs="?", help="text to scan (or --file / stdin)")
     parser.add_argument("--file", "-f", help="read text from this file (.txt/.docx/.pdf)")
     parser.add_argument(
@@ -318,7 +315,10 @@ def main(argv: list[str] | None = None) -> int:
     from untell.scripts.run import _PROBABILITY, _TOP
 
     parser.add_argument(
-        "--threshold", "-t", type=_PROBABILITY, default=DEFAULT_THRESHOLD,
+        "--threshold",
+        "-t",
+        type=_PROBABILITY,
+        default=DEFAULT_THRESHOLD,
         help="P(AI) at or above which a sentence is flagged (default: 0.3)",
     )
     parser.add_argument(
@@ -359,7 +359,9 @@ def main(argv: list[str] | None = None) -> int:
         for row in result["sentences"]:
             mark = "AI " if row["flagged"] else "ok "
             print(f"[{mark}{row['ai']:.2f}] {row['text']}")
-        print(f"\n{len(result['flagged'])}/{len(result['sentences'])} sentences flagged to rewrite first.")
+        print(
+            f"\n{len(result['flagged'])}/{len(result['sentences'])} sentences flagged to rewrite first."
+        )
         print(f"note: {result['note']}")
     # 2 when the catalogue and detectors cannot read this script at all — the same code and reasoning
     # `untell-verify`, `untell-score`, `untell-tells` and `untell-humanness` use. MEASURED on a

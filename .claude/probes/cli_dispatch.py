@@ -1,5 +1,7 @@
 """CLI dispatch: every registered command resolves to a callable, unknown refused."""
+
 import json, os, importlib
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
 from untell.scripts.cli import _COMMANDS, _STANDALONE_ONLY, main
 

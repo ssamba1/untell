@@ -1,5 +1,7 @@
 """Debug span-level behavior for surprising cases."""
+
 import sys
+
 sys.path.insert(0, "C:/Users/Admin/Humanize")
 from untell.scripts.preserve import _collect_labeled_spans, _merge, lock
 

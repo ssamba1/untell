@@ -6,6 +6,7 @@ Measured: 1k words 0.56s, 2k 2.12s, 4k 8.77s, 8k 36.1s — each doubling 4.1x
 inputs (fall back to proportional cuts past a size where exact alignment
 costs more than it is worth).
 """
+
 import time
 
 from untell.text_split import aligned_chunks
@@ -28,10 +29,14 @@ def test_aligned_chunks_bounded_time_on_long_docs():
 
 def test_aligned_chunks_still_correct_on_normal_docs():
     # A normal-size doc must still use the exact matcher path and align correctly
-    a = ("Our results demonstrate that the attention mechanism improves performance. "
-         "The ablation studies confirm our hypothesis about the architecture.")
-    b = ("Our results demonstrate that the attention mechanism improves performance. "
-         "We also perform a series of ablation studies. The results confirm our hypothesis.")
+    a = (
+        "Our results demonstrate that the attention mechanism improves performance. "
+        "The ablation studies confirm our hypothesis about the architecture."
+    )
+    b = (
+        "Our results demonstrate that the attention mechanism improves performance. "
+        "We also perform a series of ablation studies. The results confirm our hypothesis."
+    )
     result = aligned_chunks(a, b)
     assert result
     total_a = sum(len(x.split()) for x, _ in result)

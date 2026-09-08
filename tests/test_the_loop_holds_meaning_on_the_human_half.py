@@ -17,6 +17,7 @@ What CAN be guaranteed is that the edits do not change what the user's own sente
 at 0.9929 similarity on the human half. That is the property these tests hold, because it is the
 one a user is entitled to rely on when the tool touches prose they wrote.
 """
+
 from __future__ import annotations
 
 import pytest
@@ -44,8 +45,9 @@ def mixed() -> dict:
 @pytest.mark.slow
 def test_the_human_half_keeps_its_meaning_even_when_edited(mixed):
     """The guarantee. Losing phrasing is a cost; losing meaning would be a defect."""
-    result = untell_text(mixed["document"], tier="full", threshold=0.30, max_iters=2,
-                         rewriter="composite", seed=11)
+    result = untell_text(
+        mixed["document"], tier="full", threshold=0.30, max_iters=2, rewriter="composite", seed=11
+    )
 
     assert similarity(mixed["document"], result["final"]) >= 0.9, (
         f"the whole document drifted to {result.get('similarity')}"
@@ -60,8 +62,9 @@ def test_the_loop_does_edit_the_human_half(mixed):
     This asserts the behaviour exists so nobody reads the guarantee above as "human text is left
     alone" — it is not.
     """
-    result = untell_text(mixed["document"], tier="full", threshold=0.30, max_iters=2,
-                         rewriter="composite", seed=11)
+    result = untell_text(
+        mixed["document"], tier="full", threshold=0.30, max_iters=2, rewriter="composite", seed=11
+    )
     if not result.get("changed"):
         pytest.skip("the loop declined to rewrite this document")
 
@@ -83,8 +86,9 @@ def test_the_stdlib_path_leaves_the_document_alone(monkeypatch, mixed):
     """
     monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
 
-    result = untell_text(mixed["document"], tier="lite", threshold=0.30, max_iters=2,
-                         rewriter="composite", seed=11)
+    result = untell_text(
+        mixed["document"], tier="lite", threshold=0.30, max_iters=2, rewriter="composite", seed=11
+    )
 
     assert not result.get("changed"), (
         "the stdlib path rewrote a document it scores below threshold; if dilution stopped "

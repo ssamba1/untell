@@ -6,6 +6,7 @@ inverts membership: a detector whose score IS in the results gets named as
 "ran without <detector>", the exact opposite of the truth. Forced with a fake
 detector that is tier-qualified, in scores, not opt-in, and unavailable.
 """
+
 from unittest.mock import patch
 
 from untell.scripts.score import _short_roster_note

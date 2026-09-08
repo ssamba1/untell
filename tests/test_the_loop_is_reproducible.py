@@ -59,9 +59,9 @@ def _run(rewriter, text: str, seed: int = 42) -> str:
     particular text triggers one.
     """
     random.seed(seed)
-    return untell_text(
-        text, tier="lite", max_iters=1, best_of=2, rewriter=rewriter, threshold=0.0
-    )["final"]
+    return untell_text(text, tier="lite", max_iters=1, best_of=2, rewriter=rewriter, threshold=0.0)[
+        "final"
+    ]
 
 
 @pytest.mark.parametrize("text", TEXTS, ids=["ai_formal", "ai_marketing"])

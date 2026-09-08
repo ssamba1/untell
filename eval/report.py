@@ -45,9 +45,7 @@ def _per_detector(results: list, threshold: float) -> dict[str, dict[str, float]
     # the same file and the one where the guard was missing, which is also the one whose
     # number is quoted per detector rather than in aggregate.
     results = [
-        r
-        for r in results
-        if r.pre.get("scored") is not False and r.post.get("scored") is not False
+        r for r in results if r.pre.get("scored") is not False and r.post.get("scored") is not False
     ]
     names: list[str] = []
     for r in results:
@@ -165,7 +163,11 @@ def summarize(by_strategy: dict[str, list], threshold: float) -> dict:
                 )
             else:
                 beats_nothing = fl["mean_post_max"] < np["mean_post_max"]
-                basis = f"{basis} + beats noop" if beats_nothing else f"{basis} but NOT better than noop"
+                basis = (
+                    f"{basis} + beats noop"
+                    if beats_nothing
+                    else f"{basis} but NOT better than noop"
+                )
         summary["thesis_pass"] = bool(comparable and better and similarity_ok and beats_nothing)
         summary["thesis_basis"] = basis
         if not comparable:
@@ -183,7 +185,9 @@ def render(by_strategy: dict[str, list], threshold: float) -> str:
     lines: list[str] = []
     lines.append("# untell benchmark\n")
     lines.append(f"Threshold (max-proxy P(AI) for bypass): **{threshold}**\n")
-    lines.append("| Strategy | n | mean pre max | mean post max | bypass rate | mean sim | mean iters |")
+    lines.append(
+        "| Strategy | n | mean pre max | mean post max | bypass rate | mean sim | mean iters |"
+    )
     lines.append("|---|---:|---:|---:|---:|---:|---:|")
     any_unscored = False
     for name, st in s["strategies"].items():

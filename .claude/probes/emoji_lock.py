@@ -1,5 +1,7 @@
 """preserve.lock with emoji/ZWJ/regional-indicator sequences: no corruption, round-trip exact."""
+
 import json, os
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
 from untell.scripts.preserve import lock, restore
 
@@ -16,7 +18,11 @@ for name, t in cases.items():
     restored = restore(masked, mapping)
     out[name] = {
         "roundtrip_exact": restored == t,
-        "emoji_preserved": "👨" in restored or "🇺" in restored or "🧑" in restored or "👍" in restored or "❤" in restored,
+        "emoji_preserved": "👨" in restored
+        or "🇺" in restored
+        or "🧑" in restored
+        or "👍" in restored
+        or "❤" in restored,
         "sentinel_count": sum(1 for k in mapping if k.startswith("⟦")),
     }
 print(json.dumps(out, indent=1))

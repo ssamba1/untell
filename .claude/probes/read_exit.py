@@ -1,7 +1,9 @@
 """read_file_or_exit: every failure -> clean message + exit, never a raw traceback."""
+
 import json, subprocess, sys, os, tempfile
 
-env = dict(os.environ); env["PYTHONPATH"] = ""
+env = dict(os.environ)
+env["PYTHONPATH"] = ""
 script = (
     "import sys\n"
     "from untell.scripts.io_utils import read_file_or_exit\n"
@@ -26,8 +28,15 @@ with tempfile.NamedTemporaryFile(suffix=".txt", delete=False) as bf:
 
 out = {}
 for name, path in cases.items():
-    r = subprocess.run([sys.executable, runner, path], capture_output=True, text=True, env=env, timeout=60)
-    out[name] = {"exit": r.stdout.strip(), "stderr_tb": "Traceback" in r.stderr, "stderr_len": len(r.stderr)}
+    r = subprocess.run(
+        [sys.executable, runner, path], capture_output=True, text=True, env=env, timeout=60
+    )
+    out[name] = {
+        "exit": r.stdout.strip(),
+        "stderr_tb": "Traceback" in r.stderr,
+        "stderr_len": len(r.stderr),
+    }
 os.unlink(runner)
-if cases.get("binary"): os.unlink(cases["binary"])
+if cases.get("binary"):
+    os.unlink(cases["binary"])
 print(json.dumps(out, indent=1))

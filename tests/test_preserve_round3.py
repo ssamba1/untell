@@ -5,6 +5,7 @@ output (see goals/results/20260815_204928-2.md). NER-safe: assertions check
 that the FACT lands inside one sentinel, not exact sentinel counts, because
 en_core_web_sm may add entity spans that merge with the regex locks.
 """
+
 import pytest
 
 from untell.scripts.preserve import lock, restore

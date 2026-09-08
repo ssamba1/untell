@@ -78,9 +78,7 @@ def _cli_defaults(build_parser) -> dict:
 
 def _rest_defaults(model) -> dict:
     return {
-        name: field.default
-        for name, field in model.model_fields.items()
-        if name not in _CLI_ONLY
+        name: field.default for name, field in model.model_fields.items() if name not in _CLI_ONLY
     }
 
 
@@ -98,10 +96,18 @@ def _operations():
 
     tools = _mcp_tools()
     return [
-        ("humanize", _cli_defaults(humanize_parser), _rest_defaults(api.HumanizeRequest),
-         _mcp_defaults(tools["untell"])),
-        ("verify", _cli_defaults(verify_parser), _rest_defaults(api.VerifyRequest),
-         _mcp_defaults(tools["verify_commercial"])),
+        (
+            "humanize",
+            _cli_defaults(humanize_parser),
+            _rest_defaults(api.HumanizeRequest),
+            _mcp_defaults(tools["untell"]),
+        ),
+        (
+            "verify",
+            _cli_defaults(verify_parser),
+            _rest_defaults(api.VerifyRequest),
+            _mcp_defaults(tools["verify_commercial"]),
+        ),
     ]
 
 
@@ -153,8 +159,19 @@ def test_no_surface_is_missing_a_parameter_another_one_has(operation):
     # reproducibility JSON *file* as a side effect of the run. It is output routing to a
     # filesystem the REST/MCP surfaces have no concept of, so there is nothing for them to
     # mirror — the loop result dict they return is unchanged.
-    allowed = {"browser", "sim_bar", "scrub", "detector_thresholds", "confirm", "n",
-               "include_matches", "diff", "timings", "html", "manifest"}
+    allowed = {
+        "browser",
+        "sim_bar",
+        "scrub",
+        "detector_thresholds",
+        "confirm",
+        "n",
+        "include_matches",
+        "diff",
+        "timings",
+        "html",
+        "manifest",
+    }
     unexpected = {k: v for k, v in missing.items() if k not in allowed}
     assert not unexpected, f"{name}: parameter present on some surfaces only: {unexpected}"
 
@@ -194,8 +211,11 @@ def test_no_cli_accepts_a_narrower_tier_vocabulary_than_the_loader():
     # A literal `choices=[...]` list attached to a --tier argument, however the call is wrapped.
     pattern = re.compile(r'"--tier".{0,400}?choices=\[([^\]]*)\]', re.S)
     checked, narrow = 0, []
-    for path in sorted(list(root.glob("untell/**/*.py")) + list(root.glob("eval/*.py"))
-                       + list(root.glob("training/*.py"))):
+    for path in sorted(
+        list(root.glob("untell/**/*.py"))
+        + list(root.glob("eval/*.py"))
+        + list(root.glob("training/*.py"))
+    ):
         for match in pattern.finditer(path.read_text(encoding="utf-8")):
             checked += 1
             listed = set(re.findall(r'"([^"]*)"', match.group(1)))
@@ -292,8 +312,11 @@ class TestBestOfIsThreeOnEverySurfaceThatHumanizes:
 
         tools = _mcp_tools()
         humanize = next(
-            (fn for name, fn in tools.items()
-             if "best_of" in inspect.signature(fn).parameters and "ceiling" not in name),
+            (
+                fn
+                for name, fn in tools.items()
+                if "best_of" in inspect.signature(fn).parameters and "ceiling" not in name
+            ),
             None,
         )
         assert humanize is not None, f"no humanizing MCP tool takes best_of: {sorted(tools)}"
@@ -306,7 +329,8 @@ class TestBestOfIsThreeOnEverySurfaceThatHumanizes:
         model = next(
             m
             for name, m in vars(api).items()
-            if name.endswith("Request") and "best_of" in getattr(m, "model_fields", {})
+            if name.endswith("Request")
+            and "best_of" in getattr(m, "model_fields", {})
             and "ceiling" not in name.lower()
         )
         assert model.model_fields["best_of"].default == 3
@@ -317,8 +341,11 @@ class TestBestOfIsThreeOnEverySurfaceThatHumanizes:
         import untell.api_server as api
 
         ceiling = next(
-            (m for name, m in vars(api).items()
-             if name.endswith("Request") and "ceiling" in name.lower()),
+            (
+                m
+                for name, m in vars(api).items()
+                if name.endswith("Request") and "ceiling" in name.lower()
+            ),
             None,
         )
         if ceiling is None:
@@ -386,9 +413,12 @@ class TestTheSurfacesAgreeOnRANGES_NotJustDefaults:
     @pytest.mark.parametrize(
         "flag,value",
         [
-            ("--threshold", "50"), ("--threshold", "-1"),
-            ("--best-of", "0"), ("--best-of", "10000"),
-            ("--max-iters", "-5"), ("--max-iters", "0"),
+            ("--threshold", "50"),
+            ("--threshold", "-1"),
+            ("--best-of", "0"),
+            ("--best-of", "10000"),
+            ("--max-iters", "-5"),
+            ("--max-iters", "0"),
             ("--margin", "5"),
         ],
     )
@@ -470,9 +500,7 @@ class TestConfigAndEnvGetTheSameRangeChecks:
         assert resolved[key] == shipped, f"{key}={bad} was accepted from untell.yaml"
         assert key in capsys.readouterr().err, "the rejection was silent"
 
-    @pytest.mark.parametrize(
-        "key,good", [("threshold", 0.55), ("max_iters", 9), ("best_of", 7)]
-    )
+    @pytest.mark.parametrize("key,good", [("threshold", 0.55), ("max_iters", 9), ("best_of", 7)])
     def test_an_in_range_value_still_gets_through(self, key, good, monkeypatch):
         """The guard must reject the impossible, not the merely unusual. A rule that dropped valid
         configuration would be a worse bug than the one it fixes, and silent besides."""
@@ -486,7 +514,9 @@ class TestConfigAndEnvGetTheSameRangeChecks:
         from untell.scripts.run import _BEST_OF, _CONFIG_RANGES, _ITERS, _PROBABILITY
 
         for key, parser in (
-            ("threshold", _PROBABILITY), ("max_iters", _ITERS), ("best_of", _BEST_OF)
+            ("threshold", _PROBABILITY),
+            ("max_iters", _ITERS),
+            ("best_of", _BEST_OF),
         ):
             low, high = _CONFIG_RANGES[key]
             cast = int if key != "threshold" else float

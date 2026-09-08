@@ -1,4 +1,5 @@
 """Novel invariants: lock idempotency + restore exactness + similarity symmetry."""
+
 import json
 from untell.scripts.preserve import lock, restore
 from untell.scripts.quality import similarity
@@ -11,17 +12,17 @@ CASES = [
 results = {}
 for i, t in enumerate(CASES):
     m1, map1 = lock(t)
-    m2, map2 = lock(m1)   # lock on masked text: sentinels must be claimed first
+    m2, map2 = lock(m1)  # lock on masked text: sentinels must be claimed first
     restored = restore(m2, map2)
-    results[f"case{i}_lock_idempotent"] = (m1 == m2)
-    results[f"case{i}_restore_exact"] = (restored == t)
+    results[f"case{i}_lock_idempotent"] = m1 == m2
+    results[f"case{i}_restore_exact"] = restored == t
 
 # similarity symmetry: sim(a,b) == sim(b,a)?
 a = "The system utilizes a comprehensive methodology throughout the year."
 b = "The system uses a wide-ranging methodology throughout the year."
 s_ab = similarity(a, b)
 s_ba = similarity(b, a)
-results["sim_symmetric"] = (s_ab == s_ba)
+results["sim_symmetric"] = s_ab == s_ba
 results["sim_ab"] = round(s_ab, 6)
 results["sim_ba"] = round(s_ba, 6)
 print(json.dumps(results, indent=1))

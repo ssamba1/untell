@@ -165,7 +165,9 @@ def test_an_undocumented_env_var_is_caught(tmp_path, monkeypatch):
     read = set()
     for path in (tmp_path / "untell").rglob("*.py"):
         read |= set(audit.ENV_VAR_RE.findall(path.read_text(encoding="utf-8")))
-    undocumented = [v for v in read if v not in (tmp_path / "README.md").read_text(encoding="utf-8")]
+    undocumented = [
+        v for v in read if v not in (tmp_path / "README.md").read_text(encoding="utf-8")
+    ]
     assert undocumented == ["UNTELL_SECRET_KNOB"]
 
 
@@ -310,7 +312,9 @@ def test_audit_still_fires_for_structural_defect():
     if every failure became a drift, report.failures would always be empty.
     """
     report_with_defect = audit.Report()
-    report_with_defect.check("no live document has a stray control character", False, "BEL found in README:3")
+    report_with_defect.check(
+        "no live document has a stray control character", False, "BEL found in README:3"
+    )
 
     # BREAK: a false statement is in failures.
     assert report_with_defect.failures, "a structural FAIL must appear in report.failures"

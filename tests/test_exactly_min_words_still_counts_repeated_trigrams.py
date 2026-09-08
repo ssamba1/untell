@@ -5,6 +5,7 @@ The mutation < -> <= makes the guard fire AT the minimum (60 words), so a text
 with exactly 60 words and a hammered trigram reads as 0 repeats instead of its
 real count — the detector goes silent exactly at its own boundary.
 """
+
 from untell.scripts.tells import _repeated_trigrams
 
 

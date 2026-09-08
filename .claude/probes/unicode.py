@@ -1,5 +1,7 @@
 """unicode_tricks: scrub removes hidden classes, keeps legitimate text; count agrees with scrub."""
+
 import json, os
+
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
 from untell.attacks.unicode_tricks import scrub_hidden, count_hidden, homoglyph_substitute
 

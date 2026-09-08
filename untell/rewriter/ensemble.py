@@ -92,7 +92,10 @@ class EnsembleRewriter(Rewriter):
     def __init__(self, intensity: float = 0.7, max_subs: int = 12, best_of: int = 3):
         # Ordered so the richest member is LAST — it is the fallback on a non-scoreable tier.
         self._members: list[tuple[str, Rewriter]] = [
-            ("composite", CompositeRewriter(intensity=intensity, max_subs=max_subs, best_of=best_of))
+            (
+                "composite",
+                CompositeRewriter(intensity=intensity, max_subs=max_subs, best_of=best_of),
+            )
         ]
         try:
             from .mt_pivot import MTPivotRewriter
@@ -164,8 +167,11 @@ class EnsembleRewriter(Rewriter):
                     logger.warning(
                         "ensemble member %r failed and is being skipped (%s: %s); the ensemble is "
                         "now selecting over %d of %d members.",
-                        _name, type(exc).__name__, str(exc)[:120],
-                        live, len(self._members),
+                        _name,
+                        type(exc).__name__,
+                        str(exc)[:120],
+                        live,
+                        len(self._members),
                     )
                 continue
             if not cand.strip() or cand == text:

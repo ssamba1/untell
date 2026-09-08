@@ -27,8 +27,10 @@ def rw(monkeypatch):
 
 def _fixed(text_map, default=None):
     """A stub generator returning a scripted output per input."""
+
     def _gen(self, text, *, sentence=False):
         return text_map.get(text.strip(), default if default is not None else text)
+
     return _gen
 
 
@@ -62,7 +64,9 @@ class TestSentinelsSurviveTheModel:
     def test_a_faithful_paraphrase_around_the_markers_keeps_them(self):
         masked, _ = lock("Smith et al. (2020) found 47 cases in version 1.2.3.")
         shielded, back = lp._shield_sentinels(masked)
-        assert lp._sentinels_intact(masked, lp._unshield(shielded.replace("found", "reported"), back))
+        assert lp._sentinels_intact(
+            masked, lp._unshield(shielded.replace("found", "reported"), back)
+        )
 
 
 class TestOnlyEverHelpPerSentence:
@@ -75,8 +79,10 @@ class TestOnlyEverHelpPerSentence:
         assert rw.rewrite(source, {"max": 0.9}, 0.3) == source
 
     def test_a_document_whose_sentences_all_revert_comes_back_unchanged(self, rw, monkeypatch):
-        text = ("The trial enrolled adults at three separate clinical sites. "
-                "The results were published after review by an independent panel.")
+        text = (
+            "The trial enrolled adults at three separate clinical sites. "
+            "The results were published after review by an independent panel."
+        )
         monkeypatch.setattr(rw, "_sentence_is_faithful", lambda *_: False)
         monkeypatch.setattr(type(rw), "_generate_once", _fixed({}, default="x"), raising=False)
         assert rw.rewrite(text, {"max": 0.9}, 0.3) == text
@@ -104,8 +110,10 @@ class TestTheDocumentBudget:
         # Each rewrite is faithful by the guard but drops three words.
         monkeypatch.setattr(rw, "_sentence_is_faithful", lambda *_: True)
         monkeypatch.setattr(
-            type(rw), "_generate_once",
-            _fixed({}, default="alpha beta gamma delta epsilon zeta eta."), raising=False
+            type(rw),
+            "_generate_once",
+            _fixed({}, default="alpha beta gamma delta epsilon zeta eta."),
+            raising=False,
         )
         out = rw.rewrite(text, {"max": 0.9}, 0.3)
         lost = len(text.split()) - len(out.split())
@@ -118,7 +126,8 @@ class TestTheDocumentBudget:
         text = " ".join([sentence] * 10)
         monkeypatch.setattr(rw, "_sentence_is_faithful", lambda *_: True)
         monkeypatch.setattr(
-            type(rw), "_generate_once",
+            type(rw),
+            "_generate_once",
             _fixed({}, default="alpha beta gamma delta epsilon zeta eta theta iota lambda."),
             raising=False,
         )
@@ -186,18 +195,24 @@ class TestGenerationIsReproducible:
 
 
 class TestPreambleStripping:
-    @pytest.mark.parametrize("raw,want", [
-        ("Here is the rewritten text:\nReal content follows.", "Real content follows."),
-        ("```\nFenced body text.\n```", "Fenced body text."),
-        ('"Wrapped in quotes."', "Wrapped in quotes."),
-    ])
+    @pytest.mark.parametrize(
+        "raw,want",
+        [
+            ("Here is the rewritten text:\nReal content follows.", "Real content follows."),
+            ("```\nFenced body text.\n```", "Fenced body text."),
+            ('"Wrapped in quotes."', "Wrapped in quotes."),
+        ],
+    )
     def test_announcing_wrappers_are_removed(self, raw, want):
         assert lp._strip_preamble(raw) == want
 
-    @pytest.mark.parametrize("raw", [
-        "The study found three things. It also noted a caveat.",
-        "The committee reached the following conclusions after reviewing every dataset at length:\nOne.",
-    ])
+    @pytest.mark.parametrize(
+        "raw",
+        [
+            "The study found three things. It also noted a caveat.",
+            "The committee reached the following conclusions after reviewing every dataset at length:\nOne.",
+        ],
+    )
     def test_real_content_is_never_removed(self, raw):
         """A caveat that eats prose is worse than no caveat."""
         assert lp._strip_preamble(raw) == raw

@@ -194,8 +194,10 @@ def test_local_max_is_not_counted_as_its_own_checker():
         "threshold": 0.30,
     }
     # commercial_detectors is imported lazily inside verify(), so patch it at its source module.
-    with patch.object(v, "score_text", return_value=fake), \
-         patch.object(C, "commercial_detectors", return_value=[]):
+    with (
+        patch.object(v, "score_text", return_value=fake),
+        patch.object(C, "commercial_detectors", return_value=[]),
+    ):
         r = v.verify("some text to verify here", tier="full")
 
     assert r["n_configured"] == 2, f"counted the summary row: {r['configured']}"

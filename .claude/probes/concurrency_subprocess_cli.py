@@ -6,6 +6,7 @@ JSON). Any difference across processes = process-level determinism break.
 
 Run:  PYTHONPATH= UNTELL_LITE_NO_TORCH=1 .venv/Scripts/python.exe .claude/probes/concurrency_subprocess_cli.py
 """
+
 from __future__ import annotations
 
 import json
@@ -39,10 +40,22 @@ def env() -> dict:
 
 def main() -> int:
     SAMPLE.write_text(TEXT, encoding="utf-8")
-    cmd = [str(PY), "-m", "untell.scripts.score", "--file", str(SAMPLE), "--tier", "lite", "--quiet"]
+    cmd = [
+        str(PY),
+        "-m",
+        "untell.scripts.score",
+        "--file",
+        str(SAMPLE),
+        "--tier",
+        "lite",
+        "--quiet",
+    ]
 
     t0 = time.time()
-    procs = [subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env()) for _ in range(4)]
+    procs = [
+        subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env())
+        for _ in range(4)
+    ]
     outs: list[tuple[int, bytes, bytes]] = []
     for p in procs:
         out, err = p.communicate(timeout=180)
@@ -64,8 +77,10 @@ def main() -> int:
         for i, b in enumerate(raw):
             print(f"  proc{i}: {b[:120]!r}")
     else:
-        print(f"[subprocess] all 4 stdout byte-identical ({len(raw[0])} bytes, sha256 "
-              f"{__import__('hashlib').sha256(raw[0]).hexdigest()[:12]})")
+        print(
+            f"[subprocess] all 4 stdout byte-identical ({len(raw[0])} bytes, sha256 "
+            f"{__import__('hashlib').sha256(raw[0]).hexdigest()[:12]})"
+        )
 
     # Also verify the parsed JSON matches and scores are present
     try:
@@ -76,7 +91,9 @@ def main() -> int:
         scores = {p["detectors"]["perplexity_burstiness"] for p in parsed}
         if len(scores) != 1:
             FINDINGS.append(f"perplexity_burstiness score differs across processes: {scores}")
-        print(f"[subprocess] parsed JSON identical: {len(parsed) == 4 and len({str(p) for p in parsed}) == 1}")
+        print(
+            f"[subprocess] parsed JSON identical: {len(parsed) == 4 and len({str(p) for p in parsed}) == 1}"
+        )
     except Exception as e:  # noqa: BLE001
         FINDINGS.append(f"could not parse CLI JSON: {e!r}")
 

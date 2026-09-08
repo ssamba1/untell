@@ -7,6 +7,7 @@ the one-empty case, so similarity('', 'hello') falls through to the embedding
 path and returns ~0.51 (measured) — an empty string reads as half-similar to
 real text, defeating the gate.
 """
+
 from untell.scripts.quality import similarity
 
 

@@ -39,22 +39,40 @@ SENTINEL = "⟦HZ0000⟧"
 
 # (label, masked text, what the span restores to, expected output)
 KEEPS_CASE = [
-    ("numbered dot", f"1. {SENTINEL}'s rate is the open question.", "untell",
-     "1. untell's rate is the open question."),
-    ("numbered paren", f"1) {SENTINEL}'s rate is the open question.", "untell",
-     "1) untell's rate is the open question."),
-    ("double digit", f"12. {SENTINEL}'s rate is the open question.", "untell",
-     "12. untell's rate is the open question."),
-    ("indented", f"  3. {SENTINEL} is the open question.", "untell",
-     "  3. untell is the open question."),
-    ("mid document", f"Prior work is cited.\n\n2. {SENTINEL} is the open question.", "untell",
-     "Prior work is cited.\n\n2. untell is the open question."),
+    (
+        "numbered dot",
+        f"1. {SENTINEL}'s rate is the open question.",
+        "untell",
+        "1. untell's rate is the open question.",
+    ),
+    (
+        "numbered paren",
+        f"1) {SENTINEL}'s rate is the open question.",
+        "untell",
+        "1) untell's rate is the open question.",
+    ),
+    (
+        "double digit",
+        f"12. {SENTINEL}'s rate is the open question.",
+        "untell",
+        "12. untell's rate is the open question.",
+    ),
+    (
+        "indented",
+        f"  3. {SENTINEL} is the open question.",
+        "untell",
+        "  3. untell is the open question.",
+    ),
+    (
+        "mid document",
+        f"Prior work is cited.\n\n2. {SENTINEL} is the open question.",
+        "untell",
+        "Prior work is cited.\n\n2. untell is the open question.",
+    ),
 ]
 
 
-@pytest.mark.parametrize(
-    "name,masked,span,expected", KEEPS_CASE, ids=[c[0] for c in KEEPS_CASE]
-)
+@pytest.mark.parametrize("name,masked,span,expected", KEEPS_CASE, ids=[c[0] for c in KEEPS_CASE])
 def test_a_list_item_keeps_its_authors_casing(
     name: str, masked: str, span: str, expected: str
 ) -> None:

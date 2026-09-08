@@ -1,4 +1,5 @@
 """API auth invariants: no-key open, key required when set, constant-time, rate limit 0 disables."""
+
 import json, os
 from untell.api_server import _verify_key, _api_key, _rate_limit, _rate_limited
 

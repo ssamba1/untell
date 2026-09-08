@@ -5,16 +5,21 @@ throws hostile config files at load_config: malformed YAML, wrong types,
 deep nesting, unknown keys, empty file, directory-as-config, and checks the
 fallthrough is actually reachable end-to-end.
 """
+
 import sys, json, tempfile, os
 from pathlib import Path
+
 for p in Path(__file__).resolve().parents:
     if (p / "untell" / "__init__.py").exists():
-        sys.path.insert(0, str(p)); break
+        sys.path.insert(0, str(p))
+        break
 
 from untell.config import _try_yaml, _try_pyproject, _coerce
 
+
 def load_yaml_file(path):
     return _try_yaml(Path(path)) or {}
+
 
 HOSTILE = {
     "malformed_yaml": "threshold: [unclosed",

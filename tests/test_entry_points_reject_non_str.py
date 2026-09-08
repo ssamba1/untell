@@ -5,21 +5,22 @@ Fuzz-found: bytes input (e.g. a file read in binary mode) raised an internal
 TypeError from deep inside the normalisers. The public entry points must
 name the contract: text must be str.
 """
+
 import pytest
 
 from untell.scripts.run import untell_text
 from untell.scripts.score import score_text
 
 BAD_INPUTS = [
-    b"hello world",        # utf-8 bytes
-    b"\x00\x01\x02",       # binary bytes
-    b"\xff" * 10,          # invalid-utf8 bytes
-    bytearray(b"test"),    # bytearray
-    memoryview(b"test"),   # memoryview
-    12345,                 # int
-    None,                  # None
+    b"hello world",  # utf-8 bytes
+    b"\x00\x01\x02",  # binary bytes
+    b"\xff" * 10,  # invalid-utf8 bytes
+    bytearray(b"test"),  # bytearray
+    memoryview(b"test"),  # memoryview
+    12345,  # int
+    None,  # None
     ["list", "of", "words"],  # list
-    {"text": "dict"},      # dict
+    {"text": "dict"},  # dict
 ]
 
 
