@@ -264,13 +264,26 @@ _TRANSITIONS = [
     "Nonetheless", "Similarly", "Alternatively", "Indeed", "Essentially", "Arguably",
     "In essence", "That said", "On the other hand",
 ]
+# `[^\S\n]*`, never `\s*`, after a MULTILINE `^`.
+#
+# `\s` matches `\n`, so `^\s*` at a line start can consume the entire following run of blank
+# lines and then backtrack one character at a time when the alternation fails. With `re.MULTILINE`
+# the anchor also matches after EVERY newline, so a document of N bare newlines costs O(N^2).
+# MEASURED: `untell tells` on 100k newlines did not finish -- five patterns here hung the whole
+# test suite (tests/test_scale_ceilings.py::test_all_newlines_score_tells), and CI's lite job never
+# reached them because collection aborted first.
+#
+# `[^\S\n]` is horizontal whitespace only, so the newline run cannot be consumed and the blowup
+# is structurally impossible. Detection is unchanged -- `^` already matches at each line start, so
+# the only difference is that a span no longer includes the newlines in front of it. Verified over
+# 600 real documents x 5 patterns: identical match counts, 0 mismatches.
 _TRANSITION_OPENER_RE = re.compile(
-    r"(?:^|(?<=[.!?]\s))\s*(" + "|".join(_TRANSITIONS) + r")\b", re.IGNORECASE | re.MULTILINE
+    r"(?:^|(?<=[.!?]\s))[^\S\n]*(" + "|".join(_TRANSITIONS) + r")\b", re.IGNORECASE | re.MULTILINE
 )
 
 # Reader-steering adverb openers (§20).
 _STEER_RE = re.compile(
-    r"(?:^|(?<=[.!?]\s))\s*(Interestingly|Notably|Importantly|Surprisingly|Crucially|Remarkably),",
+    r"(?:^|(?<=[.!?]\s))[^\S\n]*(Interestingly|Notably|Importantly|Surprisingly|Crucially|Remarkably),",
     re.IGNORECASE | re.MULTILINE,
 )
 
@@ -438,7 +451,7 @@ _APHORISM_RE = re.compile(
 
 # Theatrical rhetorical openers used as standalone hooks.
 _RHETORICAL_OPENER_RE = re.compile(
-    r"(?:^|(?<=[.!?]\s))\s*(?:Honestly\?|Look,|Here'?s the thing|The thing is,|Truth is,)",
+    r"(?:^|(?<=[.!?]\s))[^\S\n]*(?:Honestly\?|Look,|Here'?s the thing|The thing is,|Truth is,)",
     re.IGNORECASE | re.MULTILINE,
 )
 
@@ -532,7 +545,7 @@ _CLICHE_RE = re.compile(r"\b(" + "|".join(_CLICHES) + r")\b", re.IGNORECASE)
 
 # Sycophancy / preamble + closing meta + chatbot artifacts (§9, §10, §14).
 _SYCOPHANCY_RE = re.compile(
-    r"(?:^|(?<=[.!?]\s)|(?<=\n))\s*(Certainly!|Absolutely!|Great question!|"
+    r"(?:^|(?<=[.!?]\s)|(?<=\n))[^\S\n]*(Certainly!|Absolutely!|Great question!|"
     r"Sure,? here'?s|Let me (?:break this down|walk you through)|You'?re absolutely right)",
     re.IGNORECASE | re.MULTILINE,
 )
@@ -586,7 +599,7 @@ _FALSE_RANGE_RE = re.compile(
 # after `R` succeeds (the next character `*` is not a word char); `__TL;DR__` does not match the
 # `\b` (underscore IS a word char) — acceptable, that form is far less common in AI output.
 _MARKDOWN_ARTIFACT_RE = re.compile(
-    r"^\s*(?:#{1,6}\s*|(?:\*{1,3}|_{1,3})\s*)?(?:key takeaways?|key points?|tl;?dr|in a nutshell)\b"
+    r"^[^\S\n]*(?:#{1,6}[^\S\n]*|(?:\*{1,3}|_{1,3})[^\S\n]*)?(?:key takeaways?|key points?|tl;?dr|in a nutshell)\b"
     r"|^#{1,6}\s.*[\U0001F300-\U0001FAFF✅✨]",  # TL;DR/Key-Takeaways blocks, or emoji headers
     re.MULTILINE | re.IGNORECASE,
 )
@@ -895,7 +908,11 @@ def _semicolon_crutch(text: str) -> int:
 #       2022-era and later models do emit typographic quotes — but not on today's evidence.
 _FENCE_RE = re.compile(r"(?ms)^```.*?^```")
 _HEADING_RE = re.compile(r"(?m)^#{1,6}\s+(.+)$")
-_DIFF_ANCHOR_RE = re.compile(r"(?m)^\s*\+\s+\w")
+# Horizontal whitespace only, for the reason recorded above `_TRANSITION_OPENER_RE`:
+# `(?m)^\\s*` is quadratic on a run of blank lines, and this pattern alone took 17.9s of the
+# 18.3s that `score_tells("\\n" * 100_000)` spent. A diff anchor lives on ONE line, so
+# neither gap was ever meant to cross a newline.
+_DIFF_ANCHOR_RE = re.compile(r"(?m)^[^\S\n]*\+[^\S\n]+\w")
 # Skipped when deciding whether a heading is title-cased: capitalising these is what distinguishes
 # real Title Case from a merely capitalised sentence, so counting them would flag both.
 _TITLE_STOPWORDS = frozenset(
