@@ -5,9 +5,17 @@ The mutation >= -> > demotes count==3 from red to yellow, silently lowering the
 severity of the worst tells. The markup passed to Table.add_row is the
 observable — count 3 must carry "[red]", count 2 must carry "[yellow]".
 """
-from rich.table import Table
 
-import untell.rich_output as rich_output
+import pytest
+
+# Without this the module raised ImportError at COLLECTION, which aborts the whole run
+# (`Interrupted: N errors during collection`) rather than skipping one file. That is why
+# the lite CI job reported "7 skipped, 127 deselected, 6 errors" and ran no tests at all.
+pytest.importorskip("rich")
+
+from rich.table import Table  # noqa: E402
+
+import untell.rich_output as rich_output  # noqa: E402
 
 
 def _capture(monkeypatch, tells):

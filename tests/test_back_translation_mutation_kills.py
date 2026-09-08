@@ -13,6 +13,8 @@ Mutation names match `python .claude/mutate.py untell/attacks/back_translation.p
 
 from __future__ import annotations
 
+import pytest
+
 from untell.attacks.back_translation import BackTranslator
 
 
@@ -55,10 +57,26 @@ def _bt_with_fakes():
     return bt, tok, model
 
 
+def _needs_the_translation_stack() -> None:
+    """Skip unless the real MarianMT path can run.
+
+    These six drive `BackTranslator` itself, which imports torch inside `_translate`
+    (back_translation.py:122) and transformers when it builds a pipeline. The fakes above replace
+    the MODEL, not the stack around it. Without the guard they did not skip on a lite install --
+    four raised ModuleNotFoundError and two failed an assertion instead, because the code
+    degrades to returning its input rather than raising. The other ten tests in this file are
+    pure-stdlib and keep running.
+    """
+    pytest.importorskip("torch")
+    pytest.importorskip("transformers")
+
+
 class TestAvailability:
     """`available()` and the empty-input guard (lines 35-36, 136)."""
 
     def test_back_translate_runs_the_round_trip(self, monkeypatch):
+
+        _needs_the_translation_stack()
         # back_translation.py:35  constant: False -> True   (import-failure branch)
         # back_translation.py:36  constant: True -> False   (success branch)
         # The dependencies are importable here, so `available()` is True and the round
@@ -78,6 +96,8 @@ class TestPipeCache:
     """`_pipe` cache hit path (line 40)."""
 
     def test_pipe_uses_the_cache_when_present(self, monkeypatch):
+
+        _needs_the_translation_stack()
         # back_translation.py:40  membership: not in -> in
         # With the pair already cached, `_pipe` must return it without touching
         # transformers. The mutated membership enters the load branch and calls
@@ -186,22 +206,30 @@ class TestTranslateCallContract:
         return out, tok, model
 
     def test_translate_requests_truncation_at_the_models_cap(self):
+
+        _needs_the_translation_stack()
         # back_translation.py:127  constant: True -> False   (truncation=True)
         out, tok, model = self._translate_once()
         assert out == "fake-translation"
         assert tok.call_kwargs[-1]["truncation"] is True
 
     def test_translate_requests_padding(self):
+
+        _needs_the_translation_stack()
         # back_translation.py:128  constant: True -> False   (padding=True)
         _, tok, _ = self._translate_once()
         assert tok.call_kwargs[-1]["padding"] is True
 
     def test_translate_generates_with_four_beams(self):
+
+        _needs_the_translation_stack()
         # back_translation.py:130  constant: 4 -> 5   (num_beams=4)
         _, _, model = self._translate_once()
         assert model.generate_kwargs["num_beams"] == 4
 
     def test_translate_decodes_skipping_special_tokens(self):
+
+        _needs_the_translation_stack()
         # back_translation.py:131  constant: True -> False   (skip_special_tokens=True)
         _, tok, _ = self._translate_once()
         assert tok.decode_kwargs[-1]["skip_special_tokens"] is True

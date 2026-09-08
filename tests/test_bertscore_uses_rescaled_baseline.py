@@ -6,9 +6,17 @@ bar (raw F1 would sit ~0.93+ and need a different bar, per the comment). The
 mutation True -> False silently switches the scorer to its raw scale. Pinned by
 capturing the constructor kwargs via monkeypatched bert_score.BERTScorer.
 """
-import bert_score
 
-import untell.scripts.quality as quality
+import pytest
+
+# Without this the module raised ImportError at COLLECTION, which aborts the whole run
+# (`Interrupted: N errors during collection`) rather than skipping one file. That is why
+# the lite CI job reported "7 skipped, 127 deselected, 6 errors" and ran no tests at all.
+pytest.importorskip("bert_score")
+
+import bert_score  # noqa: E402
+
+import untell.scripts.quality as quality  # noqa: E402
 
 
 def test_bertscore_constructed_with_rescale(monkeypatch):

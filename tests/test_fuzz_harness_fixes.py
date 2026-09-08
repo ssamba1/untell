@@ -293,9 +293,20 @@ class TestCliPrintingSurvivesSurrogates:
         # suite is the one whose environment these tests mean to exercise.
         py = sys.executable
         env = {"PYTHONPATH": "", "PYTHONUTF8": "1"}
-        # a lone surrogate in the text position; scrub prints it back
+        # A lone surrogate in the text position; scrub prints it back.
+        #
+        # U+DCFF, not U+D800. On POSIX `execve` takes BYTES, so Python encodes argv with the
+        # filesystem encoding and surrogateescape — which maps only U+DC80..U+DCFF back to raw
+        # bytes. Every other lone surrogate is unencodable, so `subprocess.run` raised
+        # UnicodeEncodeError *in the parent* and this test failed on Linux without the child ever
+        # starting. It passed on Windows, where argv is UTF-16 and carries any surrogate, which is
+        # where it was written.
+        #
+        # The surrogateescape range is also the case that actually occurs: an argv byte the OS
+        # hands over that is not valid UTF-8 reaches Python as exactly one of these. So this is
+        # both the runnable test and the realistic one, and it still covers Windows.
         proc = subprocess.run(
-            [str(py), "-m", "untell.scripts.scrub", "text with \ud800 surrogate"],
+            [str(py), "-m", "untell.scripts.scrub", "text with \udcff surrogate"],
             capture_output=True, text=True, encoding="utf-8", errors="replace",
             timeout=30, cwd=repo, stdin=subprocess.DEVNULL, env=env,
         )
@@ -316,7 +327,9 @@ class TestCliPrintingSurvivesSurrogates:
         # CreateProcess rejects an embedded NUL in argv; the harness sanitises that
         # case before spawning.)
         proc = subprocess.run(
-            [str(py), "-m", "untell.scripts.score", "--tier", "lite\udb87", "hello"],
+            # U+DCFF for the reason given in the test above: on POSIX only U+DC80..U+DCFF survive
+            # argv encoding, so "lite\udb87" could never reach the child on Linux.
+            [str(py), "-m", "untell.scripts.score", "--tier", "lite\udcff", "hello"],
             capture_output=True, text=True, encoding="utf-8", errors="replace",
             timeout=30, cwd=repo, stdin=subprocess.DEVNULL, env=env,
         )

@@ -6,11 +6,19 @@ for [1,1] vs [1,0] the normalized cosine is 0.707 but the raw dot is 1.0. The
 0.76 gate bar lives on the raw-cosine scale, so the flag is part of the
 measurement contract. Pinned with a fake model so no HF download is needed.
 """
-from unittest.mock import patch
 
-import numpy as np
+import pytest
 
-from untell.scripts.quality import _cosine_similarity
+# Without this the module raised ImportError at COLLECTION, which aborts the whole run
+# (`Interrupted: N errors during collection`) rather than skipping one file. That is why
+# the lite CI job reported "7 skipped, 127 deselected, 6 errors" and ran no tests at all.
+pytest.importorskip("numpy")
+
+from unittest.mock import patch  # noqa: E402
+
+import numpy as np  # noqa: E402
+
+from untell.scripts.quality import _cosine_similarity  # noqa: E402
 
 
 class _FakeModel:

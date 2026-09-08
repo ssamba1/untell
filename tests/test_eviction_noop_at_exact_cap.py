@@ -6,7 +6,15 @@ bucket at the cap boundary is preserved. The mutation <= -> < runs eviction at
 exactly 4096, dropping every stale bucket (here, all of them). Pinned at the
 module-global level.
 """
-import untell.api_server as api_server
+
+import pytest
+
+# Without this the module raised ImportError at COLLECTION, which aborts the whole run
+# (`Interrupted: N errors during collection`) rather than skipping one file. That is why
+# the lite CI job reported "7 skipped, 127 deselected, 6 errors" and ran no tests at all.
+pytest.importorskip("fastapi")
+
+import untell.api_server as api_server  # noqa: E402
 
 
 def test_eviction_noop_at_exact_cap():

@@ -12,10 +12,17 @@ returns, and return everything it marks required.
 from __future__ import annotations
 
 import pytest
-from fastapi.testclient import TestClient
 
-from untell import api_server
-from untell.api_server import app
+# Without this the module raised ImportError at COLLECTION, which aborts the whole run
+# (`Interrupted: N errors during collection`) rather than skipping one file. That is why
+# the lite CI job reported "7 skipped, 127 deselected, 6 errors" and ran no tests at all.
+pytest.importorskip("fastapi")
+
+import pytest  # noqa: E402
+from fastapi.testclient import TestClient  # noqa: E402
+
+from untell import api_server  # noqa: E402
+from untell.api_server import app  # noqa: E402
 
 client = TestClient(app)
 

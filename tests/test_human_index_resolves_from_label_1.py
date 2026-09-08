@@ -7,11 +7,19 @@ unsatisfiable ("label_1" can't contain "human"), so the detector returns None
 — no score at all — instead of 1-P(human). Prior 'needs live model.config'
 note wrong; the seam is a stub model.
 """
-from unittest.mock import patch
 
-import torch
+import pytest
 
-import untell.detectors.mage as mage
+# Without this the module raised ImportError at COLLECTION, which aborts the whole run
+# (`Interrupted: N errors during collection`) rather than skipping one file. That is why
+# the lite CI job reported "7 skipped, 127 deselected, 6 errors" and ran no tests at all.
+pytest.importorskip("torch")
+
+from unittest.mock import patch  # noqa: E402
+
+import torch  # noqa: E402
+
+import untell.detectors.mage as mage  # noqa: E402
 
 
 class _Cfg:

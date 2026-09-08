@@ -954,9 +954,15 @@ class TestTheScoreResponseIsSafeToConsume:
         from untell.detectors import base
 
         client = TestClient(app)
-        detector = next((d for d in base.all_detectors() if d.name == victim), None)
+        # `all_detectors()` returns every REGISTERED detector, available or not — 15 of them on a
+        # lite install where exactly 1 can run. Guarding on `is None` therefore never fires, the
+        # test proceeded to break a detector that was never going to be called, and `tier="full"`
+        # silently fell back to lite. Availability is the predicate this test actually needs.
+        detector = next(
+            (d for d in base.all_detectors() if d.name == victim and d.available()), None
+        )
         if detector is None:
-            pytest.skip(f"{victim} unavailable in this environment")
+            pytest.skip(f"{victim} is not available in this environment")
         cls = type(detector)
         original = cls.score
 
@@ -1010,9 +1016,12 @@ class TestTheScoreResponseIsSafeToConsume:
         from untell.detectors import base
         from untell.scripts.score import score_text
 
-        detector = next((d for d in base.all_detectors() if d.name == "hc3_roberta"), None)
+        # Registration is not availability — see `_with_a_broken_detector` above.
+        detector = next(
+            (d for d in base.all_detectors() if d.name == "hc3_roberta" and d.available()), None
+        )
         if detector is None:
-            pytest.skip("hc3_roberta unavailable")
+            pytest.skip("hc3_roberta is not available in this environment")
         cls = type(detector)
         original = cls.score
 

@@ -7,10 +7,18 @@ which always evaluates to "" (or a falsy operand): every credentialed caller
 lands in the anonymous bucket, so one client's flood throttles all others.
 Pinned by capturing the credential passed to _rate_limited.
 """
-import os
 
 import pytest
-from fastapi.testclient import TestClient
+
+# Without this the module raised ImportError at COLLECTION, which aborts the whole run
+# (`Interrupted: N errors during collection`) rather than skipping one file. That is why
+# the lite CI job reported "7 skipped, 127 deselected, 6 errors" and ran no tests at all.
+pytest.importorskip("fastapi")
+
+import os  # noqa: E402
+
+import pytest  # noqa: E402
+from fastapi.testclient import TestClient  # noqa: E402
 
 import untell.api_server as api_server  # noqa: E402
 

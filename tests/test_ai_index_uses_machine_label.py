@@ -7,11 +7,19 @@ mutation or -> and makes the condition impossible (a label can't both contain
 fallback. For a 2-class model 1-P(human) == P(machine) hides it; a 3-class
 model exposes the wrong index: P(machine)=0.0009 vs 1-P(human)=0.5002.
 """
-from unittest.mock import patch
 
-import torch
+import pytest
 
-import untell.detectors.mage as mage
+# Without this the module raised ImportError at COLLECTION, which aborts the whole run
+# (`Interrupted: N errors during collection`) rather than skipping one file. That is why
+# the lite CI job reported "7 skipped, 127 deselected, 6 errors" and ran no tests at all.
+pytest.importorskip("torch")
+
+from unittest.mock import patch  # noqa: E402
+
+import torch  # noqa: E402
+
+import untell.detectors.mage as mage  # noqa: E402
 
 
 class _Cfg:

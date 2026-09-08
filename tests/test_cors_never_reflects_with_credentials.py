@@ -11,11 +11,18 @@ browser tab away from someone else's text.
 
 from __future__ import annotations
 
-import importlib
-import sys
-
 import pytest
-from fastapi.testclient import TestClient
+
+# Without this the module raised ImportError at COLLECTION, which aborts the whole run
+# (`Interrupted: N errors during collection`) rather than skipping one file. That is why
+# the lite CI job reported "7 skipped, 127 deselected, 6 errors" and ran no tests at all.
+pytest.importorskip("fastapi")
+
+import importlib  # noqa: E402
+import sys  # noqa: E402
+
+import pytest  # noqa: E402
+from fastapi.testclient import TestClient  # noqa: E402
 
 EVIL = "https://evil.example"
 GOOD = "https://good.example"

@@ -240,6 +240,12 @@ def test_first_line_arrives_before_process_exits() -> None:
     )
     proc.stdin.write(THREE_PARA.encode("utf-8"))
     proc.stdin.close()
+    # `communicate()` below flushes `self.stdin` when it is not None, and guards only
+    # BrokenPipeError — a CLOSED stdin raises ValueError("flush of closed file") straight through
+    # it (CPython subprocess.py). stdin has to be closed here, because the child reads to EOF
+    # before emitting anything and the test would otherwise deadlock on readline(). Dropping the
+    # reference is the documented way to have communicate() skip a stream already dealt with.
+    proc.stdin = None
 
     # Block until the first complete line (the first block's result) arrives.
     first_line_bytes = proc.stdout.readline()

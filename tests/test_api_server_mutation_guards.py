@@ -12,7 +12,14 @@ schema-description-only. All recorded as unkillable in survivors.md.
 
 from __future__ import annotations
 
-from untell import api_server as A
+import pytest
+
+# Without this the module raised ImportError at COLLECTION, which aborts the whole run
+# (`Interrupted: N errors during collection`) rather than skipping one file. That is why
+# the lite CI job reported "7 skipped, 127 deselected, 6 errors" and ran no tests at all.
+pytest.importorskip("fastapi")
+
+from untell import api_server as A  # noqa: E402
 
 
 class TestPortFromEnv:
