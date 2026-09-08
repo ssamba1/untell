@@ -13,6 +13,11 @@ Pure-python over the chosen detector + semantic similarity, so it is testable on
 GPU (the surrogate path needs `.[train]` + a trained surrogate dir).
 """
 
+# Required on Python 3.9: without it `list[str] | None` in a signature below is evaluated at
+# def time and raises `TypeError: unsupported operand type(s) for |`. Every other module in
+# training/ already has it, which is why only these two aborted collection on the 3.9 CI job.
+from __future__ import annotations
+
 import os
 import re
 

@@ -40,7 +40,7 @@ import sys
 import time
 from contextlib import asynccontextmanager
 from enum import Enum
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Optional
 
 # Named import failure. `untell-server` is a console script pointing at `main` in this module, so
 # the module is imported before `main` can print anything — on a base (zero-dependency) install
@@ -438,6 +438,19 @@ class ScoreRequest(_Request):
     threshold: _Probability = DEFAULT_THRESHOLD
 
 
+# `Optional[X]` on pydantic model fields below, never `X | None` -- and each carries a
+# `noqa: UP045`, because ruff sees the `from __future__ import annotations` above and concludes
+# PEP 604 is safe here. It is not.
+#
+# The future import makes every annotation a STRING, and pydantic evaluates model annotations when
+# it builds the model. Python 3.9 -- which `requires-python = ">=3.9"` supports and the CI matrix
+# runs -- cannot evaluate a PEP 604 union from a string:
+#
+#     TypeError: Unable to evaluate type annotation '_Style | None'
+#
+# That aborted collection for THIRTEEN test modules on the 3.9 job, so none of them ran. Ordinary
+# function signatures in this file stay `X | None`: nothing evaluates those, and the future import
+# is exactly what keeps them safe. The distinction is "does something call get_type_hints on it".
 class HumanizeRequest(_Request):
     text: str = _TEXT
     # "full", matching the CLI's `--tier` default. The loop OPTIMISES against whatever tier it is
@@ -447,7 +460,7 @@ class HumanizeRequest(_Request):
     # default fixed below: the CLI was strengthened and the network surfaces were left behind.
     tier: _TIER = "full"
     threshold: _Probability = DEFAULT_THRESHOLD
-    style: _Style | None = None
+    style: Optional[_Style] = None  # noqa: UP045
     max_iters: _Iters = 5
     # "composite", matching the CLI and the MCP tool. MEASURED: POST /humanize with defaults
     # returned "no rewriter configured" on any install without an API key, because "auto" is not
@@ -469,17 +482,17 @@ class HumanizeRequest(_Request):
     # dependency, and both change the verdict, which is precisely why dropping them quietly was
     # worse than refusing them.
     confirm: _Confirm = 0
-    detector_thresholds: dict[str, float] | None = None
+    detector_thresholds: Optional[dict[str, float]] = None  # noqa: UP045
     # The CLI takes a FILE path here; over HTTP the sample travels as text. Among candidate
     # rewrites already tied on AI tells, the one whose sentence length, rhythm and comma rate sit
     # closest to this wins — a tie-break inside the 0.02 detector noise band: no cost in AI tells,
     # and up to 0.02 of detector score (measured 0.009 at worst, on 3 of 12). See scripts/voice.py
     # for what it does and does not claim to measure.
-    voice_sample: str | None = Field(default=None, max_length=MAX_INPUT_CHARS)
+    voice_sample: Optional[str] = Field(default=None, max_length=MAX_INPUT_CHARS)  # noqa: UP045
     # Unset derives the stream from the text, so an identical request already returns an identical
     # result. Sent as an int it fixes the stream, which is what makes two requests that differ by
     # one field comparable — otherwise the difference between them includes the draw.
-    seed: _Seed | None = None
+    seed: Optional[_Seed] = None  # noqa: UP045
     # Per-candidate rejection log (issue #33). When True, result["inspect"] carries a list of
     # dicts describing for each sentence whether it was rewritten or left alone, which AI tells
     # fired, and — for every candidate the loop rejected — which gate fired and why. Zero
@@ -503,7 +516,7 @@ class SentencesRequest(_Request):
     tier: _TIER = "lite"
     threshold: _Probability = DEFAULT_THRESHOLD
     # Unset means the worst ~third, which is what this endpoint always returned.
-    top: _Top | None = None
+    top: Optional[_Top] = None  # noqa: UP045
 
 
 class VerifyRequest(_Request):
@@ -511,7 +524,7 @@ class VerifyRequest(_Request):
     threshold: _Probability = DEFAULT_THRESHOLD
     tier: _VERIFY_TIER = "full"
     sandbox: bool = False
-    browser: str | None = None
+    browser: Optional[str] = None  # noqa: UP045
 
 
 class CeilingRequest(_Request):
