@@ -19,6 +19,22 @@ single-request case, where a call stays at its MEASURED 73.2ms median.
 These are timing tests, which are the flakiest kind, so they compare threaded work against the
 identical sequential work in the same process and assert on the *ratio*. A slow machine moves both
 terms together and cancels; only the pathology moves them apart.
+
+⚠️ That cancellation holds for STEADY load and not for a transient spike, which is how this test
+failed once in a full-suite run at **2.41x** while passing in isolation, in three repeats, in a
+140-file replay of everything that runs before it, and in a second full-suite run byte-identical to
+the baseline. A spike landing in one trial's threaded half inflates that trial permanently, and a
+median over five trials moves once three of them are hit.
+
+So the estimator is the MINIMUM of the paired ratios rather than their median. Noise only ever adds
+time, so the least-contaminated trial is the best estimate of the true cost — and one bad trial
+cannot move a minimum at all. MEASURED on this machine, 12 reps against 8 competing CPU-bound
+processes: min-of-ratios stayed within 0.98-1.06, median-of-ratios reached 1.32.
+
+Two estimators were tried and rejected on measurement rather than taste. `min(threaded) /
+min(sequential)` takes its two terms from DIFFERENT trials, which breaks the pairing that makes load
+cancel; it was the worst of the three under load (1.69 on one rep where the median gave 1.12).
+Widening the bar was not tried, because it would have weakened the test to hide a noisy estimator.
 """
 
 from __future__ import annotations
@@ -37,8 +53,13 @@ _TEXT = ("Moreover, the system processes data efficiently. Furthermore, it is im
 _counter = itertools.count()
 
 # Observed with the lock: 0.96-1.22 over seven trials, median 1.06. Observed without it: 3.17-4.13.
-# 2.0 sits clear of the first and well under the second, so it separates the two states rather than
-# tracking either closely.
+#
+# RE-MEASURED on a 4-core machine with the lock replaced by `contextlib.nullcontext()`, which is the
+# positive control for this whole file: **14.66-23.39x**, min-of-ratios 14.66 at its lowest. The
+# original 3.17-4.13 stands as what was seen where it was taken; the pathology is simply far larger
+# here, and the two readings are recorded rather than one replacing the other. Either way 2.0 sits
+# clear of the healthy state and nowhere near the broken one, so the bar is unchanged — a bar moved
+# to quiet a noisy estimator would be the wrong fix, and the estimator is what changed.
 MAX_THREADED_RATIO = 2.0
 TRIALS = 5
 CONCURRENCY = 4
@@ -50,30 +71,51 @@ def _unique() -> str:
     return f"Report {next(_counter)}. " + _TEXT
 
 
-def _ratio(call) -> float:
-    start = time.perf_counter()
-    for _ in range(CONCURRENCY):
-        call()
-    sequential = time.perf_counter() - start
+def _ratio(call, threaded_first: bool = False) -> float:
+    """One paired measurement: the same work on threads, over the same work in turn.
 
-    threads = [threading.Thread(target=call) for _ in range(CONCURRENCY)]
-    start = time.perf_counter()
-    for thread in threads:
-        thread.start()
-    for thread in threads:
-        thread.join()
-    threaded = time.perf_counter() - start
+    `threaded_first` alternates which half runs first. Whichever goes second inherits whatever the
+    first left behind — a warmed allocator, a GC generation due — and always running them in the
+    same order folds that bias into every trial identically, where alternating cancels it.
+    """
+    def sequential_pass() -> float:
+        start = time.perf_counter()
+        for _ in range(CONCURRENCY):
+            call()
+        return time.perf_counter() - start
+
+    def threaded_pass() -> float:
+        threads = [threading.Thread(target=call) for _ in range(CONCURRENCY)]
+        start = time.perf_counter()
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+        return time.perf_counter() - start
+
+    if threaded_first:
+        threaded = threaded_pass()
+        sequential = sequential_pass()
+    else:
+        sequential = sequential_pass()
+        threaded = threaded_pass()
     return threaded / sequential if sequential > 0 else float("inf")
 
 
-def _median_ratio(call) -> float:
+def _stable_ratio(call) -> float:
+    """The smallest paired ratio over `TRIALS`, which is the least-contaminated one.
+
+    NOT the median: see the module docstring. The pathology this file exists for is systematic —
+    every trial shows it — so taking the best trial costs no detection power, MEASURED at 14.66x
+    with the lock removed against 0.85-1.08 with it.
+    """
     call()  # warm: the first call pays the spaCy model load
-    return statistics.median(_ratio(call) for _ in range(TRIALS))
+    return min(_ratio(call, threaded_first=i % 2 == 1) for i in range(TRIALS))
 
 
 def test_threaded_ner_is_not_slower_than_sequential_ner():
     """The defect, at the component where it actually lives."""
-    ratio = _median_ratio(lambda: preserve._spacy_entity_spans(_unique()))
+    ratio = _stable_ratio(lambda: preserve._spacy_entity_spans(_unique()))
     assert ratio < MAX_THREADED_RATIO, (
         f"{CONCURRENCY} concurrent NER passes took {ratio:.2f}x the time of running them one after "
         f"another. Threads are supposed to cost nothing here, not multiply the work — check that "
@@ -84,7 +126,7 @@ def test_threaded_scoring_is_not_slower_than_sequential_scoring():
     """The same property at the level a request actually sees."""
     from untell.scripts.score import score_text
 
-    ratio = _median_ratio(lambda: score_text(_unique(), tier="lite"))
+    ratio = _stable_ratio(lambda: score_text(_unique(), tier="lite"))
     assert ratio < MAX_THREADED_RATIO, (
         f"{CONCURRENCY} concurrent score_text calls took {ratio:.2f}x sequential")
 
@@ -126,5 +168,5 @@ def test_the_pure_python_components_were_never_the_problem(component, call):
     If these ever went superlinear too, the cause would not be spaCy and the lock would be the wrong
     answer. Keeping them measured is what makes the NER result mean something.
     """
-    ratio = _median_ratio(call)
+    ratio = _stable_ratio(call)
     assert ratio < MAX_THREADED_RATIO, f"{component} now degrades on threads too: {ratio:.2f}x"
