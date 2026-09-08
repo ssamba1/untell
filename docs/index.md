@@ -72,6 +72,7 @@ Run `untell-audit` to re-check the claims in these documents against the code as
 - **[Measured: the free evasion ceiling](free-ceiling-measured.md)** — the full log, 229 results
 - **[Summary: the free-ceiling report](free-ceiling-report.md)** — the short version
 - **[Humanizer comparison](humanizer-comparison.md)** — untell vs every free technique
+- **[Head-to-head: a competitor's outputs through our gates](head-to-head-measured.md)** — the first comparison made by running something of theirs rather than reading their paper
 - **[The 435-repo census](humanizer-census.md)** — what this field is actually made of
 - **[Why this is the most rigorous open detector audit](why-best-open-repo.md)** — the argument, with its corrections
 - **[Training runbook](free-training-runbook.md)** — the GPU path (RL against the ensemble)

@@ -42,6 +42,7 @@ ENTRY_POINTS: list[tuple[str, str]] = [
     ("untell-latex", "untell.scripts.latex:main"),
     ("untell-ceiling", "eval.ceiling:main"),
     ("untell-detector-audit", "eval.detector_audit:main"),
+    ("untell-head-to-head", "eval.head_to_head:main"),
     ("untell-distill", "training.distill:main"),
     ("untell-surrogate", "training.surrogate:main"),
     ("untell-eval-policy", "eval.eval_policy:main"),

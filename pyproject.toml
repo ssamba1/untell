@@ -135,6 +135,9 @@ untell-audit = "untell.scripts.audit:main"
 # LaTeX: prose extraction for scoring, plus citation verification against a .bib.
 untell-latex = "untell.scripts.latex:main"
 untell-ceiling = "eval.ceiling:main"
+# Score a COMPETING humanizer's published outputs with our gates — the comparison
+# docs/why-best-open-repo.md had only ever made by reading the other project's paper.
+untell-head-to-head = "eval.head_to_head:main"
 untell-detector-audit = "eval.detector_audit:main"
 untell-distill = "training.distill:main"
 untell-surrogate = "training.surrogate:main"
