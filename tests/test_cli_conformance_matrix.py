@@ -110,9 +110,17 @@ MINIMAL: dict[str, dict] = {
 # Commands whose no-args invocation is a documented VALID run (not a missing-argument
 # error): the dispatcher runs the demo, daemons bind, eval scripts run their default
 # workload. Their "missing required args" contract is covered by their minimal check.
+# Scripts whose every positional is `nargs="?"` — they read stdin, a --file, or nothing at all, so
+# a bare invocation is a valid run rather than a usage error.
+#
+# `untell-scrub` was missing, and the omission was invisible in an environment where the console
+# scripts are not installed: the whole matrix skips without them. It is a filter like the rest —
+# `echo ... | untell-scrub` scrubs and echoes, exit 0 — and its `text` argument is `nargs="?"` with
+# `--file` and stdin as the alternatives.
 NO_REQUIRED_ARGS = {
     "untell", "untell-compare", "untell-mcp", "untell-audit", "untell-ceiling",
     "untell-detector-audit", "untell-distill", "untell-surrogate", "untell-server",
+    "untell-scrub",
 }
 
 
@@ -278,3 +286,16 @@ def test_every_console_script_has_a_matrix_entry():
     ships without a minimal-invocation contract would be invisible to this file."""
     missing = [s for s in _console_scripts() if s not in MINIMAL]
     assert not missing, f"console scripts with no minimal-invocation spec: {missing}"
+
+
+def test_every_exempted_script_is_a_real_console_script():
+    """The exemption list is hand-maintained, which is how `untell-scrub` came to be missing from it.
+
+    This catches the other drift direction: a name that no longer exists silently exempts nothing
+    while looking like it still covers something. It cannot catch a script that SHOULD be exempt and
+    is not — that one shows up as the matrix failing, which is what happened here.
+    """
+    declared = set(_console_scripts())
+    unknown = sorted(NO_REQUIRED_ARGS - declared)
+    assert not unknown, (
+        f"exempted from the required-args check but not declared as console scripts: {unknown}")
