@@ -156,6 +156,17 @@ packages = [
     "untell.rewriter",
     "untell.attacks",
     "eval",
+    # `eval.data` holds two SOURCE modules, not just JSON: `generated_abstracts.py` and
+    # `generated_registers.py` carry the machine-written arm behind the AUROC inversion, and
+    # `tests/test_the_catalogue_reads_register_not_authorship.py` imports them as
+    # `from eval.data.generated_abstracts import ABSTRACTS`. Listing `eval` alone shipped neither,
+    # so a wheel built from this tree was missing modules its own tests import.
+    #
+    # It went unnoticed because the check for it, `test_egg_info_sources_txt_is_not_stale`, reads
+    # `untell.egg-info/SOURCES.txt` — which only exists once somebody installs the package. In an
+    # environment that never ran `pip install -e .` the test skipped, so the one guard against this
+    # was silent precisely where the mistake could be made.
+    "eval.data",
     "training",
 ]
 
