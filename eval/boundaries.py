@@ -146,9 +146,6 @@ EQUIVALENT: dict[tuple[str, str], str] = {
         "MAX * (0.50 - 0.35) / 0.15 == MAX * 1. The piecewise function is continuous there, so "
         "both branches compute the same penalty. IEEE arithmetic separates them by 5.55e-17 and "
         "`humanness` returns round(score * 100.0, 1), which erases it — MEASURED 69.0 either way.",
-    ("untell/humanness.py", 'shape = "uniform" if cv < _BURSTY_IDEAL else "erratic"'):
-        "Reached only when penalty > 0, which requires cv < 0.50 or cv > 1.0. cv == _BURSTY_IDEAL "
-        "(0.70) satisfies neither, so the equality case cannot occur.",
     ("untell/scripts/score.py", "if abs(estimate - _LOCKED_SHARE_BAR) > _LOCK_NOTE_MARGIN:"):
         "Flips only when abs(estimate - 0.50) == 0.15 exactly, and no IEEE double does: a "
         "difference in [0.5, 1) lands on a 2^-53 grid while 0.15 needs the finer grid of "

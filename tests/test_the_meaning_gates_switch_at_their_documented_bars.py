@@ -11,10 +11,9 @@ import json
 
 import pytest
 
-from untell.detectors import perplexity_burstiness as pb
+from untell import humanness as humanness_mod
 from untell.humanness import (
     _BURSTY_FLOOR,
-    _BURSTY_IDEAL,
     _BURSTY_RAMP,
     _MAX_BURSTY_PENALTY,
 )
@@ -129,41 +128,52 @@ def test_the_burstiness_floor_is_a_continuity_point_not_a_switch():
         "any difference this small is erased by round(score * 100.0, 1)")
 
 
-# --- Two more equivalent mutants, recorded rather than faked ---
+# --- What replaced two equivalence arguments that turned out to be wrong ---
 
-def test_the_repetition_signal_floor_cannot_be_killed_by_any_test():
-    """`perplexity_burstiness._repetition_signal` reads::
+def test_the_shape_label_is_taken_from_the_branch_that_set_the_penalty():
+    """`_BURSTY_IDEAL` is gone, and this is what replaced the equivalence argument for it.
 
-        if ttr >= _TTR_FLOOR:
-            return 0.0
-        return clamp01((_TTR_FLOOR - ttr) / (_TTR_FLOOR - _TTR_SATURATION))
+    The label used to be `"uniform" if cv < _BURSTY_IDEAL else "erratic"`, reached only when
+    penalty > 0 — which requires cv < 0.50 or cv > 1.0. 0.70 therefore sat in a gap no input can
+    occupy, so `<` and `<=` could not differ and the mutant was unkillable. It was also arbitrary
+    by its own comment.
 
-    Under `>`, a ttr exactly at the floor falls through instead of returning early — and the
-    fall-through evaluates `(FLOOR - FLOOR) / (FLOOR - SATURATION)`, which is exactly 0.0, the same
-    value the early return gives. The mutant is EQUIVALENT: observationally identical on every
-    input, so it survives every sweep and always will.
+    Deriving the label from the branch removes the comparison instead of excusing it. This pins the
+    behaviour that comparison used to express, on both sides of the unpenalised band.
     """
-    assert pb._TTR_FLOOR != pb._TTR_SATURATION, "a zero denominator would change this analysis"
-    fall_through = (pb._TTR_FLOOR - pb._TTR_FLOOR) / (pb._TTR_FLOOR - pb._TTR_SATURATION)
-    assert max(0.0, min(1.0, fall_through)) == 0.0, (
-        "the fall-through no longer equals the early return — the boundary is now reachable "
-        "and needs a real test")
+    assert not hasattr(humanness_mod, "_BURSTY_IDEAL"), (
+        "the constant is back; if it decides something now it needs a boundary test, and if it "
+        "does not it is a number that decides nothing")
+
+    uniform = _shape_for(cv=0.20)
+    erratic = _shape_for(cv=1.50)
+    assert uniform == "uniform" and erratic == "erratic"
 
 
-def test_the_burstiness_shape_label_boundary_is_unreachable():
-    """`_dominant_signal` reads::
+def test_no_label_is_produced_inside_the_unpenalised_band():
+    """The band between 0.50 and 1.0 carries no penalty, so it names no rhythm at all — which is
+    why the old comparison against 0.70 could never be reached with cv equal to it."""
+    assert _shape_for(cv=0.70) is None
+    assert _shape_for(cv=0.55) is None
 
-        if cv < 0.35:   penalty = MAX
-        elif cv < 0.50: penalty = MAX * (0.50 - cv) / 0.15
-        elif cv > 1.0:  penalty = MAX * 0.5
-        else:           penalty = 0.0
-        if penalty > 0:
-            shape = "uniform" if cv < _BURSTY_IDEAL else "erratic"
 
-    The label line is reached only when `penalty > 0`, which requires `cv < 0.50` or `cv > 1.0`.
-    `cv == _BURSTY_IDEAL` (0.70) satisfies neither, so `<` and `<=` cannot differ there. EQUIVALENT.
-    """
-    reachable = [c / 1000 for c in range(0, 3001) if c / 1000 < 0.50 or c / 1000 > 1.0]
-    assert _BURSTY_IDEAL not in reachable, (
-        "the ideal is now a reachable cv — the shape label needs a real boundary test")
-    assert not any((c < _BURSTY_IDEAL) != (c <= _BURSTY_IDEAL) for c in reachable)
+def _shape_for(cv: float) -> str | None:
+    """The rhythm word `_dominant_signal` puts in its advice, or None when it says nothing."""
+    import re
+
+    from untell import humanness as h
+
+    text = "Some text whose content does not matter to this."
+    original_tells, original_score = h.score_tells, h.score_text
+    try:
+        h.score_tells = lambda t, **kw: {  # noqa: ARG005
+            "burstiness_cv": cv, "tells_per_100w": 0.0, "tells": 0, "by_category": {},
+            "words": 200, "language_supported": True}
+        h.score_text = lambda t, **kw: {"max": 0.5, "scored": True}  # noqa: ARG005
+        message = h._dominant_signal(text, tier="lite")
+    finally:
+        h.score_tells, h.score_text = original_tells, original_score
+    if not message:
+        return None
+    found = re.search(r"driven by (uniform|erratic) sentence rhythm", message)
+    return found.group(1) if found else None

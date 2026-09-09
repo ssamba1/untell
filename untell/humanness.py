@@ -39,10 +39,6 @@ _W_BURSTY = 0.20      # Burstiness / sentence-length variation
 
 # Calibration constants.
 _MAX_TELLS_PER_100W = 25.0  # Approximate ceiling for tells/100w
-# Divider between "too uniform" and "too erratic" for the ADVICE LABEL only. It has never been used
-# in the penalty arithmetic — that applies below 0.50 and above 1.0 — so any value inside the
-# unpenalised band labels identically, and this one is arbitrary rather than measured.
-_BURSTY_IDEAL = 0.70
 # Where human prose actually sits, and the reason the advice no longer quotes a single figure.
 # MEASURED, sentence-length coefficient of variation over 40 human texts per corpus, >=90 words:
 #
@@ -702,16 +698,28 @@ def _dominant_signal(text: str, tier: str) -> str | None:
     actionable: list[tuple[float, str]] = []
 
     if cv is not None:
+        # The label comes from the branch that set the penalty, because that branch IS the
+        # distinction it names: the low arms penalise uniform rhythm, the high arm erratic rhythm.
+        # It used to be a second comparison, `cv < _BURSTY_IDEAL`, against a constant of 0.70 whose
+        # own comment admitted it was "arbitrary rather than measured" and that any value inside the
+        # unpenalised band labels identically. That was true and worth acting on: the line is
+        # reached only when penalty > 0, which requires cv < 0.50 or cv > 1.0, so 0.70 sat in a gap
+        # no input can occupy and decided nothing. Reading it, though, every reviewer had to work
+        # out that 0.70 was not a threshold — and a boundary sweep could never kill the mutant on
+        # it, because there is no input on which the two operators differ.
         if cv < 0.35:
             penalty = _MAX_BURSTY_PENALTY
+            shape = "uniform"
         elif cv < 0.50:
             penalty = _MAX_BURSTY_PENALTY * (0.50 - cv) / 0.15
+            shape = "uniform"
         elif cv > 1.0:
             penalty = _MAX_BURSTY_PENALTY * 0.5
+            shape = "erratic"
         else:
             penalty = 0.0
+            shape = None
         if penalty > 0:
-            shape = "uniform" if cv < _BURSTY_IDEAL else "erratic"
             actionable.append((
                 penalty * _W_BURSTY,
                 f"driven by {shape} sentence rhythm (burstiness {cv:.2f}; measured human medians "
