@@ -1,6 +1,6 @@
 {
   "stale_since_sweep": [],
-  "boundaries": 48,
+  "boundaries": 47,
   "protected": [
     {
       "file": "untell/api_server.py",
@@ -40,13 +40,13 @@
     },
     {
       "file": "untell/humanness.py",
-      "line": 307,
+      "line": 303,
       "constant": "_MIN_WORDS_FOR_SIGNAL",
       "source": "if len(_WORD_RE.findall(text)) < _MIN_WORDS_FOR_SIGNAL:"
     },
     {
       "file": "untell/humanness.py",
-      "line": 426,
+      "line": 422,
       "constant": "_MIN_WORDS_FOR_A_BAND",
       "source": "if _words < _MIN_WORDS_FOR_A_BAND:"
     },
@@ -272,17 +272,10 @@
   "equivalent": [
     {
       "file": "untell/humanness.py",
-      "line": 474,
+      "line": 470,
       "constant": "_BURSTY_FLOOR",
       "source": "if cv < _BURSTY_FLOOR:",
       "why_equivalent": "The ramp in the next branch is CONSTRUCTED to meet the flat penalty at the floor: MAX * (0.50 - 0.35) / 0.15 == MAX * 1. The piecewise function is continuous there, so both branches compute the same penalty. IEEE arithmetic separates them by 5.55e-17 and `humanness` returns round(score * 100.0, 1), which erases it \u2014 MEASURED 69.0 either way."
-    },
-    {
-      "file": "untell/humanness.py",
-      "line": 714,
-      "constant": "_BURSTY_IDEAL",
-      "source": "shape = \"uniform\" if cv < _BURSTY_IDEAL else \"erratic\"",
-      "why_equivalent": "Reached only when penalty > 0, which requires cv < 0.50 or cv > 1.0. cv == _BURSTY_IDEAL (0.70) satisfies neither, so the equality case cannot occur."
     },
     {
       "file": "untell/scripts/score.py",

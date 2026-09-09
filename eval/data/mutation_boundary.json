@@ -70,15 +70,15 @@
   "by_kind": {
     "boundary": {
       "killed": 114,
-      "survived": 226,
-      "score": 33.5
+      "survived": 225,
+      "score": 33.6
     }
   },
   "workers": 4,
-  "mutants": 340,
+  "mutants": 339,
   "killed": 114,
-  "survived": 226,
-  "score": 33.5,
+  "survived": 225,
+  "score": 33.6,
   "survivors": [
     {
       "file": "untell/_retry.py",
@@ -425,70 +425,63 @@
     },
     {
       "file": "untell/humanness.py",
-      "line": 474,
+      "line": 470,
       "kind": "boundary",
       "mutation": "< -> <=",
       "killed": false
     },
     {
       "file": "untell/humanness.py",
-      "line": 476,
+      "line": 472,
       "kind": "boundary",
       "mutation": "< -> <=",
       "killed": false
     },
     {
       "file": "untell/humanness.py",
-      "line": 705,
+      "line": 710,
       "kind": "boundary",
       "mutation": "< -> <=",
-      "killed": false
-    },
-    {
-      "file": "untell/humanness.py",
-      "line": 707,
-      "kind": "boundary",
-      "mutation": "< -> <=",
-      "killed": false
-    },
-    {
-      "file": "untell/humanness.py",
-      "line": 709,
-      "kind": "boundary",
-      "mutation": "> -> >=",
       "killed": false
     },
     {
       "file": "untell/humanness.py",
       "line": 713,
       "kind": "boundary",
-      "mutation": "> -> >=",
-      "killed": false
-    },
-    {
-      "file": "untell/humanness.py",
-      "line": 714,
-      "kind": "boundary",
       "mutation": "< -> <=",
       "killed": false
     },
     {
       "file": "untell/humanness.py",
-      "line": 723,
+      "line": 716,
       "kind": "boundary",
       "mutation": "> -> >=",
       "killed": false
     },
     {
       "file": "untell/humanness.py",
-      "line": 733,
+      "line": 722,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/humanness.py",
+      "line": 731,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/humanness.py",
+      "line": 741,
       "kind": "boundary",
       "mutation": ">= -> >",
       "killed": false
     },
     {
       "file": "untell/humanness.py",
-      "line": 737,
+      "line": 745,
       "kind": "boundary",
       "mutation": ">= -> >",
       "killed": false
@@ -2205,37 +2198,51 @@
     },
     {
       "file": "untell/humanness.py",
-      "line": 307,
+      "line": 303,
       "kind": "boundary",
       "mutation": "< -> <=",
       "killed": true
     },
     {
       "file": "untell/humanness.py",
-      "line": 426,
+      "line": 422,
       "kind": "boundary",
       "mutation": "< -> <=",
       "killed": true
+    },
+    {
+      "file": "untell/humanness.py",
+      "line": 470,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/humanness.py",
+      "line": 472,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
     },
     {
       "file": "untell/humanness.py",
       "line": 474,
       "kind": "boundary",
-      "mutation": "< -> <=",
-      "killed": false
-    },
-    {
-      "file": "untell/humanness.py",
-      "line": 476,
-      "kind": "boundary",
-      "mutation": "< -> <=",
-      "killed": false
-    },
-    {
-      "file": "untell/humanness.py",
-      "line": 478,
-      "kind": "boundary",
       "mutation": "> -> >=",
+      "killed": true
+    },
+    {
+      "file": "untell/humanness.py",
+      "line": 635,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": true
+    },
+    {
+      "file": "untell/humanness.py",
+      "line": 637,
+      "kind": "boundary",
+      "mutation": ">= -> >",
       "killed": true
     },
     {
@@ -2254,70 +2261,49 @@
     },
     {
       "file": "untell/humanness.py",
-      "line": 643,
-      "kind": "boundary",
-      "mutation": ">= -> >",
-      "killed": true
-    },
-    {
-      "file": "untell/humanness.py",
-      "line": 645,
-      "kind": "boundary",
-      "mutation": ">= -> >",
-      "killed": true
-    },
-    {
-      "file": "untell/humanness.py",
-      "line": 705,
+      "line": 710,
       "kind": "boundary",
       "mutation": "< -> <=",
-      "killed": false
-    },
-    {
-      "file": "untell/humanness.py",
-      "line": 707,
-      "kind": "boundary",
-      "mutation": "< -> <=",
-      "killed": false
-    },
-    {
-      "file": "untell/humanness.py",
-      "line": 709,
-      "kind": "boundary",
-      "mutation": "> -> >=",
       "killed": false
     },
     {
       "file": "untell/humanness.py",
       "line": 713,
       "kind": "boundary",
-      "mutation": "> -> >=",
-      "killed": false
-    },
-    {
-      "file": "untell/humanness.py",
-      "line": 714,
-      "kind": "boundary",
       "mutation": "< -> <=",
       "killed": false
     },
     {
       "file": "untell/humanness.py",
-      "line": 723,
+      "line": 716,
       "kind": "boundary",
       "mutation": "> -> >=",
       "killed": false
     },
     {
       "file": "untell/humanness.py",
-      "line": 733,
+      "line": 722,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/humanness.py",
+      "line": 731,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/humanness.py",
+      "line": 741,
       "kind": "boundary",
       "mutation": ">= -> >",
       "killed": false
     },
     {
       "file": "untell/humanness.py",
-      "line": 737,
+      "line": 745,
       "kind": "boundary",
       "mutation": ">= -> >",
       "killed": false
