@@ -71,7 +71,18 @@ def _st_model():
         from sentence_transformers import SentenceTransformer
 
         _model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
-    except (ImportError, OSError):
+    except Exception:  # noqa: BLE001 — a quality gate must degrade, never crash its caller
+        # `(ImportError, OSError)` was too narrow, and the gap is not hypothetical. With the ML
+        # stack installed but the model not cached, the constructor reaches the network, and a
+        # proxy that refuses returns `httpx.ProxyError` — an `httpx.HTTPError`, which is neither of
+        # those. MEASURED: it escaped as far as pytest COLLECTION, because
+        # `test_documented_thresholds_are_the_real_ones` calls `recommended_bar()` at module level.
+        # One unreachable host aborted the entire suite before a single test ran.
+        #
+        # `method()` reads this as `"embedding" if _st_model() is not None else "token_overlap"`, so
+        # returning None IS the documented contract for "unavailable" — raising was never one of the
+        # answers. `_bs_scorer` directly below already catches bare `Exception` for the same reason;
+        # this is the same lesson, learned twice in one file.
         _model = None
     return _model
 
