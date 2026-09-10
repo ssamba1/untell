@@ -94,19 +94,63 @@ def test_a_substring_of_another_name_is_not_a_reference(tmp_path, monkeypatch):
     assert "score (" in finding.detail, "`score` is dead; `score_text` must not rescue it"
 
 
-@pytest.mark.parametrize("seconds", [30])
-def test_the_whole_audit_stays_fast_enough_to_keep_in_a_commit_hook(seconds):
-    """The optimisation's actual purpose. MEASURED after the rewrite: about 11 seconds, against 70
-    before. The bar is deliberately loose — this guards against a regression to the old shape, not
-    against ordinary growth."""
+@pytest.mark.parametrize("seconds", [10])
+def test_the_corpus_scanning_checks_stay_linear(seconds):
+    """The regression guard, pointed at the code it is actually about.
+
+    `check_no_dead_functions` is the check that was O(functions x codebase) and took 58 of the
+    audit's 70 seconds. A return to that shape shows up HERE, and nowhere else. MEASURED today:
+    1.08s for the dead-function check and 0.72s for the control-character scan, against a bar of
+    ten — loose enough for ordinary growth, tight enough that a per-item scan over the whole corpus
+    cannot hide inside it.
+
+    This replaces a whole-audit stopwatch that could not do this job. `A.run()` spends most of its
+    time in a `pytest --collect-only` SUBPROCESS — PROFILED at 23.4s of 37.5s, 61% — which grows
+    with the number of test modules and has nothing to do with the quadratic shape. A quadratic
+    regression could therefore double the checks' cost and still sit inside a whole-audit budget,
+    while the suite merely getting bigger fails it. Both are the wrong answer.
+    """
+    import time
+
+    report = A.Report()
+    start = time.monotonic()
+    A.check_no_dead_functions(report)
+    A.check_no_control_characters(report)
+    elapsed = time.monotonic() - start
+    assert elapsed < seconds, (
+        f"the corpus-scanning checks took {elapsed:.1f}s against a {seconds}s bar. These are the "
+        f"checks that were O(functions x codebase); look for a per-item scan reintroduced over the "
+        f"whole corpus."
+    )
+
+
+@pytest.mark.parametrize("seconds", [90])
+def test_the_whole_audit_stays_inside_what_the_hook_expects_of_it(seconds):
+    """Wall clock, against the budget THIS REPOSITORY states for it.
+
+    `.githooks/pre-commit` runs `untell-audit` "only when a live document changed, because it takes
+    about a minute". That is the repo's own expectation, and a test asserting under thirty seconds
+    contradicted it — two numbers for one quantity, which is the defect class this audit exists to
+    find, in the audit's own tests.
+
+    MEASURED at 30.7s with the full ML stack installed: about 8s of the audit's own work and 23s of
+    `pytest --collect-only`, which `_collected_test_count` shells out to so a documented test count
+    can be checked against reality. That subprocess is most of the cost and scales with the suite —
+    677 modules and 10,848 tests today.
+
+    Ninety, not sixty: the hook says "about a minute", and a bar set AT the stated expectation fails
+    on any machine slower than the one that measured it. This is a runaway guard, and the tight
+    check above is what actually watches for a regression.
+    """
     import time
 
     start = time.monotonic()
     A.run()
     elapsed = time.monotonic() - start
     assert elapsed < seconds, (
-        f"untell-audit took {elapsed:.0f}s. It runs in the pre-commit hook; past about half a "
-        f"minute people stop running the gate. Check for a per-item scan over the whole corpus."
+        f"untell-audit took {elapsed:.0f}s against a {seconds}s bar. It runs in the pre-commit "
+        f"hook, so this is the point at which people start skipping the gate. Most of the cost is "
+        f"the `pytest --collect-only` subprocess in `_collected_test_count`."
     )
 
 
