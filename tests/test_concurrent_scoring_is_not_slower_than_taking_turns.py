@@ -60,7 +60,30 @@ _counter = itertools.count()
 # here, and the two readings are recorded rather than one replacing the other. Either way 2.0 sits
 # clear of the healthy state and nowhere near the broken one, so the bar is unchanged — a bar moved
 # to quiet a noisy estimator would be the wrong fix, and the estimator is what changed.
-MAX_THREADED_RATIO = 2.0
+# RAISED from 2.0 to 5.0, which REVERSES a decision made two rounds earlier in this same file.
+#
+# That round said widening the bar "would weaken the test to hide a noisy estimator", and that was
+# right at the time: the estimator WAS the problem, a median over five trials that three bad trials
+# could move. Switching to the minimum of the paired ratios fixed that, and it measurably helped —
+# the excursion fell from 2.41x to 2.09x.
+#
+# It did not fall below 2.0, and 2.09 is a MINIMUM over five trials, so it is not one contaminated
+# trial. All five were slow. The bar is simply inside the healthy range under load:
+#
+#     healthy, isolated (many reps, torch installed or not)   0.91 - 1.07
+#     healthy, inside a 40-minute full-suite run (observed)   up to 2.41
+#     PATHOLOGICAL, `_NER_LOCK` replaced by nullcontext()    14.66 - 23.39
+#
+# A threshold whose job is to separate two states should sit between them, and 2.0 sits inside the
+# first. Five is above every healthy value ever measured here and nearly three times below the
+# lowest pathological one, so it separates them with room on both sides rather than tracking either.
+#
+# What is NOT claimed: that the cause of the loaded-run excursion is understood. It does not
+# reproduce in isolation, and the obvious explanation — torch's OpenMP pool contending with the four
+# NER threads — was tested and REFUTED: 0.98 baseline, 0.99 after warming the pool with matmuls,
+# 0.91 with `torch.set_num_threads(1)`. So this is a bar calibrated on observed behaviour, not on a
+# mechanism, and that is worth saying out loud rather than implying more than was established.
+MAX_THREADED_RATIO = 5.0
 TRIALS = 5
 CONCURRENCY = 4
 
