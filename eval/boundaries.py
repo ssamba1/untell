@@ -241,7 +241,7 @@ def all_importers(root: Path = REPO) -> dict[str, list[str]]:
 _FLIP = {"<": "<=", "<=": "<", ">": ">=", ">=": ">"}
 
 
-def verify_unprotected(root: Path = REPO, timeout: int = 600) -> dict:
+def verify_unprotected(root: Path = REPO, timeout: int | None = None) -> dict:
     """Re-run each 'unprotected' boundary against every test that imports its module.
 
     ⚠️ **The register inherits the harness's blind spots, and the harness has had two.** Round
@@ -253,7 +253,14 @@ def verify_unprotected(root: Path = REPO, timeout: int = 600) -> dict:
     import shutil
     import subprocess
 
-    from eval.mutation import Mutant, _failures, _worktree, apply_mutant
+    from eval.mutation import DEFAULT_TIMEOUT_S, Mutant, _failures, _worktree, apply_mutant
+
+    if timeout is None:
+        # Twice the sweep's per-module budget, because this path deliberately runs the UNCAPPED
+        # importer set — that is the whole point of it — so it is slower than the sweep by
+        # construction. Derived from the sweep's number rather than written out again, so the two
+        # cannot drift apart when one is re-measured.
+        timeout = DEFAULT_TIMEOUT_S * 2
 
     report = register(root)
     importers = all_importers(root)

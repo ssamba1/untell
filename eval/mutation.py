@@ -371,16 +371,43 @@ UNUSABLE = -1
 #     four concurrent copies, four cores       177-180s <- the sweep's own worker count
 #     solo, warm working tree, under load      206s
 #     round 107's recorded figure              267s
-#     the cut                                  300s
+#     the old cut                              300s
 #
 # Not one condition reaches the timeout, yet a timeout was once observed. So the distribution has a
 # tail that crosses 300s occasionally, and a single crossing PERMANENTLY mislabels the module in a
 # committed artefact: round 110 moved the register's protected share 44.7% -> 43.8% on exactly one
 # such flip, and rounds 110-112 spent two multi-hour sweeps chasing it.
 #
+# RE-MEASURED with the full ML stack installed, where `untell-audit` costs 30.7s instead of ~11s
+# because every run imports torch — and this selection includes `test_every_audit_check_can_fail`,
+# which runs the whole audit once per check:
+#
+#     cold fresh worktree, idle                523s     <- 4.6x the figure above
+#     four concurrent copies, four cores       369-379s
+#     the cut                                  900s
+#
+# The concurrent case is FASTER than the solo one here, which inverts the table above and is not
+# explained. The plausible reading is that the solo run paid first-touch OS page-cache costs for
+# torch's shared objects and the concurrent copies then reused them; that was not tested, so it is
+# recorded as observed rather than as a mechanism.
+#
+# 900 covers the worst observed (523s) with 1.7x of headroom, on the same reasoning that put the old
+# cut 2.65x above its cold figure: the point is to sit above the tail, not beside it. It also has to
+# cover BOTH environments — a lite machine still runs this in ~113s — so the cut is set by the
+# slowest configuration the sweep can meet, which is a full-tier install.
+#
+# The cost of being wrong is asymmetric, which is why the headroom is generous. A cut that is too
+# high makes a genuinely hung module burn 15 minutes, twice, once. A cut that is too low silently
+# converts a protected boundary into "unmeasured" in a committed artefact and, per rounds 110-112,
+# costs multi-hour sweeps to notice.
+#
 # A timed-out baseline is therefore retried once before the module is written off. A collect
 # failure is not retried — it is deterministic, and re-running it buys a second identical answer
 # at the cost of another full timeout.
+# Seconds a single module's test selection may take before it is written off. See the measured
+# distribution above for how this number was chosen.
+DEFAULT_TIMEOUT_S = 900
+
 TIMED_OUT = -2
 # Both mean "no usable number came back", which is what every caller checking for one should ask.
 UNUSABLE_BASELINES = (UNUSABLE, TIMED_OUT)
@@ -506,7 +533,8 @@ def _worker(root: Path, queue: list[tuple[str, tuple[str, ...]]], limit: int | N
     return results, unmeasurable, baselines
 
 
-def run_parallel(root: Path = REPO, limit_per_file: int | None = None, timeout: int = 300,
+def run_parallel(root: Path = REPO, limit_per_file: int | None = None,
+                 timeout: int = DEFAULT_TIMEOUT_S,
                  targets: tuple[tuple[str, tuple[str, ...]], ...] | None = None,
                  workers: int = 4, kinds: frozenset[str] | None = None) -> dict:
     """The same sweep, spread across several worktrees.
@@ -566,7 +594,7 @@ def run_parallel(root: Path = REPO, limit_per_file: int | None = None, timeout: 
     }
 
 
-def run(root: Path = REPO, limit_per_file: int | None = None, timeout: int = 300,
+def run(root: Path = REPO, limit_per_file: int | None = None, timeout: int = DEFAULT_TIMEOUT_S,
         targets: tuple[tuple[str, tuple[str, ...]], ...] | None = None,
         kinds: frozenset[str] | None = None) -> dict:
     """Introduce each mutant, run its module's tests, and record whether anything failed.
@@ -690,7 +718,7 @@ def _all_importers(root: Path) -> dict[str, list[str]]:
 
 
 def verify_survivors(survivors: list[dict], root: Path = REPO, sample: int = 24,
-                     seed: int = 0, timeout: int = 600) -> dict:
+                     seed: int = 0, timeout: int = DEFAULT_TIMEOUT_S * 2) -> dict:
     """How many reported survivors are genuinely uncaught by ANY test?
 
     A survivor is this harness's finding, and `eval/checkers.py` records every other checker's
@@ -845,7 +873,7 @@ def main(argv: list[str] | None = None) -> int:
                         help="run the sweep across this many worktrees at once")
     parser.add_argument("--limit", type=int, default=None,
                         help="cap mutants per file, spaced evenly through it")
-    parser.add_argument("--timeout", type=int, default=300)
+    parser.add_argument("--timeout", type=int, default=DEFAULT_TIMEOUT_S)
     parser.add_argument("--json", action="store_true", dest="as_json")
     args = parser.parse_args(argv)
     if args.verify:
