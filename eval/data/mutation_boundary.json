@@ -1,84 +1,75 @@
 {
   "baselines": {
     "untell/attacks/unicode_tricks.py": 0,
+    "untell/detectors/fast_detectgpt.py": 10,
     "untell/html_report.py": 0,
     "untell/layout.py": 0,
     "untell/rewriter/ensemble.py": 0,
     "untell/rewriter/structural.py": 0,
-    "untell/rich_output.py": 0,
+    "untell/rich_output.py": 2,
     "untell/scripts/entailment.py": 2,
     "untell/scripts/latex.py": 0,
-    "untell/scripts/roles.py": 2,
-    "untell/scripts/sentences.py": 0,
+    "untell/scripts/roles.py": 3,
+    "untell/scripts/sentences.py": 1,
     "untell/scripts/watch.py": 0,
     "untell/_retry.py": 0,
     "untell/attacks/word_importance.py": 0,
     "untell/detectors/base.py": 1,
-    "untell/detectors/perplexity_burstiness.py": 0,
+    "untell/detectors/perplexity_burstiness.py": 2,
     "untell/humanness.py": 0,
     "untell/mcp_server.py": 0,
-    "untell/rewriter/local_policy.py": 2,
+    "untell/rewriter/local_policy.py": 0,
     "untell/scripts/audit.py": 0,
     "untell/scripts/explain.py": 0,
     "untell/scripts/numerals.py": 0,
     "untell/scripts/run.py": 0,
     "untell/scripts/tells.py": 0,
     "untell/text_split.py": 0,
-    "untell/api_server.py": 27,
+    "untell/api_server.py": 26,
     "untell/browser_check.py": 0,
     "untell/detectors/binoculars.py": 0,
     "untell/detectors/llm_judge.py": 0,
     "untell/inspect_report.py": 0,
     "untell/scripts/batch.py": 0,
-    "untell/scripts/hedges.py": 0,
+    "untell/scripts/hedges.py": 1,
     "untell/scripts/preserve.py": 0,
     "untell/scripts/score.py": 0,
     "untell/scripts/verify.py": 0,
-    "untell/attacks/back_translation.py": 6,
+    "untell/attacks/back_translation.py": 0,
     "untell/calibrate.py": 0,
     "untell/detectors/commercial.py": 0,
-    "untell/detectors/local_judge.py": 1,
+    "untell/detectors/local_judge.py": 0,
     "untell/rewriter/composite.py": 0,
     "untell/rewriter/prompts.py": 0,
     "untell/rewriter/targeted.py": 0,
-    "untell/scripts/io_utils.py": 1,
+    "untell/scripts/io_utils.py": 0,
     "untell/scripts/quality.py": 0,
     "untell/scripts/voice.py": 0
   },
-  "unmeasurable": [
-    {
-      "file": "untell/detectors/fast_detectgpt.py",
-      "tests": [
-        "tests/test_batched_detector_identity.py",
-        "tests/test_detectors_full.py"
-      ],
-      "why": "its test selection exits without reporting a result, so no mutant against it could be scored",
-      "cause": "collect_error",
-      "retried": false
-    }
-  ],
+  "unmeasurable": [],
   "red_baselines": {
+    "untell/detectors/fast_detectgpt.py": 10,
+    "untell/rich_output.py": 2,
     "untell/scripts/entailment.py": 2,
-    "untell/scripts/roles.py": 2,
+    "untell/scripts/roles.py": 3,
+    "untell/scripts/sentences.py": 1,
     "untell/detectors/base.py": 1,
-    "untell/rewriter/local_policy.py": 2,
-    "untell/api_server.py": 27,
-    "untell/attacks/back_translation.py": 6,
-    "untell/detectors/local_judge.py": 1,
-    "untell/scripts/io_utils.py": 1
+    "untell/detectors/perplexity_burstiness.py": 2,
+    "untell/api_server.py": 26,
+    "untell/scripts/hedges.py": 1
   },
   "by_kind": {
     "boundary": {
-      "killed": 114,
-      "survived": 225,
-      "score": 33.6
+      "killed": 116,
+      "survived": 224,
+      "score": 34.1
     }
   },
   "workers": 4,
-  "mutants": 339,
-  "killed": 114,
-  "survived": 225,
-  "score": 33.6,
+  "mutants": 340,
+  "killed": 116,
+  "survived": 224,
+  "score": 34.1,
   "survivors": [
     {
       "file": "untell/_retry.py",
@@ -333,8 +324,8 @@
       "killed": false
     },
     {
-      "file": "untell/detectors/local_judge.py",
-      "line": 195,
+      "file": "untell/detectors/fast_detectgpt.py",
+      "line": 105,
       "kind": "boundary",
       "mutation": ">= -> >",
       "killed": false
@@ -1131,13 +1122,6 @@
       "killed": false
     },
     {
-      "file": "untell/scripts/io_utils.py",
-      "line": 50,
-      "kind": "boundary",
-      "mutation": "> -> >=",
-      "killed": false
-    },
-    {
       "file": "untell/scripts/numerals.py",
       "line": 437,
       "kind": "boundary",
@@ -1174,28 +1158,28 @@
     },
     {
       "file": "untell/scripts/quality.py",
-      "line": 121,
+      "line": 132,
       "kind": "boundary",
       "mutation": "< -> <=",
       "killed": false
     },
     {
       "file": "untell/scripts/quality.py",
-      "line": 220,
+      "line": 231,
       "kind": "boundary",
       "mutation": "< -> <=",
       "killed": false
     },
     {
       "file": "untell/scripts/quality.py",
-      "line": 221,
+      "line": 232,
       "kind": "boundary",
       "mutation": "> -> >=",
       "killed": false
     },
     {
       "file": "untell/scripts/quality.py",
-      "line": 296,
+      "line": 307,
       "kind": "boundary",
       "mutation": ">= -> >",
       "killed": false
@@ -2043,6 +2027,13 @@
       "killed": false
     },
     {
+      "file": "untell/detectors/fast_detectgpt.py",
+      "line": 105,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
       "file": "untell/detectors/llm_judge.py",
       "line": 102,
       "kind": "boundary",
@@ -2054,7 +2045,7 @@
       "line": 195,
       "kind": "boundary",
       "mutation": ">= -> >",
-      "killed": false
+      "killed": true
     },
     {
       "file": "untell/detectors/perplexity_burstiness.py",
@@ -3216,7 +3207,7 @@
       "line": 50,
       "kind": "boundary",
       "mutation": "> -> >=",
-      "killed": false
+      "killed": true
     },
     {
       "file": "untell/scripts/latex.py",
@@ -3269,42 +3260,42 @@
     },
     {
       "file": "untell/scripts/quality.py",
-      "line": 121,
+      "line": 132,
       "kind": "boundary",
       "mutation": "< -> <=",
       "killed": false
     },
     {
       "file": "untell/scripts/quality.py",
-      "line": 220,
+      "line": 231,
       "kind": "boundary",
       "mutation": "< -> <=",
       "killed": false
     },
     {
       "file": "untell/scripts/quality.py",
-      "line": 221,
+      "line": 232,
       "kind": "boundary",
       "mutation": "> -> >=",
       "killed": false
     },
     {
       "file": "untell/scripts/quality.py",
-      "line": 296,
+      "line": 307,
       "kind": "boundary",
       "mutation": ">= -> >",
       "killed": false
     },
     {
       "file": "untell/scripts/quality.py",
-      "line": 322,
+      "line": 333,
       "kind": "boundary",
       "mutation": "< -> <=",
       "killed": true
     },
     {
       "file": "untell/scripts/quality.py",
-      "line": 335,
+      "line": 346,
       "kind": "boundary",
       "mutation": ">= -> >",
       "killed": true
