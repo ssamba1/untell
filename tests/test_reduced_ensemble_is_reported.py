@@ -27,9 +27,20 @@ not fire on healthy scoring, which is what makes it worth reading when it does.
 
 from __future__ import annotations
 
+import importlib.util
+
 import pytest
 
 from untell.scripts.score import score_text
+
+# Every case here reduces a MULTI-detector ensemble; a lite install loads one detector, and the
+# `healthy` fixture itself asserts a one-detector ensemble cannot be partially reduced.
+needs_full = pytest.mark.skipif(
+    not (importlib.util.find_spec("torch") is not None
+        and importlib.util.find_spec("transformers") is not None),
+    reason="needs the [full] extra",
+)
+pytestmark = needs_full
 
 
 @pytest.fixture(autouse=True)

@@ -2,10 +2,19 @@
 
 from __future__ import annotations
 
+import importlib.util
+
 import pytest
 
 from training.distill import distill
 from training.reward import fluency, humanness_reward
+
+# "This IS the NLI path": the paraphrase scores 0.32 on token overlap, so only NLI admits it.
+needs_nli = pytest.mark.skipif(
+    not (importlib.util.find_spec("torch") is not None
+        and importlib.util.find_spec("transformers") is not None),
+    reason="needs the [full] extra (the NLI gate)",
+)
 
 
 def test_fluency_penalizes_repetition():
@@ -87,6 +96,7 @@ def test_distill_drops_flagged_or_low_similarity(monkeypatch):
     assert distill("builtin", n=3, tier="lite")["kept"] == 0
 
 
+@needs_nli
 def test_distill_keeps_a_faithful_paraphrase_the_loop_admits(monkeypatch):
     """The distillation filter must agree with the deployed loop's meaning gate.
 

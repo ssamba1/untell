@@ -98,4 +98,9 @@ def test_the_rewrite_actually_did_something(monkeypatch) -> None:
     # for the wrong reason. The variable is read at call time, so deleting it here is enough;
     # the test must not depend on what the ambient environment happened to set.
     monkeypatch.delenv("UNTELL_LITE_NO_TORCH", raising=False)
-    assert _run(get_rewriter("composite"), TEXTS[0]) != TEXTS[0]
+    # Which text moves depends on the scoring path, so require one of them rather than naming it.
+    # MEASURED at threshold 0.0: TEXTS[0] is rewritten on the GPT-2 path and returned untouched on
+    # the stdlib one, where nothing beats its 0.8667; TEXTS[1] is rewritten on the stdlib path. A
+    # lite install has no GPT-2, so pinning TEXTS[0] failed there while proving nothing.
+    changed = [t for t in TEXTS if _run(get_rewriter("composite"), t) != t]
+    assert changed, "the loop rewrote none of the texts, so every test above compared no-ops"

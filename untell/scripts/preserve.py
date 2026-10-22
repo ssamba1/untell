@@ -826,13 +826,26 @@ _WARNED_NO_NER_ENV = False
 
 
 def _warn_no_ner() -> None:
-    """Say once that named-entity locking is off, and how to turn it on."""
+    """Say once that named-entity locking is off, why, and how to turn it on.
+
+    It used to say "spaCy is installed but the model is not" whatever was missing. On the lite
+    install, the one the README leads with, spaCy is not installed at all, so the message was
+    false and its fix (`python -m spacy download`) fails with "No module named spacy". The cause is
+    checked with find_spec, a path lookup, not by importing spaCy, which costs ~5s.
+    """
     global _WARNED_NO_NER
     if not _WARNED_NO_NER:
+        import importlib.util
+
+        if importlib.util.find_spec("spacy") is None:
+            cause = "spaCy is not installed"
+            fix = "pip install 'untell[full]' && python -m spacy download en_core_web_sm"
+        else:
+            cause = "spaCy is installed but the 'en_core_web_sm' model is not"
+            fix = "python -m spacy download en_core_web_sm"
         logger.warning(
-            "spaCy is installed but the 'en_core_web_sm' model is not, so NAMED ENTITIES "
-            "(people, organisations, places) are NOT being locked — only citations, numbers, "
-            "quotes and URLs are. Enable it with: python -m spacy download en_core_web_sm"
+            f"{cause}, so NAMED ENTITIES (people, organisations, places) are NOT being locked — "
+            f"only citations, numbers, quotes and URLs are. Enable it with: {fix}"
         )
         _WARNED_NO_NER = True
 
@@ -950,6 +963,10 @@ def _spacy_entity_spans_impl(text: str) -> list[tuple[int, int]]:
         try:
             import spacy
         except (ImportError, OSError):
+            # The model is on the path but spaCy will not import (a broken or mismatched install).
+            # This returned [] silently: entities went unlocked with nothing said, the one outcome
+            # every other branch here exists to prevent.
+            _warn_no_ner()
             _spacy_entity_spans._nlp = None  # type: ignore[attr-defined]
             return []
         try:

@@ -8,9 +8,17 @@ need a live model or are decode/kwargs constants — annotated in survivors.md.
 
 from __future__ import annotations
 
+import importlib.util
+
 import pytest
 
 from untell.detectors.local_judge import LocalJudgeDetector
+
+# `score()` imports torch itself, even with the model stubbed.
+needs_torch = pytest.mark.skipif(
+    not (importlib.util.find_spec("torch") is not None),
+    reason="needs torch",
+)
 
 
 class _FakeTok:
@@ -68,6 +76,7 @@ class _FakeOut:
         return 4
 
 
+@needs_torch
 class TestPercentageBoundary:
     """Survivor local_judge.py:178 — `val >= 2.0` mutated to `>`.
 

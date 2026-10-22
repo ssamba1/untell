@@ -25,6 +25,14 @@ def fresh_nli(monkeypatch):
     monkeypatch.delenv("UNTELL_LITE_NO_TORCH", raising=False)
 
 
+@pytest.fixture
+def past_the_gate(fresh_nli, monkeypatch):
+    """Open `available()` itself. Clearing the env var is not enough where torch and transformers
+    are not installed: the probe still says no, and the code under test is never reached. The model
+    is stubbed in each test, so nothing here needs the real one."""
+    monkeypatch.setattr(entailment, "available", lambda: True)
+
+
 def test_available_refuses_when_disabled_by_env(fresh_nli, monkeypatch) -> None:
     monkeypatch.setenv("UNTELL_DISABLE_NLI", "1")
     assert entailment.available() is False
@@ -42,7 +50,7 @@ def test_available_is_false_once_dead(fresh_nli, monkeypatch) -> None:
     assert entailment.available() is False
 
 
-def test_contradiction_resolves_labels_with_a_warmup_call(fresh_nli, monkeypatch) -> None:
+def test_contradiction_resolves_labels_with_a_warmup_call(past_the_gate, monkeypatch) -> None:
     """With label_idx unresolved, one forward pass runs to discover the label order.
 
     The pass's result is discarded when the labels still cannot be resolved — the
@@ -56,7 +64,7 @@ def test_contradiction_resolves_labels_with_a_warmup_call(fresh_nli, monkeypatch
     assert len(calls) == 1
 
 
-def test_entailment_resolves_labels_with_a_warmup_call(fresh_nli, monkeypatch) -> None:
+def test_entailment_resolves_labels_with_a_warmup_call(past_the_gate, monkeypatch) -> None:
     calls: list[tuple[str, str]] = []
     monkeypatch.setattr(
         entailment, "_pair_probs", lambda a, b: calls.append((a, b)) or [0.1, 0.2, 0.7]
@@ -66,7 +74,7 @@ def test_entailment_resolves_labels_with_a_warmup_call(fresh_nli, monkeypatch) -
 
 
 def test_a_raising_model_disables_the_veto_and_says_so_once(
-    fresh_nli, monkeypatch, caplog
+    past_the_gate, monkeypatch, caplog
 ) -> None:
     def boom(a, b):
         raise RuntimeError("model exploded")

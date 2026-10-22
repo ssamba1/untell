@@ -12,11 +12,19 @@ still lock.
 """
 from __future__ import annotations
 
+import importlib.util
 import time
 
 import pytest
 
 from untell.scripts.preserve import _PATTERNS, lock
+
+# Its positive control is that ordinary prose still yields entities, which needs the NER model.
+needs_ner = pytest.mark.skipif(
+    not (importlib.util.find_spec("spacy") is not None
+        and importlib.util.find_spec("en_core_web_sm") is not None),
+    reason="needs spaCy and en_core_web_sm",
+)
 
 
 @pytest.fixture(autouse=True)
@@ -61,6 +69,7 @@ def test_real_identifiers_still_lock():
                    "UNTELL_ENABLE_RADAR", "--tier"):
         assert needle in locked, f"{needle!r} not locked; got {locked}"
 
+@needs_ner
 def test_symbol_soup_skips_ner_without_loading_the_model(monkeypatch):
     """spaCy's tokenizer is O(n^2) on long punctuation runs and its model passes
     take ~36s on 10k symbol tokens, so lock() hung on pasted symbol blobs

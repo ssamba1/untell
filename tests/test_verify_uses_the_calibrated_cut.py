@@ -17,10 +17,19 @@ more likely to call human writing AI. After: verify matches score exactly, 7/40.
 
 from __future__ import annotations
 
+import importlib.util
+
 import pytest
 
 from untell.scripts.score import DEFAULT_THRESHOLD, score_text
 from untell.scripts.verify import verify
+
+# The band exists on the torch path only, and the test says a stub cannot stand in for it.
+needs_full = pytest.mark.skipif(
+    not (importlib.util.find_spec("torch") is not None
+        and importlib.util.find_spec("transformers") is not None),
+    reason="needs the [full] extra",
+)
 
 # Scores 0.3255 on the stdlib lite path — above the loop's 0.30, below the calibrated 0.45.
 IN_THE_BAND = (
@@ -78,6 +87,7 @@ def test_the_calibrated_cut_is_the_one_applied():
     assert row["verdict_threshold"] == scored["verdict_threshold"]
 
 
+@needs_full
 def test_a_text_between_the_two_cuts_now_passes():
     """The band this fix is about: above the loop's target, below the calibrated verdict.
 

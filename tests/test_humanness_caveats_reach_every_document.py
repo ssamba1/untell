@@ -24,11 +24,19 @@ is unchanged. What is added is a second channel that is per document.
 
 from __future__ import annotations
 
+import importlib.util
 import logging
 
 import pytest
 
 from untell import humanness as H
+
+# "A clean FULL-tier document should carry nothing": a lite run always carries the stdlib caveat.
+needs_full = pytest.mark.skipif(
+    not (importlib.util.find_spec("torch") is not None
+        and importlib.util.find_spec("transformers") is not None),
+    reason="needs the [full] extra",
+)
 
 # Above the five-word floor, below the forty-word bar: the band where the number is returned and
 # does not separate the classes.
@@ -119,6 +127,7 @@ def test_an_unreadable_script_still_gets_the_language_caveat_not_the_empty_one()
     assert not any("the text is empty" in c for c in caveats)
 
 
+@needs_full
 def test_a_qualified_number_says_so_and_an_unqualified_one_stays_quiet():
     """An empty list has to mean something, or the channel is noise.
 

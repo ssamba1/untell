@@ -6,7 +6,18 @@ abstain. Label-resolution is only reachable through a live model load.
 
 from __future__ import annotations
 
+import importlib.util
+
+import pytest
+
 from untell.detectors.mage import MageDetector
+
+# `available()` is True only where the model can load, which needs torch and transformers.
+needs_full = pytest.mark.skipif(
+    not (importlib.util.find_spec("torch") is not None
+        and importlib.util.find_spec("transformers") is not None),
+    reason="needs the [full] extra",
+)
 
 
 class TestAvailableEnvGate:
@@ -14,6 +25,7 @@ class TestAvailableEnvGate:
         monkeypatch.setenv("UNTELL_DISABLE_MAGE", "1")
         assert MageDetector().available() is False
 
+    @needs_full
     def test_enabled_without_env(self, monkeypatch) -> None:
         monkeypatch.delenv("UNTELL_DISABLE_MAGE", raising=False)
         assert MageDetector().available() is True

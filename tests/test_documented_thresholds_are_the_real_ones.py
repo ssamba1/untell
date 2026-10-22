@@ -77,7 +77,10 @@ def test_the_doc_names_the_similarity_method_it_quotes() -> None:
     """The bar only means something alongside the method that produces it — 0.76 is the embedding
     bar, and the doc quotes 0.88 for BERTScore and 0.50 for token overlap in the same cell. A test
     on the number alone would pass if the default method changed underneath it."""
-    assert method() in DOC, f"quality.method() is {method()!r} and the doc does not mention it"
+    # Prose spells the identifier with a hyphen ("token-overlap"); `method()` returns "token_overlap".
+    # Only the embedding spelling was ever checked, because only the full tier ran this.
+    named = {method(), method().replace("_", "-")}
+    assert any(n in DOC for n in named), f"quality.method() is {method()!r} and the doc does not mention it"
     assert "0.76" in DOC and "0.88" in DOC and "0.50" in DOC
 
 
