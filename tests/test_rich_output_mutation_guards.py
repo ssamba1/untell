@@ -15,9 +15,17 @@ recorded as unkillable in survivors.md.
 from __future__ import annotations
 
 import contextlib
+import importlib.util
 import io
 
+import pytest
+
 from untell import rich_output as RO
+
+# Truncation happens only in the rich panels; the plain fallback prints the whole text.
+needs_rich = pytest.mark.skipif(
+    importlib.util.find_spec("rich") is None, reason="needs the [rich] extra"
+)
 
 
 def _capture(fn) -> str:
@@ -54,6 +62,7 @@ class TestVerdictBands:
         assert "flagged" not in out.lower()
 
 
+@needs_rich
 class TestTruncationMarker:
     """Survivors 266/267/271 — `len(x) > 2000` mutated to `>=`.
 

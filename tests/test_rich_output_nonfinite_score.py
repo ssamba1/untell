@@ -9,7 +9,16 @@ vector, not a display. The bar must stay exactly ``bar_len`` wide whatever the i
 
 from __future__ import annotations
 
+import importlib.util
+
+import pytest
+
 from untell import rich_output
+
+# The bar is drawn only on the rich path; the plain fallback prints the number alone.
+needs_rich = pytest.mark.skipif(
+    importlib.util.find_spec("rich") is None, reason="needs the [rich] extra"
+)
 
 
 def test_nonfinite_score_does_not_crash(capsys):
@@ -20,6 +29,7 @@ def test_nonfinite_score_does_not_crash(capsys):
         assert out, f"expected some output for {score}"
 
 
+@needs_rich
 def test_out_of_range_score_keeps_the_bar_bounded(capsys):
     """score=999999 previously painted ~300,000 block chars; the bar must stay 30 cells."""
     rich_output.print_humanness(999999.0, "mixed")
@@ -28,6 +38,7 @@ def test_out_of_range_score_keeps_the_bar_bounded(capsys):
     assert len(bar_line) == 30, f"bar is {len(bar_line)} cells, expected exactly 30"
 
 
+@needs_rich
 def test_negative_score_keeps_the_bar_bounded(capsys):
     """score=-5 painted 31 cells (empty fill plus a 31-cell hollow bar); must stay 30."""
     rich_output.print_humanness(-5.0, "mixed")

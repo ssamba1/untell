@@ -6,10 +6,18 @@ A number rendered wrongly is indistinguishable, to the reader, from the loop wor
 
 from __future__ import annotations
 
+import importlib.util
+
 import pytest
 
 from untell import rich_output
 from untell.humanness import classification
+
+# Tests that drive the rich path need the extra: `_Table`/`_Text`/`_Panel` only exist when it
+# imports. The lite CI job does not install it; the full-tier job does, and runs them there.
+needs_rich = pytest.mark.skipif(
+    importlib.util.find_spec("rich") is None, reason="needs the [rich] extra"
+)
 
 
 def _verdict(p_ai: float) -> str:
@@ -48,6 +56,7 @@ def test_verdict_actually_varies_across_the_range():
     assert len({_verdict(p) for p in (0.0, 0.3, 0.5, 0.7, 1.0)}) > 1
 
 
+@needs_rich
 def test_uniform_burstiness_row_is_not_hidden_by_falsy_zero(monkeypatch, capsys):
     """A CV of exactly 0.0 means perfectly uniform sentence lengths — the strongest burstiness
     tell there is. `if tells.get("burstiness_cv"):` hid the row precisely when it mattered most."""
@@ -65,6 +74,7 @@ def test_uniform_burstiness_row_is_not_hidden_by_falsy_zero(monkeypatch, capsys)
     )
 
 
+@needs_rich
 def test_a_none_max_score_does_not_crash_the_report(monkeypatch, capsys):
     """An abstention score dict carries `max: None` (every detector errored); the report must
     render a 0 baseline rather than crash on `None - None`."""
@@ -84,6 +94,7 @@ def test_a_none_max_score_does_not_crash_the_report(monkeypatch, capsys):
     assert printed, "nothing was printed"
 
 
+@needs_rich
 def test_undefined_burstiness_row_is_still_omitted(monkeypatch):
     """None means undefined (fewer than two sentences) and must stay hidden — the fix is about
     zero, not about printing a row for a value that does not exist."""
@@ -134,6 +145,7 @@ class TestBurstinessReachesThePlainTerminalToo:
         })
         assert "Burstiness" not in out
 
+    @needs_rich
     def test_both_paths_agree_on_when_the_row_appears(self, monkeypatch, capsys):
         """The two renderers must not disagree about whether a signal exists."""
         cases = [
@@ -215,6 +227,7 @@ class TestNoChangeIsReportedAsSuchNotAsSuccess:
         out = capsys.readouterr().out
         assert "No change was made" not in out
 
+    @needs_rich
     def test_rich_output_headers_differ(self, monkeypatch):
         """Same assertion on the rich path, which is what a terminal user actually sees."""
         import untell.rich_output as rich_output
@@ -289,6 +302,7 @@ class TestProgressIsWiredIntoTheLoop:
         assert "progress=not args.json" in src, "progress must be off whenever --json is set"
 
 
+@needs_rich
 def test_bracketed_text_survives_the_panels_verbatim(monkeypatch):
     """Rich parses markup in plain strings, so user text containing `[...]` had its brackets
     swallowed as markup tags: "See [citation needed]." rendered as "See  ." in the Original and

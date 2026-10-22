@@ -249,6 +249,13 @@ def print_humanize_diff(diff: dict) -> None:
     _CONSOLE.print()
 
 
+def _verdict_label(p_ai: float, cut: float) -> str:
+    """The Verdict row's label. One definition, so the rich table and the plain fallback agree."""
+    if p_ai >= cut:
+        return "flagged"
+    return "borderline" if p_ai >= cut - _VERDICT_BAND else "clear"
+
+
 def print_humanize_result(
     original: str,
     final: str,
@@ -306,6 +313,14 @@ def print_humanize_result(
         # Fallback: plain text
         print(f"Iterations: {iterations}  Stopped: {stopped}")
         print(f"Before: P(AI)={pre_score.get('max', 0):.2f}  After: P(AI)={post_score.get('max', 0):.2f}")
+        # The verdict, which only the rich table showed. A plain user saw "P(AI)=0.40" with no way
+        # to tell whether that is flagged: the cut is `verdict_threshold` (0.45 by default), not
+        # the loop's threshold, and nothing on this branch said which one applied.
+        cut = post_score.get("verdict_threshold", post_score.get("threshold", 0.30))
+        print(
+            f"Verdict: {_verdict_label(pre_score.get('max') or 0.0, cut)} -> "
+            f"{_verdict_label(post_score.get('max') or 0.0, cut)}  (cut {cut:.2f})"
+        )
         if mean_note:
             print(mean_note)
         if note:
@@ -384,9 +399,7 @@ def print_humanize_result(
     cut = post_score.get("verdict_threshold", post_score.get("threshold", 0.30))
 
     def _verdict(p_ai: float) -> str:
-        if p_ai >= cut:
-            return "flagged"
-        return "borderline" if p_ai >= cut - _VERDICT_BAND else "clear"
+        return _verdict_label(p_ai, cut)
 
     table.add_row("P(AI) max", f"{before_max:.2f}", f"{after_max:.2f}", f"[{delta_style}]{delta_str}[/]")
     table.add_row("Verdict", _verdict(before_max), _verdict(after_max), "")
