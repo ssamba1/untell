@@ -2114,3 +2114,21 @@ SAW    1.30: a "notifications/message ... Internal Server Error" and no response
 WHY    The fault is in the SDK's request validation, not in untell's code.
 NEXT   Report upstream (modelcontextprotocol/python-sdk) with the two frames above. The fuzz
        harness now labels these "the MCP SDK drops a request it cannot validate".
+
+## 2026-10-22 session (owner-directed) RED — a competitor the 2026-08-05 census predates
+
+WHAT   README's differentiator: of 44 repos with a detector loop, "none ... combines it with a
+       mechanical meaning gate, citation preservation, and tests in an installable package".
+       A 2026-10-22 web search found github.com/a8594755-maker/humanize-lab, NOT in
+       docs/humanizer-census.json (435 repos). Per its README: a closed detector loop (multi-
+       detector + sliding-window diagnosis -> rewrite -> holdout re-check, rollback on fail) and an
+       IN-LOOP gate "BGE Similarity >= 0.60 & DeBERTa NLI Contradiction <= 0.55 & Numbers/Quotes
+       Intact". It lacks: an installable package (git clone + Setup.ps1, no pyproject/setup.py),
+       documented tests (test_core.py exists, unexplained), citation preservation, a license. 0 stars.
+RAN    WebSearch x3 (extended) + WebFetch of the repo page; not cloned or run.
+SAW    The claim still holds as worded, but on 2 of its 4 conditions (package, tests) rather than on
+       the meaning gate, which is no longer unique.
+WHY    RED: adding the row changes census counts the README and docs publish (the audit re-derives
+       them), and the README's wording is a published claim.
+NEXT   Add humanize-lab to the census on the next sweep and reword the differentiator if needed,
+       e.g. lead with citation locking + installable + tested, not the meaning gate alone.
