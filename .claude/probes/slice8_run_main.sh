@@ -1,5 +1,5 @@
 #!/bin/bash
-# Run ONE chunk under coverage in the MAIN tree (shipped code). 
+# Run ONE chunk under coverage in the MAIN tree (shipped code).
 # usage: bash slice8_run_main.sh <CHUNK_VAR_NAME> [extra test files...]
 set +m
 cd /c/Users/Admin/Humanize || exit 9

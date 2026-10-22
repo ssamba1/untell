@@ -7,7 +7,7 @@ import time
 from untell.mcp_server import _server
 
 TEXTS = [f"Furthermore, the system leverages robust methodologies to optimize outcome number {i}. "
-         f"This is sentence two of document {i} with some distinctive words: zebra kiosk umbrella." 
+         f"This is sentence two of document {i} with some distinctive words: zebra kiosk umbrella."
          for i in range(10)]
 
 
