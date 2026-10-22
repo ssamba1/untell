@@ -193,7 +193,8 @@ jobs:
           # environment because nothing installed it, and the code path they cover had a
           # gate that rejected 19 of 20 real rewrites. An optional extra nobody exercises
           # is an untested code path a user can turn on with one pip flag.
-          pip install -e ".[full,eval,quality,docs,rich,dev]"
+          # `mcp` too: without it the `untell-mcp` minimal invocation could only crash on import here.
+          pip install -e ".[full,eval,quality,docs,rich,dev,mcp]"
           # Retried rather than `|| true`d into silence. A bare `|| true` treats a transient
           # model-index failure and a permanently missing model as the same thing, and the
           # capability check below turns the second into a red build.
