@@ -21,6 +21,12 @@ corpus output it is a gate that has never rejected anything.
 This file does not re-run the corpus sweep; it pins the two properties that make the number
 meaningful — that the fallback really is `sim >= strict_bar`, and that a candidate at 0.98
 similarity passes it whatever the model-backed checks think.
+
+Since `direction_kept`, one inversion shape no longer reaches the fallback: an up word traded for
+a down word ("runs faster" -> "runs slower", this file's original example) is vetoed mechanically.
+The hole is narrower, not closed. An inversion that changes no direction word, number, hedge or
+negation ("cleared" -> "kept") is still judged by similarity alone, so the properties are pinned
+on one of those.
 """
 
 from __future__ import annotations
@@ -34,6 +40,11 @@ from untell.scripts.quality import recommended_bar
 
 SOURCE = "The new build runs faster than the previous one on every machine we tested it on."
 INVERTED = "The new build runs slower than the previous one on every machine we tested it on."
+# An inversion no mechanical check can see: no direction word, number, hedge or negation changes.
+MECHANICALLY_BLIND = (
+    "The cache is cleared on every restart of the service we tested it on.",
+    "The cache is kept on every restart of the service we tested it on.",
+)
 
 
 @pytest.fixture(autouse=True)
@@ -49,8 +60,9 @@ def test_the_fallback_is_similarity_against_the_strict_bar(monkeypatch) -> None:
 
     monkeypatch.setattr(ent, "available", lambda: False)
     bar = recommended_bar()
-    assert meaning_preserved(SOURCE, INVERTED, sim=bar + 0.01, strict_sim_bar=bar)
-    assert not meaning_preserved(SOURCE, INVERTED, sim=bar - 0.01, strict_sim_bar=bar)
+    source, inverted = MECHANICALLY_BLIND
+    assert meaning_preserved(source, inverted, sim=bar + 0.01, strict_sim_bar=bar)
+    assert not meaning_preserved(source, inverted, sim=bar - 0.01, strict_sim_bar=bar)
 
 
 def test_a_high_similarity_inversion_passes_the_fallback(monkeypatch) -> None:
@@ -59,8 +71,19 @@ def test_a_high_similarity_inversion_passes_the_fallback(monkeypatch) -> None:
     import untell.scripts.entailment as ent
 
     monkeypatch.setattr(ent, "available", lambda: False)
+    source, inverted = MECHANICALLY_BLIND
     for sim in (0.969, 0.981):
-        assert meaning_preserved(SOURCE, INVERTED, sim=sim, strict_sim_bar=recommended_bar())
+        assert meaning_preserved(source, inverted, sim=sim, strict_sim_bar=recommended_bar())
+
+
+def test_a_direction_inversion_no_longer_reaches_the_fallback(monkeypatch) -> None:
+    """This file's original example. At any similarity, an up word traded for a down word is vetoed
+    before similarity is consulted, so the lean install no longer admits it."""
+    import untell.scripts.entailment as ent
+
+    monkeypatch.setattr(ent, "available", lambda: False)
+    for sim in (0.969, 0.981, 1.0):
+        assert not meaning_preserved(SOURCE, INVERTED, sim=sim, strict_sim_bar=recommended_bar())
 
 
 def test_the_mechanical_checks_still_run_without_the_model(monkeypatch) -> None:
