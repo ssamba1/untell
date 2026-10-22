@@ -873,6 +873,7 @@ def run_mcp_stdio_surface(frames: list[dict], timeout: float, out_f) -> list[dic
                      + (f"; process exited {proc.poll()}" if proc.poll() is not None else ""))
             proc.kill()
             return findings
+        cold_budget_spent = False
         for i, case in enumerate(frames):
             payload = base64.b64decode(case["b64"])
             # assign a fresh id so responses are attributable (unless the frame
@@ -894,7 +895,10 @@ def run_mcp_stdio_surface(frames: list[dict], timeout: float, out_f) -> list[dic
             # Fixed generous budget: the first score-family call imports the
             # spacy->thinc->numpy chain, which under CPU saturation can take minutes.
             want_id = case["resp_id"] if case.get("resp_id") is not None else 1000 + i
-            resp = _wait_resp(want_id, 300)
+            # 300s once: after a full budget has elapsed any cold import has finished, so a later
+            # silence is the server not answering, and paying 300s for each of nine of them is
+            # what took this surface past 45 minutes.
+            resp = _wait_resp(want_id, 60 if cold_budget_spent else 300)
             if resp is None:
                 if proc.poll() is not None:
                     err = proc.stderr.read().decode("utf-8", "replace")
@@ -902,10 +906,16 @@ def run_mcp_stdio_surface(frames: list[dict], timeout: float, out_f) -> list[dic
                              f"server died (exit {proc.poll()}) waiting for response; "
                              f"stderr: {err[-200:]!r}")
                 else:
+                    cold_budget_spent = True
+                    # Two causes, and the first is not untell's. MEASURED on mcp 1.30 and 2.3: a
+                    # request the SDK cannot validate (a lone surrogate in the arguments, an
+                    # `initialize` whose params are not an object) is never answered: 1.x emits
+                    # an "Internal Server Error" notification instead, 2.x stays silent; the
+                    # process keeps serving. The other is a first-call import under CPU load.
                     _finding("GAP", case["name"],
-                             "no response within deadline; server alive (first-call "
-                             "spacy/numpy import under CPU saturation can exceed the "
-                             "deadline — measured, not a crash)")
+                             "no response within deadline; server alive (the MCP SDK drops a "
+                             "request it cannot validate, or a first-call import overran the "
+                             "deadline under CPU load; not a crash)")
             elif "Traceback" in resp:
                 _finding("DEFECT", case["name"],
                          f"traceback in server output: {resp[:200]!r}")
