@@ -2034,3 +2034,18 @@ WHY    RED: closing it means a new veto in the default gate, which changes what 
        failing for an environment they did not state; they still run where NLI is installed.
 NEXT   A mechanical direction check (up/down verb lexicon, like polarity_kept) measured for false
        vetoes on real loop output before it ships. Being prototyped on the same branch.
+
+## 2026-10-22 session (owner-directed) RED — DONE on the branch: `direction_kept` closes the antonym hole
+
+WHAT   New mechanical veto in the default meaning gate (`hedges.direction_kept`, wired into
+       `entailment.meaning_preserved` and `meaning_preserved_vetoes` after polarity). It fires
+       only when an UP word is traded for a DOWN word or the reverse; adding or dropping one is
+       not flagged. Closes the entry above ("reduced" -> "increased" admitted without NLI).
+RAN    scratchpad measure_direction.py: every candidate of structural/surgical/composite over the
+       offline corpora (.claude/corpora + eval built-ins: 43 texts), 3 seeds, lite tier.
+SAW    0 direction vetoes in 240 changed candidates, 120 from a source with a direction word.
+       Every _SYN substitution keeps direction (now a test). The corpus is small because the
+       HC3/RAID downloads were blocked in this environment.
+WHY    RED: a new veto changes what the loop adopts. Measured cost 0 on this sample.
+NEXT   Re-measure on the full HC3 + RAID sets where the downloads work; revert the commit that
+       adds `direction_kept` if a false-veto rate shows up there.

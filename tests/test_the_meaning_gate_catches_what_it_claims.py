@@ -70,8 +70,8 @@ SOURCE = (
 SIM_BAR = 0.86
 
 # Cases decided by the NLI half on this source. Without NLI the gate is similarity plus the
-# mechanical checks, which admit the antonym flip and veto the register change.
-_NLI_ONLY_CAUGHT = {"polarity flipped"}
+# mechanical checks, which veto the casual-register rewrite. (The antonym flip, "reduced" ->
+# "increased", was the other one; `direction_kept` now catches it on every path.)
 _NLI_ONLY_ADMITTED = {"register change"}
 
 CAUGHT = {
@@ -125,10 +125,6 @@ def _admits(candidate: str) -> bool:
 
 @pytest.mark.parametrize("name", sorted(CAUGHT))
 def test_a_meaning_break_is_vetoed(name: str) -> None:
-    if name in _NLI_ONLY_CAUGHT and not available():
-        # A real hole on the lite path, not a test artefact: `polarity_kept` counts negations, and
-        # "reduced" -> "increased" adds none. Recorded in .claude/human-queue.md.
-        pytest.skip(f"{name}: caught only by NLI on this source; the stdlib gate admits it")
     assert not _admits(CAUGHT[name]), name
 
 

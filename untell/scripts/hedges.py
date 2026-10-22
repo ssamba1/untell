@@ -381,3 +381,62 @@ def polarity_kept(source: str, candidate: str) -> bool:
     of which touches polarity, and contractions ("do not" -> "don't") keep the marker.
     """
     return negation_count(source) == negation_count(candidate)
+
+
+# Direction words: a change that goes UP versus one that goes DOWN. "reduced" -> "increased" is a
+# full inversion of the claim and adds no negation, so `polarity_kept` cannot see it, and similarity
+# scores it near 1.0. Where NLI is installed the contradiction veto catches it; on the lite path
+# nothing did. MEASURED on tests/test_the_meaning_gate_catches_what_it_claims.py's SOURCE with NLI
+# unavailable: `meaning_preserved_vetoes` fired nothing at all.
+#
+# Whole words with their inflections, listed rather than stemmed: a prefix rule matched "cut" in
+# "cutting-edge". Generic quantifiers ("more", "less") are left out, since they qualify far more
+# often than they assert a change, and "worsen" is in neither list: "symptoms worsened" is more of
+# something, "performance worsened" is less.
+def _inflect(*stems: str) -> frozenset[str]:
+    out: set[str] = set()
+    for stem in stems:
+        forms = stem.split("/")
+        out.update(forms)
+        base = forms[0]
+        if " " in base:
+            continue
+        out.add(base + "s")
+        if base.endswith("e"):
+            out.update({base + "d", base[:-1] + "ing"})
+        else:
+            out.update({base + "ed", base + "ing"})
+    return frozenset(out)
+
+
+_UP_WORDS = _inflect(
+    "increase", "rise/rose/risen/rising", "grow/grew/grown/growing", "improve", "raise", "boost",
+    "enhance", "strengthen", "expand", "accelerate", "climb", "surge", "soar", "double", "triple",
+    "amplify/amplified/amplifies/amplifying", "heighten", "higher", "greater", "larger", "faster",
+    "stronger",
+)
+_DOWN_WORDS = _inflect(
+    "reduce", "decrease", "decline", "fall/fell/fallen/falling", "drop/dropped/dropping",
+    "lower", "shrink/shrank/shrunk/shrinking", "weaken", "slow", "cut/cutting", "halve",
+    "diminish", "lessen", "plunge", "plummet", "smaller", "slower", "weaker",
+)
+_DIRECTION_TOKEN_RE = re.compile(r"[A-Za-z]+(?:-[A-Za-z]+)*")
+
+
+def _direction_counts(text: str) -> tuple[int, int]:
+    words = [w.lower() for w in _DIRECTION_TOKEN_RE.findall(text)]
+    return sum(w in _UP_WORDS for w in words), sum(w in _DOWN_WORDS for w in words)
+
+
+def direction_kept(source: str, candidate: str) -> bool:
+    """False when the rewrite trades a word of one direction for a word of the other.
+
+    A TRANSFER, not a count: an UP word lost while a DOWN word is gained, or the reverse. Adding
+    or dropping a direction word on its own is not flagged, because that is what the substitution
+    tables do when they are faithful ("optimize" -> "improve", "additional" -> "more"), and none of
+    their entries maps one direction to the other.
+    """
+    up_s, down_s = _direction_counts(source)
+    up_c, down_c = _direction_counts(candidate)
+    d_up, d_down = up_c - up_s, down_c - down_s
+    return not ((d_up < 0 < d_down) or (d_down < 0 < d_up))

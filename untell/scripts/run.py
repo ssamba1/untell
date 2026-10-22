@@ -1668,10 +1668,12 @@ def _meaning_gate_mode(veto_contradictions: bool) -> str:
     two model-backed halves going missing, and it went missing silently.
     ``"similarity-only (...)"`` — the model-backed half is absent, because NLI could not be
     imported or the veto was switched off. The mechanical checks still run; what is missing is
-    every check that needs the model, and those are the ones that catch an INVERSION. Measured:
-    "runs faster" -> "runs slower" scores similarity 0.983 against a 0.76 bar and is admitted here,
-    rejected under ``"nli"``. The name says "similarity-only" because similarity is the only thing
-    still judging the *semantics* — not because it is the only check running.
+    every check that needs the model, and those are the ones that catch most INVERSIONS. Measured:
+    "runs faster" -> "runs slower" scores similarity 0.983 against a 0.76 bar and used to be
+    admitted here; the mechanical `direction_kept` now vetoes that one shape (an up word traded for
+    a down word) on every path, but a contradiction that changes no direction word still needs NLI.
+    The name says "similarity-only" because similarity is the only thing still judging the
+    *semantics* — not because it is the only check running.
 
     **What that costs on real output, rather than on a probe.** 49 genuine rewrites from
     `structural`, `surgical` and `composite` over 20 HC3 and RAID documents, every gate evaluated
