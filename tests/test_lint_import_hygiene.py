@@ -21,6 +21,8 @@ import sys
 import textwrap
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parent.parent
 CHECKER = ROOT / "scripts" / "check_annotations.py"
 VERIFIER = ROOT / "scripts" / "verify_console_scripts.py"
@@ -54,6 +56,10 @@ def test_every_console_scripts_entry_resolves() -> None:
     assert "entry points resolve cleanly" in proc.stdout
 
 
+# Not on 3.9: `get_type_hints` cannot evaluate `X | None` there, so every PEP 604 annotation in
+# the tree is reported (156 on the first 3.9 run that got this far). What the checker looks for,
+# an undefined NAME, does not depend on the interpreter, and the 3.11/3.12 legs check it fully.
+@pytest.mark.skipif(sys.version_info < (3, 10), reason="PEP 604 annotations do not evaluate on 3.9")
 def test_annotations_checker_passes_on_clean_tree() -> None:
     proc = _run(CHECKER)
     assert proc.returncode == 0, proc.stdout + proc.stderr

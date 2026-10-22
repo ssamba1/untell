@@ -9,15 +9,32 @@ import importlib
 import sys
 from pathlib import Path
 
-import tomllib
-
 ROOT = Path(__file__).resolve().parent.parent
 
 
-def main() -> int:
+def _declared_scripts() -> dict[str, str]:
+    """[project.scripts] from pyproject.toml, or from the installed metadata before Python 3.11.
+
+    `tomllib` is standard library from 3.11 only, and the package supports 3.9, so on 3.9 and 3.10
+    this script died on its first import. The installed distribution's console_scripts entry points
+    are the same table, as `pip install -e .` wrote it.
+    """
+    try:
+        import tomllib
+    except ModuleNotFoundError:
+        from importlib.metadata import distribution
+
+        return {
+            ep.name: ep.value
+            for ep in distribution("untell").entry_points
+            if ep.group == "console_scripts"
+        }
     with (ROOT / "pyproject.toml").open("rb") as f:
-        pyproject = tomllib.load(f)
-    scripts = pyproject["project"]["scripts"]
+        return tomllib.load(f)["project"]["scripts"]
+
+
+def main() -> int:
+    scripts = _declared_scripts()
     failures = []
     for name, target in sorted(scripts.items()):
         module_name, _, attr = target.partition(":")
