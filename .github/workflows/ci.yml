@@ -5,6 +5,13 @@ on:
     branches: ["**"]
   pull_request:
 
+# A newer push to the same branch makes the older run moot, and the full tier alone takes over an
+# hour: four pushes in twenty minutes had four of them running at once. Superseded runs are
+# cancelled everywhere except main, where every commit keeps its own complete record.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   lite:
     name: lite-tier (no model downloads)

@@ -2066,3 +2066,14 @@ WHY    RED: the remedy is a scoring change (e.g. score the prose blocks, not fen
 NEXT   The claim is now pinned to the stdlib path where it holds, and the GPT-2 path has its own
        xfail(strict=False) test, so a fix shows as XPASS. Measure a prose-only scoring input on
        the GPT-2 path before choosing one.
+
+## 2026-10-22 session (owner-directed) AMBER — CI workflow changes on the branch
+
+WHAT   .github/workflows: (1) every action moved to its first Node 24 major (checkout v5,
+       setup-python v6, cache v5, upload-artifact v6), checked per tag; (2) ci.yml gains a
+       concurrency group that cancels a superseded run on any branch except main; (3) earlier in
+       the session, the full-tier install gained the `mcp` extra.
+RAN    the next CI run on claude/zen-darwin-19g89x is the check.
+WHY    AMBER: anything under .github/.
+NEXT   If setup-python v6 no longer offers 3.9 (EOL Oct 2025), the 3.9 leg says so on its first
+       step; drop 3.9 from the matrix and requires-python together, or pin setup-python@v5 for it.
