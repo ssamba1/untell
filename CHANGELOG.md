@@ -71,6 +71,10 @@ All notable changes to this project are documented here. The format is based on
 - **Documents over 6,000 words had every rewrite vetoed.** Past the exact-alignment limit the
   meaning gates compared misaligned chunks (similarity 0.004 for a light edit); alignment is now
   anchored on words unique to both texts. (`353efbb`)
+- **The rewriter deleted a sentence from human writing as a "restatement".** On a genuine HC3 answer
+  it removed the return trip of a network request on 6 of 6 default runs (coverage 0.78 against a
+  0.70 bar). The bar is now 0.80; 2 of 20 human texts had a false drop at 0.70, none do now.
+  (`09a19f1`)
 - **Worked examples lost steps to restatement removal.** "...add 4 to your total" was dropped as a
   restatement of "...add 2 ..."; a restatement now needs one earlier sentence carrying its numbers.
   (`9273816`)
