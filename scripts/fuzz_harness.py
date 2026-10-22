@@ -26,8 +26,8 @@ Surfaces (run one with --surface, or all):
 
 Usage (from repo root, PYTHONPATH cleared — the Hermes desktop app shadows pydantic_core):
 
-    PYTHONPATH= UNTELL_LITE_NO_TORCH=1 .venv/Scripts/python.exe scripts/fuzz_harness.py
-    PYTHONPATH= UNTELL_LITE_NO_TORCH=1 .venv/Scripts/python.exe scripts/fuzz_harness.py --surface split --quick
+    PYTHONPATH= UNTELL_LITE_NO_TORCH=1 python scripts/fuzz_harness.py
+    PYTHONPATH= UNTELL_LITE_NO_TORCH=1 python scripts/fuzz_harness.py --surface split --quick
 
 Output: JSONL findings to --out (default .claude/probes/fuzz_harness_findings.jsonl)
 plus a numbered human summary on stdout. Exit code 0 always (findings are data,
@@ -61,7 +61,10 @@ from concurrent.futures import ThreadPoolExecutor
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HERE)
-PY = os.path.join(REPO, ".venv", "Scripts", "python.exe")
+# The interpreter running the harness, not `.venv/Scripts/python.exe`: that path is Windows-only and
+# lives in one developer's checkout, so everywhere else every subprocess surface died on spawn (the
+# same defect b054e670 fixed in eight tests).
+PY = sys.executable
 DEFAULT_OUT = os.path.join(REPO, ".claude", "probes", "fuzz_harness_findings.jsonl")
 
 ENV = dict(os.environ)
@@ -199,7 +202,18 @@ def sanitise_argv(argv: list[str]) -> list[str]:
     sanitisation on the result line. NUL *inside text* (stdin / --file / API
     body) still reaches the engine and is fuzzed there.
     """
-    return [a.replace("\x00", "") for a in argv]
+    out = [a.replace("\x00", "") for a in argv]
+    if sys.platform == "win32":
+        return out
+    # POSIX argv is bytes, and a lone surrogate has no UTF-8 form: spawning the str raised
+    # UnicodeEncodeError in THIS process, before the CLI ran, and was recorded as a spawn error.
+    # What a POSIX caller can actually deliver is undecodable bytes, which the child decodes with
+    # surrogateescape into lone surrogates, so send those (as tests/test_fuzz_harness_fixes.py does).
+    return [a.encode("utf-8", "surrogatepass") if _has_lone_surrogate(a) else a for a in out]
+
+
+def _has_lone_surrogate(text: str) -> bool:
+    return any("\ud800" <= ch <= "\udfff" for ch in text)
 
 
 # --- case runners --------------------------------------------------------------------------------
@@ -1127,7 +1141,9 @@ def classify(result: dict, surface: str) -> dict | None:
     if status == "exception":
         exc_type = result.get("exc_type", "?")
         # a clean TypeError naming the contract is the repo's documented fix shape
-        if "TypeError" in exc_type and "must be str" in exc:
+        # (the text guard says "must be str", the numeric ones "must be a number, got <type>"; the
+        # second was reported as a GAP although it is the same convention)
+        if "TypeError" in exc_type and ("must be str" in exc or "must be a number, got" in exc):
             return None
         sev = "DEFECT" if surface in ("split", "layout", "detectors", "preserve", "cli",
                                       "rest_socket", "soak") else "GAP"
@@ -1180,7 +1196,9 @@ def cli_one_shot(surface: str, argv: list[str], which: str, timeout: float) -> d
                   "sentences": "untell.scripts.sentences", "scrub": "untell.scripts.scrub",
                   "tells": "untell.scripts.tells", "preserve": "untell.scripts.preserve"}
     clean = sanitise_argv(argv)
-    sanitised = clean != argv
+    # Only stripping a NUL is a sanitisation worth reporting; surrogate args sent as bytes are the
+    # same characters by the only route POSIX offers.
+    sanitised = any("\x00" in a for a in argv)
     cmd = [PY, "-m", module_for[which]] + clean
     t0 = time.time()
     try:
@@ -1221,7 +1239,9 @@ def run_subprocess_cli(n: int, out_f) -> list[dict]:
         else:
             timeout = 40
         r = cli_one_shot("cli", argv, which, timeout)
-        if r["status"] in ("exception", "hang", "spawn_error") or r["sanitised_nul"]:
+        # `spawn_error:<Exception>`, so by prefix: an exact match never fired, and a case that could not
+        # even start was dropped as clean, which is how a missing interpreter read as "0 findings".
+        if r["status"] in ("exception", "hang") or r["status"].startswith("spawn_error") or r["sanitised_nul"]:
             findings.append(r)
             out_f.write(json.dumps({"surface": r["surface"], **r},
                                    ensure_ascii=True, default=str) + "\n")
@@ -1283,7 +1303,7 @@ def main() -> int:
         print("== cli subprocess one-shots ==", flush=True)
         sub_findings = run_subprocess_cli(15 if args.quick else 40, out_f)
         for f in sub_findings:
-            if f["status"] in ("exception", "hang", "spawn_error"):
+            if f["status"] in ("exception", "hang") or str(f["status"]).startswith("spawn_error"):
                 print(f"   {f['surface']} {f['argv'][:3]!r} -> {f['status']}", flush=True)
             elif f["sanitised_nul"]:
                 # NUL was stripped and the CLI still answered — the point of the
