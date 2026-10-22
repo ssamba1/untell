@@ -607,7 +607,7 @@ _CONTENT_STOP = frozenset(
     "how why what who will would could should may might must do does did been being into over "
     "under about between across during while if so because".split()
 )
-_RESTATEMENT_COVERAGE = 0.70
+_RESTATEMENT_COVERAGE = 0.80
 # preserve.py OWNS this pattern. A second copy here drifts the moment the sentinel format changes,
 # and tests/test_preserve.py::test_sentinel_pattern_is_defined_once exists to catch exactly that —
 # it caught this. rewriter/targeted.py imports it the same way, so there is no cycle.
@@ -639,12 +639,18 @@ def _drop_restatements(sentences: list[str], coverage: float = _RESTATEMENT_COVE
 
           coverage   AI texts   HUMAN texts (a false drop)
             0.60       45%          1%
-            0.70       26%          0%      <- shipped
+            0.70       26%          0%      <- shipped until 2026-10-22
             0.75       25%          0%
-            0.80       19%          0%
+            0.80       19%          0%      <- shipped
 
-      0.70 fires on 37% more AI text than the 0.80 first tried, with no human sentence dropped
-      anywhere in the sample;
+      0.70 fired on 37% more AI text, and on RAID dropped no human sentence. HC3's conversational
+      human answers are a different register, and there it did, wrongly, in 2 of 20 (MEASURED,
+      .claude/corpora/hc3-human.txt): "Legacy: Decks are made of any cards" deleted as a
+      restatement of the "Modern: ... printed since 2003" line above it (coverage 0.75), and the
+      RETURN trip of a network request deleted as a restatement of the outbound one (0.78). The
+      second reached the final output on 6 of 6 default runs, a sentence of a human's own writing
+      removed by the tool meant to defend it. At 0.80 both are kept, and the 23 offline AI texts
+      lose none of their drops; RAID's table above prices it at 26% -> 19%;
     * never the first or last sentence — the opener frames and the closer concludes, and both
       restate on purpose;
     * never a sentence carrying a NUMERAL the earlier sentence lacks, since a restatement that

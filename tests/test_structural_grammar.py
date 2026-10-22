@@ -901,6 +901,37 @@ class TestDropRestatements:
         assert len(out) >= len(sents) - (len(sents) // 5)
         assert len(out) > len(sents) // 2, "a call must never remove most of a paragraph"
 
+    @pytest.mark.parametrize(
+        "sents",
+        [
+            [
+                "Magic has several formats. ",
+                "- **Modern**: Decks are made of cards printed since about 2003 (minus a ban list). ",
+                "- **Legacy**: Decks are made of *any* cards (minus a ban list). ",
+                "Most local shops run Modern on Fridays. ",
+                "That is the short version. ",
+            ],
+            [
+                "Here is what happens when you load a page. ",
+                "My request is sent from my computer, to my ISP's servers, to the servers of the "
+                "website and then takes the little bit of information, lets say a specific webpage, "
+                "and then does that same process in reverse. ",
+                "Taking the information from the servers of the website to the ISP's servers and "
+                "then back to my computer. ",
+                "All of that happens in well under a second. ",
+                "That is the short version. ",
+            ],
+        ],
+        ids=["parallel list items", "the return trip"],
+    )
+    def test_does_not_drop_a_human_sentence_that_differs_in_what_matters(self, sents):
+        """Two real HC3 human answers that 0.70 cut, at coverage 0.75 and 0.78. The words they do
+        not share ("Legacy", "any"; "back to my computer") are the information. The second was
+        deleted from the final output on 6 of 6 default runs."""
+        from untell.rewriter.structural import _drop_restatements
+
+        assert _drop_restatements(list(sents)) == sents
+
     def test_short_input_is_untouched(self):
         from untell.rewriter.structural import _drop_restatements
 
@@ -908,7 +939,7 @@ class TestDropRestatements:
         assert _drop_restatements(list(sents)) == sents
 
     def test_does_not_fire_on_varied_human_prose(self):
-        """Measured: 0 of 80 human RAID texts had a sentence dropped at the shipped 0.70 bar."""
+        """Measured: 0 of 80 human RAID texts had a sentence dropped at 0.70; the bar is now 0.80."""
         from untell.rewriter.structural import _drop_restatements
 
         sents = [

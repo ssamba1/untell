@@ -2085,3 +2085,18 @@ RAN    .claude/probes/direction_docs.py: structural/surgical/composite, 2 seeds,
 SAW    0 direction vetoes in 1,843 changed candidates (0 of 2,083 with the earlier corpora).
 NEXT   The HC3/RAID re-measure in the entry above still stands; this narrows how likely it is to
        find anything.
+
+## 2026-10-22 session (owner-directed) RED — restatement coverage bar 0.70 -> 0.80
+
+WHAT   `_drop_restatements` deleted genuine content from 2 of 20 HC3 HUMAN answers at 0.70:
+       a parallel list item ("Legacy: ... any cards" vs "Modern: ... since 2003", coverage 0.75)
+       and the return trip of a network request (0.78). The second reached the FINAL output on
+       6 of 6 default runs (composite and structural, 3 seeds): the tool removed a sentence from
+       a human's own writing. The meaning gate's deletion allowance admits one sentence.
+RAN    see the coverage sweep in the `_drop_restatements` docstring; local corpora only.
+SAW    at 0.80: human false drops 2/20 -> 0/20; AI texts with a drop 3/23 -> 3/23 (no loss here).
+       The RAID table already in the docstring prices 0.80 at 26% -> 19% of AI texts.
+WHY    RED: a measured rewriter constant. Changed because the transform's own rule is "deliberately
+       conservative, because deleting a sentence is the most destructive edit here".
+NEXT   Re-run the RAID/HC3 sweep with the downloads available; revert the one-line constant
+       if 0.80 costs more than the docstring's table says.
