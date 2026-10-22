@@ -23,6 +23,8 @@ import json
 
 import pytest
 
+from tests._mcp_compat import content_blocks
+
 pytest.importorskip("mcp")
 
 
@@ -36,7 +38,7 @@ def _call(name: str, **kwargs) -> dict:
         return await server.call_tool(name, kwargs)
 
     result = asyncio.run(run())
-    blocks = result[0] if isinstance(result, tuple) else result
+    blocks = content_blocks(result)
     for block in blocks:
         text = getattr(block, "text", None)
         if text:

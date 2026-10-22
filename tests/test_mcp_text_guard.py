@@ -22,6 +22,7 @@ import json
 
 import pytest
 
+from tests._mcp_compat import content_blocks
 from untell.mcp_server import _text_too_long
 
 OVER = "x" * 50_001
@@ -86,7 +87,7 @@ def test_an_oversized_text_is_refused_instead_of_processing(tool, args):
     async def _go():
         srv = _real_server()
         result = await srv.call_tool(tool, {"text": OVER, **args})
-        return json.loads(result[0].text)
+        return json.loads(content_blocks(result)[0].text)
 
     payload = _run(_go())
     assert "error" in payload, f"{tool} processed a 50,001-char text: {str(payload)[:120]}"
@@ -97,7 +98,7 @@ def test_an_oversized_voice_sample_is_refused():
     async def _go():
         srv = _real_server()
         result = await srv.call_tool("untell", {"text": "short", "tier": "lite", "voice_sample": OVER})
-        return json.loads(result[0].text)
+        return json.loads(content_blocks(result)[0].text)
 
     payload = _run(_go())
     assert "error" in payload and "voice_sample" in payload["error"]
@@ -111,7 +112,7 @@ def test_a_text_at_the_limit_still_runs():
         srv = _real_server()
         text = ("Furthermore, the system leverages robust methodologies. ") * (MAX_INPUT_CHARS // 56)
         result = await srv.call_tool("scrub", {"text": text})
-        return json.loads(result[0].text)
+        return json.loads(content_blocks(result)[0].text)
 
     payload = _run(_go())
     assert "error" not in payload, payload.get("error")

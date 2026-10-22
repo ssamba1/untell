@@ -77,7 +77,9 @@ docs = [
 # The MCP SDK requires Python >=3.10, but the base package supports 3.9 — gate the extra with an
 # environment marker so `.[mcp]` installs nothing (instead of failing to resolve) on 3.9.
 mcp = [
-    "mcp>=1.0; python_version >= '3.10'",
+    # <3: 1.x and 2.x are both supported (mcp 2.0 renamed FastMCP to MCPServer; see
+    # untell/mcp_server.py:_server_class). A 3.x has not been tried.
+    "mcp>=1.0,<3; python_version >= '3.10'",
 ]
 # Production REST API server (FastAPI).
 server = [

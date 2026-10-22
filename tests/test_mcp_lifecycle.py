@@ -31,6 +31,7 @@ mcp = pytest.importorskip("mcp")  # noqa: F841
 from mcp import ClientSession, StdioServerParameters  # noqa: E402
 from mcp.client.stdio import stdio_client  # noqa: E402
 
+from tests._mcp_compat import content_blocks  # noqa: E402
 from untell.mcp_server import _TOOL_NAMES, _server  # noqa: E402
 
 TEXT = (
@@ -136,10 +137,10 @@ def test_two_server_instances_interleaved_do_not_answer_for_each_other():
         r1 = await asyncio.gather(*[s1.call_tool("tells", {"text": t}) for t in docs1])
         r2 = await asyncio.gather(*[s2.call_tool("tells", {"text": t}) for t in docs2])
         for i, texts in enumerate(r1):
-            body = json.loads(texts[0].text)
+            body = json.loads(content_blocks(texts)[0].text)
             assert body["words"] == len(docs1[i].split()), f"server1 call {i} crossed over"
         for i, texts in enumerate(r2):
-            body = json.loads(texts[0].text)
+            body = json.loads(content_blocks(texts)[0].text)
             assert body["words"] == len(docs2[i].split()), f"server2 call {i} crossed over"
 
     asyncio.run(_go())
@@ -163,7 +164,7 @@ def test_cancel_mid_flight_leaves_the_server_answering_correctly():
         except (asyncio.CancelledError, Exception):  # noqa: BLE001
             pass
         res = await srv.call_tool("tells", {"text": TEXT})
-        body = json.loads(res[0].text)
+        body = json.loads(content_blocks(res)[0].text)
         assert body["words"] == len(TEXT.split())
 
     asyncio.run(_go())
