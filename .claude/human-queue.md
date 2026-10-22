@@ -2100,3 +2100,17 @@ WHY    RED: a measured rewriter constant. Changed because the transform's own ru
        conservative, because deleting a sentence is the most destructive edit here".
 NEXT   Re-run the RAID/HC3 sweep with the downloads available; revert the one-line constant
        if 0.80 costs more than the docstring's table says.
+
+## 2026-10-22 session (owner-directed) — upstream: the MCP SDK never answers some malformed requests
+
+WHAT   Over stdio, `untell-mcp` stays alive but sends NO response to the request id for
+       (a) a tools/call whose arguments carry a lone surrogate ("\ud800", valid JSON syntax) and
+       (b) an `initialize` whose params are not an object. A client awaiting that id hangs.
+       Not untell's output: `scrub_hidden("\ud800\x00tail")` returns "tail", which serialises.
+RAN    a stdio probe (initialize, then each frame, 40s wait), under mcp 1.30 and mcp 2.3.
+SAW    1.30: a "notifications/message ... Internal Server Error" and no response to the id;
+       pydantic "JSONRPCError.error Field required" on stderr.  2.3: silence.  `ping` answers
+       instantly afterwards on both.
+WHY    The fault is in the SDK's request validation, not in untell's code.
+NEXT   Report upstream (modelcontextprotocol/python-sdk) with the two frames above. The fuzz
+       harness now labels these "the MCP SDK drops a request it cannot validate".
