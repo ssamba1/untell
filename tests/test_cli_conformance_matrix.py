@@ -25,6 +25,7 @@ completes in <2s; the slow ones are marked ``slow`` and run the real workload
 """
 from __future__ import annotations
 
+import importlib.util
 import os
 import re
 import subprocess
@@ -235,8 +236,17 @@ def test_minimal_valid_invocation_slow(script):
     _assert_minimal(script)
 
 
+# Console scripts whose minimal VALID run needs an optional package. Without it each prints the
+# package and the extra and exits 1 (untell-mcp is pinned in tests/test_mcp_server.py); the SDK
+# for untell-mcp cannot be installed at all on Python 3.9.
+_NEEDS_A_PACKAGE = {"untell-mcp": "mcp", "untell-surrogate": "torch"}
+
+
 def _assert_minimal(script: str) -> None:
     spec = MINIMAL[script]
+    needed = _NEEDS_A_PACKAGE.get(script)
+    if needed and importlib.util.find_spec(needed) is None:
+        pytest.skip(f"{script}'s minimal run needs {needed!r}, which is not installed here")
     argv = _make_files(script, list(spec["argv"]))
     target = _console_scripts()[script]
     timeout = 420 if spec.get("slow") else 60

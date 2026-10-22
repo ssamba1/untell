@@ -76,7 +76,7 @@ def test_the_yaml_branch_still_warns_too() -> None:
 
 def test_base_install_stays_zero_dependency() -> None:
     """The reason `tomli` was not simply added. If that changes, revisit this whole trade."""
-    import tomllib as _t
+    _t = pytest.importorskip("tomllib")  # 3.11+; the check is the same on every Python
 
     data = _t.loads(pathlib.Path("pyproject.toml").read_text(encoding="utf-8"))
     assert data["project"]["dependencies"] == [], (

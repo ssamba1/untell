@@ -419,3 +419,28 @@ def test_an_unknown_flag_is_rejected_rather_than_ignored():
     with pytest.raises(SystemExit) as exc:
         build_parser().parse_args(["--not-a-real-flag"])
     assert exc.value.code != 0
+
+
+def test_a_missing_sdk_is_a_message_not_a_traceback(monkeypatch, capsys):
+    """What every Python 3.9 user gets: the `mcp` extra installs nothing there."""
+    import untell.mcp_server as mcp_server
+
+    def no_sdk():
+        raise ModuleNotFoundError("No module named 'mcp'", name="mcp")
+
+    monkeypatch.setattr(mcp_server, "_server_class", no_sdk)
+    assert mcp_server.main([]) == 1
+    err = capsys.readouterr().err
+    assert "pip install 'untell[mcp]'" in err and "3.10" in err, err
+
+
+def test_an_unrelated_missing_module_is_not_dressed_up_as_the_sdk(monkeypatch):
+    """Only the SDK's absence gets the message; any other missing module must surface as itself."""
+    import untell.mcp_server as mcp_server
+
+    def other():
+        raise ModuleNotFoundError("No module named 'somethingelse'", name="somethingelse")
+
+    monkeypatch.setattr(mcp_server, "_server_class", other)
+    with pytest.raises(ModuleNotFoundError, match="somethingelse"):
+        mcp_server.main([])

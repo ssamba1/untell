@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import sys
 
 # Free, no-key rewriter backends selectable via the ``rewriter`` arg; anything else (e.g. "auto")
 # routes to a hosted/local-policy backend via prefer=None.
@@ -605,7 +606,22 @@ def main(argv: list[str] | None = None) -> int:
         print("\n".join(_TOOL_NAMES))
         return 0
     logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
-    _server().run()
+    try:
+        server = _server()
+    except ModuleNotFoundError as exc:
+        # The SDK missing is a message, not a traceback, like `untell-server` without FastAPI. It is
+        # ALWAYS missing on Python 3.9: the `mcp` extra installs nothing there, because the SDK
+        # needs 3.10, so a 3.9 user who followed the install docs got a bare ModuleNotFoundError.
+        if (exc.name or "").split(".")[0] != "mcp":
+            raise
+        print(
+            "untell-mcp needs the MCP SDK, which this install does not have: "
+            "pip install 'untell[mcp]' (Python 3.10 or newer; the SDK does not support 3.9). "
+            "Everything else, the CLI, the REST server and the Python API, works without it.",
+            file=sys.stderr,
+        )
+        return 1
+    server.run()
     return 0
 
 
