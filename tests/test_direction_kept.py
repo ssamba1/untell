@@ -7,8 +7,9 @@ it; on the lite path nothing did, and `meaning_preserved` admitted it as faithfu
 `direction_kept` is a TRANSFER check, not a count: it fires only when a word of one direction is
 lost AND a word of the other is gained. MEASURED before it was wired in, over the offline corpora
 (43 texts, structural/surgical/composite, 3 seeds): 0 vetoes in 240 changed candidates, 120 of them
-from a source carrying a direction word. The invariant that makes that hold for the substitution
-tables is pinned at the bottom of this file.
+from a source carrying a direction word; then over all 703 prose paragraphs of the repository's own
+documentation (.claude/probes/direction_docs.py): 0 in 1,843. The invariant that makes that hold for
+the substitution tables is pinned at the bottom of this file.
 """
 
 from __future__ import annotations

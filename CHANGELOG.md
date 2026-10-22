@@ -65,8 +65,9 @@ All notable changes to this project are documented here. The format is based on
 - **The REST server could not import on Python 3.9**, a supported version: pydantic evaluates
   `X | None` annotations at runtime. The request models use `Optional`. (`77505ba`)
 - **Without NLI, the meaning gate admitted "reduced" -> "increased".** A new mechanical veto,
-  `direction_kept`, refuses a rewrite that trades an up word for a down word; it fired on 0 of 240
-  real candidates from the free rewriters. (`019a9ae`)
+  `direction_kept`, refuses a rewrite that trades an up word for a down word; it fired on 0 of 2,083
+  real candidates from the free rewriters (offline corpora plus 703 documentation paragraphs).
+  (`019a9ae`)
 - **Documents over 6,000 words had every rewrite vetoed.** Past the exact-alignment limit the
   meaning gates compared misaligned chunks (similarity 0.004 for a light edit); alignment is now
   anchored on words unique to both texts. (`353efbb`)

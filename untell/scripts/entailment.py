@@ -507,7 +507,9 @@ def meaning_preserved(
     # no negation, so the check above cannot see it, and without NLI nothing else did: the gate
     # admitted it. Cost on real output, MEASURED over the offline corpora (43 texts, the structural,
     # surgical and composite rewriters, 3 seeds): 0 vetoes in 240 changed candidates, 120 of them
-    # from a source that carries a direction word. See `hedges.direction_kept`.
+    # from a source that carries a direction word. Re-measured over every prose paragraph of this
+    # repository's own documentation (703, dense with "raised", "fell", "lower" because they report
+    # measurements; .claude/probes/direction_docs.py): 0 in 1,843. See `hedges.direction_kept`.
     if not direction_kept(source, candidate):
         return False
     # Deletion, which is the ONE defect class the zero-dependency path cannot otherwise see: a

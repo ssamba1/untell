@@ -2077,3 +2077,11 @@ RAN    the next CI run on claude/zen-darwin-19g89x is the check.
 WHY    AMBER: anything under .github/.
 NEXT   If setup-python v6 no longer offers 3.9 (EOL Oct 2025), the 3.9 leg says so on its first
        step; drop 3.9 from the matrix and requires-python together, or pin setup-python@v5 for it.
+
+## 2026-10-22 session (owner-directed) — `direction_kept` re-measured on a larger sample
+
+RAN    .claude/probes/direction_docs.py: structural/surgical/composite, 2 seeds, over all 703 prose
+       paragraphs of README/ROADMAP/docs (141 contain a direction word), lite tier.
+SAW    0 direction vetoes in 1,843 changed candidates (0 of 2,083 with the earlier corpora).
+NEXT   The HC3/RAID re-measure in the entry above still stands; this narrows how likely it is to
+       find anything.
