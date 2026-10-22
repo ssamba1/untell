@@ -18,6 +18,8 @@ advertised there and missing here fails the guard.
 """
 from __future__ import annotations
 
+import importlib.util
+
 import pytest
 
 from untell.mcp_server import _FREE_REWRITERS
@@ -32,6 +34,15 @@ SCORE = {"tier": "lite", "max": 0.9, "detectors": {"perplexity_burstiness": 0.9}
 
 # `max` is an alias the surfaces accept, not a distinct backend, so it is not swept for output.
 SWEPT = sorted(_FREE_REWRITERS - {"max"})
+
+# Free means no API key, not no extra: these two load a translation / paraphrase model and need
+# the [full] extra. Named rather than inferred, so a stdlib rewriter that stops resolving cannot
+# hide behind the skip; the test below keeps this set honest.
+_NEEDS_MODELS = {"mt_pivot", "t5_paraphrase"}
+_HAS_MODELS = (
+    importlib.util.find_spec("torch") is not None
+    and importlib.util.find_spec("transformers") is not None
+)
 
 
 @pytest.fixture(autouse=True)
@@ -49,6 +60,8 @@ def test_the_swept_list_matches_what_the_surfaces_advertise():
 
 @pytest.mark.parametrize("name", SWEPT)
 def test_the_rewriter_resolves_and_is_available(name: str):
+    if name in _NEEDS_MODELS and not _HAS_MODELS:
+        pytest.skip(f"{name} needs the [full] extra")
     rewriter = get_rewriter(prefer=name)
     assert rewriter is not None, f"{name} is advertised as free and does not resolve"
     assert rewriter.available(), f"{name} resolves but reports unavailable"
@@ -95,3 +108,8 @@ def test_the_keyed_backends_do_not_pretend_to_be_available(name: str):
     assert not rewriter.available() or getattr(rewriter, "name", name) == name, (
         f"{name} resolved to {type(rewriter).__name__}, which is a different backend"
     )
+
+
+def test_the_model_backed_set_names_real_rewriters():
+    """The skip above is only safe while it names rewriters that are actually swept."""
+    assert _NEEDS_MODELS <= set(SWEPT), sorted(_NEEDS_MODELS - set(SWEPT))

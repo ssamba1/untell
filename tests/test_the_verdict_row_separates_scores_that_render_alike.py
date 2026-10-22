@@ -18,7 +18,9 @@ threshold would call flagged text clear on exactly the tier a clean install land
 """
 from __future__ import annotations
 
+import importlib.util
 import io
+import re
 from contextlib import redirect_stdout
 
 import pytest
@@ -57,12 +59,17 @@ def _verdict_after(post: dict) -> str:
     """
     for line in _render(post).splitlines():
         if "Verdict" in line:
+            # The plain renderer (no `rich` extra) prints "Verdict: before -> after  (cut 0.30)".
+            plain = re.match(r"Verdict: (\w+) -> (\w+)", line.strip())
+            if "│" not in line and plain:
+                return plain.group(2)
             cells = [c.strip() for c in line.split("│") if c.strip()]
             assert len(cells) >= 3, f"unexpected Verdict row shape: {line!r}"
             return cells[2]
     raise AssertionError("no Verdict row rendered")
 
 
+@pytest.mark.skipif(importlib.util.find_spec("rich") is None, reason="compares rich table cells")
 def test_the_two_scores_really_do_render_alike():
     """The premise. Without it the rest guards a problem that does not exist."""
     under, at = _score(0.29996, False), _score(0.30000, True)

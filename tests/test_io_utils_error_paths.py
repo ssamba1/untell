@@ -43,7 +43,7 @@ def test_empty_docx_is_reported_empty(monkeypatch) -> None:
     class PkgNotFound(Exception):
         pass
 
-    import docx
+    docx = pytest.importorskip("docx")  # the [docs] extra
 
     monkeypatch.setattr(docx, "Document", lambda path: (_ for _ in ()).throw(PkgNotFound("nope")))
     with pytest.raises(ValueError, match="is empty"):
@@ -56,7 +56,7 @@ def test_corrupt_docx_is_reported_as_unreadable(monkeypatch) -> None:
     class PkgNotFound(Exception):
         pass
 
-    import docx
+    docx = pytest.importorskip("docx")  # the [docs] extra
 
     monkeypatch.setattr(docx, "Document", lambda path: (_ for _ in ()).throw(PkgNotFound("nope")))
     with pytest.raises(ValueError, match="not a readable .docx"):
@@ -65,7 +65,7 @@ def test_corrupt_docx_is_reported_as_unreadable(monkeypatch) -> None:
 
 def test_empty_pdf_is_reported_empty(monkeypatch) -> None:
     monkeypatch.setattr(io_utils, "_has_bytes", lambda path: False)
-    import pypdf
+    pypdf = pytest.importorskip("pypdf")  # the [docs] extra
 
     monkeypatch.setattr(pypdf, "PdfReader", lambda path: (_ for _ in ()).throw(RuntimeError("empty")))
     with pytest.raises(ValueError, match="is empty"):
@@ -74,7 +74,7 @@ def test_empty_pdf_is_reported_empty(monkeypatch) -> None:
 
 def test_encrypted_pdf_names_the_password(monkeypatch) -> None:
     monkeypatch.setattr(io_utils, "_has_bytes", lambda path: True)
-    import pypdf
+    pypdf = pytest.importorskip("pypdf")  # the [docs] extra
 
     class NotDecrypted(Exception):
         pass
@@ -86,7 +86,7 @@ def test_encrypted_pdf_names_the_password(monkeypatch) -> None:
 
 def test_corrupt_pdf_is_reported_as_unreadable(monkeypatch) -> None:
     monkeypatch.setattr(io_utils, "_has_bytes", lambda path: True)
-    import pypdf
+    pypdf = pytest.importorskip("pypdf")  # the [docs] extra
 
     class StreamEnded(Exception):
         pass

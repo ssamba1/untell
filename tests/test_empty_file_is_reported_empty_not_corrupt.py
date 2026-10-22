@@ -9,10 +9,13 @@ boundary — 0 bytes must be "empty", not "corrupt".
 import os
 import tempfile
 
+import pytest
+
 from untell.scripts.io_utils import read_file
 
 
 def test_empty_docx_reports_empty_not_corrupt():
+    pytest.importorskip("docx")  # the [docs] extra; without it the message is "needs python-docx"
     with tempfile.TemporaryDirectory() as d:
         path = os.path.join(d, "empty.docx")
         open(path, "wb").close()

@@ -12,6 +12,8 @@ touch the shipped code path. These do, through the public function.
 
 from __future__ import annotations
 
+import re
+
 import pytest
 
 from untell import rich_output
@@ -76,6 +78,10 @@ def _after_verdict(out: str) -> str:
     flagged. The first version of this test did exactly that and failed on its own assertion.
     """
     line = next(ln for ln in out.splitlines() if "Verdict" in ln)
+    # The plain renderer (no `rich` extra) prints "Verdict: before -> after  (cut 0.30)".
+    plain = re.match(r"Verdict: (\w+) -> (\w+)", line.strip())
+    if "│" not in line and plain:
+        return plain.group(2)
     cells = [c.strip() for c in line.split("│") if c.strip()]
     return cells[2]  # ["Verdict", before, after]
 
