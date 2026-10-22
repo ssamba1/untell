@@ -384,6 +384,81 @@ def split_sentences(text: str) -> list[str]:
 CHUNK_WORDS = 90
 
 
+def _anchored_cut_points(aw: list[str], bw: list[str], cuts_a: list[int]) -> list[int]:
+    """Map each source cut into ``bw`` without aligning the whole document at once.
+
+    The whole-document matcher is quadratic, but a cut only needs the text near it. The catch is
+    what "near" means: a window that simply looks ahead from the previous cut latches onto a LATER
+    copy of a repeated phrase, then starts the next window from there, and the error compounds.
+    MEASURED on a 4,660-word corpus whose paragraphs share their phrasing: such a window agreed
+    with the exact alignment on 6 of 55 cuts and was off by up to 1,795 words by the end.
+
+    So the windows are bounded on BOTH sides by anchors, the way patience diff does it: words that
+    occur exactly once in each text, kept only where their positions rise together (the longest
+    increasing run). A unique word cannot be confused with a repeat. Each cut is then mapped by the
+    exact matcher over the span between its two surrounding anchors, with the same
+    anchor-through-matching-blocks rule `aligned_chunks` uses below its size limit. A span too big
+    to match exactly is interpolated between its anchors instead.
+    """
+    import bisect
+
+    count_a: dict[str, int] = {}
+    count_b: dict[str, int] = {}
+    for w in aw:
+        count_a[w] = count_a.get(w, 0) + 1
+    for w in bw:
+        count_b[w] = count_b.get(w, 0) + 1
+    where_b = {w: i for i, w in enumerate(bw) if count_b[w] == 1 and count_a.get(w) == 1}
+    pairs = [(i, where_b[w]) for i, w in enumerate(aw) if w in where_b]
+
+    # Longest increasing run of b-positions (pairs are already in a-order): O(n log n).
+    tails: list[int] = []
+    tail_at: list[int] = []
+    parent = [-1] * len(pairs)
+    for n, (_, pb) in enumerate(pairs):
+        j = bisect.bisect_left(tails, pb)
+        if j == len(tails):
+            tails.append(pb)
+            tail_at.append(n)
+        else:
+            tails[j] = pb
+            tail_at[j] = n
+        parent[n] = tail_at[j - 1] if j else -1
+    run: list[tuple[int, int]] = []
+    n = tail_at[-1] if tail_at else -1
+    while n != -1:
+        run.append(pairs[n])
+        n = parent[n]
+    anchors = [(0, 0), *reversed(run), (len(aw), len(bw))]
+    anchor_a = [pa for pa, _ in anchors]
+
+    span_limit = 8 * CHUNK_WORDS  # 720 words a side: under a tenth of a second to match exactly
+    out: list[int] = []
+    for cut in cuts_a:
+        j = bisect.bisect_right(anchor_a, cut) - 1
+        (pa, pb), (na, nb) = anchors[j], anchors[min(j + 1, len(anchors) - 1)]
+        local = cut - pa
+        if cut == pa or na <= pa:
+            point = pb
+        elif na - pa > span_limit or nb - pb > span_limit:
+            point = pb + round(local * (nb - pb) / (na - pa))
+        else:
+            point = nb
+            for blk in difflib.SequenceMatcher(
+                a=aw[pa:na], b=bw[pb:nb], autojunk=False
+            ).get_matching_blocks():
+                if not blk.size:
+                    continue
+                if blk.a <= local < blk.a + blk.size:
+                    point = pb + blk.b + (local - blk.a)
+                    break
+                if blk.a > local:  # in a gap: anchor to the start of the next matching block
+                    point = pb + blk.b
+                    break
+        out.append(max(point, out[-1] if out else 0))
+    return out
+
+
 def aligned_chunks(a: str, b: str) -> list[tuple[str, str]]:
     """Pair up ``a`` and ``b`` piecewise so neither side reaches the tokeniser's cut.
 
@@ -435,14 +510,23 @@ def aligned_chunks(a: str, b: str) -> list[tuple[str, str]]:
 
     # difflib's SequenceMatcher is worst-case O(n*m). Measured on identical inputs it
     # doubles ~4.1x per doubling: 1k words 0.56s, 2k 2.12s, 4k 8.77s, 8k 36.1s — a 40k-word
-    # document (~900s) would pin an API worker. Past this size the exact matcher costs more
-    # than the correspondence it buys; proportional cuts (the fallback below) still bound
-    # both sides under CHUNK_WORDS and the gates only need pieces small enough to tokenise.
-    _EXACT_ALIGN_LIMIT = 6000  # ~18s today, under the exact path; proportional beyond
+    # document (~900s) would pin an API worker. Past this size the WHOLE-document matcher costs
+    # more than it buys, so each cut is mapped through an exact match over a bounded window
+    # instead (`_anchored_cut_points`): the same correspondence, at near-linear cost.
+    #
+    # This used to fall back to proportional cuts, and cut the rewrite at the SOURCE's word
+    # indices — the drift this docstring describes, unscaled. A rewrite that merges or splits
+    # sentences is a sentence out of step within a few chunks, token overlap between chunks
+    # that no longer correspond collapses, and the min-over-chunks gate vetoes everything.
+    # MEASURED with tests/test_the_loop_still_works_past_the_scoring_cap.py's corpus at one
+    # iteration, best_of=3: 6,893 words adopted a rewrite (tells 6893 -> 4573) while 7,905 words
+    # adopted nothing, all three candidates vetoed at sim 0.27-0.31 against a 0.50 bar. Every
+    # document past 6,000 words had its rewrites refused by a gate reading misaligned text.
+    _EXACT_ALIGN_LIMIT = 6000  # ~18s today, under the exact path; anchored beyond
     if longest > _EXACT_ALIGN_LIMIT:
         cuts_a = [round(len(aw) * n / k) for n in range(1, k)]
         bounds_a = [0, *cuts_a, len(aw)]
-        bounds_b = [0, *cuts_a, len(bw)]
+        bounds_b = [0, *_anchored_cut_points(aw, bw, cuts_a), len(bw)]
         out: list[tuple[str, str]] = []
         for n in range(k):
             ca = " ".join(aw[bounds_a[n] : bounds_a[n + 1]])
