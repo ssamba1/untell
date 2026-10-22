@@ -2016,3 +2016,21 @@ WHY    AMBER: .github/ci.yml (mcp extra in the full-tier install), new test modu
 NEXT   Review the branch and merge it, or revert any one commit on its own (each is
        self-contained). Lite-tier rot that was hidden while collection failed is being worked
        through on the same branch; anything not fixed there will get its own entry here.
+
+## 2026-10-22 session (owner-directed) RED — the stdlib meaning gate admits an antonym flip
+
+WHAT   With NLI unavailable (the lite install), `meaning_preserved` admits
+       "the drug reduced relapse by 31 percent" -> "the drug increased relapse by 31 percent".
+       `polarity_kept` counts negations, and an antonym swap adds none; similarity is high.
+       run.py's `_meaning_gate_mode` docstring already records the class ("runs faster" ->
+       "runs slower" admitted under similarity-only). Also on that path: the token-overlap gate
+       VETOES deleting a stance frame ("It's important to note that ...") from a short sentence,
+       and a casual-register faithful rewrite.
+RAN    meaning_preserved_vetoes(SOURCE, SOURCE.replace("reduced", "increased"), ...) -> []
+       (tests/test_the_meaning_gate_catches_what_it_claims.py SOURCE, Python 3.11, no torch)
+SAW    no veto fired; the same call with "did not reduce" fires polarity_kept.
+WHY    RED: closing it means a new veto in the default gate, which changes what the loop adopts.
+       The tests that pinned these cases now skip on the lite path with this reason, instead of
+       failing for an environment they did not state; they still run where NLI is installed.
+NEXT   A mechanical direction check (up/down verb lexicon, like polarity_kept) measured for false
+       vetoes on real loop output before it ships. Being prototyped on the same branch.

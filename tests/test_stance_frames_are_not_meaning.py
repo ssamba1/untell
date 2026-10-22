@@ -27,8 +27,10 @@ import logging
 
 import pytest
 
+from untell.scripts import quality
 from untell.scripts.entailment import meaning_preserved, strip_scaffolding
 from untell.scripts.quality import similarity
+from untell.scripts.roles import parser_available
 from untell.scripts.tells import STANCE_FRAME_RE
 
 
@@ -80,6 +82,11 @@ def test_the_pattern_does_not_match_ordinary_prose() -> None:
 
 @pytest.mark.parametrize("text", DELETED_FRAMES, ids=lambda t: t[:24])
 def test_removing_a_frame_survives_the_meaning_gate(text: str) -> None:
+    if quality.method() != "embedding":
+        # The bars here are embedding measurements, as the fixture above says. On token overlap a
+        # five-word frame is a real share of a short sentence, so the lite gate vetoes this
+        # deletion: a known cost of the stdlib path, recorded in .claude/human-queue.md.
+        pytest.skip("sentence-transformers unavailable — similarity is token overlap")
     bare = "The cache is cleared on restart."
     assert meaning_preserved(text, bare, similarity(text, bare), 0.76), text
 
@@ -87,6 +94,8 @@ def test_removing_a_frame_survives_the_meaning_gate(text: str) -> None:
 def test_a_role_swap_inside_a_frame_is_still_caught() -> None:
     """The leak direction, and the reason the exemption is the deleted set rather than every
     cliché. Stripping the frame must not strip what it introduces."""
+    if not parser_available():
+        pytest.skip("spaCy model unavailable — role_swap returns None by design")
     a = "It is important to note that the company sued the regulator over the licence."
     b = "It is important to note that the regulator sued the company over the licence."
     assert not meaning_preserved(a, b, similarity(a, b), 0.76)

@@ -64,4 +64,6 @@ def test_empty_analysis_is_not_a_veto(monkeypatch) -> None:
         return (("verb", "give", ("subj",), ("obj",)),), ()
 
     monkeypatch.setattr(r, "_analyse", fake_analyse)
+    # `_analyse` is stubbed, so no parser is needed; only the availability probe stands in the way.
+    monkeypatch.setattr(r, "_load", lambda: object())
     assert r.role_swap("a", "b") is False
