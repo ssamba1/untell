@@ -9,9 +9,11 @@ via the score() seam with a size-sensitive stub model.
 """
 from unittest.mock import patch
 
-import torch
+import pytest
 
 import untell.detectors.mage as mage
+
+torch = pytest.importorskip("torch")
 
 TEXT = " ".join(["word"] * 1401)
 

@@ -6,9 +6,11 @@ bar (raw F1 would sit ~0.93+ and need a different bar, per the comment). The
 mutation True -> False silently switches the scorer to its raw scale. Pinned by
 capturing the constructor kwargs via monkeypatched bert_score.BERTScorer.
 """
-import bert_score
+import pytest
 
 import untell.scripts.quality as quality
+
+bert_score = pytest.importorskip("bert_score")
 
 
 def test_bertscore_constructed_with_rescale(monkeypatch):

@@ -9,9 +9,11 @@ model exposes the wrong index: P(machine)=0.0009 vs 1-P(human)=0.5002.
 """
 from unittest.mock import patch
 
-import torch
+import pytest
 
 import untell.detectors.mage as mage
+
+torch = pytest.importorskip("torch")
 
 
 class _Cfg:
