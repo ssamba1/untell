@@ -1997,3 +1997,22 @@ SAW    Two call sites, both hosted rewriters (Anthropic, OpenAI). The free rewri
 WHY    Publishing an effect size for an untested capability would be a fabricated number.
 NEXT   Whoever holds a key runs the acceptance command in ~/goals/results/w7-06.md. Until then the
        rubric is implemented, tested for shape, and unproven for effect.
+
+## 2026-10-22 session (owner-directed, not the unattended loop) AMBER+RED — CI repair on claude/zen-darwin-19g89x
+
+WHAT   main's CI was red on every job that runs tests. Fixed on the branch, not merged:
+       * 7 test modules leaked UNTELL_LITE_NO_TORCH / UNTELL_DISABLE_MAGE into the whole session
+         (5 at import time), so the full tier ran torch tests with torch off. conftest.py now
+         stops the session on an import-time leak and fails a module that leaks at runtime.
+       * lite tier died at collection: 6 unguarded optional imports (now importorskip), and on
+         3.9 another 16 errors (pydantic `X | None`, tomllib).
+       * `mcp>=1.0` resolved to mcp 2.x, which renamed FastMCP; untell-mcp crashed on import.
+       * pre-commit had never passed (ruff-format hook removed, check-yaml --unsafe, ps1 EOL).
+RAN    pytest -q -m "not slow" on 3.9/3.11/3.13; MCP tests under mcp 1.30 and 2.3; pre-commit.
+SAW    pre-commit job green in CI; 3.9 collection 16 errors -> 0; MCP tests 51 failed -> 0.
+WHY    AMBER: .github/ci.yml (mcp extra in the full-tier install), new test module
+       tests/_mcp_compat.py, refactors across >3 files. RED: the mcp extra is now bounded
+       `mcp>=1.0,<3` (a dependency change), made because the owner directed the session.
+NEXT   Review the branch and merge it, or revert any one commit on its own (each is
+       self-contained). Lite-tier rot that was hidden while collection failed is being worked
+       through on the same branch; anything not fixed there will get its own entry here.
