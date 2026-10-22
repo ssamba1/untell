@@ -43,6 +43,72 @@ def _active_scoring_env() -> list[str]:
     return [f"{name}={os.environ[name]}" for name in _SCORING_ENV if os.environ.get(name)]
 
 
+# The scoring env as the session started, and the modules caught changing it while being imported.
+#
+# Five test modules once did `os.environ.setdefault("UNTELL_LITE_NO_TORCH", "1")` at module level.
+# That runs at COLLECTION, so it pinned every module collected after them to the stdlib path, for
+# the whole session. CI's full-tier job ran its torch tests with torch silently switched off and
+# failed them as `_torch_ready() is False` and `'token_overlap' == 'embedding'`, while its own
+# summary line printed the leaked `UNTELL_LITE_NO_TORCH=1` that explained them.
+_SESSION_SCORING_ENV: dict[str, str | None] = {}
+_COLLECTION_LEAKS: list[str] = []
+
+
+def _scoring_env_snapshot() -> dict[str, str | None]:
+    return {name: os.environ.get(name) for name in _SCORING_ENV}
+
+
+def _restore_scoring_env(snapshot: dict[str, str | None]) -> list[str]:
+    """Put the scoring env back to ``snapshot``; return the ``NAME: before -> after`` diffs undone."""
+    changed = []
+    for name, value in snapshot.items():
+        now = os.environ.get(name)
+        if now == value:
+            continue
+        changed.append(f"{name}: {value!r} -> {now!r}")
+        if value is None:
+            os.environ.pop(name, None)
+        else:
+            os.environ[name] = value
+    return changed
+
+
+def pytest_sessionstart(session) -> None:
+    _SESSION_SCORING_ENV.update(_scoring_env_snapshot())
+
+
+def pytest_collectreport(report) -> None:
+    """Name a module that changed the scoring env merely by being imported, and undo it."""
+    if not _SESSION_SCORING_ENV or not report.nodeid.endswith(".py"):
+        return
+    changed = _restore_scoring_env(_SESSION_SCORING_ENV)
+    if changed:
+        _COLLECTION_LEAKS.append(f"{report.nodeid} ({'; '.join(changed)})")
+
+
+def pytest_collection_finish(session) -> None:
+    if _COLLECTION_LEAKS:
+        raise pytest.UsageError(
+            "test modules changed the scoring environment at import time, which would apply it "
+            "to every module collected after them. Use monkeypatch.setenv in a fixture, or the "
+            "`stdlib_lite` fixture:\n  " + "\n  ".join(_COLLECTION_LEAKS)
+        )
+
+
+@pytest.fixture(scope="module", autouse=True)
+def _scoring_env_does_not_outlive_its_module():
+    """A module that leaves the scoring env changed fails, and the next module starts clean."""
+    before = _scoring_env_snapshot()
+    yield
+    changed = _restore_scoring_env(before)
+    if changed:
+        pytest.fail(
+            "this module left the scoring environment changed after its last test, which applies "
+            "it to every module after it: " + "; ".join(changed) + ". Use monkeypatch.setenv.",
+            pytrace=False,
+        )
+
+
 def pytest_report_header(config) -> list[str] | None:
     """Name any ambient setting that changes scoring, or say that none is set."""
     active = _active_scoring_env()

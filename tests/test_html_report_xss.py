@@ -12,14 +12,15 @@ is a serious XSS defect.
 
 from __future__ import annotations
 
-import os
 import re
 
 import pytest
 
-os.environ.setdefault("UNTELL_LITE_NO_TORCH", "1")
-
 from untell.html_report import generate_html_report
+
+# Pinned per test, not with a module-level os.environ write: that runs at COLLECTION, so it
+# would pin every module collected after this one to the stdlib path too, full tier included.
+pytestmark = pytest.mark.usefixtures("stdlib_lite")
 
 # ---------------------------------------------------------------------------
 # Helpers

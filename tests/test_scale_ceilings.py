@@ -14,17 +14,12 @@ from __future__ import annotations
 
 import cProfile
 import io
-import os
 import pstats
 import statistics
 import sys
 import time
 from pathlib import Path
 from typing import Callable
-
-# Force stdlib path BEFORE any untell import.
-os.environ.setdefault("UNTELL_LITE_NO_TORCH", "1")
-os.environ.setdefault("UNTELL_DISABLE_MAGE", "1")
 
 # Make the package importable when run directly.
 for _p in Path(__file__).resolve().parents:
@@ -36,6 +31,18 @@ for _p in Path(__file__).resolve().parents:
 # The sys.path bootstrap above has to run before anything imports `untell`, so every import in
 # this file necessarily follows executable code.
 import pytest  # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def _stdlib_path(monkeypatch):
+    """Force the stdlib path for every test in this module.
+
+    Per test, not with a module-level os.environ write: that runs at COLLECTION, so it
+    would pin every module collected after this one to the stdlib path, full tier included.
+    The variables are read at call time, so setting them after the import is enough.
+    """
+    monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
+    monkeypatch.setenv("UNTELL_DISABLE_MAGE", "1")
 
 # ---------------------------------------------------------------------------
 # RSS helper

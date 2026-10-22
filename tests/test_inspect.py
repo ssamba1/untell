@@ -17,15 +17,22 @@ GATES TESTED
 
 from __future__ import annotations
 
-import os
-
-# Zero-dep path so tests run without torch/transformers.
-os.environ.setdefault("UNTELL_LITE_NO_TORCH", "1")
-os.environ.setdefault("UNTELL_DISABLE_MAGE", "1")
+import pytest
 
 from untell.inspect_report import render_inspect_report
 from untell.scripts.entailment import meaning_preserved_vetoes
 from untell.scripts.run import untell_text
+
+
+@pytest.fixture(autouse=True)
+def _zero_dep_path(monkeypatch):
+    """Zero-dep path so these tests run without torch/transformers.
+
+    Set per test, not with a module-level os.environ write: that runs at COLLECTION, so it
+    would pin every module collected after this one to the stdlib path, full tier included.
+    """
+    monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
+    monkeypatch.setenv("UNTELL_DISABLE_MAGE", "1")
 
 # ---------------------------------------------------------------------------
 # meaning_preserved_vetoes unit tests

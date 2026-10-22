@@ -22,11 +22,14 @@ from eval.ceiling import measure_ceiling
 
 
 @pytest.fixture(scope="module")
-def repeated() -> dict:
-    import os
-
-    os.environ["UNTELL_LITE_NO_TORCH"] = "1"
-    return measure_ceiling(tier="lite", rewriter="composite", max_iters=1, best_of=1, repeats=3)
+def repeated():
+    # MonkeyPatch.context, not os.environ: a bare write outlived this module and pinned every
+    # later module in the session to the stdlib path.
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setenv("UNTELL_LITE_NO_TORCH", "1")
+        yield measure_ceiling(
+            tier="lite", rewriter="composite", max_iters=1, best_of=1, repeats=3
+        )
 
 
 def test_the_repeats_are_not_all_the_same_run(repeated):
@@ -42,20 +45,16 @@ def test_the_reported_spread_is_not_a_hardcoded_zero(repeated):
     assert repeated["post_mean_max_stdev"] > 0.0
 
 
-def test_the_whole_measurement_still_reproduces():
+def test_the_whole_measurement_still_reproduces(monkeypatch):
     """The property the seeding was for. A spread that cannot be re-derived is not evidence."""
-    import os
-
-    os.environ["UNTELL_LITE_NO_TORCH"] = "1"
+    monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
     kw = dict(tier="lite", rewriter="composite", max_iters=1, best_of=1, repeats=2)
     assert measure_ceiling(**kw)["run_post_means"] == measure_ceiling(**kw)["run_post_means"]
 
 
-def test_a_single_pass_reports_no_spread(repeated):
+def test_a_single_pass_reports_no_spread(repeated, monkeypatch):
     """One sample has no spread to report, and inventing one would be the opposite failure."""
-    import os
-
-    os.environ["UNTELL_LITE_NO_TORCH"] = "1"
+    monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
     once = measure_ceiling(tier="lite", rewriter="composite", max_iters=1, best_of=1, repeats=1)
     assert len(once["run_post_means"]) == 1
     assert once.get("post_mean_max_stdev") in (0.0, None)

@@ -27,9 +27,11 @@ import time
 import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-os.environ.setdefault("UNTELL_LITE_NO_TORCH", "1")
-
 from untell.rewriter.structural import _FRONTABLE_RE  # type-ignore
+
+# Pinned per test, not with a module-level os.environ write: that runs at COLLECTION, so it
+# would pin every module collected after this one to the stdlib path too, full tier included.
+pytestmark = pytest.mark.usefixtures("stdlib_lite")
 
 # ---------------------------------------------------------------------------
 # Helpers
