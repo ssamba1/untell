@@ -102,6 +102,7 @@ def test_passes_agrees_with_the_cut_the_row_names(with_stub) -> None:
         assert row["passes"] == (row["ai"] < row["verdict_threshold"]), (key, row)
 
 
+@pytest.mark.usefixtures("stdlib_lite")  # the swept 0.45 cut is the stdlib scorer's; GPT-2 lite uses 0.30
 def test_the_two_kinds_of_row_keep_their_own_bars(with_stub) -> None:
     """The local ensemble is judged at its swept cut; a commercial score is judged at the caller's.
     Collapsing them would apply a calibration derived from one scorer to a different one."""

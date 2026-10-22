@@ -2049,3 +2049,20 @@ SAW    0 direction vetoes in 240 changed candidates, 120 from a source with a di
 WHY    RED: a new veto changes what the loop adopts. Measured cost 0 on this sample.
 NEXT   Re-measure on the full HC3 + RAID sets where the downloads work; revert the commit that
        adds `direction_kept` if a false-veto rate shows up there.
+
+## 2026-10-22 session (owner-directed) RED — on the GPT-2 lite path, markdown pushes AI text under the threshold
+
+WHAT   test_markdown_scaffolding_dilutes_the_score.py's headline claim ("no markdown form changed
+       a single verdict") was measured on the stdlib scorer. CI's full tier is the first run of it
+       on the GPT-2 path (lite tier with torch installed), because a leaked UNTELL_LITE_NO_TORCH=1
+       had pinned every earlier full-tier run to stdlib. There it fails: 5 of 10 HC3 machine
+       documents drop under 0.30 once wrapped in headings/list/table/code fence.
+       The same file's caveat test was passing vacuously: "headings" and "list" received only the
+       standing stdlib caveat, never the layout note it claimed; on GPT-2 they receive nothing.
+RAN    CI run 39732619984, job "full-tier", tests/test_markdown_scaffolding_dilutes_the_score.py
+SAW    5 of 10 crossed below the threshold: [(0.4641, 0.1906), (0.5539, 0.1851), (0.5966, 0.1616)]
+WHY    RED: the remedy is a scoring change (e.g. score the prose blocks, not fences and tables),
+       and it cannot be measured here (huggingface.co is blocked, so no GPT-2).
+NEXT   The claim is now pinned to the stdlib path where it holds, and the GPT-2 path has its own
+       xfail(strict=False) test, so a fix shows as XPASS. Measure a prose-only scoring input on
+       the GPT-2 path before choosing one.

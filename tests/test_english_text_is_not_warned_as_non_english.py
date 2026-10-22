@@ -13,7 +13,9 @@ def test_english_text_is_not_warned_as_non_english():
     out = _warning_for(
         "This is a perfectly normal English sentence.", "lite", [], []
     )
-    assert "not verdicts" not in out, f"English text flagged non-English: {out}"
+    # None when there is nothing to say at all, which is the full tier's answer here; lite always
+    # carries its stdlib caveat, so only lite ever reached this assertion with a string.
+    assert "not verdicts" not in (out or ""), f"English text flagged non-English: {out}"
 
 
 def test_non_english_text_gets_the_language_warning():
