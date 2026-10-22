@@ -45,6 +45,11 @@ PROSE = (
 CODE = "```python\n" + "\n".join(f"def f{i}(a, b):\n    return a + b * {i}" for i in range(20)) + "\n```"
 TIER_MARK = "lite tier on the stdlib path"
 
+# The caveat under test is the STDLIB path's, so pin that path. These passed in CI only while
+# another module leaked UNTELL_LITE_NO_TORCH=1 into the session; once the leak was fixed, the full
+# tier scored them on GPT-2 and the stdlib note, correctly, did not appear.
+pytestmark = pytest.mark.usefixtures("stdlib_lite")
+
 
 @pytest.fixture(autouse=True)
 def _quiet(caplog):

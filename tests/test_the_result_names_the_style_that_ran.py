@@ -43,6 +43,11 @@ TEXT = (
 )
 KWARGS = dict(tier="lite", threshold=0.3, max_iters=1, rewriter="structural", best_of=1, seed=5)
 
+# Pinned to the stdlib path, where this TEXT is over the threshold and gets rewritten. On the GPT-2
+# path it already passes, nothing is adopted, and every style returns it unchanged. That made the
+# premise test depend on another module leaking UNTELL_LITE_NO_TORCH=1 into the session.
+pytestmark = pytest.mark.usefixtures("stdlib_lite")
+
 
 @pytest.fixture(autouse=True)
 def _quiet(caplog):
