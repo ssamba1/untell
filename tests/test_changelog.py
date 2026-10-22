@@ -145,7 +145,7 @@ def test_the_shipped_version_appears_in_the_changelog() -> None:
     import pathlib
     import re
 
-    import tomllib
+    tomllib = pytest.importorskip("tomllib")  # 3.11+; the check is the same on every Python
 
     version = tomllib.loads(pathlib.Path("pyproject.toml").read_text(encoding="utf-8"))["project"][
         "version"
@@ -174,7 +174,7 @@ def test_shipped_version_section_names_its_headline_features() -> None:
     import pathlib
     import re
 
-    import tomllib
+    tomllib = pytest.importorskip("tomllib")  # 3.11+; the check is the same on every Python
 
     version = tomllib.loads(
         pathlib.Path("pyproject.toml").read_text(encoding="utf-8")

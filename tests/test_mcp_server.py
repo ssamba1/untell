@@ -394,7 +394,7 @@ def test_pyproject_entry_point_wires_this_module_and_its_tool_list():
     import importlib
     from pathlib import Path
 
-    import tomllib
+    tomllib = pytest.importorskip("tomllib")  # 3.11+; the check is the same on every Python
 
     mcp_module = importlib.import_module("untell.mcp_server")
 

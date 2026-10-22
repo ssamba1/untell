@@ -10,7 +10,11 @@ from __future__ import annotations
 import pathlib
 import re
 
-import tomllib
+import pytest
+
+# Standard library from 3.11 only. What this checks is the same on every Python, so it runs on
+# the newer interpreters rather than needing a tomli dependency for 3.9 and 3.10.
+tomllib = pytest.importorskip("tomllib")
 
 
 def _scripts() -> set[str]:
