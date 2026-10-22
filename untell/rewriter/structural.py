@@ -678,21 +678,33 @@ def _drop_one_restatement(sentences: list[str], coverage: float) -> list[str]:
     """Remove the first restatement found, or return the input unchanged."""
     if len(sentences) < 4:
         return sentences
-    seen: list[set[str]] = [_content_words(sentences[0])]
+    def numerals(sentence: str) -> set[str]:
+        return set(re.findall(r"\d+(?:\.\d+)?", sentence))
+
+    # (content words, numerals) per earlier sentence. A restatement needs ONE earlier sentence that
+    # both covers its content and already carries its numbers. The numbers used to be pooled across
+    # every earlier sentence instead, so in a worked example ("...so you add 2 to your total",
+    # "...so you add 4 to your total") each step's figure had appeared SOMEWHERE before it, and the
+    # step was deleted as a restatement of the one that said 2. That is the docstring's own rule
+    # ("a NUMERAL the earlier sentence lacks"), which the pooled check did not implement.
+    # MEASURED over the offline corpora (.claude/corpora + eval built-ins): the only change is 2
+    # fewer drops, both steps of the HC3 binary-reading answer whose figures differ. An exact
+    # repeat is still a restatement and is still dropped.
+    seen: list[tuple[set[str], set[str]]] = [
+        (_content_words(sentences[0]), numerals(sentences[0]))
+    ]
     for i in range(1, len(sentences) - 1):
         s = sentences[i]
-        words = _content_words(s)
+        words, nums = _content_words(s), numerals(s)
         if not words or _SENTINEL_PATTERN.search(s):
-            seen.append(words)
+            seen.append((words, nums))
             continue
-        best = max((len(words & prev) / len(words) for prev in seen if prev), default=0.0)
-        if best >= coverage:
-            new_numerals = set(re.findall(r"\d+(?:\.\d+)?", s)) - {
-                n for p in sentences[:i] for n in re.findall(r"\d+(?:\.\d+)?", p)
-            }
-            if not new_numerals:
-                return sentences[:i] + sentences[i + 1 :]
-        seen.append(words)
+        if any(
+            prev and len(words & prev) / len(words) >= coverage and nums <= prev_nums
+            for prev, prev_nums in seen
+        ):
+            return sentences[:i] + sentences[i + 1 :]
+        seen.append((words, nums))
     return sentences
 
 

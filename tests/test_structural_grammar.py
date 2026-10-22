@@ -812,6 +812,36 @@ class TestDropRestatements:
         ]
         assert len(_drop_restatements(list(sents))) == len(sents)
 
+    def test_never_drops_a_step_whose_figure_its_match_lacks(self):
+        """The figure has to be in the sentence it restates, not merely somewhere earlier.
+
+        Pooling the numerals across every earlier sentence deleted the third step here: "4" had
+        appeared (in the first sentence), so a step covered by "add 2" passed as a restatement of
+        it. Taken from the HC3 binary-reading answer, where it happened on every seed."""
+        from untell.rewriter.structural import _drop_restatements
+
+        sents = [
+            "A byte has 8 bits and the rightmost 4 matter here. ",
+            "The next bit is a 1, so you add 2 to your total. ",
+            "The next bit is a 1, so you add 4 to your total. ",
+            "Unrelated content follows here entirely. ",
+            "Final sentence stands alone. ",
+        ]
+        assert len(_drop_restatements(list(sents))) == len(sents)
+
+    def test_an_exact_repeat_is_still_a_restatement(self):
+        """The other side of the step rule: a repeated figure is not a new one."""
+        from untell.rewriter.structural import _drop_restatements
+
+        sents = [
+            "Opening sentence that frames the work. ",
+            "The next bit is a 1, so you add 2 to your total. ",
+            "The next bit is a 1, so you add 2 to your total. ",
+            "Unrelated content follows here entirely. ",
+            "Final sentence stands alone. ",
+        ]
+        assert len(_drop_restatements(list(sents))) == len(sents) - 1
+
     def test_never_drops_a_sentence_holding_a_locked_span(self):
         """A sentinel marks a citation, quote or quantity that exists nowhere else."""
         from untell.rewriter.structural import _drop_restatements
