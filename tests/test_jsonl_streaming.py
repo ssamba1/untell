@@ -240,6 +240,9 @@ def test_first_line_arrives_before_process_exits() -> None:
     )
     proc.stdin.write(THREE_PARA.encode("utf-8"))
     proc.stdin.close()
+    # communicate() below flushes stdin first, and before Python 3.13 that raises "ValueError:
+    # flush of closed file" on the stdin just closed: on 3.9, 3.11 and 3.12, every version CI runs.
+    proc.stdin = None
 
     # Block until the first complete line (the first block's result) arrives.
     first_line_bytes = proc.stdout.readline()

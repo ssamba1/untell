@@ -33,6 +33,7 @@ import csv
 import logging
 import os
 import random
+import sys
 
 logger = logging.getLogger(__name__)
 DEFAULT_BASE = "FacebookAI/roberta-base"
@@ -267,9 +268,22 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--smoke", action="store_true", help="tiny CPU dry-run (bert-tiny, 16 samples).")
     a = ap.parse_args(argv)
 
-    out = train_surrogate(
-        a.out, dataset=a.dataset, base=a.base, n=a.n, epochs=a.epochs, lr=a.lr, batch=a.batch, smoke=a.smoke
-    )
+    try:
+        out = train_surrogate(
+            a.out, dataset=a.dataset, base=a.base, n=a.n, epochs=a.epochs, lr=a.lr, batch=a.batch,
+            smoke=a.smoke,
+        )
+    except ModuleNotFoundError as exc:
+        # Training needs the model stack. Without it this was a bare traceback from inside
+        # train_surrogate; name the package and the extra instead, like untell-server and untell-mcp.
+        if (exc.name or "").split(".")[0] not in {"torch", "transformers", "datasets"}:
+            raise
+        print(
+            f"untell-surrogate needs {exc.name!r}, which this install does not have: "
+            "pip install 'untell[full,train]'",
+            file=sys.stderr,
+        )
+        return 1
     print(f"surrogate saved -> {out}")
     print(f"use it as the RL reward target:  UNTELL_SURROGATE_DIR={out} python -m training.rl_humanizer ...")
     return 0

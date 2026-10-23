@@ -12,6 +12,7 @@ a fully-cached detector for the whole process. ``_snapshot_dir()`` retries
 cache-only on transport-class errors and only goes dead when nothing is on
 disk (issue #28).
 """
+import importlib.util
 import json
 import os
 import ssl
@@ -21,6 +22,13 @@ from unittest.mock import patch
 import pytest
 
 import untell.detectors.mage as mage
+
+# These patch huggingface_hub, which only the [full] extra installs.
+needs_hub = pytest.mark.skipif(
+    not (importlib.util.find_spec("huggingface_hub") is not None),
+    reason="needs huggingface_hub (the [full] extra)",
+)
+pytestmark = needs_hub
 
 
 class _StubTok:

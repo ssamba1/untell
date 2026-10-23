@@ -22,6 +22,7 @@ optional deps were already clean and stay that way.
 
 from __future__ import annotations
 
+import importlib.util
 import os
 import subprocess
 import sys
@@ -31,15 +32,31 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 
+# Rows that block ONE package need the rest of the model stack present: with torch also absent
+# the reason (correctly) names every missing package, and mt_pivot is unavailable for a different
+# reason than the one the row is about.
+_MODEL_STACK = (
+    importlib.util.find_spec("torch") is not None
+    and importlib.util.find_spec("transformers") is not None
+)
+needs_model_stack = pytest.mark.skipif(not _MODEL_STACK, reason="needs the [full] extra")
+
 # (blocked dep, surface, expected exit code, expected message fragment)
 rows = [
     # peft — the known case, fixed at wave 5 / issue #34. CLI exit 2 + reason.
-    pytest.param("peft", "peft_cli", 2, "untell[train]", marks=pytest.mark.slow),
-    pytest.param("peft", "peft_unavailable_reason", 0, "needs the 'peft' package"),
+    pytest.param(
+        "peft", "peft_cli", 2, "untell[train]", marks=[pytest.mark.slow, needs_model_stack]
+    ),
+    pytest.param(
+        "peft", "peft_unavailable_reason", 0, "needs the 'peft' package",
+        marks=needs_model_stack,
+    ),
     # sacremoses — transitive transformers-level need of the Marian/T5 tokenizer;
     # mt_pivot's availability must survive without it (transformers warns, untell
     # does not crash).
-    pytest.param("sacremoses", "sacremoses_mtpivot", 0, "available: True"),
+    pytest.param(
+        "sacremoses", "sacremoses_mtpivot", 0, "available: True", marks=needs_model_stack
+    ),
     # nltk — word_importance falls back to the built-in synonym map.
     pytest.param("nltk", "nltk_synonyms", 0, "kick off"),
     # torch — full-tier scoring honestly degrades to lite (never a traceback).

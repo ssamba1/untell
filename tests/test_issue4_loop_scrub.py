@@ -26,8 +26,15 @@ Run: part of the fast suite, lite tier, no torch/keys/network.
 
 from __future__ import annotations
 
+import pytest
+
 from untell.attacks import count_hidden
 from untell.scripts.run import main, untell_text
+
+# Loop mechanics at tier="lite" and the default threshold, on fixtures that the STDLIB scorer puts
+# over it. Where torch is installed, lite scores on GPT-2, these fixtures already pass, and nothing
+# is rewritten. That only showed once a leaked UNTELL_LITE_NO_TORCH=1 stopped pinning the session.
+pytestmark = pytest.mark.usefixtures("stdlib_lite")
 
 AI = (
     "Furthermore, artificial intelligence has fundamentally transformed numerous industries. "

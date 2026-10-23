@@ -104,15 +104,13 @@ def test_the_pair_is_order_insensitive(source: str, candidate: str) -> None:
     assert _conditional_pair(source) == _conditional_pair(candidate)
 
 
-def test_the_rule_does_not_fire_on_real_rewrites_of_conditional_text() -> None:
+def test_the_rule_does_not_fire_on_real_rewrites_of_conditional_text(monkeypatch) -> None:
     """The false-veto measurement. A gate that blocks the loop is worse than one that misses a
     case, so this drives the actual rewriters over conditional prose and counts vetoes.
 
     MEASURED: 0 of 81 real rewrites across three rewriters, five conditional documents, six seeds.
     """
-    import os
-
-    os.environ.setdefault("UNTELL_LITE_NO_TORCH", "1")
+    monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
     from untell.rewriter import get_rewriter
     from untell.scripts.score import score_text
 

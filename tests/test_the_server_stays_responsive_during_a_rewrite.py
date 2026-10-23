@@ -39,7 +39,9 @@ AI_PARAGRAPH = (
     "for every stakeholder involved. Furthermore, it underscores the pivotal integration of "
     "modern methodologies across the entire landscape of the discipline."
 )
-LONG = " ".join([AI_PARAGRAPH] * 4)
+# Twelve, not four. Four took 0.89s here and 0.46s on a CI runner, under the 0.5s the test needs
+# before it can say anything about blocking; twelve takes ~2.9s here, a margin on any machine.
+LONG = " ".join([AI_PARAGRAPH] * 12)
 
 
 @pytest.fixture

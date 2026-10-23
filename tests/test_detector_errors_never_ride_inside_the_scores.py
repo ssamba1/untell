@@ -57,13 +57,17 @@ def _quiet(caplog):
 @pytest.fixture
 def _broken_models(monkeypatch):
     real = score_module.load_detectors
-    monkeypatch.setattr(
-        score_module,
-        "load_detectors",
-        lambda tier: [
-            d if d.name == "perplexity_burstiness" else _Boom(d.name) for d in real(tier)
-        ],
-    )
+
+    def broken(tier):
+        detectors = [d if d.name == "perplexity_burstiness" else _Boom(d.name) for d in real(tier)]
+        # A lite install loads perplexity_burstiness alone, so swapping out "every other" detector
+        # swapped nothing and the premise below failed. The property does not depend on the roster:
+        # make sure one member fails whatever loaded.
+        if not any(isinstance(d, _Boom) for d in detectors):
+            detectors.append(_Boom("roberta_openai"))
+        return detectors
+
+    monkeypatch.setattr(score_module, "load_detectors", broken)
 
 
 def _assert_clean(scores: dict, errors: dict | None) -> None:

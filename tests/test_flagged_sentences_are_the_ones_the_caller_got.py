@@ -45,6 +45,11 @@ import pytest
 
 from untell.scripts.run import _flagged_sentences_of, untell_text
 
+# Loop mechanics at tier="lite" and the default threshold, on fixtures that the STDLIB scorer puts
+# over it. Where torch is installed, lite scores on GPT-2, these fixtures already pass, and nothing
+# is rewritten. That only showed once a leaked UNTELL_LITE_NO_TORCH=1 stopped pinning the session.
+pytestmark = pytest.mark.usefixtures("stdlib_lite")
+
 SENTINEL = "⟦HZ"
 TEXT = (
     "Moreover, the framework leverages a robust approach to delivery [3] at scale across the "

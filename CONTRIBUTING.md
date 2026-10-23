@@ -27,7 +27,7 @@ pip install -e ".[full,eval]"
 
 ```bash
 ruff check .       # lint (must be clean)
-ruff format .      # auto-format
+ruff check --fix . # autofix what lint can (the tree is hand-formatted; no `ruff format`)
 pytest -q          # tests (must be green; lite tier needs zero ML)
 ```
 

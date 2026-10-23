@@ -59,6 +59,30 @@ All notable changes to this project are documented here. The format is based on
   for piping. (`a5a1dbd`)
 
 ### Fixed
+- **`untell-mcp` crashed on import on every fresh install.** mcp 2.0 renamed `FastMCP` to
+  `MCPServer`, and the extra allowed `mcp>=1.0`, so new installs got 2.x. Both majors work now
+  (verified on 1.30 and 2.3); the extra is bounded `<3`. (`4ac6087`)
+- **The REST server could not import on Python 3.9**, a supported version: pydantic evaluates
+  `X | None` annotations at runtime. The request models use `Optional`. (`77505ba`)
+- **Without NLI, the meaning gate admitted "reduced" -> "increased".** A new mechanical veto,
+  `direction_kept`, refuses a rewrite that trades an up word for a down word; it fired on 0 of 2,083
+  real candidates from the free rewriters (offline corpora plus 703 documentation paragraphs).
+  (`019a9ae`)
+- **Documents over 6,000 words had every rewrite vetoed.** Past the exact-alignment limit the
+  meaning gates compared misaligned chunks (similarity 0.004 for a light edit); alignment is now
+  anchored on words unique to both texts. (`353efbb`)
+- **The rewriter deleted a sentence from human writing as a "restatement".** On a genuine HC3 answer
+  it removed the return trip of a network request on 6 of 6 default runs (coverage 0.78 against a
+  0.70 bar). The bar is now 0.80; 2 of 20 human texts had a false drop at 0.70, none do now.
+  (`09a19f1`)
+- **Worked examples lost steps to restatement removal.** "...add 4 to your total" was dropped as a
+  restatement of "...add 2 ..."; a restatement now needs one earlier sentence carrying its numbers.
+  (`9273816`)
+- **Plain output (no `[rich]`) never showed the verdict.** It now prints
+  `Verdict: before -> after (cut N)` from the same rule as the rich table. (`514acdc`)
+- **The no-NER caveat said spaCy was installed when it was not**, and offered a fix that cannot
+  work without it. It names the real cause; the silent branch where spaCy fails to import now
+  warns too. (`8278200`)
 - **`--tier full` without torch told you to re-run at `--tier full`.** On a base install the ML
   stack cannot load, scoring falls back to the stdlib lite path, and the note it attached ended
   "re-run at --tier full before trusting a flag OR a clear" -- which is what the user had just

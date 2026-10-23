@@ -485,7 +485,7 @@ def meaning_preserved(
     # Running them first is also the cheap order: a candidate rejected here skips four NLI forward
     # passes and a spaCy parse. All the checks are conjunctive vetoes, so order cannot change the
     # verdict, only the cost of reaching it.
-    from untell.scripts.hedges import certainty_kept, polarity_kept
+    from untell.scripts.hedges import certainty_kept, direction_kept, polarity_kept
     from untell.scripts.numerals import numbers_kept
 
     # Reader-directed sign-offs are not meaning, and every gate below reads them as if they were.
@@ -502,6 +502,15 @@ def meaning_preserved(
     # 0 of 30 HC3 and 0 of 30 RAID loop results change their negation count, because the
     # rewriter's transforms are substitutions, merges and splits — none of which touches polarity.
     if not polarity_kept(source, candidate):
+        return False
+    # Direction: an UP word traded for a DOWN one ("reduced" -> "increased"). An inversion that adds
+    # no negation, so the check above cannot see it, and without NLI nothing else did: the gate
+    # admitted it. Cost on real output, MEASURED over the offline corpora (43 texts, the structural,
+    # surgical and composite rewriters, 3 seeds): 0 vetoes in 240 changed candidates, 120 of them
+    # from a source that carries a direction word. Re-measured over every prose paragraph of this
+    # repository's own documentation (703, dense with "raised", "fell", "lower" because they report
+    # measurements; .claude/probes/direction_docs.py): 0 in 1,843. See `hedges.direction_kept`.
+    if not direction_kept(source, candidate):
         return False
     # Deletion, which is the ONE defect class the zero-dependency path cannot otherwise see: a
     # dropped sentence scores similarity 0.949 against a 0.76 bar and contradicts nothing, so only
@@ -544,7 +553,7 @@ def meaning_preserved_vetoes(
 
     Called only from the ``--inspect`` path; zero cost on the default rewrite loop.
     """
-    from untell.scripts.hedges import certainty_kept, polarity_kept
+    from untell.scripts.hedges import certainty_kept, direction_kept, polarity_kept
     from untell.scripts.numerals import numbers_kept
 
     source, candidate = strip_scaffolding(source), strip_scaffolding(candidate)
@@ -557,6 +566,8 @@ def meaning_preserved_vetoes(
         fired.append("certainty_kept")
     if not polarity_kept(source, candidate):
         fired.append("polarity_kept")
+    if not direction_kept(source, candidate):
+        fired.append("direction_kept")
 
     lost = words_lost(source, candidate)
     allowance = deletion_allowance(source)

@@ -6,10 +6,17 @@ bar, progress line). Each asserts on the rendered output, not on incidental side
 from __future__ import annotations
 
 import importlib
+import importlib.util
 
 import pytest
 
 from untell import rich_output
+
+# The rich-path tests patch `_Panel`/`_Table`/`_Text`, which only exist when `rich` imports.
+# The lite CI job does not install the extra; the full-tier job does, and runs them there.
+needs_rich = pytest.mark.skipif(
+    importlib.util.find_spec("rich") is None, reason="needs the [rich] extra"
+)
 
 
 class TestModuleDegradesWhenRichIsAbsent:
@@ -33,8 +40,8 @@ class TestModuleDegradesWhenRichIsAbsent:
             assert rich_output._CONSOLE is None
         finally:
             builtins.__import__ = real_import
-            importlib.reload(rich_output)  # restore the real (rich-installed) state
-            assert rich_output._RICH is True
+            importlib.reload(rich_output)  # restore the real state, whichever it is
+            assert rich_output._RICH is (importlib.util.find_spec("rich") is not None)
 
     def test_fallback_diff_returns_the_rewrite_verbatim(self, monkeypatch):
         """Without rich there is no markup engine: the diff is the rewritten text itself."""
@@ -42,6 +49,7 @@ class TestModuleDegradesWhenRichIsAbsent:
         assert rich_output._diff_words("one two three", "one two three four") == "one two three four"
 
 
+@needs_rich
 class TestWordDiff:
     @staticmethod
     def _styles(out):
@@ -87,6 +95,7 @@ class TestSaturatedMaxNote:
         assert "pinned" in out
         assert "Ensemble mean" not in out
 
+    @needs_rich
     def test_rich_output_prints_the_mean_note_too(self, monkeypatch):
         printed: list = []
         monkeypatch.setattr(rich_output, "_RICH", True)
@@ -123,6 +132,7 @@ class TestPlainReportRows:
         assert "NOTE: threshold not calibrated" in capsys.readouterr().out
 
 
+@needs_rich
 class TestRichOnlyRenderRows:
     def _console(self, monkeypatch, panel_marker="PANEL"):
         printed: list = []

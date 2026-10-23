@@ -5,7 +5,9 @@ repos:
     hooks:
       - id: ruff
         args: [--fix]
-      - id: ruff-format
+      # No `ruff-format` hook. The tree is hand-formatted (multi-line conditions, aligned
+      # tables in comments) and `ruff format` rewrites 781 of its ~970 files, so the hook
+      # failed on every run it ever had. Lint is the gate, enforced by the `ruff` CI job.
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.6.0
@@ -14,7 +16,12 @@ repos:
       - id: end-of-file-fixer
       - id: check-json
       - id: check-yaml
+        # mkdocs.yml uses `!!python/name:` tags (pymdownx slugify, emoji index). --unsafe
+        # checks syntax instead of constructing them, which a hook cannot import.
+        args: [--unsafe]
       - id: check-added-large-files
       - id: check-merge-conflict
       - id: mixed-line-ending
         args: [--fix=lf]
+        # .gitattributes pins *.ps1 to CRLF; forcing LF here would fight it on every run.
+        exclude: \.ps1$

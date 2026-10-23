@@ -13,7 +13,19 @@ Mutation names match `python .claude/mutate.py untell/attacks/back_translation.p
 
 from __future__ import annotations
 
+import importlib.util
+
+import pytest
+
 from untell.attacks.back_translation import BackTranslator
+
+# These classes need torch and transformers importable: `available()` must be True for the round
+# trip to run, and the call-contract tests patch transformers itself. The chunking and fitting
+# tests are pure Python and run everywhere.
+needs_mt = pytest.mark.skipif(
+    importlib.util.find_spec("torch") is None or importlib.util.find_spec("transformers") is None,
+    reason="needs the [full] extra (torch + transformers)",
+)
 
 
 class _FakeTok:
@@ -55,6 +67,7 @@ def _bt_with_fakes():
     return bt, tok, model
 
 
+@needs_mt
 class TestAvailability:
     """`available()` and the empty-input guard (lines 35-36, 136)."""
 
@@ -74,6 +87,7 @@ class TestAvailability:
         assert bt.back_translate("   ") == "   "
 
 
+@needs_mt
 class TestPipeCache:
     """`_pipe` cache hit path (line 40)."""
 
@@ -171,6 +185,7 @@ class TestFit:
         assert len(BackTranslator()._fit(" ".join(["w"] * 600), _FakeTok(), BUDGET)) == 2
 
 
+@needs_mt
 class TestTranslateCallContract:
     """`_translate` model call site (lines 127-131).
 

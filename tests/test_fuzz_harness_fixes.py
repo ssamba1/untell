@@ -271,6 +271,20 @@ class TestThresholdMustBeNumeric:
 # --- 6. CLI printing must survive lone surrogates ------------------------------------
 
 
+def _surrogate_arg(text: str) -> str | bytes:
+    """``text`` as an argv element that reaches the child carrying lone surrogates.
+
+    Windows argv is UTF-16, so a lone surrogate passes through as-is. POSIX argv is bytes, and
+    ``os.fsencode`` cannot encode U+D800 at all: passing the str raised UnicodeEncodeError in
+    THIS process, before the CLI under test ever ran. What POSIX does deliver is undecodable
+    bytes, which the child decodes with surrogateescape into lone surrogates (U+DC80..U+DCFF),
+    the same printing hazard by the route a POSIX user can actually reach.
+    """
+    if sys.platform == "win32":
+        return text
+    return text.encode("utf-8", "surrogatepass")
+
+
 class TestCliPrintingSurvivesSurrogates:
     """A CLI printing text/argv containing a lone surrogate crashed with
     UnicodeEncodeError on HEAD — scrub's output path and argparse's stderr path."""
@@ -292,10 +306,13 @@ class TestCliPrintingSurvivesSurrogates:
         # this test FAILED rather than skipping. The interpreter already running the
         # suite is the one whose environment these tests mean to exercise.
         py = sys.executable
-        env = {"PYTHONPATH": "", "PYTHONUTF8": "1"}
+        # PYTHONIOENCODING makes stdout STRICT. Under UTF-8 mode alone POSIX stdout uses
+        # surrogateescape and round-trips what `_surrogate_arg` delivers, so a bare `print`
+        # passes this test without the fix; with strict stdout a bare `print` raises.
+        env = {"PYTHONPATH": "", "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"}
         # a lone surrogate in the text position; scrub prints it back
         proc = subprocess.run(
-            [str(py), "-m", "untell.scripts.scrub", "text with \ud800 surrogate"],
+            [str(py), "-m", "untell.scripts.scrub", _surrogate_arg("text with \ud800 surrogate")],
             capture_output=True, text=True, encoding="utf-8", errors="replace",
             timeout=30, cwd=repo, stdin=subprocess.DEVNULL, env=env,
         )
@@ -314,9 +331,11 @@ class TestCliPrintingSurvivesSurrogates:
         # an invalid --tier value containing a surrogate: argparse prints the value
         # into its error message, which crashed on HEAD. (No NUL here — Windows
         # CreateProcess rejects an embedded NUL in argv; the harness sanitises that
-        # case before spawning.)
+        # case before spawning.) The crash this guards is a Windows one: POSIX CPython writes
+        # stderr with backslashreplace whatever PYTHONIOENCODING says, so here it can only
+        # confirm the error path stays a message.
         proc = subprocess.run(
-            [str(py), "-m", "untell.scripts.score", "--tier", "lite\udb87", "hello"],
+            [str(py), "-m", "untell.scripts.score", "--tier", _surrogate_arg("lite\udb87"), "hello"],
             capture_output=True, text=True, encoding="utf-8", errors="replace",
             timeout=30, cwd=repo, stdin=subprocess.DEVNULL, env=env,
         )

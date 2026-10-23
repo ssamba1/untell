@@ -22,6 +22,8 @@ import types
 
 import pytest
 
+from tests._mcp_compat import content_blocks
+
 mcp = pytest.importorskip("mcp")  # noqa: F841
 
 
@@ -41,7 +43,7 @@ def test_an_unknown_rewriter_name_is_refused_before_any_measurement():
     async def _go():
         srv = _real_server()
         result = await srv.call_tool("ceiling", {"rewriter": "wat", "tier": "lite"})
-        return json.loads(result[0].text)
+        return json.loads(content_blocks(result)[0].text)
 
     payload = _run(_go())
     assert "error" in payload, f"ceiling ran a measurement for a nonexistent rewriter: {str(payload)[:160]}"
@@ -52,7 +54,7 @@ def test_the_refusal_lists_the_valid_vocabulary():
     async def _go():
         srv = _real_server()
         result = await srv.call_tool("ceiling", {"rewriter": "does_not_exist"})
-        return json.loads(result[0].text)
+        return json.loads(content_blocks(result)[0].text)
 
     payload = _run(_go())
     for name in ("composite", "surgical", "auto"):
@@ -63,7 +65,7 @@ def test_a_valid_rewriter_still_runs():
     async def _go():
         srv = _real_server()
         result = await srv.call_tool("ceiling", {"tier": "lite", "n": 1, "rewriter": "surgical"})
-        return json.loads(result[0].text)
+        return json.loads(content_blocks(result)[0].text)
 
     payload = _run(_go())
     assert "error" not in payload, payload.get("error")

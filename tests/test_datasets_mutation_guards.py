@@ -11,7 +11,17 @@ or network-path-dependent — annotated in survivors.md.
 
 from __future__ import annotations
 
+import importlib.util
+
+import pytest
+
 from eval import datasets as D
+
+# Without the `datasets` package `load_samples` falls back to the built-in samples (by design), so
+# the patched rows these classes feed it are never read.
+needs_datasets = pytest.mark.skipif(
+    importlib.util.find_spec("datasets") is None, reason="needs the [eval] extra"
+)
 
 
 def _monkeypatch_load(monkeypatch, rows):
@@ -28,6 +38,7 @@ def _monkeypatch_load(monkeypatch, rows):
     monkeypatch.setattr(_real, "load_dataset", lambda *a, **k: iter(rows))
 
 
+@needs_datasets
 class TestHc3MinLength:
     """Survivor datasets.py:350 — `len(a.split()) > 30` -> 31 (hc3 branch).
 
@@ -41,6 +52,7 @@ class TestHc3MinLength:
         assert any("word word" in s for s in samples), f"31-word answer must be included: {samples}"
 
 
+@needs_datasets
 class TestRaidMinLength:
     """Survivor datasets.py:364 — `len(gen.split()) > 30` -> 31 (raid branch).
 

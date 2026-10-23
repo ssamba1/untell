@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import sys
 
 # Free, no-key rewriter backends selectable via the ``rewriter`` arg; anything else (e.g. "auto")
 # routes to a hosted/local-policy backend via prefer=None.
@@ -139,9 +140,26 @@ def _text_too_long(text: str, name: str = "text") -> dict | None:
     return None
 
 
-def _server():
-    from mcp.server.fastmcp import FastMCP
+def _server_class():
+    """The SDK's server class: ``FastMCP`` on mcp 1.x, ``MCPServer`` on mcp 2.x.
 
+    mcp 2.0 renamed ``mcp.server.fastmcp.FastMCP`` to ``mcp.server.mcpserver.MCPServer`` and left
+    the old module raising ModuleNotFoundError. The dependency was ``mcp>=1.0``, so every fresh
+    install resolved to 2.x and ``untell-mcp`` died on that import before serving anything. The
+    name, ``@tool()`` and a stdio ``run()`` are unchanged between the two, which is all this uses.
+    The 1.x path is tried first so the suite's fake ``mcp.server.fastmcp`` modules still stand in.
+    """
+    try:
+        from mcp.server.fastmcp import FastMCP
+
+        return FastMCP
+    except ImportError:
+        from mcp.server.mcpserver import MCPServer
+
+        return MCPServer
+
+
+def _server():
     from untell.attacks import count_hidden, scrub_hidden
     from untell.rewriter.prompts import STYLE_NAMES
     from untell.scripts.run import untell_text
@@ -150,7 +168,7 @@ def _server():
     from untell.scripts.tells import score_tells
     from untell.scripts.verify import verify
 
-    server = FastMCP("untell")
+    server = _server_class()("untell")
 
     @server.tool()
     def score(text: str, tier: str = "full", threshold: float = 0.30) -> dict:
@@ -588,7 +606,22 @@ def main(argv: list[str] | None = None) -> int:
         print("\n".join(_TOOL_NAMES))
         return 0
     logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
-    _server().run()
+    try:
+        server = _server()
+    except ModuleNotFoundError as exc:
+        # The SDK missing is a message, not a traceback, like `untell-server` without FastAPI. It is
+        # ALWAYS missing on Python 3.9: the `mcp` extra installs nothing there, because the SDK
+        # needs 3.10, so a 3.9 user who followed the install docs got a bare ModuleNotFoundError.
+        if (exc.name or "").split(".")[0] != "mcp":
+            raise
+        print(
+            "untell-mcp needs the MCP SDK, which this install does not have: "
+            "pip install 'untell[mcp]' (Python 3.10 or newer; the SDK does not support 3.9). "
+            "Everything else, the CLI, the REST server and the Python API, works without it.",
+            file=sys.stderr,
+        )
+        return 1
+    server.run()
     return 0
 
 

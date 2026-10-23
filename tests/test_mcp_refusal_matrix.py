@@ -26,6 +26,7 @@ import pytest
 
 mcp = pytest.importorskip("mcp")  # noqa: F841
 
+from tests._mcp_compat import content_blocks  # noqa: E402
 from untell.mcp_server import _server  # noqa: E402
 
 TEXT = (
@@ -36,7 +37,7 @@ TEXT = (
 
 async def _payload(srv, name, args) -> dict:
     result = await srv.call_tool(name, args)
-    return json.loads(result[0].text)
+    return json.loads(content_blocks(result)[0].text)
 
 
 # (tool, args, substring that must appear in the error) — answers {"error": ...} only.

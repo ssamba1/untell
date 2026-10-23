@@ -7,12 +7,22 @@ present, so the validity check fails and the loader rewrites the model's real
 label scheme to the MAGE convention ("AI" -> "machine"), clobbering a shipped
 config. Pinned via the full load path with mocked snapshot/transformers.
 """
+import importlib.util
 import json
 import os
 import tempfile
 from unittest.mock import patch
 
+import pytest
+
 import untell.detectors.mage as mage
+
+# These patch huggingface_hub, which only the [full] extra installs.
+needs_hub = pytest.mark.skipif(
+    not (importlib.util.find_spec("huggingface_hub") is not None),
+    reason="needs huggingface_hub (the [full] extra)",
+)
+pytestmark = needs_hub
 
 
 class _StubTok:

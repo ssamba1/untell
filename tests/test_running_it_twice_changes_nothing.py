@@ -29,7 +29,6 @@ beats the incumbent is behaving correctly. This file makes no claim about the de
 from __future__ import annotations
 
 import logging
-import os
 
 import pytest
 
@@ -58,23 +57,18 @@ def _stdlib_lite_module():
     which fails the denominator test without saying anything about idempotence. The
     loop's behaviour is path-dependent; the numbers being pinned are the stdlib ones.
     Module scope because the module-scoped `passes` fixture must run under the pin."""
-    os.environ["UNTELL_LITE_NO_TORCH"] = "1"
     from untell.scripts import score as score_mod
 
-    for name in ("score_text", "batch_score_texts"):
-        fn = getattr(score_mod, name, None)
-        if hasattr(fn, "cache_clear"):
-            fn.cache_clear()
-    yield
-    # Restore the PREVIOUS value: an unconditional pop leaks the unset state to every
-    # later test in the session that assumes the ambient env (verified: with this pop,
-    # test_the_result_names_the_style_that_ran and the verify family fail when this
-    # module runs first — the style test scores on the torch path with the var gone).
-    previous = os.environ.get("UNTELL_LITE_NO_TORCH")
-    if previous is None:
-        os.environ.pop("UNTELL_LITE_NO_TORCH", None)
-    else:
-        os.environ["UNTELL_LITE_NO_TORCH"] = previous
+    # MonkeyPatch.context restores the value from BEFORE the pin. The hand-written restore this
+    # replaces read `previous` after setting the variable, so it always "restored" "1" and pinned
+    # every later module in the session to the stdlib path.
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setenv("UNTELL_LITE_NO_TORCH", "1")
+        for name in ("score_text", "batch_score_texts"):
+            fn = getattr(score_mod, name, None)
+            if hasattr(fn, "cache_clear"):
+                fn.cache_clear()
+        yield
     for name in ("score_text", "batch_score_texts"):
         fn = getattr(score_mod, name, None)
         if hasattr(fn, "cache_clear"):

@@ -37,6 +37,7 @@ import logging
 import pytest
 
 from untell.rewriter.structural import _CLOSER_REMAINDER_WORDS, _strip_meta_closers
+from untell.scripts import quality
 from untell.scripts.quality import passes, similarity
 
 
@@ -114,7 +115,10 @@ def test_the_deletion_survives_the_meaning_gate(closer: str) -> None:
     text = f"{BODY} {closer}"
     out = _strip_meta_closers(text)
     assert passes(text, out), similarity(text, out)
-    assert similarity(text, out) >= 0.95
+    # 0.95 is on the embedding scale. Token overlap, the stdlib fallback, scores the same deletion
+    # about 0.91 (see the fixture above); the gate still admits it, which is the property here.
+    if quality.method() == "embedding":
+        assert similarity(text, out) >= 0.95
 
 
 def test_the_threshold_sits_between_the_two_measured_groups() -> None:

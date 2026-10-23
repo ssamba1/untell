@@ -144,5 +144,23 @@ def test_the_loop_says_when_a_voice_sample_is_too_short(warnings_from) -> None:
 def test_preserve_says_when_it_has_no_ner(warnings_from) -> None:
     import untell.scripts.preserve as mod
 
-    out = warnings_from([], mod._warn_no_ner)
-    assert out.strip()
+    # The flag has to be reset like every other case here. With `[]` this read nothing whenever an
+    # earlier test had already triggered the warning, which on a lite install is most of them.
+    out = warnings_from([("untell.scripts.preserve", "_WARNED_NO_NER")], mod._warn_no_ner)
+    assert "NOT being locked" in out
+
+
+def test_the_no_ner_caveat_names_the_real_cause(warnings_from, monkeypatch) -> None:
+    """Without spaCy at all, the old text claimed spaCy was installed and offered a fix that fails."""
+    import importlib.util
+
+    import untell.scripts.preserve as mod
+
+    real_find_spec = importlib.util.find_spec
+    monkeypatch.setattr(
+        importlib.util, "find_spec", lambda name, *a: None if name == "spacy" else real_find_spec(name, *a)
+    )
+    out = warnings_from([("untell.scripts.preserve", "_WARNED_NO_NER")], mod._warn_no_ner)
+    assert "spaCy is not installed" in out
+    assert "untell[full]" in out
+    assert "is installed but" not in out

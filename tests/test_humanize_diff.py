@@ -31,6 +31,8 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
 from untell import rich_output
 from untell.rich_output import _hunk_header, _unified_range, humanize_diff, print_humanize_diff
 from untell.scripts.run import main
@@ -264,7 +266,7 @@ def test_plain_renderer_warns_when_a_lock_did_not_survive(monkeypatch, capsys) -
 def test_rich_renderer_escapes_markup_and_colours(monkeypatch) -> None:
     """Brackets in a user line must not be parsed as rich markup — the same `_Text` rule as
     print_humanize_result's panels (a user text like "See [1]" used to render as "See  .")."""
-    from rich.text import Text
+    Text = pytest.importorskip("rich.text").Text
 
     printed: list[tuple] = []
     monkeypatch.setattr(rich_output, "_RICH", True)

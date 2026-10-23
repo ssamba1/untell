@@ -25,7 +25,7 @@ import pytest
 from untell.scripts import entailment, quality
 from untell.scripts.hedges import certainty_kept
 from untell.scripts.numerals import numbers_kept
-from untell.scripts.roles import role_swap
+from untell.scripts.roles import parser_available, role_swap
 from untell.text_split import CHUNK_WORDS, aligned_chunks
 
 
@@ -59,6 +59,8 @@ class TestPositionDoesNotDecideTheVerdict:
 
     @pytest.mark.parametrize("reps", REPETITIONS)
     def test_roles_catches_a_swap_anywhere(self, reps):
+        if not parser_available():
+            pytest.skip("spaCy model unavailable — role_swap returns None by design")
         pad = FILLER * reps
         a = "The company sued the regulator over the ruling."
         b = "The regulator sued the company over the ruling."

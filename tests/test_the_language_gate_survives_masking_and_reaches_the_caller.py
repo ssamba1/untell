@@ -27,11 +27,20 @@ now fixed on six surfaces, where the caveat at least reached the result. It is n
 
 from __future__ import annotations
 
+import importlib.util
+
 import pytest
 
 from untell.scripts.preserve import lock
 from untell.scripts.run import untell_text
 from untell.scripts.tells import looks_non_english
+
+# The fixtures lock their named entities, so without the NER model nothing is masked at all.
+needs_ner = pytest.mark.skipif(
+    not (importlib.util.find_spec("spacy") is not None
+        and importlib.util.find_spec("en_core_web_sm") is not None),
+    reason="needs spaCy and en_core_web_sm",
+)
 
 
 @pytest.fixture(autouse=True)
@@ -119,6 +128,7 @@ def test_masked_text_can_still_fall_under_the_word_floor(name: str) -> None:
     assert words < len(NON_ENGLISH[name].split()), "locking should reduce the word count"
 
 
+@needs_ner
 def test_at_least_one_fixture_actually_gets_masked() -> None:
     """Guards both tests above. French locks nothing, so if every fixture behaved like French
     neither would be exercising masking at all."""

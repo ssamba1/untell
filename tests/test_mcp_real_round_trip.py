@@ -22,6 +22,7 @@ import pytest
 
 mcp = pytest.importorskip("mcp")  # declared optional dependency ([project.optional-dependencies].mcp)
 
+from tests._mcp_compat import content_blocks  # noqa: E402
 from untell.mcp_server import _server  # noqa: E402  (after importorskip)
 
 
@@ -45,7 +46,7 @@ def test_a_real_round_trip_through_the_actual_fastmcp_engine(name, args, require
         srv = _server()
         return await srv.call_tool(name, args)
 
-    result = asyncio.run(_round_trip())
+    result = content_blocks(asyncio.run(_round_trip()))
     assert result, "call_tool returned nothing"
     assert all(hasattr(item, "text") for item in result), (
         f"expected TextContent items, got {type(result[0]).__name__}"

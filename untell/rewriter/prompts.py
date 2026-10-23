@@ -239,6 +239,13 @@ def _worst_detectors(score_result: dict, k: int = 3) -> list[tuple[str, float]]:
 def build_rewrite_prompt(text: str, score_result: dict, threshold: float = 0.30) -> str:
     """Build the rewrite instruction, naming the detectors + the exact sentences flagging the text.
 
+    WHO READS IT (issue #46): only the hosted rewriters in `rewriter/base.py`, the Anthropic and
+    OpenAI classes, which need an API key. The free rewriters (composite, structural, surgical,
+    t5_paraphrase, mt_pivot, ensemble) take no prompt, and the Claude Code skill never calls this:
+    SKILL.md has the running model apply `references/ai-tells.md` and `references/prompt-rubric.md`
+    directly. That makes two vocabularies for one rubric; they are kept naming the same tells by
+    tests/test_the_skill_and_the_prompt_share_one_rubric.py.
+
     Named-signal section: derives the tell categories actually present in ``text`` (via
     ``_detected_signals``) and appends a bullet per detected category with a concrete action.
     A document heavy in clichés gets a cliché-focused instruction; one heavy in repeated openers

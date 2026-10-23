@@ -955,7 +955,9 @@ class TestTheScoreResponseIsSafeToConsume:
 
         client = TestClient(app)
         detector = next((d for d in base.all_detectors() if d.name == victim), None)
-        if detector is None:
+        # Registered is not loadable: on a lite install hc3_roberta is in the registry but cannot
+        # run, the request falls back to the lite tier, and nothing is left to break.
+        if detector is None or not detector.available():
             pytest.skip(f"{victim} unavailable in this environment")
         cls = type(detector)
         original = cls.score
@@ -1011,7 +1013,7 @@ class TestTheScoreResponseIsSafeToConsume:
         from untell.scripts.score import score_text
 
         detector = next((d for d in base.all_detectors() if d.name == "hc3_roberta"), None)
-        if detector is None:
+        if detector is None or not detector.available():  # registered is not loadable; see above
             pytest.skip("hc3_roberta unavailable")
         cls = type(detector)
         original = cls.score

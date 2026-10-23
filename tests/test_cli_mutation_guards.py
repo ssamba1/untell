@@ -25,7 +25,16 @@ class TestTorchNotice:
     mutation prints it only when the opt-out IS set — inverted."""
 
     def test_notice_prints_without_the_opt_out(self, monkeypatch) -> None:
+        import importlib.util
+
         monkeypatch.delenv("UNTELL_LITE_NO_TORCH", raising=False)
+        # The notice is about torch being installed, so report it installed: what is under test is
+        # the opt-out check, and a lite install would otherwise never reach it.
+        real_find_spec = importlib.util.find_spec
+        monkeypatch.setattr(
+            importlib.util, "find_spec",
+            lambda name, *a: object() if name == "torch" else real_find_spec(name, *a),
+        )
         monkeypatch.setattr(cli, "_run_check", lambda *a, **k: 0)
         buf = io.StringIO()
         with contextlib.redirect_stderr(buf):

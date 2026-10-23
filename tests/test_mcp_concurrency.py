@@ -22,6 +22,7 @@ import pytest
 
 mcp = pytest.importorskip("mcp")  # noqa: F841
 
+from tests._mcp_compat import content_blocks  # noqa: E402
 from untell.mcp_server import _server  # noqa: E402
 
 TEXTS = [
@@ -33,7 +34,7 @@ TEXTS = [
 
 async def _call(srv, name, args):
     result = await srv.call_tool(name, args)
-    return [getattr(item, "text", None) for item in result]
+    return [getattr(item, "text", None) for item in content_blocks(result)]
 
 
 async def _payload(srv, name, args) -> dict:

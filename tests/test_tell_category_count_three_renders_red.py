@@ -5,9 +5,11 @@ The mutation >= -> > demotes count==3 from red to yellow, silently lowering the
 severity of the worst tells. The markup passed to Table.add_row is the
 observable — count 3 must carry "[red]", count 2 must carry "[yellow]".
 """
-from rich.table import Table
+import pytest
 
 import untell.rich_output as rich_output
+
+Table = pytest.importorskip("rich.table").Table
 
 
 def _capture(monkeypatch, tells):

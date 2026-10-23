@@ -29,4 +29,3 @@ def test_unanticipated_oserror_exits_two(monkeypatch):
     with pytest.raises(SystemExit) as exc:
         read_file_or_exit("whatever")
     assert exc.value.code == 2
-

@@ -6,7 +6,16 @@ failure here costs GPU hours and yields an adapter trained on noise.
 
 from __future__ import annotations
 
+import importlib.util
+
 import pytest
+
+# "This IS the NLI path": the paraphrase scores 0.32 on token overlap, so only NLI admits it.
+needs_nli = pytest.mark.skipif(
+    not (importlib.util.find_spec("torch") is not None
+        and importlib.util.find_spec("transformers") is not None),
+    reason="needs the [full] extra (the NLI gate)",
+)
 
 
 def test_sim_floor_adapts_to_the_active_similarity_metric(monkeypatch):
@@ -50,6 +59,7 @@ def test_off_topic_rewrite_is_still_hard_gated(monkeypatch):
     assert r.humanness_reward(orig, off_topic) == -1.0
 
 
+@needs_nli
 def test_faithful_paraphrase_the_loop_accepts_is_not_gated(monkeypatch):
     """The reward's meaning gate must agree with the deployed loop's.
 

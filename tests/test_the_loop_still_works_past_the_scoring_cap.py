@@ -85,20 +85,22 @@ def oversized() -> str:
 
 
 @pytest.fixture(scope="module")
-def run(oversized: str) -> dict:
+def run(oversized: str):
     """ONE loop run, shared by every case.
 
     Written first as three tests each calling `untell_text` on a 50k+ document, which did not
     finish inside the timeout. Every run here rewrites the whole document; the cost is in the runs,
     so three assertions about one result cost a third of three results.
     """
-    import os
-
-    os.environ["UNTELL_LITE_NO_TORCH"] = "1"
-    return untell_text(
-        oversized, tier="lite", rewriter="composite", max_iters=1, best_of=3,
-        threshold=0.001, seed=3,
-    )
+    # Set here as well as in `stdlib_lite`: a module fixture runs before any function-scoped one.
+    # MonkeyPatch.context, not os.environ: a bare write outlived this module and pinned every
+    # later module in the session to the stdlib path.
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setenv("UNTELL_LITE_NO_TORCH", "1")
+        yield untell_text(
+            oversized, tier="lite", rewriter="composite", max_iters=1, best_of=3,
+            threshold=0.001, seed=3,
+        )
 
 
 def test_the_fixture_really_is_over_the_cap(oversized: str) -> None:

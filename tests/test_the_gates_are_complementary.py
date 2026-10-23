@@ -28,11 +28,12 @@ import logging
 
 import pytest
 
+from untell.scripts.entailment import available as nli_available
 from untell.scripts.entailment import contradicts
 from untell.scripts.hedges import certainty_kept, polarity_kept
 from untell.scripts.numerals import numbers_kept
 from untell.scripts.quality import passes, similarity
-from untell.scripts.roles import role_swap
+from untell.scripts.roles import parser_available, role_swap
 
 
 @pytest.fixture(autouse=True)
@@ -92,6 +93,8 @@ def test_a_faithful_rewrite_passes_every_gate() -> None:
 def test_similarity_alone_would_let_it_through(name: str, a: str, b: str, gate) -> None:
     """The argument for the conjunction. Each of these is a different lie about the source, and each
     scores high enough on similarity to look faithful."""
+    if name == "a swapped role" and not parser_available():
+        pytest.skip("spaCy model unavailable — role_swap returns None by design")
     assert similarity(a, b) >= 0.76, f"{name}: premise — this must LOOK faithful to similarity"
     assert passes(a, b), f"{name}: premise — the similarity gate must accept it"
     assert gate(a, b), f"{name}: the gate built for this defect did not catch it"
@@ -103,6 +106,8 @@ def test_polarity_and_contradiction_both_catch_a_negation() -> None:
     a = "The framework improves efficiency across the whole corpus."
     b = "The framework does not improve efficiency across the whole corpus."
     assert not polarity_kept(a, b)
+    if not nli_available():
+        pytest.skip("NLI unavailable: only the mechanical half of the redundancy can be checked")
     assert contradicts(a, b)
 
 

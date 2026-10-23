@@ -5,6 +5,13 @@ on:
     branches: ["**"]
   pull_request:
 
+# A newer push to the same branch makes the older run moot, and the full tier alone takes over an
+# hour: four pushes in twenty minutes had four of them running at once. Superseded runs are
+# cancelled everywhere except main, where every commit keeps its own complete record.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   lite:
     name: lite-tier (no model downloads)
@@ -13,10 +20,10 @@ jobs:
       matrix:
         python-version: ["3.9", "3.11", "3.12"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -96,10 +103,10 @@ jobs:
     name: ruff lint gate (shipped code zero-tolerance; probes exempted by policy)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up Python 3.11
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
 
@@ -125,11 +132,11 @@ jobs:
     name: new-test sweep — no new lint debt (changed files only)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: Set up Python 3.11
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
       - name: Install ruff
@@ -172,15 +179,15 @@ jobs:
     name: full-tier (torch + real detectors)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up Python 3.11
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
 
       - name: Cache Hugging Face models
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cache/huggingface
           key: hf-${{ runner.os }}-${{ hashFiles('pyproject.toml') }}
@@ -193,7 +200,8 @@ jobs:
           # environment because nothing installed it, and the code path they cover had a
           # gate that rejected 19 of 20 real rewrites. An optional extra nobody exercises
           # is an untested code path a user can turn on with one pip flag.
-          pip install -e ".[full,eval,quality,docs,rich,dev]"
+          # `mcp` too: without it the `untell-mcp` minimal invocation could only crash on import here.
+          pip install -e ".[full,eval,quality,docs,rich,dev,mcp]"
           # Retried rather than `|| true`d into silence. A bare `|| true` treats a transient
           # model-index failure and a permanently missing model as the same thing, and the
           # capability check below turns the second into a red build.
@@ -258,10 +266,10 @@ jobs:
     name: linux installer + zero-dep run (install.sh)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up Python 3.11
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
 
@@ -289,10 +297,10 @@ jobs:
     name: windows installer + zero-dep run (Windows PowerShell 5.1)
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up Python 3.11
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
 
@@ -329,7 +337,7 @@ jobs:
     name: docker image builds and serves
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # Nothing built this image, and a shipped Dockerfile that cannot build is the one kind of
       # breakage no unit test reaches. It shipped with `pip install /tmp/untell-*.whl[server]`,
@@ -367,10 +375,10 @@ jobs:
     name: pre-commit hooks
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up Python 3.11
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
 

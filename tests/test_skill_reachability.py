@@ -15,6 +15,7 @@ can run it" are different properties. These tests check the second one.
 from __future__ import annotations
 
 import re
+import sys
 from pathlib import Path
 
 import pytest
@@ -90,6 +91,9 @@ def test_skill_invokes_scripts_by_relative_path():
     assert not stray, f"SKILL.md should call scripts by path, not -m: {stray}"
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 10), reason="sys.stdlib_module_names is 3.10+; the 3.11/3.12 legs run this"
+)
 def test_no_step_script_shadows_a_stdlib_module():
     """A script here must not be named after a stdlib module.
 
@@ -118,6 +122,9 @@ def test_no_step_script_shadows_a_stdlib_module():
     )
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 10), reason="sys.stdlib_module_names is 3.10+; the 3.11/3.12 legs run this"
+)
 def test_stdlib_shadowing_guard_would_actually_fire():
     """Guard the guard: prove the check recognises a known stdlib name."""
     import sys

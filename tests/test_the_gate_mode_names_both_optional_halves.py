@@ -49,6 +49,9 @@ def _quiet(caplog):
 
 def test_the_mode_reports_a_missing_parser(monkeypatch) -> None:
     monkeypatch.setattr(roles, "_load", lambda: None)
+    # NLI present, parser absent: the case being labelled. Stub NLI in rather than skipping where
+    # it is not installed, since what is under test is the label, not the model.
+    monkeypatch.setattr("untell.scripts.entailment.available", lambda: True)
     assert _meaning_gate_mode(True) == "nli (no role check)"
 
 
@@ -84,6 +87,7 @@ def test_the_three_values_are_ordered_by_what_is_running(monkeypatch) -> None:
     """The vocabulary is a ladder, and its rungs must stay distinct — two of them collapsing into
     one is exactly the bug this file exists for."""
     monkeypatch.setattr(roles, "_load", lambda: None)
+    monkeypatch.setattr("untell.scripts.entailment.available", lambda: True)
     degraded = _meaning_gate_mode(True)
     disabled = _meaning_gate_mode(False)
     assert degraded != disabled

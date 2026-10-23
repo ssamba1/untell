@@ -8,9 +8,11 @@ measurement contract. Pinned with a fake model so no HF download is needed.
 """
 from unittest.mock import patch
 
-import numpy as np
+import pytest
 
 from untell.scripts.quality import _cosine_similarity
+
+np = pytest.importorskip("numpy")
 
 
 class _FakeModel:
