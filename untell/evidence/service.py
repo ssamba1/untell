@@ -96,8 +96,9 @@ def stability_payload(text: str, detector: str | None = None, threshold: float |
 def brief_payload(text: str, detector: str | None = None, name: str | None = None,
                   threshold: float | None = None, scores: dict | None = None,
                   documents: int = 1, fpr: float | None = None, tpr: float = 0.9,
-                  detector_version: str | None = None, allow_commercial: bool = False) -> dict:
+                  detector_version: str | None = None, allow_commercial: bool = False,
+                  writer: str = "general") -> dict:
     stab = stability_payload(text, detector, threshold, scores, allow_commercial=allow_commercial)
     return build_brief(text, name or detector or "recorded-scores", stability=stab,
                        documents=max(1, int(documents)), fpr=fpr, tpr=tpr,
-                       detector_version=detector_version)
+                       detector_version=detector_version, writer=writer)

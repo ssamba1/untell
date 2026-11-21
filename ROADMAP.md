@@ -48,7 +48,7 @@ drifts from the plan it summarises is worse than none, because it is the part pe
 | 20 | Offline browser evidence kit | ✅ done | — |
 | 21 | Pangram adapter; audit tools over MCP and REST | ✅ done | — |
 | 22 | First report cards for commercial detectors | 🔜 open | **API keys** as repository secrets, and a check of each provider's terms of service |
-| 23 | Corpora where detectors are known to fail: non-native, student, short text | 🔜 open | **partners with consented data** (writing centres, ESL programmes, integrity offices) |
+| 23 | Corpora where detectors are known to fail: non-native, student, short text | 🔜 open — 2023 baseline done from public data; current versions need fresh scoring | **partners with consented data** (writing centres, ESL programmes, integrity offices), and API keys to re-score |
 | 24 | Verify every `summary`-marked published rate against its primary source | 🔜 open | **network access** to the primary PDFs (epoch.ai and arXiv were unreachable from the build session) |
 | 25 | First PyPI release | 🔜 open | **your PyPI account**: register the trusted publisher for `.github/workflows/release.yml`, then tag `v0.4.0` |
 
@@ -441,8 +441,10 @@ check per provider.
 ### 🔜 Corpora where detectors are known to fail
 
 The published evidence locates detector failure in non-native writers, short text and lightly
-edited text. Measuring it needs consented corpora with provenance; `report-card` already slices by
-`group` and `author`. Waiting on partners.
+edited text. A 2023 baseline now exists: seven commercial detectors' recorded scores from Liang et
+al.'s public data, as report cards by writer population (non-native 52–76% flagged, US students
+0–12%). What is still open is the current versions (re-score the same essays with API keys and run
+`drift`) and larger consented corpora from partners.
 
 ### 🔜 Verify every published rate against its primary source
 

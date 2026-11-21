@@ -72,6 +72,7 @@ def build_brief(
     tpr: float = 0.90,
     priors: tuple[float, ...] = DEFAULT_PRIORS,
     documents: int = 1,
+    writer: str = "general",
     cohort: int = 1000,
     now: _dt.datetime | None = None,
 ) -> dict:
@@ -83,11 +84,12 @@ def build_brief(
     now = now or _dt.datetime.now(_dt.timezone.utc)
     words = len(_WORDS.findall(text))
     published = _rates.rates_for(detector)
-    est = _rates.best_fpr_estimate(detector)
+    est = _rates.best_fpr_estimate(detector, population=writer)
     fpr_used, fpr_source = (fpr, "supplied by the user") if fpr is not None else (
         (est["fpr"], est["source"]) if est else (None, None))
 
-    bayes: dict = {"tpr_assumed": tpr, "fpr": fpr_used, "fpr_source": fpr_source}
+    bayes: dict = {"tpr_assumed": tpr, "fpr": fpr_used, "fpr_source": fpr_source,
+                   "writer_population": writer}
     if fpr_used is not None:
         bayes["by_prior"] = [
             {"prior": p,
@@ -213,6 +215,10 @@ def render_markdown(b: dict) -> str:
         L.append("No false-positive rate is available, so this cannot be computed. A flag cannot be "
                  "interpreted as a probability of AI authorship without one.")
     else:
+        pop = bay.get("writer_population", "general")
+        if pop != "general":
+            L.append(f"Writer population: **{pop}** — the rate below was measured on that population.")
+            L.append("")
         L.append(f"Using a false-positive rate of **{_pct(bay['fpr'], 2)}** ({bay['fpr_source']}) "
                  f"and an *assumed* true-positive rate of {_pct(bay['tpr_assumed'], 0)}. The answer "
                  "depends on how common AI-written work is among the documents being screened:")

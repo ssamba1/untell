@@ -23,7 +23,9 @@ untell brief --file essay.txt --detector gptzero --documents 12 --format html --
 ```
 
 `--documents` is how many documents this person has submitted in total, which is what turns a
-per-document error rate into a per-person one.
+per-document error rate into a per-person one. `--writer non-native` selects published rates
+measured on non-native English writers, where they exist; a general-population rate is never
+silently applied to a population it was not measured on.
 
 **For a detector with no API** (Turnitin, most web interfaces), generate the scoring kit, score each
 file in the detector's own interface, and fill in the CSV:

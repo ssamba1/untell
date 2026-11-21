@@ -486,6 +486,8 @@ class BriefRequest(StabilityRequest):
     fpr: _Probability | None = None
     tpr: _Probability = 0.9
     detector_version: str | None = None
+    # Which published rates apply: "general", or a population such as "non-native".
+    writer: str = Field("general", max_length=40)
 
 
 class SentencesRequest(_Request):
@@ -1229,7 +1231,7 @@ async def brief(body: BriefRequest):
         return await _offload(
             brief_payload, body.text, body.detector, body.name, body.threshold, body.scores,
             body.documents, body.fpr, body.tpr, body.detector_version,
-            allow_commercial=http_allows_commercial())
+            allow_commercial=http_allows_commercial(), writer=body.writer)
     except RefusedSpec as exc:
         return _refused(exc)
 

@@ -5,6 +5,15 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- **Report cards for seven commercial detectors' 2023 versions**, from the per-essay scores Liang et
+  al. (Patterns, 2023) recorded: GPTZero, Originality.ai, ZeroGPT, Sapling, Crossplag, Quillbot and
+  the OpenAI RoBERTa detector, by writer population. They flag 52–76% of TOEFL essays by non-native
+  writers against 0–12% of US 8th-graders' essays; untell reproduces the paper's 61% average
+  (62.0%). Importer: `python -m untell.bench.liang2023 <clone>`; cards in `docs/observatory/liang-2023/`.
+- **`--writer non-native`** (`brief`, `flagmath`, MCP and REST): published rates carry a writer
+  population, and a rate measured on one population is never applied to another.
+
 ## [0.4.0] - 2026-11-21
 
 ### Added

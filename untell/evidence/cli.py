@@ -79,6 +79,9 @@ def brief_main(argv: list[str] | None = None) -> int:
     ap.add_argument("--tpr", type=float, default=0.90, help="assumed true-positive rate (default 0.90)")
     ap.add_argument("--documents", type=int, default=1,
                     help="how many documents this writer submitted (for the per-person risk)")
+    ap.add_argument("--writer", default="general",
+                    help="which published rates apply: 'general', or 'non-native' for a writer "
+                         "whose first language is not English (default general)")
     ap.add_argument("--format", choices=("md", "html", "json"), default="md")
     ap.add_argument("--out", "-o", help="write to this file instead of stdout")
     args = ap.parse_args(argv)
@@ -93,7 +96,7 @@ def brief_main(argv: list[str] | None = None) -> int:
         text, name, detector_version=args.detector_version, stability=stability,
         observed_score=args.score,
         observed_flagged=None if args.flagged is None else args.flagged == "yes",
-        fpr=args.fpr, tpr=args.tpr, documents=max(1, args.documents))
+        fpr=args.fpr, tpr=args.tpr, documents=max(1, args.documents), writer=args.writer)
     render = {"md": render_markdown, "html": render_html,
               "json": lambda x: json.dumps(x, indent=2) + "\n"}[args.format]
     _write(args.out, render(b))
@@ -180,6 +183,8 @@ def flagmath_main(argv: list[str] | None = None) -> int:
         description="What a detector flag implies: P(AI | flagged) by Bayes, and the chance an "
                     "honest writer is falsely flagged at least once across k documents.")
     ap.add_argument("--detector", help="look up a published false-positive rate for this detector")
+    ap.add_argument("--writer", default="general",
+                    help="whose rate to look up: 'general' or 'non-native' (default general)")
     ap.add_argument("--fpr", type=float, help="false-positive rate per document")
     ap.add_argument("--tpr", type=float, default=0.90)
     ap.add_argument("--prior", type=float, action="append",
@@ -190,7 +195,7 @@ def flagmath_main(argv: list[str] | None = None) -> int:
     args = ap.parse_args(argv)
     fpr, source = args.fpr, "given"
     if fpr is None and args.detector:
-        est = best_fpr_estimate(args.detector)
+        est = best_fpr_estimate(args.detector, population=args.writer)
         if est:
             fpr, source = est["fpr"], est["source"]
     if fpr is None:

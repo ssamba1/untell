@@ -94,17 +94,20 @@ least once over 30 essays.
 
 | finding | figure | source |
 |---|---|---|
+| Seven commercial detectors (2023 versions) on non-native writers | flagged **52–76%** of TOEFL essays by non-native writers, **0–12%** of US 8th-graders' essays; untell reproduces the original study's 61% average (62.0%) | [observatory](docs/observatory/README.md), from [Liang et al.'s recorded scores](https://github.com/Weixin-Liang/ChatGPT-Detector-Bias) |
 | The same detector, same threshold, different writing | lite tier: **1.2%** false positives on 80 pre-2022 PEPs, **30%** on HC3 forum answers | [observatory](docs/observatory/README.md), [Result 43](docs/free-ceiling-measured.md) |
 | Our full local ensemble on real human answers | flags **5 of 30** (17%) HC3 human answers, two at >0.98 | [measurement log](docs/free-ceiling-measured.md) |
 | A detector read punctuation spacing as authorship | one space before each full stop took `hc3_roberta`'s AUROC from **0.98 to 0.14** — below chance | [`untell/detectors/base.py`](untell/detectors/base.py) |
 | Text pasted from a justified PDF | soft hyphens made a human paragraph score **1.0000** AI | [`untell/detectors/base.py`](untell/detectors/base.py) |
 | Optimising against detectors does not transfer | a detector-in-the-loop rewrite moved the detectors it saw and **not** one it never saw: 4/10 still flagged, every seed | [measurement log](docs/free-ceiling-measured.md) |
 
-The last two rows are why untell normalises its own detectors' input, and why the stability test
-exists: if the detectors in this repository had shortcuts like these, the commercial ones may too,
-and the only way to know is to test them. **No commercial detector has been measured here yet** —
-the [observatory workflow](.github/workflows/observatory.yml) runs each one as soon as its API key
-is configured.
+The punctuation and PDF rows are why untell normalises its own detectors' input, and why the
+stability test exists: if the detectors in this repository had shortcuts like these, the commercial
+ones may too, and the only way to know is to test them. **No commercial detector's current version
+has been measured live here yet** — the 2023 figures above come from scores recorded at the time,
+and the [observatory workflow](.github/workflows/observatory.yml) measures each current version as
+soon as its API key is configured. For a non-native writer, `untell brief --writer non-native`
+uses the population-specific rates.
 
 ## Install
 

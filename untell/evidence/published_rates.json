@@ -1,5 +1,5 @@
 {
-  "_about": "Published error-rate figures for named AI detectors. Every entry names its source. 'checked' records how far this project verified it: 'primary' = read in the primary source; 'summary' = seen only via a search summary or secondary report; 'vendor' = the detector's own claim. Detectors change models silently: a figure describes the version that was tested, on the text that was tested. Last reviewed 2026-11-21.",
+  "_about": "Published error-rate figures for named AI detectors. Every entry names its source. 'checked' records how far this project verified it: 'primary' = read in the primary source; 'summary' = seen only via a search summary or secondary report; 'vendor' = the detector's own claim. Detectors change models silently: a figure describes the version that was tested, on the text that was tested. 'population' says which writers a figure describes ('general' or e.g. 'non-native'); a figure for one population is never applied to another. Last reviewed 2026-11-21.",
   "entries": [
     {
       "detector": "pangram",
@@ -10,7 +10,8 @@
       "source": "Jabarian & Imas, 'Artificial Writing and Automated Detection', NBER Working Paper 34223 (2025)",
       "url": "https://www.nber.org/system/files/working_papers/w34223/w34223.pdf",
       "checked": "summary",
-      "note": "Reported as approximately zero; the only detector in that study to keep high recall with FPR capped at 0.5%."
+      "note": "Reported as approximately zero; the only detector in that study to keep high recall with FPR capped at 0.5%.",
+      "population": "general"
     },
     {
       "detector": "gptzero",
@@ -21,7 +22,8 @@
       "source": "Jabarian & Imas, NBER Working Paper 34223 (2025)",
       "url": "https://www.nber.org/system/files/working_papers/w34223/w34223.pdf",
       "checked": "summary",
-      "note": "Under 1%; recall largely lost after humanizer processing in the same study."
+      "note": "Under 1%; recall largely lost after humanizer processing in the same study.",
+      "population": "general"
     },
     {
       "detector": "originality",
@@ -31,7 +33,8 @@
       "condition": "long-form human text, vendor default threshold",
       "source": "Jabarian & Imas, NBER Working Paper 34223 (2025)",
       "url": "https://www.nber.org/system/files/working_papers/w34223/w34223.pdf",
-      "checked": "summary"
+      "checked": "summary",
+      "population": "general"
     },
     {
       "detector": "originality",
@@ -41,7 +44,8 @@
       "condition": "495 human-written passages",
       "source": "Epoch AI data insight (July 2026)",
       "url": "https://epoch.ai/data-insights/ai-detectors-false-negatives",
-      "checked": "summary"
+      "checked": "summary",
+      "population": "general"
     },
     {
       "detector": "pangram",
@@ -51,7 +55,8 @@
       "condition": "495 human-written passages",
       "source": "Epoch AI data insight (July 2026)",
       "url": "https://epoch.ai/data-insights/ai-detectors-false-negatives",
-      "checked": "summary"
+      "checked": "summary",
+      "population": "general"
     },
     {
       "detector": "gptzero",
@@ -61,7 +66,8 @@
       "condition": "495 human-written passages",
       "source": "Epoch AI data insight (July 2026)",
       "url": "https://epoch.ai/data-insights/ai-detectors-false-negatives",
-      "checked": "summary"
+      "checked": "summary",
+      "population": "general"
     },
     {
       "detector": "pangram",
@@ -71,7 +77,8 @@
       "source": "arXiv 2608.11256 (2026)",
       "url": "https://arxiv.org/pdf/2608.11256",
       "checked": "summary",
-      "note": "Not a clean false-positive rate: provenance of the 'human' abstracts is uncertain."
+      "note": "Not a clean false-positive rate: provenance of the 'human' abstracts is uncertain.",
+      "population": "general"
     },
     {
       "detector": "gptzero",
@@ -81,7 +88,8 @@
       "source": "arXiv 2608.11256 (2026)",
       "url": "https://arxiv.org/pdf/2608.11256",
       "checked": "summary",
-      "note": "Not a clean false-positive rate: provenance of the 'human' abstracts is uncertain."
+      "note": "Not a clean false-positive rate: provenance of the 'human' abstracts is uncertain.",
+      "population": "general"
     },
     {
       "detector": "turnitin",
@@ -92,7 +100,8 @@
       "source": "Turnitin, 'Understanding false positives within our AI writing detection capabilities'",
       "url": "https://www.turnitin.com/blog/understanding-false-positives-within-our-ai-writing-detection-capabilities",
       "checked": "vendor",
-      "note": "Vendor claim; no independent 2026 false-positive study of Turnitin was found."
+      "note": "Vendor claim; no independent 2026 false-positive study of Turnitin was found.",
+      "population": "general"
     },
     {
       "detector": "turnitin",
@@ -101,17 +110,19 @@
       "condition": "Washington State University AI-misconduct cases 2023-25 where the detector was the only evidence; not an error rate",
       "source": "WSU Provost's Office memo cancelling Turnitin AI detection (Feb 2026)",
       "url": "https://provost.wsu.edu/documents/2026/02/cancellation-of-turnitin-ai-detection-software_memo-to-instructors_provost-office_spring-2026.pdf",
-      "checked": "summary"
+      "checked": "summary",
+      "population": "general"
     },
     {
       "detector": "open-source-roberta",
       "metric": "false_positive_rate",
-      "value": 0.30,
+      "value": 0.3,
       "upper": 0.78,
       "condition": "open-source RoBERTa baseline; range across text types",
       "source": "Jabarian & Imas, NBER Working Paper 34223 (2025)",
       "url": "https://www.nber.org/system/files/working_papers/w34223/w34223.pdf",
-      "checked": "summary"
+      "checked": "summary",
+      "population": "general"
     },
     {
       "detector": "multiple (7 detectors, 2023 versions)",
@@ -122,7 +133,8 @@
       "source": "Liang, Yuksekgonul, Mao, Wu & Zou, 'GPT detectors are biased against non-native English writers', Patterns 4(7), 2023",
       "url": "https://doi.org/10.1016/j.patter.2023.100779",
       "checked": "primary",
-      "note": "2023 detector versions; the bias mechanism (low-perplexity vocabulary) is general."
+      "note": "2023 detector versions; the bias mechanism (low-perplexity vocabulary) is general.",
+      "population": "non-native"
     },
     {
       "detector": "untell-local-full",
@@ -132,17 +144,67 @@
       "condition": "HC3 human forum answers, shipped threshold",
       "source": "untell docs/free-ceiling-measured.md",
       "url": "https://github.com/ssamba1/untell/blob/main/docs/free-ceiling-measured.md",
-      "checked": "primary"
+      "checked": "primary",
+      "population": "general"
     },
     {
       "detector": "untell-local-lite",
       "metric": "false_positive_rate",
-      "value": 0.30,
+      "value": 0.3,
       "n": 100,
       "condition": "HC3 human answers, lite tier verdict threshold",
       "source": "untell docs/free-ceiling-measured.md (Result 43)",
       "url": "https://github.com/ssamba1/untell/blob/main/docs/free-ceiling-measured.md",
-      "checked": "primary"
+      "checked": "primary",
+      "population": "general"
+    },
+    {
+      "detector": "gptzero",
+      "metric": "false_positive_rate",
+      "value": 0.516,
+      "n": 91,
+      "population": "non-native",
+      "condition": "2023 version; TOEFL essays by non-native English writers; flagged at score >= 0.5",
+      "source": "computed by untell from the per-essay scores Liang et al. (Patterns, 2023) recorded",
+      "url": "https://github.com/ssamba1/untell/tree/main/docs/observatory/liang-2023",
+      "checked": "primary",
+      "note": "Same essays, same detectors: US 8th-grade essays were flagged at 0-5% (n=88). Describes the 2023 version only."
+    },
+    {
+      "detector": "originality",
+      "metric": "false_positive_rate",
+      "value": 0.758,
+      "n": 91,
+      "population": "non-native",
+      "condition": "2023 version; TOEFL essays by non-native English writers; flagged at score >= 0.5",
+      "source": "computed by untell from the per-essay scores Liang et al. (Patterns, 2023) recorded",
+      "url": "https://github.com/ssamba1/untell/tree/main/docs/observatory/liang-2023",
+      "checked": "primary",
+      "note": "Same essays, same detectors: US 8th-grade essays were flagged at 0-5% (n=88). Describes the 2023 version only."
+    },
+    {
+      "detector": "zerogpt",
+      "metric": "false_positive_rate",
+      "value": 0.527,
+      "n": 91,
+      "population": "non-native",
+      "condition": "2023 version; TOEFL essays by non-native English writers; flagged at score >= 0.5",
+      "source": "computed by untell from the per-essay scores Liang et al. (Patterns, 2023) recorded",
+      "url": "https://github.com/ssamba1/untell/tree/main/docs/observatory/liang-2023",
+      "checked": "primary",
+      "note": "Same essays, same detectors: US 8th-grade essays were flagged at 0-5% (n=88). Describes the 2023 version only."
+    },
+    {
+      "detector": "sapling",
+      "metric": "false_positive_rate",
+      "value": 0.681,
+      "n": 91,
+      "population": "non-native",
+      "condition": "2023 version; TOEFL essays by non-native English writers; flagged at score >= 0.5",
+      "source": "computed by untell from the per-essay scores Liang et al. (Patterns, 2023) recorded",
+      "url": "https://github.com/ssamba1/untell/tree/main/docs/observatory/liang-2023",
+      "checked": "primary",
+      "note": "Same essays, same detectors: US 8th-grade essays were flagged at 0-5% (n=88). Describes the 2023 version only."
     }
   ]
 }

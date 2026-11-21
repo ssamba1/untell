@@ -73,6 +73,9 @@ interpreter lacks a working ML stack — re-run with a venv python that has `.[f
    ```
    python scripts/stability.py --file doc.txt --detector gptzero
    ```
+   If the writer's first language is not English, add `--writer non-native`: published rates for
+   that population are used instead of general ones (in 2023, seven detectors flagged 52–76% of
+   TOEFL essays by non-native writers).
    Detector specs: `local` / `local:lite`, a commercial name (`gptzero`, `pangram`, `originality`,
    `copyleaks`, `winston`, `sapling`, `zerogpt` — each needs its API key), `cmd:<command>` (text on
    stdin, score on stdout), or `manual:<scores.csv>`.

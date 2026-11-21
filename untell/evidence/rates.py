@@ -39,7 +39,7 @@ def rates_for(detector: str) -> list[dict]:
     return [dict(e) for e in all_rates() if e["detector"].lower() == k]
 
 
-def best_fpr_estimate(detector: str) -> dict | None:
+def best_fpr_estimate(detector: str, population: str = "general") -> dict | None:
     """A conservative single FPR for Bayes arithmetic: the HIGHEST credible published figure.
 
     Conservative in the accused writer's favour on purpose — an evidence brief that picks the
@@ -49,6 +49,10 @@ def best_fpr_estimate(detector: str) -> dict | None:
     best = None
     for e in rates_for(detector):
         if e.get("metric") != "false_positive_rate":
+            continue
+        # A rate measured on one population of writers is not evidence about another: the 2023
+        # TOEFL figures (52-76%) would otherwise swamp every general-population estimate.
+        if e.get("population", "general") != population:
             continue
         v = e.get("value")
         if v is None:
@@ -64,5 +68,6 @@ def best_fpr_estimate(detector: str) -> dict | None:
             continue
         if best is None or v > best["fpr"]:
             best = {"fpr": float(v), "source": e["source"], "url": e["url"],
-                    "condition": e.get("condition"), "checked": e.get("checked")}
+                    "condition": e.get("condition"), "checked": e.get("checked"),
+                    "population": e.get("population", "general")}
     return best

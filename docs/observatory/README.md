@@ -28,11 +28,46 @@ corpus for those (see [auditing.md](../auditing.md)).
 |---|---|---|---|---|
 | untell-local-lite | 2026-11-21 | 1.2% (1/80; 95% CI 0.2–6.7%) | 0/100 variants | [md](untell-local-lite/2026-11-21.md) · [json](untell-local-lite/2026-11-21.json) |
 
-Commercial detectors appear here once their API keys are configured as repository secrets and the
-workflow is run with `publish`. Nothing in this table has been measured against a commercial
-detector yet.
-
 Compare with the same detector on HC3 forum answers: **30%** false positives
 ([Result 43](../free-ceiling-measured.md)). Same tool, same threshold, 25× the rate, because the
 register changed. That gap is the single most important thing a false-positive rate needs
 reported next to it.
+
+## Seven commercial detectors, 2023 versions, by writer population
+
+[Liang et al. (Patterns, 2023)](https://doi.org/10.1016/j.patter.2023.100779) published, with their
+data, the score seven detectors gave every essay in early 2023
+([MIT licence](https://github.com/Weixin-Liang/ChatGPT-Detector-Bias)). untell imports those
+recorded scores through its `manual:` scorer and runs a report card per detector
+([`untell/bench/liang2023.py`](../../untell/bench/liang2023.py)). False-positive rate on human essays,
+flagged at score ≥ 0.5, with 95% intervals:
+
+| detector | toefl-non-native | us-8th-grade | us-college-admissions | stanford-cs224n-abstracts | AUROC |
+|---|---|---|---|---|---:|
+| gptzero-2023 | **52%** (47/91; 42–62) | **0%** (0/88; 0–4) | **1%** (1/70; 0–8) | **1%** (1/139; 0–4) | 0.748 |
+| originality-2023 | **76%** (69/91; 66–83) | **1%** (1/88; 0–6) | **4%** (3/70; 1–12) | **8%** (11/145; 4–13) | 0.640 |
+| zerogpt-2023 | **53%** (48/91; 43–63) | **1%** (1/88; 0–6) | **3%** (2/70; 1–10) | **0%** (0/145; 0–3) | 0.570 |
+| sapling-2023 | **68%** (62/91; 58–77) | **5%** (4/88; 2–11) | **1%** (1/70; 0–8) | — | 0.512 |
+| crossplag-2023 | **52%** (47/91; 42–62) | **12%** (11/88; 7–21) | **0%** (0/70; 0–5) | **3%** (5/145; 1–8) | 0.582 |
+| quillbot-2023 | **75%** (68/91; 65–83) | **9%** (8/88; 5–17) | **1%** (1/70; 0–8) | — | 0.585 |
+| openai-roberta-2023 | **58%** (53/91; 48–68) | **9%** (8/88; 5–17) | **0%** (0/70; 0–5) | **1%** (2/145; 0–5) | 0.593 |
+
+**Reproduction check.** Averaged across the seven detectors, untell's cards flag 62.0% of the TOEFL
+essays; the paper reports 61.3%. The gap is within what duplicates (5 repeated essays) and a
+threshold edge (several ZeroGPT scores sit at exactly 0.5) can explain.
+
+**Two data problems the importer found and reports rather than hides:** the score files are not
+always in the same order as the essays (CS224N's GPTZero file diverges from position 3), so scores
+are aligned by text; and six GPTZero scores were recorded for the placeholder "Project summaries
+unavailable" rather than for an abstract, so those six abstracts are unscored.
+
+**What this is and is not.** These are the 2023 versions, before every vendor's later model
+changes. They are a baseline: re-scoring the same essays against today's versions and running
+`untell drift` against [these cards](liang-2023/cards/) measures what changed. Per-document scores
+are in [`liang-2023/scores/`](liang-2023/scores/); the essays themselves are not stored here and are
+rebuilt from the authors' repository by `python -m untell.bench.liang2023 <clone>`.
+
+## Live measurements
+
+Commercial detectors' current versions appear here once their API keys are configured as
+repository secrets and the workflow is run with `publish`. None has been measured live yet.

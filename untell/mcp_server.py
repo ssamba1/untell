@@ -580,7 +580,8 @@ def _server():
     @server.tool()
     def brief(text: str, detector: str = "local:lite", name: str | None = None,
               documents: int = 1, scores: dict | None = None, fpr: float | None = None,
-              detector_version: str | None = None, format: str = "markdown") -> dict:
+              detector_version: str | None = None, format: str = "markdown",
+              writer: str = "general") -> dict:
         """Evidence brief for one detector verdict: stability test on the document, the
         detector's published error rates (cited), P(AI | flagged) by Bayes, and the per-person
         false-flag risk for someone who submitted `documents` documents. Measures the detector,
@@ -599,7 +600,8 @@ def _server():
             return {"error": "format must be markdown, json or html"}
         try:
             b = brief_payload(text, detector, name, scores=scores, documents=documents, fpr=fpr,
-                              detector_version=detector_version, allow_commercial=True)
+                              detector_version=detector_version, allow_commercial=True,
+                              writer=writer)
         except RefusedSpec as exc:
             return {"error": str(exc)}
         if format == "json":
@@ -608,7 +610,7 @@ def _server():
 
     @server.tool()
     def flagmath(fpr: float | None = None, detector: str | None = None, tpr: float = 0.9,
-                 prior: float = 0.1, documents: int = 10) -> dict:
+                 prior: float = 0.1, documents: int = 10, writer: str = "general") -> dict:
         """What a detector flag implies: P(AI | flagged) by Bayes and P(an honest writer is
         flagged at least once across `documents` documents). Give `fpr`, or a `detector` whose
         published false-positive rate is on file."""
@@ -617,7 +619,7 @@ def _server():
 
         src = "given"
         if fpr is None and detector:
-            est = best_fpr_estimate(detector)
+            est = best_fpr_estimate(detector, population=writer)
             if est:
                 fpr, src = est["fpr"], est["source"]
         if fpr is None:

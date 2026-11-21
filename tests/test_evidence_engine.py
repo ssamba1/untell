@@ -423,3 +423,17 @@ def test_pangram_failed_task_is_unscored(monkeypatch):
 def test_pangram_is_registered():
     from untell.detectors.commercial import commercial_detectors
     assert "pangram" in {d.name for d in commercial_detectors()}
+
+
+def test_a_population_specific_rate_is_never_applied_to_everyone():
+    general = best_fpr_estimate("originality")
+    esl = best_fpr_estimate("originality", population="non-native")
+    assert general["population"] == "general" and general["fpr"] < 0.1
+    assert esl["population"] == "non-native" and esl["fpr"] > 0.5
+    assert best_fpr_estimate("pangram", population="non-native") is None  # nothing measured
+
+
+def test_the_brief_names_the_writer_population():
+    b = build_brief(SAMPLE, "gptzero", writer="non-native", documents=4)
+    assert b["bayes"]["writer_population"] == "non-native" and b["bayes"]["fpr"] > 0.5
+    assert "Writer population: **non-native**" in render_markdown(b)
