@@ -20,7 +20,12 @@ from __future__ import annotations
 
 import pytest
 
-from eval.detector_audit import LAYOUT_SHORTCUT_WARN, _layout_only_auroc, collapse_layout, render
+from untell.bench.detector_audit import (
+    LAYOUT_SHORTCUT_WARN,
+    _layout_only_auroc,
+    collapse_layout,
+    render,
+)
 
 
 class TestCollapseLayout:

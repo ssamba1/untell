@@ -1,7 +1,7 @@
 """free_ensemble_score: renormalized weighted mean, no-detector refusal, RE WARD_FAST escape."""
 import json, os
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
-from training.reward import free_ensemble_score, _FREE_WEIGHTS
+from untell.training.reward import free_ensemble_score, _FREE_WEIGHTS
 
 out = {}
 # 1. Weighted mean < max (weights dilute the saturating detector)

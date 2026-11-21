@@ -86,7 +86,7 @@ def test_nothing_shipped_reads_fifty_as_abstention() -> None:
 
     root = Path(__file__).resolve().parents[1]
     offenders = []
-    for path in list((root / "untell").rglob("*.py")) + list((root / "eval").rglob("*.py")):
+    for path in list((root / "untell").rglob("*.py")):
         for n, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
             code = line.split("#", 1)[0]
             if ("== 50.0" in code or "!= 50.0" in code) and "humanness" in code.lower():

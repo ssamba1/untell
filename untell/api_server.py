@@ -84,7 +84,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 APP_TITLE = "untell API"
-APP_VERSION = "0.3.0"
+APP_VERSION = "0.4.0"
 APP_DESC = __doc__
 
 # Free, no-key rewriter backends selectable via the ``rewriter`` field. Anything else (e.g. "auto")
@@ -425,7 +425,7 @@ class HumanizeRequest(_Request):
     # 3, matching the CLI's --best-of default. MEASURED over 6 real HC3 paragraphs:
     # best_of=1 -> 33% still flagged; best_of=3 -> 0%. The CLI moved to 3 after best-of-1 was
     # identified as a root cause of understated evasion; MCP and this surface were left behind.
-    # (CeilingRequest stays at 1 — that matches eval/ceiling.py, where the single-draw baseline
+    # (CeilingRequest stays at 1 — that matches untell/bench/ceiling.py, where the single-draw baseline
     # is what is being measured.)
     best_of: _BestOf = 3
     margin: _Probability = 0.0
@@ -1256,7 +1256,7 @@ async def verify_endpoint(body: VerifyRequest) -> dict:
 @app.post("/ceiling", responses=_CEILING_RESPONSES)
 async def ceiling(body: CeilingRequest) -> dict:
     """Measure untell's inference-only evasion ceiling against the local detector ensemble."""
-    from eval.ceiling import _SAMPLE, measure_ceiling
+    from untell.bench.ceiling import _SAMPLE, measure_ceiling
     from untell.rewriter import get_rewriter
 
     # An unrecognised name used to fall through to `rw = None`, which means "let get_rewriter pick"

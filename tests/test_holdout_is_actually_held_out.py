@@ -16,7 +16,7 @@ import os
 
 import pytest
 
-from eval import holdout
+from untell.bench import holdout
 
 
 class _FakeDetector:

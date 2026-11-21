@@ -21,7 +21,7 @@ printed beside.
 
 from __future__ import annotations
 
-from eval.detector_audit import SENTENCE_BROKEN_AUROC, render
+from untell.bench.detector_audit import SENTENCE_BROKEN_AUROC, render
 
 
 def _report(rows: list[dict]) -> dict:

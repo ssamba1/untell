@@ -6,8 +6,8 @@ humanized} JSONL. SFT a small model on that = a fast model as good as the expens
 key at inference. Most repos have no teacher this strong.
 
     pip install -e ".[full,api]" && export ANTHROPIC_API_KEY=...   # the loop needs a rewriter (teacher)
-    python -m training.distill --dataset raid --n 2000 --tier full --out data/sft.jsonl
-    # then: SFT a small model on data/sft.jsonl, optionally GRPO/DPO refine (training.rl_humanizer).
+    python -m untell.training.distill --dataset raid --n 2000 --tier full --out data/sft.jsonl
+    # then: SFT a small model on data/sft.jsonl, optionally GRPO/DPO refine (untell.training.rl_humanizer).
 """
 
 from __future__ import annotations
@@ -35,7 +35,7 @@ def distill(
     best_of: int = 3,
 ):
     """Run the loop on ``n`` samples; yield SFT rows for the ones that passed (kept the meaning)."""
-    from eval.datasets import load_samples
+    from untell.bench.datasets import load_samples
     from untell.rewriter import get_rewriter
     from untell.scripts.entailment import meaning_preserved
     from untell.scripts.quality import recommended_bar
@@ -67,7 +67,7 @@ def distill(
             continue
         # Use the bar that matches the metric similarity() actually used. It is backend-adaptive
         # (BERTScore 0.88 / cosine 0.76 / token-overlap 0.50) and a fixed 0.76 is only meaningful for
-        # the middle one — the same defect just fixed in training/reward.py. Here it is arguably
+        # the middle one — the same defect just fixed in untell/training/reward.py. Here it is arguably
         # worse: this filter decides which examples enter the DISTILLATION SET, so on a box without
         # sentence-transformers it silently rejects nearly every good rewrite and "successfully"
         # trains on an almost-empty dataset.

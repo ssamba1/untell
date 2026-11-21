@@ -36,11 +36,11 @@ pip install --upgrade pip
 pip install -e ".[train,full]"
 
 echo "== smoke test (proves the pipeline runs: tiny model, 2 steps) =="
-python -m training.rl_humanizer --smoke || { echo "smoke failed — fix before the full run"; exit 1; }
+python -m untell.training.rl_humanizer --smoke || { echo "smoke failed — fix before the full run"; exit 1; }
 
 echo "== train (model=$MODEL tier=$TIER steps=$STEPS) =="
-python -m training.rl_humanizer --model "$MODEL" --tier "$TIER" --steps "$STEPS" --out "$OUT"
-# DPO alternative (often more stable): python -m training.dpo_humanizer --model "$MODEL" --tier "$TIER"
+python -m untell.training.rl_humanizer --model "$MODEL" --tier "$TIER" --steps "$STEPS" --out "$OUT"
+# DPO alternative (often more stable): python -m untell.training.dpo_humanizer --model "$MODEL" --tier "$TIER"
 
 echo "== done =="
 echo "Adapter at: $(pwd)/$OUT"

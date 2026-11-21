@@ -5,9 +5,9 @@ from __future__ import annotations
 import sys
 from unittest.mock import MagicMock
 
-from eval.baselines import api_loop, full_loop, noop, rewrite, single_pass
-from eval.benchmark import run
-from eval.datasets import load_samples
+from untell.bench.baselines import api_loop, full_loop, noop, rewrite, single_pass
+from untell.bench.benchmark import run
+from untell.bench.datasets import load_samples
 
 
 def test_builtin_dataset_loads():
@@ -138,7 +138,7 @@ def test_raid_load_samples_excludes_attack_variants(monkeypatch):
     Known-positive: given an attacked row, a clean row, a no-key row and a human row in the
     stream, only the clean row and the no-key row (both machine, attack absent/none) pass.
     """
-    import eval.datasets as ds_mod
+    import untell.bench.datasets as ds_mod
 
     # 36 words per body — well above the > 30 word gate in load_samples.
     _body = "the quick brown fox jumps over the lazy dog " * 4  # 36 words

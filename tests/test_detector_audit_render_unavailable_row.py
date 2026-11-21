@@ -1,6 +1,6 @@
 """The excused list must never crash, and must never excuse a paragraph verdict.
 
-eval/detector_audit.py:495 — the `excused` comprehension. Commit 3b32835 flipped the
+untell/bench/detector_audit.py:495 — the `excused` comprehension. Commit 3b32835 flipped the
 final `and` to `or`, which (a) crashed render() with KeyError('auroc') on any report
 containing a row without an 'auroc' key (UNAVAILABLE / AVAIL_ERR / SCORE_ERR /
 RETURNED_NONE verdicts — exactly what a smoke run on a machine with opt-in detectors
@@ -15,7 +15,7 @@ paragraph/healthy row in the footnote.
 
 from __future__ import annotations
 
-from eval.detector_audit import SENTENCE_BROKEN_AUROC, render
+from untell.bench.detector_audit import SENTENCE_BROKEN_AUROC, render
 
 
 def _scored(name: str, verdict: str, auroc: float, granularity: str | None = None) -> dict:

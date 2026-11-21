@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from eval.ceiling import _SAMPLE, main, measure_ceiling
+from untell.bench.ceiling import _SAMPLE, main, measure_ceiling
 
 
 class TestTheCorpusIsPartOfTheResult:
@@ -18,20 +18,20 @@ class TestTheCorpusIsPartOfTheResult:
     """
 
     def test_the_result_names_its_corpus(self):
-        from eval.ceiling import measure_ceiling
+        from untell.bench.ceiling import measure_ceiling
 
         r = measure_ceiling(["Some text to score here and there."], tier="lite", max_iters=1)
         assert r["corpus"] == "builtin"
         assert r["corpus_mean_words"] == 7
 
     def test_a_caller_can_label_its_own_corpus(self):
-        from eval.ceiling import measure_ceiling
+        from untell.bench.ceiling import measure_ceiling
 
         r = measure_ceiling(["a b c d e"], tier="lite", max_iters=1, corpus="hc3")
         assert r["corpus"] == "hc3"
 
     def test_the_render_warns_only_for_the_builtin_sample(self):
-        from eval.ceiling import _render, measure_ceiling
+        from untell.bench.ceiling import _render, measure_ceiling
 
         builtin = _render(measure_ceiling(["a b c"], tier="lite", max_iters=1))
         real = _render(measure_ceiling(["a b c"], tier="lite", max_iters=1, corpus="hc3"))
@@ -39,7 +39,7 @@ class TestTheCorpusIsPartOfTheResult:
         assert "hand-written" not in real
 
     def test_the_render_states_the_corpus_on_the_header_line(self):
-        from eval.ceiling import _render, measure_ceiling
+        from untell.bench.ceiling import _render, measure_ceiling
 
         out = _render(measure_ceiling(["a b c"], tier="lite", max_iters=1, corpus="hc3"))
         assert "corpus=hc3" in out.splitlines()[0]
@@ -51,8 +51,8 @@ def test_dataset_flag_refuses_to_report_a_fallback_under_a_real_name(monkeypatch
     Reporting that as an hc3 ceiling would attach real-corpus authority to the demo corpus — the
     exact confusion the corpus field exists to prevent.
     """
-    import eval.ceiling as ceiling
-    import eval.datasets as datasets
+    import untell.bench.ceiling as ceiling
+    import untell.bench.datasets as datasets
 
     def _unavailable(dataset="builtin", n=5, strict=False):
         assert strict, "the ceiling CLI must ask for the dataset strictly"
@@ -73,32 +73,32 @@ class TestStrictLoadingRefusesToSubstitute:
     """
 
     def test_a_bad_name_raises_instead_of_substituting(self):
-        from eval.datasets import DatasetUnavailable, load_samples
+        from untell.bench.datasets import DatasetUnavailable, load_samples
 
         with pytest.raises(DatasetUnavailable, match="no such dataset"):
             load_samples("not-a-dataset", 2, strict=True)
 
     def test_the_default_still_falls_back_quietly_enough_for_a_smoke_run(self):
-        from eval.datasets import load_samples
+        from untell.bench.datasets import load_samples
 
         assert len(load_samples("not-a-dataset", 2)) == 2
 
     def test_builtin_is_never_strict(self):
-        from eval.datasets import load_samples
+        from untell.bench.datasets import load_samples
 
         assert len(load_samples("builtin", 2, strict=True)) == 2
 
     @pytest.mark.parametrize(
         ("module", "func", "kwargs"),
         [
-            ("training.distill", "distill", {"dataset": "not-a-dataset", "n": 1, "tier": "lite"}),
-            ("training.rl_humanizer", "build_dataset", {"name": "not-a-dataset", "n": 1}),
+            ("untell.training.distill", "distill", {"dataset": "not-a-dataset", "n": 1, "tier": "lite"}),
+            ("untell.training.rl_humanizer", "build_dataset", {"name": "not-a-dataset", "n": 1}),
         ],
     )
     def test_the_training_entry_points_load_strictly(self, module, func, kwargs):
         import importlib
 
-        from eval.datasets import DatasetUnavailable
+        from untell.bench.datasets import DatasetUnavailable
 
         mod = importlib.import_module(module)
         with pytest.raises(DatasetUnavailable):
@@ -173,7 +173,7 @@ def test_repeats_records_per_run_means_and_spread(monkeypatch):
 
     `repeats` must re-run the whole corpus N times and report the per-run means plus their stdev,
     so a quoted number can be read with its error bar."""
-    import eval.ceiling as C
+    import untell.bench.ceiling as C
 
     runs = {"n": 0}
 
@@ -205,7 +205,7 @@ def test_repeats_records_per_run_means_and_spread(monkeypatch):
 
 
 def test_repeats_default_is_single_run_without_spread():
-    import eval.ceiling as C
+    import untell.bench.ceiling as C
 
     assert C._stdev([0.5]) is None       # a single sample has no spread
     assert C._stdev([]) is None
@@ -215,7 +215,7 @@ def test_repeats_default_is_single_run_without_spread():
 def test_reports_meaning_similarity_alongside_evasion(monkeypatch):
     """A ceiling number is meaningless without the fidelity it cost: a rewrite that destroys the
     text trivially beats every detector. mean/min similarity must be reported and rendered."""
-    import eval.ceiling as C
+    import untell.bench.ceiling as C
 
     def _fake_score(t, tier="full", threshold=0.3):
         m = 0.9 if "REW" not in t else 0.1
@@ -241,7 +241,7 @@ def test_rewrote_denominator_counts_every_attempt(monkeypatch):
     `rewrote/n` therefore rendered a success count LARGER than the total it was measured
     against — "(rewrote 9/3)" at --repeats 3, "(rewrote 27/3)" at --repeats 9 — on the line
     carrying the headline result."""
-    import eval.ceiling as C
+    import untell.bench.ceiling as C
 
     base = {
         "n": 3, "tier": "full", "threshold": 0.3, "max_iters": 2, "best_of": 3,
@@ -266,7 +266,7 @@ def test_rewrote_denominator_counts_every_attempt(monkeypatch):
 def test_render_survives_a_missing_repeats_key():
     """_render is called on dicts built by callers and by tests; a missing/None repeats must not
     crash the report or divide by zero."""
-    import eval.ceiling as C
+    import untell.bench.ceiling as C
 
     out = C._render({
         "n": 2, "tier": "lite", "threshold": 0.3, "max_iters": 1, "best_of": 1,
@@ -298,7 +298,7 @@ class TestTheResultNamesItsRewriter:
 
     def test_rewriter_name_is_recorded(self, monkeypatch):
         monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
-        from eval.ceiling import measure_ceiling
+        from untell.bench.ceiling import measure_ceiling
         from untell.rewriter import get_rewriter
 
         r = measure_ceiling(
@@ -315,7 +315,7 @@ class TestTheResultNamesItsRewriter:
         run-to-run spread.
         """
         monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
-        from eval.ceiling import measure_ceiling
+        from untell.bench.ceiling import measure_ceiling
         from untell.rewriter import get_rewriter
 
         for alias in ("max", "ensemble"):
@@ -327,7 +327,7 @@ class TestTheResultNamesItsRewriter:
 
     def test_no_rewriter_records_none_not_a_guess(self, monkeypatch):
         monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
-        from eval.ceiling import measure_ceiling
+        from untell.bench.ceiling import measure_ceiling
 
         r = measure_ceiling(
             self.TEXT, tier="lite", rewriter=None, best_of=1, max_iters=1, corpus="probe"
@@ -337,7 +337,7 @@ class TestTheResultNamesItsRewriter:
     def test_render_shows_the_rewriter_in_the_header(self, monkeypatch):
         """The banner is where these numbers are actually read."""
         monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
-        from eval.ceiling import _render, measure_ceiling
+        from untell.bench.ceiling import _render, measure_ceiling
         from untell.rewriter import get_rewriter
 
         r = measure_ceiling(
@@ -355,7 +355,7 @@ def test_an_unknown_name_is_diagnosed_as_a_name_even_without_the_datasets_extra(
     same command, and fails again for the reason nobody mentioned. The known set is a constant, so
     the diagnosis is available either way.
     """
-    from eval.datasets import DatasetUnavailable, load_samples
+    from untell.bench.datasets import DatasetUnavailable, load_samples
 
     with pytest.raises(DatasetUnavailable, match="no such dataset"):
         load_samples("not-a-dataset", 2, strict=True)
@@ -367,7 +367,7 @@ def test_a_known_name_still_reports_the_missing_dependency():
 
     import pytest as _pytest
 
-    from eval.datasets import DatasetUnavailable, load_samples
+    from untell.bench.datasets import DatasetUnavailable, load_samples
 
     real_import = builtins.__import__
 
@@ -404,7 +404,7 @@ class TestParallelWorkers:
         """Parallelism must be opt-in: it is a loss on cheap workloads."""
         import inspect
 
-        from eval.ceiling import measure_ceiling
+        from untell.bench.ceiling import measure_ceiling
 
         assert inspect.signature(measure_ceiling).parameters["workers"].default == 1
 
@@ -412,7 +412,7 @@ class TestParallelWorkers:
         """The rewriter is stochastic, so post-scores may differ — but the corpus, the count and
         the PRE scores are deterministic and must match exactly."""
         monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
-        from eval.ceiling import measure_ceiling
+        from untell.bench.ceiling import measure_ceiling
 
         kw = dict(tier="lite", rewriter="composite", best_of=1, max_iters=1, corpus="probe")
         a = measure_ceiling(self.TEXTS, workers=1, **kw)
@@ -425,7 +425,7 @@ class TestParallelWorkers:
         """A rewriter passed as an OBJECT holds loaded models and cannot cross a process boundary.
         Library callers do this; it must degrade rather than raise."""
         monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
-        from eval.ceiling import measure_ceiling
+        from untell.bench.ceiling import measure_ceiling
         from untell.rewriter import get_rewriter
 
         r = measure_ceiling(
@@ -437,7 +437,7 @@ class TestParallelWorkers:
     def test_cli_exposes_workers(self):
         from pathlib import Path
 
-        import eval.ceiling as mod
+        import untell.bench.ceiling as mod
 
         assert '"--workers"' in Path(mod.__file__).read_text(encoding="utf-8")
         assert "workers=args.workers" in Path(mod.__file__).read_text(encoding="utf-8")

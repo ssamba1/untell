@@ -1,6 +1,6 @@
 import json, os
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
-from training.distill import distill, _PROMPT
+from untell.training.distill import distill, _PROMPT
 
 out = {}
 r = distill(dataset="sample", n=2, tier="lite")

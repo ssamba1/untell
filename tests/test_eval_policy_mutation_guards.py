@@ -1,4 +1,4 @@
-"""Killing tests for eval/eval_policy.py mutation survivors (2026-08-14 sweep).
+"""Killing tests for untell/bench/eval_policy.py mutation survivors (2026-08-14 sweep).
 
   line 42   logic: and -> or        scored flag (both sides must score).
   line 68   boundary: < -> <=       bypass count at exact threshold.
@@ -10,7 +10,7 @@ are constants — annotated in survivors.md.
 
 from __future__ import annotations
 
-from eval import eval_policy as E
+from untell.bench import eval_policy as E
 
 
 class TestScoredFlag:
@@ -21,7 +21,7 @@ class TestScoredFlag:
     letting a dead stack look like a working policy."""
 
     def test_one_sided_scored_is_not_scored(self, monkeypatch) -> None:
-        from eval import eval_policy as EP
+        from untell.bench import eval_policy as EP
 
         class _RW:
             name = "fake"

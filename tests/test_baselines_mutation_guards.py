@@ -1,4 +1,4 @@
-"""Killing tests for eval/baselines.py mutation survivors (2026-08-14 sweep).
+"""Killing tests for untell/bench/baselines.py mutation survivors (2026-08-14 sweep).
 
   line 190  logic: and -> or / boundaries  greedy acceptance gate (full_loop).
   line 230  identity: is not -> is         rewriter dispatch (api_loop).
@@ -10,7 +10,7 @@ Killed here via monkeypatched rewrite/score_text/similarity. Other survivors
 
 from __future__ import annotations
 
-from eval import baselines as B
+from untell.bench import baselines as B
 
 
 class TestFullLoopAcceptance:

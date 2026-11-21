@@ -6,7 +6,10 @@ bucket at the cap boundary is preserved. The mutation <= -> < runs eviction at
 exactly 4096, dropping every stale bucket (here, all of them). Pinned at the
 module-global level.
 """
-import untell.api_server as api_server
+import pytest  # noqa: E402
+
+pytest.importorskip("fastapi")
+import untell.api_server as api_server  # noqa: E402
 
 
 def test_eviction_noop_at_exact_cap():

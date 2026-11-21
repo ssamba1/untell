@@ -5,8 +5,8 @@ threshold 0.30 on RAID is 0%. Wave-3 slice 11 measured 0.1667 (5/30) on the same
 path. This probe re-pins the measurement so a regression back to the 0% claim is
 caught, and records which human docs get flagged.
 
-Uses the EXACT load path of `eval.detector_audit --pairs N --dataset raid` —
-`eval.datasets.load_pairs` plus `collapse_layout` — so the figure sits on the same
+Uses the EXACT load path of `untell.bench.detector_audit --pairs N --dataset raid` —
+`untell.bench.datasets.load_pairs` plus `collapse_layout` — so the figure sits on the same
 corpus selection the shipped claim comes from. NO thresholds are changed (threshold
 moves are RED per the envelope). The README row itself is a published number and is RED:
 this probe only MEASURES and PINS; the README edit is queued for a human.
@@ -30,14 +30,14 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 # Running this file as a script auto-adds its own directory (.claude/probes/) to
-# sys.path[0]. eval/datasets._raid_pairs does `from datasets import load_dataset`,
+# sys.path[0]. untell/bench/datasets._raid_pairs does `from datasets import load_dataset`,
 # which would then resolve to the fleet self-test probe .claude/probes/datasets.py
 # (no load_dataset attribute -> ImportError -> false "needs .[eval] extra" fallback).
 # Strip the probes dir so the real `datasets` package from the venv resolves.
 sys.path = [p for p in sys.path if "probes" not in p.lower()]
 
-from eval.datasets import load_pairs  # noqa: E402
-from eval.detector_audit import collapse_layout  # noqa: E402
+from untell.bench.datasets import load_pairs  # noqa: E402
+from untell.bench.detector_audit import collapse_layout  # noqa: E402
 from untell.scripts.score import DEFAULT_THRESHOLD  # noqa: E402
 
 
@@ -81,7 +81,7 @@ def main() -> int:
         "issue": 21,
         "threshold": DEFAULT_THRESHOLD,
         "n": n,
-        "load_path": "eval.datasets.load_pairs('raid', n) + collapse_layout",
+        "load_path": "untell.bench.datasets.load_pairs('raid', n) + collapse_layout",
         "fpr": round(fpr, 4),
         "tpr": round(tpr, 4),
         "flagged_n": len(flagged_idxs),

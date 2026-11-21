@@ -113,10 +113,10 @@ def test_every_free_backend_is_reachable_from_every_surface():
     for name in free:
         assert name in accepted, f"{name} missing from untell humanize --rewriter choices"
 
-    # eval/ceiling.py has no equivalent accessor, so it is still read as source.
-    src = (root / "eval/ceiling.py").read_text(encoding="utf-8")
+    # untell/bench/ceiling.py has no equivalent accessor, so it is still read as source.
+    src = (root / "untell/bench/ceiling.py").read_text(encoding="utf-8")
     choices = re.search(r"--rewriter\"?,?\s*\n?\s*choices=\[(.*?)\]", src, re.S)
-    assert choices, "could not find --rewriter choices in eval/ceiling.py"
+    assert choices, "could not find --rewriter choices in untell/bench/ceiling.py"
     for name in free:
         assert f'"{name}"' in choices.group(1), f"{name} missing from ceiling --rewriter choices"
 
@@ -167,7 +167,7 @@ def test_every_console_script_target_resolves():
             # An entry point may live behind an optional extra (untell-server needs fastapi from
             # .[server]). A MISSING THIRD-PARTY dep is fine; a missing untell module is a typo.
             missing = (exc.name or "").split(".")[0]
-            if missing in {"untell", "eval", "training"}:
+            if missing == "untell":
                 raise AssertionError(f"{script} -> {target}: module does not exist") from exc
             continue
         assert callable(getattr(mod, func_name, None)), (

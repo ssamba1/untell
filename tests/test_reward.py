@@ -17,8 +17,8 @@ def test_sim_floor_adapts_to_the_active_similarity_metric(monkeypatch):
     back to token overlap, where 0.76 is ~50% too strict. A faithful paraphrase was then hard-gated
     to -1.0, the SAME reward as an off-topic rewrite, so every meaningful candidate scored -1.0 and
     GRPO learned to make trivially small edits while the loss curve looked plausible."""
-    import training.reward as r
     import untell.scripts.quality as q
+    import untell.training.reward as r
 
     orig = "Furthermore, the program runs in a consistent and predictable fashion throughout."
     cand = "Furthermore, the system operates in a predictable and uniform manner throughout."
@@ -39,8 +39,8 @@ def test_sim_floor_adapts_to_the_active_similarity_metric(monkeypatch):
 
 def test_off_topic_rewrite_is_still_hard_gated(monkeypatch):
     """The gate must still do its job — meaning stays non-negotiable."""
-    import training.reward as r
     import untell.scripts.quality as q
+    import untell.training.reward as r
 
     monkeypatch.setattr(q, "method", lambda: "token_overlap")
     monkeypatch.setattr(r, "target_ai_score", lambda text, tier="full": 0.0)
@@ -67,7 +67,7 @@ def test_faithful_paraphrase_the_loop_accepts_is_not_gated(monkeypatch):
     only has meaning when the NLI stack is present, so pin the env unset for this test.
     """
     monkeypatch.delenv("UNTELL_LITE_NO_TORCH", raising=False)
-    import training.reward as r
+    import untell.training.reward as r
 
     orig = "The cat sat on the mat in the warm afternoon sun, perfectly content."
     faithful = "The feline rested upon the rug during the sunny afternoon, quite satisfied."
@@ -102,7 +102,7 @@ class TestTheGateIsTheWorstOutcome:
     )
 
     def test_a_tell_saturated_but_faithful_rewrite_stays_above_the_gate(self, monkeypatch):
-        import training.reward as r
+        import untell.training.reward as r
 
         monkeypatch.setattr(r, "target_ai_score", lambda text, tier="full": 1.0)
         # Identical text: similarity 1.0 and equal length, so both hard gates pass.
@@ -112,7 +112,7 @@ class TestTheGateIsTheWorstOutcome:
 
     def test_it_still_ranks_below_a_faithful_clean_rewrite(self, monkeypatch):
         """Flooring must not flatten the ordering that matters."""
-        import training.reward as r
+        import untell.training.reward as r
 
         monkeypatch.setattr(r, "target_ai_score", lambda text, tier="full": 0.1)
         clean = "Exercise makes the heart stronger and lifts the mood over time."
@@ -122,7 +122,7 @@ class TestTheGateIsTheWorstOutcome:
 
     def test_the_penalties_are_still_applied_below_saturation(self, monkeypatch):
         """The floor must be a floor, not a flat rate — normal tell densities still cost."""
-        import training.reward as r
+        import untell.training.reward as r
 
         monkeypatch.setattr(r, "target_ai_score", lambda text, tier="full": 0.2)
         plain = "The report covers the third quarter and the outlook for the next one."
@@ -133,7 +133,7 @@ class TestTheGateIsTheWorstOutcome:
         )
 
     def test_the_floor_sits_above_the_gate_value(self):
-        import training.reward as r
+        import untell.training.reward as r
 
         assert r._MIN_SCORED_REWARD > r._GATE_REWARD
 
@@ -141,7 +141,7 @@ class TestTheGateIsTheWorstOutcome:
 def test_out_of_range_sidecar_cannot_enter_the_weighted_mean(monkeypatch):
     """score_text records a clamped value plus the raw one. If the raw value leaks into the reward's
     weighted mean as a phantom detector, a correct ~0.75 reward becomes ~-49.5."""
-    import training.reward as r
+    import untell.training.reward as r
 
     monkeypatch.setattr(
         r, "score_text",
@@ -165,7 +165,7 @@ def test_no_detector_signal_refuses_to_return_a_reward(monkeypatch):
     Same unscored-placeholder bug as humanness() and report._bypass_rate — worst here, because a
     wrong reward is not a misreported number, it is the thing the model learns.
     """
-    import training.reward as R
+    import untell.training.reward as R
 
     monkeypatch.setattr(R, "score_text", lambda text, tier="full", threshold=0.30: {
         "tier": "lite", "detectors": {"d__error": "boom"}, "max": 0.0, "mean": 0.0,
@@ -180,7 +180,7 @@ def test_no_detector_signal_refuses_to_return_a_reward(monkeypatch):
 def test_partial_detector_failure_still_scores(monkeypatch):
     """One dead detector must NOT abort training — only a total absence of signal does. The
     surviving detectors are renormalized, which is the documented behaviour."""
-    import training.reward as R
+    import untell.training.reward as R
 
     monkeypatch.setattr(R, "score_text", lambda text, tier="full", threshold=0.30: {
         "tier": "full",
@@ -194,7 +194,7 @@ def test_partial_detector_failure_still_scores(monkeypatch):
 def test_fast_reward_path_needs_no_detectors(monkeypatch):
     """UNTELL_REWARD_FAST=1 is the documented escape hatch named in the error message, so it must
     not depend on the detector stack it exists to avoid."""
-    import training.reward as R
+    import untell.training.reward as R
 
     monkeypatch.setenv("UNTELL_REWARD_FAST", "1")
 

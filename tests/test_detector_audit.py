@@ -6,7 +6,7 @@ torch guard, since it needs the models.
 """
 from __future__ import annotations
 
-from eval.detector_audit import audit_all, audit_detector, render
+from untell.bench.detector_audit import audit_all, audit_detector, render
 
 
 class _Fake:
@@ -41,7 +41,7 @@ def test_flags_constant_detector_as_dead():
 
 def test_flags_inverted_detector():
     """Human scoring above AI means the sign/label convention is backwards."""
-    from eval.detector_audit import AI_PROBES, HUMAN_PROBES
+    from untell.bench.detector_audit import AI_PROBES, HUMAN_PROBES
 
     table = {t: 0.9 for t in HUMAN_PROBES}
     table.update({t: 0.1 for t in AI_PROBES})
@@ -51,7 +51,7 @@ def test_flags_inverted_detector():
 
 
 def test_healthy_detector_is_ok_and_separated():
-    from eval.detector_audit import AI_PROBES, HUMAN_PROBES
+    from untell.bench.detector_audit import AI_PROBES, HUMAN_PROBES
 
     table = {t: 0.1 for t in HUMAN_PROBES}
     table.update({t: 0.9 for t in AI_PROBES})
@@ -68,7 +68,7 @@ def test_responsive_but_non_separating_is_weak_not_broken():
     the range check comes first by design — a detector with almost no spread (say 0.40 vs 0.42) is
     DEAD, not weak, however 'correct' its direction looks.
     """
-    from eval.detector_audit import AI_PROBES, HUMAN_PROBES
+    from untell.bench.detector_audit import AI_PROBES, HUMAN_PROBES
 
     table = dict(zip(HUMAN_PROBES, [0.20, 0.40, 0.60, 0.30, 0.50]))
     table.update(zip(AI_PROBES, [0.25, 0.45, 0.65, 0.35, 0.52]))
@@ -81,7 +81,7 @@ def test_responsive_but_non_separating_is_weak_not_broken():
 def test_tiny_spread_is_dead_even_if_direction_is_right():
     """Range is checked before gap: near-zero spread means the detector contributes nothing,
     regardless of which way the means happen to lean."""
-    from eval.detector_audit import AI_PROBES, HUMAN_PROBES
+    from untell.bench.detector_audit import AI_PROBES, HUMAN_PROBES
 
     table = {t: 0.40 for t in HUMAN_PROBES}
     table.update({t: 0.42 for t in AI_PROBES})
@@ -119,7 +119,7 @@ def test_perplexity_burstiness_is_healthy():
 
 
 def test_sentence_probe_sets_exist_and_are_single_sentences():
-    from eval.detector_audit import SENTENCE_AI_PROBES, SENTENCE_HUMAN_PROBES
+    from untell.bench.detector_audit import SENTENCE_AI_PROBES, SENTENCE_HUMAN_PROBES
 
     assert len(SENTENCE_AI_PROBES) >= 5 and len(SENTENCE_HUMAN_PROBES) >= 5
     for s in SENTENCE_AI_PROBES + SENTENCE_HUMAN_PROBES:
@@ -135,7 +135,7 @@ def test_audit_all_covers_sentence_granularity():
 
 def test_perplexity_burstiness_is_healthy_on_single_sentences():
     """The regression this granularity was added for: it measured AUROC 0.000 here."""
-    from eval.detector_audit import SENTENCE_AI_PROBES, SENTENCE_HUMAN_PROBES
+    from untell.bench.detector_audit import SENTENCE_AI_PROBES, SENTENCE_HUMAN_PROBES
     from untell.detectors.perplexity_burstiness import PerplexityBurstinessDetector
 
     r = audit_detector(
@@ -150,7 +150,7 @@ def test_perplexity_burstiness_is_healthy_on_single_sentences():
 def test_near_chance_sentence_row_is_reported_but_not_called_broken():
     """fast_detectgpt scored 0.444 on these probes and was labelled INVERTED — then measured 0.915
     on 40 real HC3 sentence pairs. Gating a build on 36 pairs of noise is worse than not gating."""
-    from eval.detector_audit import SENTENCE_BROKEN_AUROC
+    from untell.bench.detector_audit import SENTENCE_BROKEN_AUROC
 
     assert 0.0 < SENTENCE_BROKEN_AUROC < 0.5
     rows = [
@@ -180,7 +180,7 @@ def test_pairs_mode_derives_sentence_probes_from_the_labelled_corpus(monkeypatch
     machine-written. That is exactly how the 0.915/0.995 sentence figures cited in this module were
     obtained.
     """
-    import eval.detector_audit as A
+    import untell.bench.detector_audit as A
 
     human_para = " ".join(
         f"This is human sentence number {i} and it is comfortably long enough to count." for i in range(12)
@@ -189,7 +189,7 @@ def test_pairs_mode_derives_sentence_probes_from_the_labelled_corpus(monkeypatch
         f"Furthermore, this is generated sentence number {i} with ample length to count." for i in range(12)
     )
     monkeypatch.setattr(
-        "eval.datasets.load_pairs", lambda dataset, n: [(human_para, ai_para)] * 3
+        "untell.bench.datasets.load_pairs", lambda dataset, n: [(human_para, ai_para)] * 3
     )
 
     seen: list[tuple[int, int]] = []
@@ -229,9 +229,9 @@ def test_pairs_mode_derives_sentence_probes_from_the_labelled_corpus(monkeypatch
 def test_pairs_mode_keeps_packaged_sentence_probes_when_too_few_derive(monkeypatch):
     """Short paragraphs yield too few long-enough sentences to measure anything; falling back to
     the packaged probes is better than a verdict computed on three samples."""
-    import eval.detector_audit as A
+    import untell.bench.detector_audit as A
 
-    monkeypatch.setattr("eval.datasets.load_pairs", lambda dataset, n: [("Too short.", "Also short.")])
+    monkeypatch.setattr("untell.bench.datasets.load_pairs", lambda dataset, n: [("Too short.", "Also short.")])
 
     seen: list[int] = []
     real_audit = A.audit_detector

@@ -43,7 +43,7 @@ WHY    Both refusals are correct — a partial measurement is not a measurement 
        rewriter family is now incomplete, and the detector-at-threshold recipe is unusable.
 NEXT   Ensemble: raise its estimate to match reality (composite took 841s, targeted 810s;
        ensemble runs every backend, so ~1h is plausible) or drop its n. Detector audit:
-       reproduce with `python -m eval.detector_audit --pairs 20 --dataset hc3 --json` and
+       reproduce with `python -m untell.bench.detector_audit --pairs 20 --dataset hc3 --json` and
        read the failing field before changing anything.
 
 ## 2026-08-13 me2 worker — AMBER — detector-audit failing field identified; both recipe estimates corrected
@@ -59,7 +59,7 @@ WHAT   Reproduced `detector-audit` exactly as the queue entry asked. The failing
        exactly this, so the fix is either (a) let the recipe record a finding, or (b) run the
        audit on a corpus where mage is calibrated (RAID). Both are human calls: (a) changes
        what a refusing recipe means, (b) changes what the recipe measures.
-RAN    python -m eval.detector_audit --pairs 20 --dataset hc3 --json
+RAN    python -m untell.bench.detector_audit --pairs 20 --dataset hc3 --json
 SAW    broken: ['mage']; mage MISCALIBRATED hm=0.3477 am=1.0 auroc=1.0 fpr=0.35 tpr=1.0;
        4 other detectors OK/OK_SEPARATED at paragraph granularity
 WHY    AMBER — the failing field is identified but the two candidate fixes change either the
@@ -359,7 +359,7 @@ NEXT   Re-derive the noise band from all 5 measurements.jsonl runs; re-run any
        committed instruments.json deterministic=True as stale.
 ## 2026-08-14 me2 worker — RESOLVED — test-module count drift (339 vs 358) — CLOSED 2026-08-14
 
-STATUS   Sibling fixed the docs (registry counts now match: '8 local'/'7 commercial');
+STATUS   Sibling fixed the docs (registry counts now match: '8 local'/'8 commercial');
          test_every_free_rewriter_actually_rewrites.py 17/17 PASS; audit derivable-checks
          green. Queue entry superseded.
 
@@ -472,7 +472,7 @@ gerund word, re-open.
 
 2. README.md:787 — bind default "127.0.0.1:8000". STALE: api_server.py:1053 default host is 0.0.0.0 (UNTELL_HOST env fallback), port 8000. docs/api-server.md:21 correctly says 0.0.0.0. Security-relevant (all interfaces vs localhost).
 
-3. docs/why-best-open-repo.md:148 — "Multiple real detectors in the loop (14)". STALE: 15 registered (all_detectors() returns 15; the doc's own line 77 says 8 local + 7 commercial = 15).
+3. docs/why-best-open-repo.md:148 — "Multiple real detectors in the loop (14)". STALE: 15 registered (all_detectors() returns 15; the doc's own line 77 says 8 local + 8 commercial = 15).
 
 4. docs/free-ceiling-measured.md:440 — "_CAL_MID = -0.03, _CAL_SCALE = 0.12". STALE: actual untell/detectors/fast_detectgpt.py:53-54 = _CAL_MID 0.20, _CAL_SCALE 0.08; the doc's own Result 8 table (:599-600) lists the correct values and the file self-corrects at :7649.
 
@@ -506,7 +506,7 @@ docs/why-best-open-repo.md is in the guard's RED_FILES, so the three repairs bel
 
 2. Line 80 "**23** console scripts (... -latex)" — STALE. pyproject.toml [project.scripts] now defines **24** (commit 04e3bb2 added `untell-explain` without updating this page). tests/test_docs_claims.py::test_console_script_count_in_why_best_matches_pyproject FAILS on main; passes with the fix (24 + `-explain` added to the list).
 
-3. Line 148 "Multiple real detectors in the loop | ✅ (14)" — STALE. all_detectors() registers **15** (8 local incl. opt-in radar/binoculars/local_judge + 7 commercial: LLM-judge plus 6 key-gated adapters; the page's own line 77 says "8 local + 7 commercial" = 15). Already flagged by a prior queue entry; re-verified live 2026-08-15. The (14)→(15) cell edit is NOT applied in the working tree — included here for the human to do in the same pass.
+3. Line 148 "Multiple real detectors in the loop | ✅ (14)" — STALE. all_detectors() registers **15** (8 local incl. opt-in radar/binoculars/local_judge + 8 commercial: LLM-judge plus 6 key-gated adapters; the page's own line 77 says "8 local + 8 commercial" = 15). Already flagged by a prior queue entry; re-verified live 2026-08-15. The (14)→(15) cell edit is NOT applied in the working tree — included here for the human to do in the same pass.
 
 Suggested commit (human): docs(why-best): refresh test/console/detector counts to the live surface — then `python -m untell.scripts.audit` and tests/test_docs_claims.py both pass.
 
@@ -537,7 +537,7 @@ WHAT   Fresh measurement 2026-08-15 (PYTHONPATH cleared, UNTELL_LITE_NO_TORCH=1)
 
 ## 2026-08-15 slice-6 (re-run) — AMBER — detector-audit exit-1 root cause CONFIRMED with fresh evidence; companion CLI crash FIXED
 
-WHAT   Reproduced `python -m eval.detector_audit --pairs 20 --dataset hc3 --json` (PYTHONPATH
+WHAT   Reproduced `python -m untell.bench.detector_audit --pairs 20 --dataset hc3 --json` (PYTHONPATH
        cleared, full JSON teed): EXIT=1, broken=["mage"], mage MISCALIBRATED human_mean 0.3477
        ai_mean 1.0 AUROC 1.0 FPR 0.35 > MAX_FPR 0.20 at DEFAULT_THRESHOLD 0.30, TPR 1.0 — numbers
        identical to the me2 entry. Cause chain: mage's genuine calibration on HC3 (README
@@ -983,7 +983,7 @@ WHAT   Ran the queued calibration end to end: per-detector TPR/FPR at the SHIPPE
        threshold on HC3 human vs AI pairs, calibration gaps (threshold that would bring
        FPR to 20%), and a three-corpus check of the README's mage claims. Also fixed two
        render() defects in the audit's own summary (GREEN, committed here).
-RAN    python -m eval.detector_audit --pairs 20 --dataset hc3 --json   (EXIT=1, expected)
+RAN    python -m untell.bench.detector_audit --pairs 20 --dataset hc3 --json   (EXIT=1, expected)
        + calibration_sweep/verify_claims companion scripts (worktree at HEAD 0d368e9)
 SAW    HC3 20 pairs (n=20, layout collapsed):
          detector               AUROC  human  ai    FPR@0.30 TPR@0.30
@@ -1810,7 +1810,7 @@ WHAT   Issue #21 (calibration/decision): README heavy-tier note (line 541, 2026-
        claims `mage` human FPR at 0.30 on RAID is 0%. Re-measured at the EXACT cited recipe
        at the task-pinned HEAD dd25242 in a fresh worktree and REPRODUCED 0.1667 (5/30) —
        the 0% claim is falsified. Wave-3 slice 11 reported the same 5/30.
-RAN    python -m eval.detector_audit --pairs 30 --dataset raid --json   (PYTHONPATH cleared, venv)
+RAN    python -m untell.bench.detector_audit --pairs 30 --dataset raid --json   (PYTHONPATH cleared, venv)
        + python .claude/probes/mage_raid_fpr.py --json   (regression probe, same load path)
 SAW    mage paragraph row, raid n=30 layout collapsed: verdict OK_SEPARATED, AUROC 1.000,
        human_mean 0.166, FPR 0.1667, TPR 1.000  ->  5/30 human RAID docs flagged at 0.30
@@ -1834,7 +1834,7 @@ NEXT   HUMAN: apply README line-541 correction (or approve):
 WHAT   mage's shipped cut (0.30) lands inside the human score distribution's upper
        mode: it flags 33.3% of HC3 human docs (10/30 the human upper band) at the
        shipped threshold. Measured 2026-08-17 on HC3 + RAID (30 pairs each, mage on
-       collapsed doc text, same load path as `eval.detector_audit`):
+       collapsed doc text, same load path as `untell.bench.detector_audit`):
          HC3  hm=0.3338 am=1.0000 AUROC=1.0 FPR@0.30=0.3333 TPR@0.30=1.0
               humans>=0.83:10/30  humans>=0.99:7/30  AI op point=0.999987
          RAID hm=0.1660 am=1.0000 AUROC=1.0 FPR@0.30=0.1667 TPR@0.30=1.0

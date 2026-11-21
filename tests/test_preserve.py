@@ -296,7 +296,7 @@ def test_sentinel_pattern_is_defined_once():
         r"|re\.(?:findall|search|sub|match)\(\s*r?[\"']\\u27e6HZ|re\.(?:findall|search|sub|match)\(\s*r?[\"']⟦HZ"
     )
     offenders = []
-    for package in ("untell", "eval", "training", "tests"):
+    for package in ("untell", "tests"):
         for path in sorted((root / package).rglob("*.py")):
             if path.name in ("preserve.py", "test_preserve.py"):
                 continue

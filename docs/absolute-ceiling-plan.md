@@ -21,7 +21,7 @@ it drops the $0 constraint and asks what the *highest* reachable ceiling is, wit
 - **The single highest-leverage move for untell** (I×F = 72): **surrogate distillation** — query the
   commercial detectors once (~$15–30), distill a local proxy, then optimise against it offline for free.
   It is the only lever that makes the detectors untell "can't put in the loop for free" optimisable.
-  untell already ships the pieces (`training/surrogate.py`, `untell/detectors/commercial.py`) — it is wiring, not research.
+  untell already ships the pieces (`untell/training/surrogate.py`, `untell/detectors/commercial.py`) — it is wiring, not research.
 
 ## 1. The lever board (12 families, adversarially scored)
 
@@ -87,24 +87,24 @@ over 6–12 months as commercial detectors retrain on humanizer corpora.
 
 ### Phase 2 — Surrogate distillation (~1 week, highest ROI)
 - New `scripts/harvest_labels.py`: query [`detectors/commercial.py`](https://github.com/ssamba1/untell/blob/main/untell/detectors/commercial.py) (GPTZero, Originality, Sapling) on 3–5k texts (HC3 + RAID + CC-news human) → `text,score` CSV. ~$15–30.
-- Extend [`training/surrogate.py`](https://github.com/ssamba1/untell/blob/main/training/surrogate.py) with `--detector-name` → named checkpoints.
-- Multi-detector ensemble in [`training/reward.py`](https://github.com/ssamba1/untell/blob/main/training/reward.py): `R = 0.4·gptzero + 0.35·originality + 0.25·sapling`.
+- Extend [`untell/training/surrogate.py`](https://github.com/ssamba1/untell/blob/main/untell/training/surrogate.py) with `--detector-name` → named checkpoints.
+- Multi-detector ensemble in [`untell/training/reward.py`](https://github.com/ssamba1/untell/blob/main/untell/training/reward.py): `R = 0.4·gptzero + 0.35·originality + 0.25·sapling`.
 - New `scripts/check_surrogate_drift.py`: weekly Spearman ρ vs live API; alert if ρ < 0.75.
 - **Verify:** surrogate fidelity ρ ≥ 0.85 on held-out 500; ASR on commercial targets pre/post surrogate-guided selection.
 
 ### Phase 3 — RL policy training (~1–2 weeks, GPU)
-- Multi-detector GRPO reward in [`training/rl_humanizer.py`](https://github.com/ssamba1/untell/blob/main/training/rl_humanizer.py): `R = R_det + 0.1·R_sem`, `R_det = 0.5·RoBERTa + 0.3·FastDetectGPT + 0.2·gptzero_surrogate`; DEPO-style Lagrangian rejects updates with BERTScore < 0.85.
-- Corpus-seeded DPO warm-start in [`training/dpo_humanizer.py`](https://github.com/ssamba1/untell/blob/main/training/dpo_humanizer.py): chosen = domain-matched human, rejected = detector-failed outputs.
+- Multi-detector GRPO reward in [`untell/training/rl_humanizer.py`](https://github.com/ssamba1/untell/blob/main/untell/training/rl_humanizer.py): `R = R_det + 0.1·R_sem`, `R_det = 0.5·RoBERTa + 0.3·FastDetectGPT + 0.2·gptzero_surrogate`; DEPO-style Lagrangian rejects updates with BERTScore < 0.85.
+- Corpus-seeded DPO warm-start in [`untell/training/dpo_humanizer.py`](https://github.com/ssamba1/untell/blob/main/untell/training/dpo_humanizer.py): chosen = domain-matched human, rejected = detector-failed outputs.
 - **Add MAGE to the reward ensemble (weight 0.2)** — the single highest-value change to move the MAGE floor. It is open-source ([`detectors/mage.py`](https://github.com/ssamba1/untell/blob/main/untell/detectors/mage.py)), so in-loop is feasible.
 - Trained checkpoint → drop-in for `LocalPolicyRewriter` ([`rewriter/local_policy.py`](https://github.com/ssamba1/untell/blob/main/untell/rewriter/local_policy.py)). Target: Binoculars AUROC < 0.45, BERTScore ≥ 0.87 on 200 held-out.
 - **Verify:** per-detector AUROC pre/post; BERTScore; PPL vs human; 200-text held-out unseen in training.
 
 ### Phase 4 — Honest eval harness (~3 days, parallel)
-- Separate read-only eval keys (`GPTZERO_EVAL_KEY`, …) never set in training env, in [`eval/eval_policy.py`](https://github.com/ssamba1/untell/blob/main/eval/eval_policy.py).
-- TPR@1%FPR / TPR@5%FPR with thresholds calibrated on a held-out human set, in [`eval/report.py`](https://github.com/ssamba1/untell/blob/main/eval/report.py).
+- Separate read-only eval keys (`GPTZERO_EVAL_KEY`, …) never set in training env, in [`untell/bench/eval_policy.py`](https://github.com/ssamba1/untell/blob/main/untell/bench/eval_policy.py).
+- TPR@1%FPR / TPR@5%FPR with thresholds calibrated on a held-out human set, in [`untell/bench/report.py`](https://github.com/ssamba1/untell/blob/main/untell/bench/report.py).
 - Query each commercial detector 3× per sample; report mean ± std; flag std > 0.1.
 - Track GPTZero "AI-paraphrase" sub-label and Turnitin bypasser flag as a separate column.
-- `--lambda-sweep` Pareto curve (BERTScore 0.75→0.95) in [`eval/benchmark.py`](https://github.com/ssamba1/untell/blob/main/eval/benchmark.py).
+- `--lambda-sweep` Pareto curve (BERTScore 0.75→0.95) in [`untell/bench/benchmark.py`](https://github.com/ssamba1/untell/blob/main/untell/bench/benchmark.py).
 - **Verify:** report shows TPR@1%FPR per detector on held-out text with calibrated thresholds and counter-detection rates; zero train/eval overlap.
 
 ## 5. Hard limits nobody beats

@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import pytest
 
-from eval.datasets import load_pairs
+from untell.bench.datasets import load_pairs
 from untell.scripts.quality import similarity
 from untell.scripts.run import untell_text
 from untell.text_split import split_sentences

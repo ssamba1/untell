@@ -3,7 +3,7 @@
 The free-ceiling report's **Move #2**: promote PWWS / TextFooler-style word-importance substitution
 into the closed loop. Unlike the hosted (Anthropic/OpenAI) and local-policy rewriters, this needs
 **no API key, no GPU, and no model download** — it is pure stdlib plus the lite detector. That makes
-the whole closed loop runnable at $0, which is what lets the eval harness (``eval/ceiling.py``)
+the whole closed loop runnable at $0, which is what lets the eval harness (``untell/bench/ceiling.py``)
 *measure* untell's inference-only evasion ceiling against the local ensemble — the data point the
 literature is missing (see ``docs/free-ceiling-report.md``).
 
@@ -70,7 +70,7 @@ class SurgicalRewriter:
         # the stdlib lite path a clean install runs, the two modes cost the same (0.92x, 0.95x
         # measured; the 8.2x cheaper ranking is handed back downstream — see `word_importance`).
         # NOT the default of
-        # `surgical_substitute` itself, because eval/compare_humanizers.py uses that function as the
+        # `surgical_substitute` itself, because untell/bench/compare_humanizers.py uses that function as the
         # `synonym_swap` row standing in for the QuillBot / TextFooler class, and that baseline has
         # to keep modelling their technique rather than inheriting ours.
         #

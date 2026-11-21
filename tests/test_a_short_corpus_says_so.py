@@ -1,6 +1,6 @@
 """A corpus below the tool's own thresholds must announce itself.
 
-Every loader in `eval/datasets.py` filters at `> 30` words. Two of untell's guards sit above that:
+Every loader in `untell/bench/datasets.py` filters at `> 30` words. Two of untell's guards sit above that:
 `score._MIN_WORDS_FOR_A_VERDICT` is 40, and `tells._MIN_WORDS_FOR_REPETITION` is 60, which gates
 the two strongest tell categories. A corpus of 35-word texts produces numbers the tool would
 refuse to stand behind if asked about any single document in it.
@@ -23,7 +23,7 @@ from __future__ import annotations
 
 import logging
 
-from eval.datasets import _warn_if_mostly_too_short
+from untell.bench.datasets import _warn_if_mostly_too_short
 
 
 def test_a_short_corpus_warns(caplog):
@@ -60,7 +60,7 @@ def test_the_threshold_comes_from_the_scorer_not_a_copy():
     records = []
     handler = _logging.Handler()
     handler.emit = records.append
-    logger = _logging.getLogger("eval.datasets")
+    logger = _logging.getLogger("untell.bench.datasets")
     logger.addHandler(handler)
     try:
         _warn_if_mostly_too_short("x", texts)

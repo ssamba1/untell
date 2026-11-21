@@ -63,9 +63,9 @@ def _builtin(n: int) -> list[str]:
     # Repeat to satisfy larger n requests without external data — but SAY SO. The padding is
     # deliberate (the harness must run offline), and it was silent, which made every caller that
     # reports a count report a fabricated one: `--n 2000` against the builtin set returns 2000
-    # items that are 5 texts repeated 400 times. training/rl_humanizer builds one GRPO prompt per
+    # items that are 5 texts repeated 400 times. untell/training/rl_humanizer builds one GRPO prompt per
     # item, so a run "on 2000 samples" sees five, with no diversity and nothing to show it;
-    # training/distill and eval_policy print the padded number as their denominator.
+    # untell/training/distill and eval_policy print the padded number as their denominator.
     logger.warning(
         "dataset padded: %d requested but only %d unique built-in samples exist, so each is "
         "repeated ~%.0fx. Counts derived from this are NOT %d distinct texts — install .[eval] "

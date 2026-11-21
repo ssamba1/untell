@@ -28,7 +28,7 @@ pytestmark = pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def _corpus(n: int = 12) -> list[str]:
     """Real AI-side documents. Skipped rather than failed when the corpus is unavailable."""
     try:
-        from eval.datasets import load_pairs
+        from untell.bench.datasets import load_pairs
 
         pairs = load_pairs("hc3", n=n, min_words=90)
     except Exception as exc:  # pragma: no cover - environment without the corpus

@@ -1,6 +1,6 @@
 """Ten-word sentences qualify as sentence probes.
 
-eval/detector_audit.py:398: `out += [s for s in split_sentences(para) if
+untell/bench/detector_audit.py:398: `out += [s for s in split_sentences(para) if
 len(s.split()) >= 10]` — a sentence of EXACTLY 10 words is long enough to be a
 probe. The mutation >= -> > excludes it, so a probe set built from ten-word
 sentences collapses to zero and the audit falls back to the 6 packaged
@@ -9,7 +9,7 @@ Pinned via the audit_detector spy (same pattern as the existing suite test).
 """
 from unittest.mock import patch
 
-import eval.detector_audit as audit
+import untell.bench.detector_audit as audit
 
 PARA = ". ".join(["one two three four five six seven eight nine ten"] * 10)
 
@@ -25,7 +25,7 @@ def test_ten_word_sentences_become_probes(monkeypatch):
 
     audit.audit_detector = spy
     try:
-        with patch("eval.datasets.load_pairs", return_value=[(PARA, PARA)]):
+        with patch("untell.bench.datasets.load_pairs", return_value=[(PARA, PARA)]):
             audit.audit_all(pairs=1)
     finally:
         audit.audit_detector = original

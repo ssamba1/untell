@@ -30,7 +30,7 @@ curl -fsSL https://raw.githubusercontent.com/ssamba1/untell/main/training/setup_
 GITHUB_TOKEN=ghp_xxx bash setup_gpu.sh
 ```
 Or do it manually (steps in `setup_gpu.sh`): `git clone` → `python3 -m venv .venv` →
-`pip install -e ".[train,full]"` → `python -m training.rl_humanizer --tier full --steps 500`.
+`pip install -e ".[train,full]"` → `python -m untell.training.rl_humanizer --tier full --steps 500`.
 
 **Private-repo note:** the clone needs auth. Easiest: a GitHub **personal access token** (read-only,
 repo scope) passed as `GITHUB_TOKEN`, or `scp -r` the repo up from your machine, or flip the repo public
@@ -48,4 +48,4 @@ your trained policy — use it as the rewriter backend (runs on CPU for inferenc
 - H100 80GB: Qwen2.5-3B GRPO+LoRA, ~500 steps / ~10K samples ≈ a few hours.
 - Want stronger / transfer-robust vs the commercial detectors (AuthorMist): `--tier commercial` (needs
   the detector API keys set on the droplet; costs detector credits per reward call — slower, pricier).
-- Reward is `training.reward.humanness_reward` (evade our ensemble + keep meaning) — already tested.
+- Reward is `untell.training.reward.humanness_reward` (evade our ensemble + keep meaning) — already tested.

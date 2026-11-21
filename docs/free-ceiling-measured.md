@@ -202,7 +202,7 @@ ensemble that untell can actually put in its loop.**
 - **A later change to the loop does not move these numbers.** The loop now re-scores the RESTORED
   text rather than reporting the masked one, because on fact-bearing prose those differ by up to
   0.1535 and can flip a verdict. Every corpus used here is essentially unaffected: `_SAMPLE` and
-  `eval.datasets._BUILTIN` lock **0 spans** in every paragraph, so the two strings are identical;
+  `untell.bench.datasets._BUILTIN` lock **0 spans** in every paragraph, so the two strings are identical;
   the HC3 slice behind Results 11 and 14 locks spans in 5 of 8 texts but shifts by **mean +0.0006,
   max +0.0015** — the fourth decimal. Stated so a reader reproducing these figures after that
   change knows the difference is not a regression.
@@ -679,7 +679,7 @@ is what stops the number being bought with a mangled rewrite: worst-case similar
 ## Result 10 — the corpus was doing more work than anything measured above
 
 Every figure in this document, Results 1 through 9, was measured on the same three paragraphs:
-`eval/ceiling.py::_SAMPLE`, **hand-written, mean 36 words**. They were composed to read as AI, and
+`untell/bench/ceiling.py::_SAMPLE`, **hand-written, mean 36 words**. They were composed to read as AI, and
 they do. They are also **measurably easier than real AI output**, which nothing here had checked.
 
 Length and corpus are separable, so they were separated: HC3 ChatGPT answers were truncated to the
@@ -1114,7 +1114,7 @@ leaves 39 of 40 flagged at full. That is a per-detector fact, not a loop fact, a
 reported score — one stubborn detector pins the result regardless of the other four.
 
 Reproduce: `scratchpad/veto.py`, `accept.py`, `compound.py` in the session scratchpad; each is a
-standalone script against `eval.datasets.load_pairs`.
+standalone script against `untell.bench.datasets.load_pairs`.
 
 ---
 
@@ -1692,7 +1692,7 @@ this repository implements.
 | **per-token logit steering** | **20** | **absent — architectural** |
 | homoglyph / zero-width | 19 | `scripts/scrub.py` (we *remove* these) |
 | style transfer / persona | 7 | `rewriter/prompts.py` |
-| surrogate distillation | 6 | `training/surrogate.py` (GPU) |
+| surrogate distillation | 6 | `untell/training/surrogate.py` (GPU) |
 | sentence reordering | 6 | `rewriter/structural.py` |
 | **typo / noise injection** | **6** | **absent — declined** |
 | **readability targeting** | **6** | **absent — now measured, see below** |
@@ -2940,7 +2940,7 @@ Three things worth keeping:
 - **Check the `error` key before you score the result.** Validating the harness, a call to
   `untell_text` without a rewriter returned `{"error": ..., "final": <the input>}`; scoring that
   showed the shipped loop losing to a scratch reimplementation by 0.138. It was the unrewritten
-  input. `eval/compare_humanizers.py` had the same unguarded read and would have reported our own
+  input. `untell/bench/compare_humanizers.py` had the same unguarded read and would have reported our own
   tool as changing nothing in the competitor comparison; it now raises.
 
 ## Result 49
@@ -5667,7 +5667,7 @@ runtime never hands you.
 
 **The measurement tool is correct and its report contradicts itself.**
 
-`eval/detector_audit.py` produces every AUROC claim in this repo, so the first question is whether
+`untell/bench/detector_audit.py` produces every AUROC claim in this repo, so the first question is whether
 its primitive is right. It is, exactly:
 
 | case | `auroc` |
@@ -6364,7 +6364,7 @@ asymmetry *and* hands the repetition tells more text to fire on, so the two effe
 directions and no single window is the honest one. The word-count baseline needs no truncation,
 discards no pairs, and is not a control so much as a competitor.
 
-`eval/tells_auroc` now prints it on every run beside the mean word counts, with a NOTE when the
+`untell/bench/tells_auroc` now prints it on every run beside the mean word counts, with a NOTE when the
 margin falls under 0.10 — a floor the two corpora sit either side of by a wide margin, so it is not
 doing discrimination it cannot support.
 
@@ -7688,7 +7688,7 @@ PASS as evidence.
 
 Every one of those four was a throwaway script — a harness that swallowed a traceback, a
 dead-function scan that wrote its subject into its own haystack, a marker scanner that matched
-itself, a constant sweep that ignored module scope. `eval/tells_auroc.py` is not throwaway. Its
+itself, a constant sweep that ignored module scope. `untell/bench/tells_auroc.py` is not throwaway. Its
 output is quoted throughout the catalogue as the evidence that a tell separates the classes, and
 nothing had ever checked that it *can* be wrong.
 
@@ -8183,7 +8183,7 @@ precisely the mechanism that exploits a scorer rather than the property it stand
 
 The control was already in the package. RADAR is adversarially trained against a paraphraser and
 gated behind `UNTELL_ENABLE_RADAR=1`, so it has never been in a selection set or in a published
-figure. That gate is what makes it a holdout; `eval/benchmark.py --enable-radar` puts it *inside* the
+figure. That gate is what makes it a holdout; `untell/bench/benchmark.py --enable-radar` puts it *inside* the
 tier, which asks the opposite question. Premise checked first — on RAID it separates AI 0.7978 from
 human 0.0909, paired 8/8.
 
@@ -8230,7 +8230,7 @@ Two premises were tripped while taking the measurement, both silent:
 - **A control inside the tier it is controlling** is not a control. Guarded — the harness raises
   rather than producing a number.
 
-`eval/holdout.py` makes the arm permanent, with the premise check inside the result (`separates`) so
+`untell/bench/holdout.py` makes the arm permanent, with the premise check inside the result (`separates`) so
 a caller cannot quote a transfer figure computed through a dead detector. Eight tests on fakes, 1.8s,
 no download; verified by breaking the pinned threshold, which fails exactly the one assertion written
 for it.
@@ -10366,7 +10366,7 @@ looked like an error — it was simply a different experiment wearing the same a
 **Result 175 scaled from n=5 to n=10 x 3 seeds. The arm is worse than composite on every aggregate,
 one of its two headline documents does not replicate, and the other one does.**
 
-Same ten RAID documents `eval/holdout.py` measured composite on, three seeds each, 30 loop runs,
+Same ten RAID documents `untell/bench/holdout.py` measured composite on, three seeds each, 30 loop runs,
 held-out RADAR scored last on frozen text. Composite ran at `best_of=3, max_iters=5` and this arm at
 `2, 2` — a confound that favours composite, so it cannot manufacture a win here.
 
@@ -11166,7 +11166,7 @@ the verdict never moves.
 Falcon-7B models and CUDA against a CPU box. Recorded rather than quietly skipped, because "we used
 the controls we had" and "we used the controls that suited us" look identical in a results table.
 
-**The harness failed first, and the tests could not see it.** `eval/holdout.py` keeps
+**The harness failed first, and the tests could not see it.** `untell/bench/holdout.py` keeps
 `UNTELL_ENABLE_RADAR` unset — correct for the loop, and the entire point of the arm — which also
 makes `RadarDetector.available()` false, so the control returned `None` for everything and the first
 screening run died. It failed loudly, because `if not scored` was already checked. It passed all

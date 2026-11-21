@@ -7,7 +7,7 @@ detector that ERRORS on the hard samples into a detector that BEATS them.
 
 from types import SimpleNamespace
 
-from eval.report import _hardest_detector, _per_detector, render
+from untell.bench.report import _hardest_detector, _per_detector, render
 
 
 def _result(pre_detectors, post_detectors, similarity=0.9, iterations=1):

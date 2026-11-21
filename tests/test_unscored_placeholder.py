@@ -6,7 +6,7 @@ trap available to it — ``0.0 < threshold`` is true, so "nothing was measured" 
 most flattering number the tool can print: 0% flagged, 100% bypass, P(AI) 0.000.
 
 This has now been found and fixed at seven separate sites (humanness, report._bypass_rate,
-training/reward, run._passed, eval_policy, ceiling, compare_humanizers). One-site tests did not stop
+untell/training/reward, run._passed, eval_policy, ceiling, compare_humanizers). One-site tests did not stop
 it recurring, so this module tests the *class*: it forces a fully dead detector stack and asserts
 that each aggregator refuses to report a pass. New aggregators belong here.
 """
@@ -25,7 +25,7 @@ _ROOT = Path(__file__).resolve().parent.parent
 
 
 def test_report_bypass_rate_does_not_count_unscored_as_a_pass():
-    from eval.report import _bypass_rate
+    from untell.bench.report import _bypass_rate
 
     class _R:
         post = _UNSCORED
@@ -34,7 +34,7 @@ def test_report_bypass_rate_does_not_count_unscored_as_a_pass():
 
 
 def test_eval_policy_summary_does_not_count_unscored_as_a_bypass():
-    from eval.eval_policy import _summary
+    from untell.bench.eval_policy import _summary
 
     rows = [{"pre": 0.0, "post": 0.0, "sim": 0.9, "scored": False}] * 3
     out = _summary("policy", rows, 0.30)
@@ -44,7 +44,7 @@ def test_eval_policy_summary_does_not_count_unscored_as_a_bypass():
 
 def test_ceiling_does_not_report_a_zero_flagged_rate_on_a_dead_stack():
     """A 0% post-flagged rate is the headline "we beat every detector" number."""
-    import eval.ceiling as ceiling
+    import untell.bench.ceiling as ceiling
 
     with patch.object(ceiling, "score_text", return_value=dict(_UNSCORED)), \
          patch.object(ceiling, "untell_text", return_value={"post": dict(_UNSCORED), "final": "x"}):
@@ -57,7 +57,7 @@ def test_ceiling_does_not_report_a_zero_flagged_rate_on_a_dead_stack():
 
 
 def test_compare_humanizers_reports_na_not_perfect_evasion_on_a_dead_stack():
-    import eval.compare_humanizers as ch
+    import untell.bench.compare_humanizers as ch
 
     with patch.object(ch, "score_text", return_value=dict(_UNSCORED)), \
          patch.object(ch, "_techniques", return_value={"none (raw AI)": lambda t: t}):
@@ -88,7 +88,7 @@ def test_humanness_does_not_treat_an_unscored_stack_as_human():
 
 def test_free_ensemble_score_raises_rather_than_returning_the_placeholder():
     """A 0.0 placeholder here became reward 1.0 — the maximum — for text nothing scored."""
-    import training.reward as reward
+    import untell.training.reward as reward
 
     # RuntimeError specifically, not bare Exception. `pytest.raises(Exception)` also passes when
     # the call dies of an AttributeError or a TypeError — a rename or a signature change would keep
@@ -110,7 +110,7 @@ _EXEMPT = {
     "untell/api_server.py": "returns the dict verbatim, scored flag included",
     "untell/mcp_server.py": "returns the dict verbatim, scored flag included",
     "untell/scripts/score.py": "this is where scored is set",
-    "eval/baselines.py": "hands pre/post dicts to eval.report, which applies the guard",
+    "untell/bench/baselines.py": "hands pre/post dicts to untell.bench.report, which applies the guard",
     # Relative ranking only: comparing placeholder to placeholder yields "no improvement", which
     # stalls the search honestly instead of declaring victory.
     "untell/rewriter/composite.py": "ranks candidates against each other, no threshold test",
@@ -130,8 +130,8 @@ _EXEMPT = {
 
 def _callers_of_score_text() -> list[str]:
     hits = []
-    for path in list(_ROOT.glob("untell/**/*.py")) + list(_ROOT.glob("eval/*.py")) + list(
-        _ROOT.glob("training/*.py")
+    for path in list(_ROOT.glob("untell/**/*.py")) + list(_ROOT.glob("untell/bench/*.py")) + list(
+        _ROOT.glob("untell/training/*.py")
     ):
         text = path.read_text(encoding="utf-8", errors="replace")
         if re.search(r"\bscore_text\s*\(", text):

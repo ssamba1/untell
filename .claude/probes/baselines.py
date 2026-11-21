@@ -1,7 +1,7 @@
 """baselines: rewrite strength bounds, noop/single_pass contracts, LoopResult shape."""
 import json, os
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
-from eval.baselines import rewrite, noop, single_pass, LoopResult
+from untell.bench.baselines import rewrite, noop, single_pass, LoopResult
 
 out = {}
 # 1. strength 0 normalizes whitespace but keeps content words

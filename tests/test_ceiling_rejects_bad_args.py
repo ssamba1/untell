@@ -39,8 +39,8 @@ BAD_ARGS = [
 
 
 COMMANDS = [
-    (["-m", "eval.ceiling"], ["--tier", "lite"]),
-    (["-m", "eval.compare_humanizers"], ["--tier", "lite"]),
+    (["-m", "untell.bench.ceiling"], ["--tier", "lite"]),
+    (["-m", "untell.bench.compare_humanizers"], ["--tier", "lite"]),
 ]
 
 
@@ -48,7 +48,7 @@ def test_compare_rejects_out_of_range_args():
     """The head-to-head artifact must not be quotable from a nonsense configuration."""
     for argv in BAD_ARGS:
         proc = subprocess.run(
-            [str(PY), "-m", "eval.compare_humanizers", *argv, "--tier", "lite"],
+            [str(PY), "-m", "untell.bench.compare_humanizers", *argv, "--tier", "lite"],
             capture_output=True,
             text=True, encoding="utf-8",
             errors="replace",

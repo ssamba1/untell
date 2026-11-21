@@ -1,4 +1,4 @@
-"""Killing tests for eval/prove.py mutation survivors (2026-08-14 sweep).
+"""Killing tests for untell/bench/prove.py mutation survivors (2026-08-14 sweep).
 
   line 153  logic: or -> and        failure-detection gate in main's exit code.
 
@@ -9,7 +9,7 @@ annotated in survivors.md.
 
 from __future__ import annotations
 
-from eval import prove as P
+from untell.bench import prove as P
 
 
 class TestFailureGate:
@@ -26,7 +26,7 @@ class TestFailureGate:
         def _fake_prove(*a, **k):
             return {"error": "checker failed", "before": {}, "after": {"configured": True}}
 
-        monkeypatch.setattr("eval.prove.prove", _fake_prove)
+        monkeypatch.setattr("untell.bench.prove.prove", _fake_prove)
         # drive main() with a minimal argv (text is positional)
         rc = P.main(["sample text"])
         assert rc == 2, f"error result must exit 2 (got {rc})"

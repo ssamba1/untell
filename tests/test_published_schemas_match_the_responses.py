@@ -12,7 +12,10 @@ returns, and return everything it marks required.
 from __future__ import annotations
 
 import pytest
-from fastapi.testclient import TestClient
+
+pytest.importorskip("fastapi")
+pytest.importorskip("httpx")
+from fastapi.testclient import TestClient  # noqa: E402
 
 from untell import api_server
 from untell.api_server import app

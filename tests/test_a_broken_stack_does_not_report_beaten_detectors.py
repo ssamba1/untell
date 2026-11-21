@@ -25,7 +25,7 @@ from __future__ import annotations
 
 import pytest
 
-from eval.report import _bypass_rate, _per_detector, summarize
+from untell.bench.report import _bypass_rate, _per_detector, summarize
 
 
 class _Row:

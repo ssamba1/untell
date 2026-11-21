@@ -15,7 +15,10 @@ import importlib
 import sys
 
 import pytest
-from fastapi.testclient import TestClient
+
+pytest.importorskip("fastapi")
+pytest.importorskip("httpx")
+from fastapi.testclient import TestClient  # noqa: E402
 
 EVIL = "https://evil.example"
 GOOD = "https://good.example"

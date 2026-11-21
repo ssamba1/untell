@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from unittest.mock import patch
 
-from eval.eval_policy import _eval, _summary
+from untell.bench.eval_policy import _eval, _summary
 
 
 class _FakeRewriter:

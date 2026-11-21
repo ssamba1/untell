@@ -166,7 +166,7 @@ def test_the_ensemble_agrees_on_the_corpus(stdlib_lite) -> None:
     """The measurement above on real text, at the sample size that produced the table. Slow because
     it loads the full ensemble; skipped when the corpora are absent."""
     pytest.importorskip("datasets")
-    from eval.datasets import load_pairs
+    from untell.bench.datasets import load_pairs
 
     try:
         pairs = load_pairs("hc3", n=24, min_words=60)

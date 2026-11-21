@@ -1,4 +1,4 @@
-"""Killing tests for eval/detector_audit.py mutation survivors (2026-08-14 sweep).
+"""Killing tests for untell/bench/detector_audit.py mutation survivors (2026-08-14 sweep).
 
   line 398  boundary: >= -> >       sentence probe min length (exactly 10 words).
   line 433  logic: or -> and        broken-detector classification gate.
@@ -19,9 +19,9 @@ class TestBrokenClassification:
     detector and sentence probes."""
 
     def test_sentence_row_without_auroc_is_broken(self, monkeypatch) -> None:
-        from eval import detector_audit as DA
+        from untell.bench import detector_audit as DA
 
-        monkeypatch.setattr(DA, "_SPECS", [("fake-dead", "eval.datasets", "load_pairs")])
+        monkeypatch.setattr(DA, "_SPECS", [("fake-dead", "untell.bench.datasets", "load_pairs")])
         # patch audit_detector to return a DEAD sentence row without auroc
         def _audit_detector(name, det, probes=None):
             return {

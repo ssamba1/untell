@@ -10,7 +10,10 @@ Pinned by capturing the credential passed to _rate_limited.
 import os
 
 import pytest
-from fastapi.testclient import TestClient
+
+pytest.importorskip("fastapi")
+pytest.importorskip("httpx")
+from fastapi.testclient import TestClient  # noqa: E402
 
 import untell.api_server as api_server  # noqa: E402
 

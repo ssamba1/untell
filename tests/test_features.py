@@ -29,7 +29,7 @@ def test_mcp_module_imports_without_mcp_installed():
 def test_training_reward_penalizes_meaning_drift():
     # Deterministic regardless of which detector "lite" resolves to: a meaning-preserving rewrite
     # (sim 1.0, no penalty, reward >= 0) must beat a meaning-broken one (low sim, big penalty, < 0).
-    from training.reward import batch_rewards, humanness_reward
+    from untell.training.reward import batch_rewards, humanness_reward
 
     src = "The cat sat on the mat in the warm afternoon sun, perfectly content."
     faithful = src

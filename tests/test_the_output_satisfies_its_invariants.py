@@ -89,7 +89,7 @@ def rewritten(request) -> list[tuple[str, str]]:
     """(source, output) pairs. Module-scoped: the rewrite is the expensive part and every assertion
     below reads the same pairs."""
     pytest.importorskip("datasets")
-    from eval.datasets import load_pairs
+    from untell.bench.datasets import load_pairs
 
     try:
         pairs = load_pairs(request.param, n=DOCS_PER_CORPUS * 2, min_words=60)

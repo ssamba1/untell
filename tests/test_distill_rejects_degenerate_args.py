@@ -42,7 +42,7 @@ BAD_ARGS = [
 def test_distill_rejects_degenerate_args_fast():
     for argv in BAD_ARGS:
         proc = subprocess.run(
-            [str(PY), "-m", "training.distill", *argv, "--tier", "lite"],
+            [str(PY), "-m", "untell.training.distill", *argv, "--tier", "lite"],
             capture_output=True,
             text=True, encoding="utf-8",
             errors="replace",
@@ -58,7 +58,7 @@ def test_distill_rejects_degenerate_args_fast():
 def test_distill_still_accepts_valid_defaults():
     """The checks must not refuse the documented defaults (parse-only path, no training)."""
     proc = subprocess.run(
-        [str(PY), "-m", "training.distill", "--help"],
+        [str(PY), "-m", "untell.training.distill", "--help"],
         capture_output=True,
         text=True, encoding="utf-8",
         errors="replace",

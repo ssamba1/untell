@@ -1,4 +1,4 @@
-"""Killing tests for eval/benchmark.py mutation survivors (2026-08-14 sweep).
+"""Killing tests for untell/bench/benchmark.py mutation survivors (2026-08-14 sweep).
 
   line 68   membership: not in -> in   unknown-strategy filter.
 
@@ -7,7 +7,7 @@ Killed here. 42 (--n default) is an unkillable CLI constant.
 
 from __future__ import annotations
 
-from eval import benchmark as B
+from untell.bench import benchmark as B
 
 
 class TestUnknownStrategyFilter:
@@ -25,7 +25,7 @@ class TestUnknownStrategyFilter:
 
         monkeypatch.setattr(B, "run", _run)
         monkeypatch.setattr(
-            "eval.benchmark.render",
+            "untell.bench.benchmark.render",
             lambda by, threshold: "rendered-report",
         )
         rc = B.main(["--dataset", "hc3", "--n", "1", "--tier", "lite", "--strategies", "full_loop"])

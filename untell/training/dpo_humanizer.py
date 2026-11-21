@@ -1,12 +1,12 @@
 """DPO training of the humanizer — often more stable than GRPO on small GPUs. GPU-only, not run in CI.
 
 Preference pairs: ``chosen`` = a humanized rewrite that passed our ensemble (from the loop, via
-``training.distill``), ``rejected`` = the AI original. DPO teaches the model to prefer human-reading
+``untell.training.distill``), ``rejected`` = the AI original. DPO teaches the model to prefer human-reading
 text over AI text. Run distill first (needs a rewriter/teacher key), then DPO.
 
     pip install -e ".[train,full,api]" && export ANTHROPIC_API_KEY=...
-    python -m training.dpo_humanizer --dataset raid --n 1000 --model Qwen/Qwen2.5-3B-Instruct
-    python -m training.dpo_humanizer --smoke      # tiny model, 2 steps, synthetic pairs (no key) — proves it runs
+    python -m untell.training.dpo_humanizer --dataset raid --n 1000 --model Qwen/Qwen2.5-3B-Instruct
+    python -m untell.training.dpo_humanizer --smoke      # tiny model, 2 steps, synthetic pairs (no key) — proves it runs
 """
 
 from __future__ import annotations
@@ -21,7 +21,7 @@ SMOKE_MODEL = "Qwen/Qwen2.5-0.5B-Instruct"
 
 def build_pairs(dataset: str = "builtin", n: int = 200, tier: str = "full") -> dict:
     """chosen = the loop's humanized output (passed the ensemble), rejected = the AI source."""
-    from training.distill import distill
+    from untell.training.distill import distill
 
     out = distill(dataset, n=n, tier=tier)
     pairs = [{"prompt": r["prompt"], "chosen": r["humanized"], "rejected": r["source"]} for r in out["rows"]]
@@ -30,7 +30,7 @@ def build_pairs(dataset: str = "builtin", n: int = 200, tier: str = "full") -> d
 
 def _smoke_pairs(n: int = 8) -> list[dict]:
     """Synthetic pairs (no loop/key) — just to prove the DPO training loop runs end-to-end."""
-    from eval.datasets import load_samples
+    from untell.bench.datasets import load_samples
 
     return [
         {"prompt": _PROMPT.format(text=s), "chosen": "Plainly put: " + s[:60], "rejected": s}
@@ -90,7 +90,7 @@ def train(
     from peft import LoraConfig
     from trl import DPOConfig, DPOTrainer
 
-    from training.model_utils import load_model
+    from untell.training.model_utils import load_model
 
     if smoke:
         model_id, out = SMOKE_MODEL, "out/dpo-smoke"
@@ -164,7 +164,7 @@ def train(
 
 def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
-    parser = argparse.ArgumentParser(prog="training.dpo_humanizer", description=__doc__)
+    parser = argparse.ArgumentParser(prog="untell.training.dpo_humanizer", description=__doc__)
     parser.add_argument("--model", default="Qwen/Qwen2.5-3B-Instruct")
     parser.add_argument("--dataset", default="builtin")
     parser.add_argument("--n", type=int, default=1000)

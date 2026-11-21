@@ -1,4 +1,4 @@
-"""Killing tests for eval/holdout.py mutation survivors (2026-08-14 sweep).
+"""Killing tests for untell/bench/holdout.py mutation survivors (2026-08-14 sweep).
 
   line 208  boundary: >= -> >      out-of-sample flagged_pre (FLAG_BAR 0.45).
   line 213  boundary: < -> <=      improved_on (strict improvement).
@@ -10,7 +10,7 @@ annotated in survivors.md.
 
 from __future__ import annotations
 
-from eval import holdout as H
+from untell.bench import holdout as H
 
 
 class TestOutOfSampleFlags:

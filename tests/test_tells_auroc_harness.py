@@ -1,6 +1,6 @@
 """The tells catalogue's headline separation must be re-derivable, not hand-maintained.
 
-The detector ensemble has `eval/detector_audit.py`. The catalogue had nothing equivalent: its
+The detector ensemble has `untell/bench/detector_audit.py`. The catalogue had nothing equivalent: its
 overall AUROC lived in a comment, was computed by hand, and drifted. It read 0.638 on RAID while
 the shipped catalogue scored 0.9555 — the two repetition tells landed after the number was written,
 and because nothing re-derived it, the comment kept asserting the old value while the table
@@ -11,14 +11,14 @@ metric's direction, its layout control, and the property that made the drift dia
 a category reproduces the figure from before it existed).
 
 The corpus-backed figures themselves are network-dependent and slow, so they stay in the comment
-and are reproduced with `python -m eval.tells_auroc --dataset raid --pairs 200`.
+and are reproduced with `python -m untell.bench.tells_auroc --dataset raid --pairs 200`.
 """
 
 from __future__ import annotations
 
 import pytest
 
-from eval.tells_auroc import (
+from untell.bench.tells_auroc import (
     LAYOUT_CATEGORIES,
     auroc,
     binom_two_sided,
@@ -113,7 +113,7 @@ def test_excluding_a_category_isolates_its_contribution() -> None:
     fired = score_tells(text)["by_category"]
     assert fired, "probe must fire something for the exclusion to mean anything"
 
-    from eval.tells_auroc import _rate
+    from untell.bench.tells_auroc import _rate
 
     full = _rate(text)
     without = _rate(text, frozenset(fired))

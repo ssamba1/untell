@@ -490,7 +490,7 @@ class PerplexityBurstinessDetector:
         # exactly 0.0 or 1.0, which is how the old constants (mean_ppl < 60, variance < 400 — both
         # far outside the range these quantities actually take) turned the detector into a
         # near-constant. Midpoints and scales below are fitted to the measured GPT-2 distribution
-        # over paragraph-length human/AI pairs; see eval/detector_audit.py for the harness.
+        # over paragraph-length human/AI pairs; see untell/bench/detector_audit.py for the harness.
         ppl_signal = 1.0 / (1.0 + math.exp((mean_nll - _NLL_MID) / _NLL_SCALE))
         if spread is None:
             # One sentence. Perplexity alone is INVERTED here, measured: human_mean 0.224 vs

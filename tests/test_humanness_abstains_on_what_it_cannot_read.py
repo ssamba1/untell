@@ -121,7 +121,7 @@ def test_the_score_still_discriminates() -> None:
     the failure first looked like.
     """
     pytest.importorskip("datasets")
-    from eval.datasets import load_pairs
+    from untell.bench.datasets import load_pairs
 
     try:
         pairs = load_pairs("hc3", n=24, min_words=60)[:10]

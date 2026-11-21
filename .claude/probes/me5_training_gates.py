@@ -1,11 +1,11 @@
 """L4 probe: training reward gate + distill SFT filter share the loop's NLI meaning gate.
 
-PROBE 1 (training/reward.py humanness_reward):
+PROBE 1 (untell/training/reward.py humanness_reward):
   - reward uses meaning_preserved (the loop's gate: NLI conjunction), not raw cosine
   - faithful paraphrase > off-topic (off-topic hard-gated to _GATE_REWARD)
   - identical text > off-topic, never gated
 
-PROBE 2 (training/distill.py filter):
+PROBE 2 (untell/training/distill.py filter):
   - distill filter = meaning_preserved(src, final, sim, sim_bar) — same gate
   - NLI-entailed faithful rewrite admitted to SFT set
   - contradictory rewrite excluded from SFT set (even when its raw sim is HIGHER)
@@ -22,7 +22,7 @@ from untell.scripts.entailment import (
     meaning_preserved,
 )
 from untell.scripts.quality import method, recommended_bar, similarity
-import training.reward as r
+import untell.training.reward as r
 
 ORIG = "The cat sat on the mat in the warm afternoon sun, perfectly content."
 FAITHFUL = "The feline rested upon the rug during the sunny afternoon, quite satisfied."
@@ -72,7 +72,7 @@ print("reward(off_topic):", rw_live_offtopic)
 print("identical > off_topic:", rw_live_identical > rw_live_offtopic)
 print("faithful > off_topic:", rw_live_faithful > rw_live_offtopic)
 
-# --- PROBE 2: distill filter (exact expression from training/distill.py line 82) ---
+# --- PROBE 2: distill filter (exact expression from untell/training/distill.py line 82) ---
 sim_bar = recommended_bar()
 admit_faithful = (not False) and meaning_preserved(ORIG, FAITHFUL, sim_f, sim_bar)
 admit_contradictory = (not False) and meaning_preserved(ORIG, CONTRADICTORY, sim_c, sim_bar)

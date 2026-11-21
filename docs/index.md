@@ -15,19 +15,17 @@ An AI detector gives you a number, and that number is increasingly used to make 
 
 The rewrite loop is the instrument, not the product: score, edit under a meaning gate, re-score — because a verdict that collapses under meaning-preserving editing was never measuring authorship. Its result is a negative one, and it is stated as such: the loop moves the detectors it optimises against and **does not move a detector it has never seen**.
 
-That iterative, detector-feedback approach is the strongest *training-free* technique in the published literature ([arXiv 2506.07001](https://arxiv.org/abs/2506.07001): −88% TPR@1%FPR, transfers across detectors, preserves meaning) — and **no shipping tool, open or commercial, actually does it.**
-
 ## Key capabilities
 
-| Capability | untell | Others |
-|---|---|---|
-| **Closed detector-feedback loop** | ✅ | ❌ blind single pass |
-| **Real detectors in the loop** | ✅ 8 local + 8 commercial | ❌ internal proxy only |
-| **Semantic meaning gate** | ✅ NLI entailment + contradiction veto, over a similarity bar | ❌ no verification |
-| **Per-sentence targeting** | ✅ rewrite only the flagged spans | ❌ whole-text reroll |
-| **Citation lock** | ✅ byte-for-byte preserve | ❌ facts get mangled |
-| **Free no-key path** | ✅ surgical rewriter ($0) | ❌ paid API required |
-| **Run locally** | ✅ CPU, no GPU needed | ❌ cloud-only |
+| Capability | What it does |
+|---|---|
+| **Evidence brief** (`untell brief`) | stability under edits that change no words, cited published error rates, Bayes on the flag, per-person false-flag risk — for one verdict on one document |
+| **Any detector** | ✅ 8 local + 8 commercial adapters, `cmd:` for anything scriptable, `manual:` for scores recorded from a web UI (Turnitin) |
+| **Report cards** (`untell report-card`) | false-positive rate by writer group and length with 95% intervals, per-writer rollups, recall at capped FPR |
+| **Drift** (`untell drift`) | compares two report cards and flags silent model changes |
+| **Human by timestamp** (`untell capsule`) | a human corpus from git history before 2022-11-30 |
+| **Offline browser kit** | [`brief.html`](brief.html) — the same test with nothing uploaded |
+| **Robustness probe** (`untell probe`) | detector-in-the-loop rewriting under a meaning gate; its finding is that gains do not transfer |
 | **MCP server** | ✅ Claude Desktop integration | ❌ |
 | **REST API server** | ✅ FastAPI, auth, OpenAPI | ❌ |
 | **Open source** | ✅ MIT | ❌ closed SaaS |

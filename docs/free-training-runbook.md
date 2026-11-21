@@ -19,13 +19,13 @@ against free detectors + ZeroGPT (browser mode), and treat commercial transfer a
 ```bash
 git clone https://github.com/ssamba1/untell.git && cd untell
 pip install -q -e ".[train,full,eval]"
-python -m training.rl_humanizer --smoke   # MUST pass before spending GPU hours
+python -m untell.training.rl_humanizer --smoke   # MUST pass before spending GPU hours
 ```
 `--smoke` runs a tiny model for 2 steps on the free lite reward — proves the pipeline works end-to-end.
 
 ## Cell 2 — DPO warm-start on the free human corpus (~20–30 min, no key)
 ```bash
-python -m training.dpo_humanizer \
+python -m untell.training.dpo_humanizer \
   --model Qwen/Qwen2.5-3B-Instruct \
   --use-human-corpus --n 500 \
   --load-4bit \
@@ -60,7 +60,7 @@ threading.Thread(target=_push, args=("YOUR_HF_USERNAME/untell-grpo","out/rl-huma
 ## Cell 5 — GRPO on the free ensemble (~4–8h; resume across sessions)
 ```bash
 UNTELL_ENABLE_RADAR=1 \
-python -m training.rl_humanizer \
+python -m untell.training.rl_humanizer \
   --model out/dpo-merged \
   --tier full --steps 150 --k 6 \
   --load-4bit \
@@ -77,7 +77,7 @@ python -m training.rl_humanizer \
 
 You can also warm-start GRPO directly from the DPO adapter without the manual merge in Cell 3:
 ```bash
-python -m training.rl_humanizer --model Qwen/Qwen2.5-3B-Instruct --dpo-init out/dpo-humanizer ...
+python -m untell.training.rl_humanizer --model Qwen/Qwen2.5-3B-Instruct --dpo-init out/dpo-humanizer ...
 ```
 
 ## Cell 6 — deploy the adapter (local, no key)

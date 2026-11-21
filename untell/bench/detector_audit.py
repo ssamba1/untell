@@ -319,7 +319,7 @@ def audit_all(pairs: int = 0, dataset: str = "hc3") -> dict:
     source = "packaged probes (smoke test)"
     layout_shortcut = None
     if pairs > 0:
-        from eval.datasets import load_pairs
+        from untell.bench.datasets import load_pairs
 
         loaded = load_pairs(dataset, pairs)
         if loaded:

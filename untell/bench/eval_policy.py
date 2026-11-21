@@ -54,7 +54,7 @@ def _summary(name: str, rows: list[dict], threshold: float) -> str:
     if not rows:
         return f"{name}: no rows"
     # Samples where nothing scored are excluded rather than counted as bypasses; see the same
-    # guard in eval/report.py. Similarity is independent of the detector stack, so it keeps the
+    # guard in untell/bench/report.py. Similarity is independent of the detector stack, so it keeps the
     # full denominator — the counts are spelled out below so the two are not confused.
     scored = [r for r in rows if r.get("scored") is not False]
     sim = statistics.mean(r["sim"] for r in rows)
@@ -81,7 +81,7 @@ def main(argv: list[str] | None = None) -> int:
     configure_utf8_io()
     p = argparse.ArgumentParser(prog="untell-eval-policy", description=__doc__)
     p.add_argument("--policy", help="adapter dir (default: $UNTELL_POLICY_DIR)")
-    p.add_argument("--dataset", default="builtin", help="held-out source set (eval.datasets)")
+    p.add_argument("--dataset", default="builtin", help="held-out source set (untell.bench.datasets)")
     p.add_argument("--n", type=int, default=25)
     p.add_argument("--tier", default="full", help="detector tier to score against")
     p.add_argument(
@@ -92,7 +92,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--json", action="store_true")
     a = p.parse_args(argv)
 
-    from eval.datasets import load_samples
+    from untell.bench.datasets import load_samples
     from untell.rewriter.local_policy import LocalPolicyRewriter
 
     policy = LocalPolicyRewriter(adapter_dir=a.policy)

@@ -5,11 +5,11 @@ MEASURED (this slice, real FastMCP engine): `ceiling(rewriter="wat")` ran the FU
 measurement (106.59 s on the default full tier) and returned `"rewriter": "wat"` with
 `rewriter_available: False`, `run_post_means: null` and NO error anywhere. untell_text
 refused per text (`{"error": ...}`), but measure_ceiling's aggregation drops error dicts
-(eval/ceiling.py:237 `if "error" not in res and "post" in res`), so the measurement
+(untell/bench/ceiling.py:237 `if "error" not in res and "post" in res`), so the measurement
 reported a rewriter that does not exist as the one that ran.
 
 Every other surface refuses the same input: the CLI at parse time
-(eval/ceiling.py:502 argparse `choices=[auto, surgical, structural, composite, targeted,
+(untell/bench/ceiling.py:502 argparse `choices=[auto, surgical, structural, composite, targeted,
 neural, ensemble, max, t5_paraphrase, mt_pivot]`) and REST with 422 ("unknown rewriter
 {name}"). The MCP `untell` tool surfaces the same class of error. ceiling was the hole.
 """
@@ -114,7 +114,7 @@ def test_an_unavailable_free_rewriter_is_refused_not_billed(monkeypatch):
 
 def test_the_cli_refuses_the_same_input_at_parse_time():
     """The consistency anchor: the CLI's --rewriter choices must reject 'wat' too."""
-    from eval.ceiling import build_parser as ceiling_parser
+    from untell.bench.ceiling import build_parser as ceiling_parser
 
     with pytest.raises(SystemExit) as exc:
         ceiling_parser().parse_args(["--rewriter", "wat"])

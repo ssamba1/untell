@@ -988,7 +988,7 @@ def surgical_substitute(
     ranking is buying nothing there, while costing 2.3x the wall-clock (the leave-one-out pass it
     needs is exactly what the tells ranking skips).
 
-    It is NOT the default, deliberately. ``eval/compare_humanizers.py`` uses this function as the
+    It is NOT the default, deliberately. ``untell/bench/compare_humanizers.py`` uses this function as the
     ``synonym_swap`` baseline standing in for the QuillBot / TextFooler class of tool, and that row
     has to keep modelling *their* technique — score-driven word-importance substitution — rather
     than quietly inheriting an improvement of ours. Our own ``SurgicalRewriter`` passes True.

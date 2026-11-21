@@ -1,7 +1,7 @@
 """prove: structure contract via stubs on prove's own bindings."""
 import json, os
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
-import eval.prove as P
+import untell.bench.prove as P
 
 orig_text = P.untell_text
 orig_verify = P.verify

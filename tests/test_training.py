@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from training.distill import distill
-from training.reward import fluency, humanness_reward
+from untell.training.distill import distill
+from untell.training.reward import fluency, humanness_reward
 
 
 def test_fluency_penalizes_repetition():
@@ -22,7 +22,7 @@ def test_reward_penalizes_degenerate_and_meaning_drift():
 
 
 def test_free_ensemble_score_in_range():
-    from training.reward import free_ensemble_score
+    from untell.training.reward import free_ensemble_score
 
     s = free_ensemble_score("Furthermore, we leverage robust synergies to optimize outcomes.", tier="lite")
     assert 0.0 <= s <= 1.0
@@ -47,7 +47,7 @@ def test_build_pairs_human_fallback_without_datasets(monkeypatch):
     # and still return well-formed {prompt, chosen, rejected} rows.
     import sys
 
-    import training.dpo_humanizer as dpo
+    import untell.training.dpo_humanizer as dpo
 
     monkeypatch.setitem(sys.modules, "datasets", None)  # `from datasets import ...` -> ImportError
     pairs = dpo.build_pairs_human(n=4)
@@ -97,7 +97,7 @@ def test_distill_keeps_a_faithful_paraphrase_the_loop_admits(monkeypatch):
 
     A faithful rewrite the loop's NLI gate admits (measured 0.664-0.704 on the embedding cosine
     bar, below the 0.76 raw bar) used to be dropped from the training set — the same defect just
-    fixed in training/reward.py, at the site that decides which examples enter the DISTILLATION
+    fixed in untell/training/reward.py, at the site that decides which examples enter the DISTILLATION
     SET. `meaning_preserved` is the loop's own gate; the filter now uses it.
     """
     monkeypatch.delenv("UNTELL_LITE_NO_TORCH", raising=False)
@@ -113,7 +113,7 @@ def test_distill_keeps_a_faithful_paraphrase_the_loop_admits(monkeypatch):
     # The gate runs on the ACTUAL sample (from load_samples) vs the rewrite, so stub the sample
     # to `orig` and return `faithful` as the rewrite — then the NLI gate sees the pair above.
     monkeypatch.setattr(
-        "eval.datasets.load_samples",
+        "untell.bench.datasets.load_samples",
         lambda dataset, n, strict=False: [orig],
     )
     monkeypatch.setattr(
@@ -173,7 +173,7 @@ class TestDistillRunsTheStrongLoop:
 
     def test_the_cli_exposes_every_gate_and_forwards_it(self, monkeypatch, tmp_path):
         """threshold and margin were parameters of distill() that main never exposed or passed."""
-        import training.distill as d
+        import untell.training.distill as d
 
         seen: dict = {}
         monkeypatch.setattr(d, "distill", lambda **kw: seen.update(kw) or {
@@ -189,7 +189,7 @@ class TestDistillRunsTheStrongLoop:
         assert seen["rewriter"] == "surgical"
 
     def test_the_cli_defaults_match_untell_humanize(self):
-        from training.distill import build_parser
+        from untell.training.distill import build_parser
 
         defaults = {a.dest: a.default for a in build_parser()._actions}
         assert defaults["best_of"] == 3
@@ -198,12 +198,12 @@ class TestDistillRunsTheStrongLoop:
 
 
 def test_dpo_build_pairs(monkeypatch):
-    import training.distill as d
+    import untell.training.distill as d
 
     monkeypatch.setattr(
         d, "distill", lambda *a, **k: {"rows": [{"prompt": "p", "source": "ai text", "humanized": "human text"}], "kept": 1, "total": 1}
     )
-    from training.dpo_humanizer import build_pairs
+    from untell.training.dpo_humanizer import build_pairs
 
     out = build_pairs("builtin", n=1, tier="lite")
     assert out["pairs"][0]["chosen"] == "human text"
@@ -211,7 +211,7 @@ def test_dpo_build_pairs(monkeypatch):
 
 
 def test_dpo_smoke_pairs_are_valid():
-    from training.dpo_humanizer import _smoke_pairs
+    from untell.training.dpo_humanizer import _smoke_pairs
 
     pairs = _smoke_pairs(3)
     assert len(pairs) == 3
@@ -220,7 +220,7 @@ def test_dpo_smoke_pairs_are_valid():
 
 
 def test_rl_build_dataset_n():
-    from training.rl_humanizer import build_dataset
+    from untell.training.rl_humanizer import build_dataset
 
     rows = build_dataset("builtin", n=4)
     assert len(rows) == 4
@@ -229,6 +229,6 @@ def test_rl_build_dataset_n():
 
 def test_load_model_passthrough_without_4bit():
     # 4-bit off must return the model-id string (no torch/GPU needed) so trl loads it itself.
-    from training.model_utils import load_model
+    from untell.training.model_utils import load_model
 
     assert load_model("Qwen/Qwen2.5-3B-Instruct", load_4bit=False) == "Qwen/Qwen2.5-3B-Instruct"

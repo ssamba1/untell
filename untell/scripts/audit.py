@@ -59,6 +59,8 @@ REPO = Path(__file__).resolve().parent.parent.parent
 LIVE_DOCS = (
     "README.md",
     "ROADMAP.md",
+    "docs/reference.md",
+    "docs/auditing.md",
     "docs/why-best-open-repo.md",
     "docs/index.md",
     "docs/what-would-make-this-the-top-repo.md",
@@ -351,13 +353,17 @@ def check_derivable(report: Report) -> None:
     # switches that DISABLE a meaning gate. Configuration that exists but cannot be discovered is
     # a feature nobody can use and a guarantee nobody knows they have turned off.
     read_vars: set[str] = set()
-    for folder in ("untell", "eval", "training"):
+    for folder in ("untell",):  # bench/ and training/ live under untell/ now
         base = REPO / folder
         if not base.exists():
             continue
         for path in base.rglob("*.py"):
             read_vars |= set(ENV_VAR_RE.findall(path.read_text(encoding="utf-8")))
-    undocumented = sorted(v for v in read_vars if v not in readme)
+    # The README is the short introduction; the full configuration table moved to
+    # docs/reference.md with the rest of the manual. Documented in either counts.
+    ref = REPO / "docs" / "reference.md"
+    env_docs = readme + (ref.read_text(encoding="utf-8") if ref.exists() else "")
+    undocumented = sorted(v for v in read_vars if v not in env_docs)
     report.check(
         "every UNTELL_*/HUMANIZE_* variable the code reads is documented",
         not undocumented,
@@ -1000,7 +1006,7 @@ def check_no_shadowed_definitions(report: Report) -> None:
     dupes: list[str] = []
     scanned = 0
     for path in sorted(
-        [*(REPO / "untell").rglob("*.py"), *(REPO / "eval").glob("*.py"),
+        [*(REPO / "untell").rglob("*.py"),
          *(REPO / "tests").glob("*.py")]
     ):
         tree = audited_tree(report, path)
@@ -1035,6 +1041,12 @@ SELECTION_ON_BARE_MAX_ALLOWED = {
     "can say the delta beside it means nothing — the opposite of trusting it to choose",
     "untell/attacks/word_importance.py::surgical_substitute": "the prefer_tells branch ranks on "
     "(tells, max); the score-only branch is the caller's explicit opt-out",
+    # First scanned when eval/ moved under untell/bench/ (it was outside this check's scope).
+    "untell/bench/baselines.py::full_loop": "a COMPETITOR baseline: blind max-selection is the "
+    "technique being reproduced, so correcting it would misreport the competitor",
+    "untell/bench/baselines.py::api_loop": "a COMPETITOR baseline, same reason as full_loop",
+    "untell/bench/report.py::_bypass_rate": "acceptance against the threshold (did it pass?), "
+    "not a choice between candidates",
 }
 
 
@@ -1127,7 +1139,7 @@ def check_no_dead_functions(report: Report) -> None:
     """
     defined: dict[str, list[str]] = {}
     decorated: set[str] = set()
-    sources = [*(REPO / "untell").rglob("*.py"), *(REPO / "eval").rglob("*.py")]
+    sources = [*(REPO / "untell").rglob("*.py")]
     for path in sources:
         tree = audited_tree(report, path)
         if tree is None:
@@ -1384,9 +1396,11 @@ def check_dynamic_env_vars(report: Report) -> None:
     readme = audited_doc(report, "README.md")
     if readme is None:
         return
+    ref = REPO / "docs" / "reference.md"
+    docs = readme + (ref.read_text(encoding="utf-8") if ref.exists() else "")
     undocumented = [
         f"UNTELL_{key.upper()}" for key in _CLI_DEFAULTS
-        if f"UNTELL_{key.upper()}" not in readme
+        if f"UNTELL_{key.upper()}" not in docs
     ]
     report.check(
         "every config key's UNTELL_* form is documented",
@@ -1471,8 +1485,12 @@ def check_demo_privacy_claims(report: Report) -> None:
             doc = REPO / rel
             if not doc.exists():
                 continue
-            text = doc.read_text(encoding="utf-8", errors="replace").lower()
-            offenders += [f"{rel}: {p}" for p in _LOCAL_SCORING_CLAIMS if p in text]
+            # A line about the evidence kit (docs/brief.html) is exempt: that page really does
+            # run offline, and tests/test_brief_page.py fails if it ever gains a network call.
+            for line in doc.read_text(encoding="utf-8", errors="replace").lower().splitlines():
+                if "brief.html" in line or "evidence kit" in line:
+                    continue
+                offenders += [f"{rel}: {p}" for p in _LOCAL_SCORING_CLAIMS if p in line]
     report.check(
         "no document claims the browser demo scores locally",
         not offenders,

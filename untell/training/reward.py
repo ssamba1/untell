@@ -5,7 +5,7 @@ reward = (1 - P(AI) from the target detector) - meaning-drift penalty - quality 
 By default the target is our local ensemble (`score_text` max). **But the local ensemble does not
 predict commercial detectors** (measured: RADAR 0.008 vs GPTZero 100% on the same humanized text), so
 training against it produces a model that beats the local proxies and still fails GPTZero. To target a
-real detector, train a surrogate (`training/surrogate.py`) and set ``UNTELL_SURROGATE_DIR`` — the reward
+real detector, train a surrogate (`untell/training/surrogate.py`) and set ``UNTELL_SURROGATE_DIR`` — the reward
 then uses the surrogate's P(AI) instead of the local ensemble, with no other change. That is the
 difference between "learns to fool roberta/hc3" and "learns to fool a model that mimics GPTZero".
 
@@ -122,7 +122,7 @@ def target_ai_score(text: str, tier: str = "full") -> float:
     if sd:
         global _SURROGATE
         if _SURROGATE is None:
-            from training.surrogate import SurrogateDetector
+            from untell.training.surrogate import SurrogateDetector
 
             _SURROGATE = SurrogateDetector(sd)
         sv = _SURROGATE.score(text)

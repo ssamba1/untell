@@ -1,32 +1,40 @@
 ---
 name: untell
 description: >-
-  Audit an AI detector and measure what its verdict is worth, using a closed-loop
-  detector-feedback rewrite as the instrument (the "untell" skill). Use when the user wants to
-  check whether text reads as AI-generated, find out why a detector flagged something, measure a
-  detector's false-positive rate on human writing, test how stable or robust a detector's verdict
-  is, strip hidden unicode carriers, or reduce the AI-detection score of a passage or file.
-  Preserves meaning, citations and facts. Not for misrepresenting authorship — and measured to be
-  ineffective for it: the loop's gains do not transfer to detectors it has not optimised against.
+  Audit an AI-text detector and measure what its verdict is worth. Use when someone's writing was
+  flagged as AI (Turnitin, GPTZero, Pangram, Originality, Copyleaks, ZeroGPT, any detector) and
+  they want to know whether the flag holds up; to build an evidence brief for an integrity
+  process; to test whether a verdict survives edits that change no words; to work out what a flag
+  implies (false-positive rates, Bayes, per-person risk); to measure a detector's false-positive
+  rate on a corpus of human writing or check it for silent model drift; or to strip hidden
+  unicode carriers from text. Also runs a detector-in-the-loop rewrite as a robustness probe.
+  Measures the detector, not the writer. Not for disguising machine-written work as human where
+  that is prohibited — and measured to be ineffective for it.
 ---
 
 # untell
 
-Rewrite text so a local ensemble of AI-text detectors stops flagging it, while semantic meaning
-and all citations/numbers/quotes stay intact. The core technique is a **closed loop**: score →
-rewrite using the per-detector scores as feedback → re-score, repeating until the hardest
-detector is under threshold or the iteration cap is hit. You (Claude) are the rewriter; the
-local scripts only score and protect text.
+untell measures AI detectors. The question it answers is not "is this AI?" but **"what is this
+detector's verdict worth?"** — how often the detector calls human writing machine-made, whether
+its verdict on a given document is a stable property of the words, and what a flag actually
+implies once its error rate and the base rate are accounted for.
 
-> **Research / defensive use.** Detectors are noisy proxies (non-native writers are falsely
-> flagged at high rates); these local detectors are *signals*, not ground truth. Do not present
-> output as guaranteed undetectable by any commercial system. State this if the user implies a
-> high-stakes deceptive use.
+Pick the workflow from what the user is asking:
 
-## When to run
+| the user says | run |
+|---|---|
+| "my essay was flagged", "I was accused of using AI", "is this Turnitin result reliable?" | **A. Evidence brief** |
+| "what does a 1% false-positive rate actually mean?", "how likely is a false flag?" | **B. Flag arithmetic** |
+| "how good is GPTZero / Pangram / our detector on our students' writing?" | **C. Report card** |
+| "is there hidden text / zero-width characters in this?" | `python scripts/scrub.py --json "<text>"` |
+| "does this detector's verdict survive paraphrasing?", red-team a detector | **D. Robustness probe** |
 
-Trigger on requests like "humanize this", "make this sound less like AI", "reduce the AI score",
-"help this pass an AI detector". Input is either pasted text or a file path.
+> **Intent check, once, before D.** If the user wants text they did not write to pass as their
+> own where that is prohibited (coursework, a job application, a publication that bans it), say
+> plainly that untell is not for that, that the probe's gains measured as **not transferring** to
+> detectors it did not optimise against (4/10 still flagged on an unseen detector, every seed),
+> and offer A instead if their real worry is a false flag. Do not lecture beyond that, and do not
+> refuse legitimate uses: editing one's own prose, red-teaming a detector, research.
 
 ## Setup (once per session)
 
@@ -52,7 +60,67 @@ mismatch), which silently drops you to the weak **lite** tier. The scripts repor
 interpreter lacks a working ML stack — re-run with a venv python that has `.[full]` (README
 "Troubleshooting"), and tell the user the detectors were **excluded**, not silently faked at 0.5.
 
-## The loop
+## A. Evidence brief — one verdict on one document
+
+1. Get the document text and, if known, the detector's name, its score, the model version and the
+   number of documents this person has submitted overall.
+2. If the detector is reachable from here (an API key is set, or it is untell's own ensemble), run
+   the stability test against it directly:
+   ```
+   python scripts/brief.py --file doc.txt --detector gptzero --documents 12 --format md
+   ```
+   Detector specs: `local` / `local:lite`, a commercial name (`gptzero`, `pangram`, `originality`,
+   `copyleaks`, `winston`, `sapling`, `zerogpt` — each needs its API key), `cmd:<command>` (text on
+   stdin, score on stdout), or `manual:<scores.csv>`.
+3. If the detector has no API (Turnitin, most web UIs), make a scoring kit and have the user
+   score each variant in the detector's own interface:
+   ```
+   python scripts/variants.py --file doc.txt --out kit
+   ```
+   This writes `kit/base.txt`, `kit/N1.txt`… and `kit/scores.csv`. When they have filled in the
+   scores (a percentage is fine), build the brief, naming the detector so its published rates are
+   looked up:
+   ```
+   python scripts/brief.py --file doc.txt --detector manual:kit/scores.csv --name turnitin --documents 12
+   ```
+   The browser version (`docs/brief.html` on the project site) does the same offline.
+4. Report the **finding** sentence from section 1 verbatim, the per-person false-flag figure, and
+   the questions in section 4. Be exact about what it shows:
+   - flips under *null* edits (same words, only typography) mean the verdict is about formatting,
+     not authorship — strong evidence the score should not be relied on;
+   - no flips means only that this test found no instability. It is **not** evidence the person
+     wrote the text, and **not** evidence they did not. Say so.
+   - a published false-positive rate describes the version and text it was measured on.
+5. Never paste the document into the brief; it carries the text's SHA-256 only. Remind the user
+   it is not legal advice.
+
+## B. Flag arithmetic
+
+```
+python scripts/flagmath.py --detector turnitin --documents 30
+python scripts/flagmath.py --fpr 0.02 --tpr 0.9 --prior 0.05 --documents 8
+```
+Explain the two numbers people get wrong: a false-positive rate is P(flag | human), not
+P(human | flag) — the second depends on the base rate — and per-document risk compounds per
+person (1% per essay is ~26% over 30 essays). Label the TPR as an assumption.
+
+## C. Report card — a detector over a corpus
+
+```
+python scripts/report_card.py --detector pangram --human ours.jsonl --ai ai.jsonl --json-out card.json
+```
+Corpora are `.jsonl`/`.csv` (`text`, optional `group`, `author`, `label`) or folders of `.txt`.
+Every rate comes with n and a 95% interval — quote them together. `group` slices (for example
+`non-native`, `grade-9`) are where published evidence says detectors fail; recommend the user
+include them. For a human corpus with no provenance doubt, `untell capsule <git repo>` extracts
+prose committed before 2022-11-30. Compare two cards with `untell drift old.json new.json`.
+
+## D. Robustness probe — the detector-in-the-loop rewrite
+
+The probe answers one question about a detector: does its verdict survive meaning-preserving
+editing? It rewrites the text under a meaning gate, re-scores, and repeats. Report what it shows
+about the DETECTOR (how far the score moved, at what similarity), not a promise about the text.
+
 
 Defaults live in `references/thresholds.md` (threshold `0.30`, similarity bar `0.76`, max `5`
 iterations). Load `references/prompt-rubric.md` **and** `references/ai-tells.md` before your first

@@ -30,7 +30,7 @@ import logging
 
 import pytest
 
-from eval.ceiling import _PINNED_DELTA, _pinned_note
+from untell.bench.ceiling import _PINNED_DELTA, _pinned_note
 
 PINNED = {
     "per_detector_pre": {"hc3_roberta": 0.9992, "roberta_openai": 0.9986, "fast_detectgpt": 0.6563},

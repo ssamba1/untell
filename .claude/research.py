@@ -42,7 +42,7 @@ PY = sys.executable
 RECIPES: dict[str, dict] = {
     "lite-builtin": {
         "why": "cheap, reproducible, no model download: proves the pipeline still runs end to end",
-        "argv": ["-m", "eval.ceiling", "--rewriter", "composite", "--tier", "lite",
+        "argv": ["-m", "untell.bench.ceiling", "--rewriter", "composite", "--tier", "lite",
                  "--repeats", "3", "--json"],
         "metrics": ["pre_flagged_rate", "post_flagged_rate", "pre_mean_max", "post_mean_max"],
         "spread": "post_mean_max_stdev",
@@ -51,7 +51,7 @@ RECIPES: dict[str, dict] = {
     },
     "lite-hc3": {
         "why": "same cheap tier against REAL generated text; the builtin corpus is measurably easier",
-        "argv": ["-m", "eval.ceiling", "--dataset", "hc3", "--n", "10", "--rewriter", "composite",
+        "argv": ["-m", "untell.bench.ceiling", "--dataset", "hc3", "--n", "10", "--rewriter", "composite",
                  "--tier", "lite", "--repeats", "3", "--json"],
         "metrics": ["pre_flagged_rate", "post_flagged_rate", "pre_mean_max", "post_mean_max"],
         "spread": "post_mean_max_stdev",
@@ -60,7 +60,7 @@ RECIPES: dict[str, dict] = {
     },
     "full-hc3-composite": {
         "why": "the headline number: real detectors, real text, the default rewriter",
-        "argv": ["-m", "eval.ceiling", "--dataset", "hc3", "--n", "6", "--rewriter", "composite",
+        "argv": ["-m", "untell.bench.ceiling", "--dataset", "hc3", "--n", "6", "--rewriter", "composite",
                  "--tier", "full", "--repeats", "3", "--workers", "2", "--json"],
         "metrics": ["pre_flagged_rate", "post_flagged_rate", "pre_mean_max", "post_mean_max"],
         "spread": "post_mean_max_stdev",
@@ -69,7 +69,7 @@ RECIPES: dict[str, dict] = {
     },
     "full-hc3-neural": {
         "why": "the frontier, and four times as variable as composite - never quote it from one run",
-        "argv": ["-m", "eval.ceiling", "--dataset", "hc3", "--n", "6", "--rewriter", "neural",
+        "argv": ["-m", "untell.bench.ceiling", "--dataset", "hc3", "--n", "6", "--rewriter", "neural",
                  "--tier", "full", "--repeats", "3", "--workers", "2", "--json"],
         "metrics": ["pre_flagged_rate", "post_flagged_rate", "pre_mean_max", "post_mean_max"],
         "spread": "post_mean_max_stdev",
@@ -79,7 +79,7 @@ RECIPES: dict[str, dict] = {
     "full-hc3-max": {
         "why": "best-of-all-backends; the selector here once shipped as a no-op because a "
                "detector saturated at exactly 1.0 and `cand < best` never fired",
-        "argv": ["-m", "eval.ceiling", "--dataset", "hc3", "--n", "6", "--rewriter", "max",
+        "argv": ["-m", "untell.bench.ceiling", "--dataset", "hc3", "--n", "6", "--rewriter", "max",
                  "--tier", "full", "--repeats", "3", "--workers", "2", "--json"],
         "metrics": ["pre_flagged_rate", "post_flagged_rate", "pre_mean_max", "post_mean_max"],
         "spread": "post_mean_max_stdev",
@@ -89,7 +89,7 @@ RECIPES: dict[str, dict] = {
     "lite-raid": {
         "why": "same settings, different corpus. Nine results in this project's history "
                "generalised from one corpus before anyone varied it",
-        "argv": ["-m", "eval.ceiling", "--dataset", "raid", "--n", "10", "--rewriter",
+        "argv": ["-m", "untell.bench.ceiling", "--dataset", "raid", "--n", "10", "--rewriter",
                  "composite", "--tier", "lite", "--repeats", "3", "--json"],
         "metrics": ["pre_flagged_rate", "post_flagged_rate", "pre_mean_max", "post_mean_max"],
         "spread": "post_mean_max_stdev",
@@ -98,7 +98,7 @@ RECIPES: dict[str, dict] = {
     },
     "lite-mage": {
         "why": "a third corpus, so a claim can be checked against three rather than argued from one",
-        "argv": ["-m", "eval.ceiling", "--dataset", "mage", "--n", "10", "--rewriter",
+        "argv": ["-m", "untell.bench.ceiling", "--dataset", "mage", "--n", "10", "--rewriter",
                  "composite", "--tier", "lite", "--repeats", "3", "--json"],
         "metrics": ["pre_flagged_rate", "post_flagged_rate", "pre_mean_max", "post_mean_max"],
         "spread": "post_mean_max_stdev",
@@ -107,7 +107,7 @@ RECIPES: dict[str, dict] = {
     },
     "lite-hc3-surgical": {
         "why": "rewriter sweep: the cheapest backend, as the floor to measure the others against",
-        "argv": ["-m", "eval.ceiling", "--dataset", "hc3", "--n", "10", "--rewriter", "surgical",
+        "argv": ["-m", "untell.bench.ceiling", "--dataset", "hc3", "--n", "10", "--rewriter", "surgical",
                  "--tier", "lite", "--repeats", "3", "--json"],
         "metrics": ["pre_flagged_rate", "post_flagged_rate", "pre_mean_max", "post_mean_max"],
         "spread": "post_mean_max_stdev",
@@ -117,7 +117,7 @@ RECIPES: dict[str, dict] = {
     "lite-hc3-structural": {
         "why": "rewriter sweep: the one whose clause-joining once tripped the contradiction veto "
                "on every candidate it produced",
-        "argv": ["-m", "eval.ceiling", "--dataset", "hc3", "--n", "10", "--rewriter", "structural",
+        "argv": ["-m", "untell.bench.ceiling", "--dataset", "hc3", "--n", "10", "--rewriter", "structural",
                  "--tier", "lite", "--repeats", "3", "--json"],
         "metrics": ["pre_flagged_rate", "post_flagged_rate", "pre_mean_max", "post_mean_max"],
         "spread": "post_mean_max_stdev",
@@ -127,7 +127,7 @@ RECIPES: dict[str, dict] = {
     "lite-hc3-targeted": {
         "why": "rewriter sweep: detector-directed rewriting, the one whose leverage the tell "
                "catalogue predicts but has never been measured against composite",
-        "argv": ["-m", "eval.ceiling", "--dataset", "hc3", "--n", "10", "--rewriter", "targeted",
+        "argv": ["-m", "untell.bench.ceiling", "--dataset", "hc3", "--n", "10", "--rewriter", "targeted",
                  "--tier", "lite", "--repeats", "3", "--json"],
         "metrics": ["pre_flagged_rate", "post_flagged_rate", "pre_mean_max", "post_mean_max"],
         "spread": "post_mean_max_stdev",
@@ -137,7 +137,7 @@ RECIPES: dict[str, dict] = {
     "lite-hc3-ensemble": {
         "why": "rewriter sweep: all free backends, selection included - the lane where a "
                "saturating detector once made selection a no-op",
-        "argv": ["-m", "eval.ceiling", "--dataset", "hc3", "--n", "10", "--rewriter", "ensemble",
+        "argv": ["-m", "untell.bench.ceiling", "--dataset", "hc3", "--n", "10", "--rewriter", "ensemble",
                  "--tier", "lite", "--repeats", "3", "--json"],
         "metrics": ["pre_flagged_rate", "post_flagged_rate", "pre_mean_max", "post_mean_max"],
         "spread": "post_mean_max_stdev",
@@ -158,7 +158,7 @@ RECIPES: dict[str, dict] = {
     "compare-hc3": {
         "why": "this pipeline against the other humanizers on the same text - the only "
                "measurement that says whether the wall is ours or everyone's",
-        "argv": ["-m", "eval.compare_humanizers", "--dataset", "hc3", "--n", "10",
+        "argv": ["-m", "untell.bench.compare_humanizers", "--dataset", "hc3", "--n", "10",
                  "--tier", "lite", "--json"],
         "metrics": [],
         "spread": "",
@@ -187,7 +187,7 @@ RECIPES: dict[str, dict] = {
     "length-short": {
         "why": "openings only. Detectors used to read the first few hundred words and nothing "
                "else, so this is the length every old result was really about",
-        "argv": ["-m", "eval.ceiling", "--file", ".claude/corpora/hc3-short.txt",
+        "argv": ["-m", "untell.bench.ceiling", "--file", ".claude/corpora/hc3-short.txt",
                  "--rewriter", "composite", "--tier", "lite", "--repeats", "3", "--json"],
         "needs": [".claude/corpora/hc3-short.txt"],
         "metrics": ["pre_flagged_rate", "post_flagged_rate", "pre_mean_max", "post_mean_max"],
@@ -199,7 +199,7 @@ RECIPES: dict[str, dict] = {
         "why": "past where detectors used to stop reading. If windowed scoring holds, this "
                "should not be systematically easier than the short bucket - and nothing has "
                "re-checked that by length since the fix",
-        "argv": ["-m", "eval.ceiling", "--file", ".claude/corpora/hc3-long.txt",
+        "argv": ["-m", "untell.bench.ceiling", "--file", ".claude/corpora/hc3-long.txt",
                  "--rewriter", "composite", "--tier", "lite", "--repeats", "3", "--json"],
         "needs": [".claude/corpora/hc3-long.txt"],
         "metrics": ["pre_flagged_rate", "post_flagged_rate", "pre_mean_max", "post_mean_max"],
@@ -211,7 +211,7 @@ RECIPES: dict[str, dict] = {
         "why": "HUMAN text only, scored at the shipped threshold. An audit once reported AUROC "
                "0.999 while that threshold flagged 95% of human writing - separation is not "
                "calibration, and only this recipe can see the difference",
-        "argv": ["-m", "eval.ceiling", "--file", ".claude/corpora/hc3-human.txt",
+        "argv": ["-m", "untell.bench.ceiling", "--file", ".claude/corpora/hc3-human.txt",
                  "--rewriter", "composite", "--tier", "lite", "--repeats", "3", "--json"],
         "needs": [".claude/corpora/hc3-human.txt"],
         "metrics": ["pre_flagged_rate", "pre_mean_max"],
@@ -222,7 +222,7 @@ RECIPES: dict[str, dict] = {
     "detector-audit": {
         "why": "detectors AT the shipped threshold, on labelled pairs - AUROC hides calibration, "
                "and a detector flagging most HUMAN text can still separate the classes",
-        "argv": ["-m", "eval.detector_audit", "--pairs", "20", "--dataset", "hc3", "--json"],
+        "argv": ["-m", "untell.bench.detector_audit", "--pairs", "20", "--dataset", "hc3", "--json"],
         "metrics": [],
         "spread": "",
         "liveness": [],
@@ -231,7 +231,7 @@ RECIPES: dict[str, dict] = {
     "tells-auroc": {
         "why": "per-tell discrimination on paired text; one category once pointed the wrong way "
                "and inverted the aggregate",
-        "argv": ["-m", "eval.tells_auroc", "--dataset", "hc3", "--pairs", "40", "--json"],
+        "argv": ["-m", "untell.bench.tells_auroc", "--dataset", "hc3", "--pairs", "40", "--json"],
         "metrics": [],
         "spread": "",
         "liveness": [],

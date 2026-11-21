@@ -1,7 +1,7 @@
 """datasets: builtin works offline, n respected, strict raises on missing, too-short warning."""
 import json, os
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
-from eval.datasets import load_samples, load_pairs, _warn_if_mostly_too_short
+from untell.bench.datasets import load_samples, load_pairs, _warn_if_mostly_too_short
 
 out = {}
 # 1. builtin offline, exact n

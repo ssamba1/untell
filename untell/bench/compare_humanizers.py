@@ -244,7 +244,7 @@ def _render(r: dict) -> str:
 
 
 def _read_corpus(path: str) -> list[str]:
-    # Same conversion as eval/ceiling.py: a mistyped path used to surface as a raw
+    # Same conversion as untell/bench/ceiling.py: a mistyped path used to surface as a raw
     # FileNotFoundError / PermissionError traceback (exit 1) — MEASURED on this slice.
     # read_file_or_exit prints one line and exits 2, matching the repo convention.
     from untell.scripts.io_utils import read_file_or_exit
@@ -274,7 +274,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--threshold", "-t", type=float, default=DEFAULT_THRESHOLD)
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args(argv)
-    # Same validation as untell-ceiling (eval/ceiling.py _validate): --n 0 / --threshold 2.5
+    # Same validation as untell-ceiling (untell/bench/ceiling.py _validate): --n 0 / --threshold 2.5
     # silently run a comparison with degenerate settings — measured exit 0 with a threshold
     # where nothing can ever flag. Reject here so the head-to-head artifact cannot be quoted
     # from a nonsense configuration.
@@ -287,7 +287,7 @@ def main(argv: list[str] | None = None) -> int:
         texts = _read_corpus(args.file)
         corpus = args.file
     elif args.dataset:
-        from eval.datasets import load_pairs
+        from untell.bench.datasets import load_pairs
 
         pairs = load_pairs(args.dataset, args.n)
         if not pairs:

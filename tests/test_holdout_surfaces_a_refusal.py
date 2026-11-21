@@ -1,9 +1,9 @@
-"""`eval/holdout.py` turned every loop refusal into `KeyError: 'pre'`.
+"""`untell/bench/holdout.py` turned every loop refusal into `KeyError: 'pre'`.
 
 `untell_text` reports a refusal as `{"error": ...}` with no `pre`/`post`, and holdout indexed
 straight into `result["pre"]["max"]`. MEASURED with a typo'd backend name, `--rewriter compsite`:
 
-    File "eval/holdout.py", line 103, in run
+    File "untell/bench/holdout.py", line 103, in run
         "pre_max": result["pre"]["max"],
     KeyError: 'pre'
 
@@ -33,7 +33,7 @@ import pytest
 
 from untell.detectors.base import _TIER_RANK
 
-_HOLDOUT = Path(__file__).resolve().parents[1] / "eval" / "holdout.py"
+_HOLDOUT = Path(__file__).resolve().parents[1] / "untell" / "bench" / "holdout.py"
 
 
 def test_the_tier_flag_accepts_every_tier_the_loader_supports() -> None:
@@ -61,7 +61,7 @@ def test_the_rewriter_flag_is_not_constrained_by_argparse() -> None:
 
 def test_a_refusal_is_reported_not_indexed_into(monkeypatch) -> None:
     """The defect itself, driven through `run` with a stubbed loop so no rewriting is needed."""
-    import eval.holdout as holdout
+    import untell.bench.holdout as holdout
 
     monkeypatch.setattr(
         holdout, "untell_text",
@@ -79,7 +79,7 @@ def test_a_refusal_is_reported_not_indexed_into(monkeypatch) -> None:
 
 def test_a_normal_result_is_still_processed(monkeypatch) -> None:
     """Guards the guard. A `run` that raised on everything would pass the test above."""
-    import eval.holdout as holdout
+    import untell.bench.holdout as holdout
 
     monkeypatch.setattr(
         holdout, "untell_text",

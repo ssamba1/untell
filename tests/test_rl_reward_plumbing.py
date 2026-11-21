@@ -9,9 +9,9 @@ from __future__ import annotations
 
 import pytest
 
-from training.reward import batch_rewards, fluency, humanness_reward
-from training.rl_humanizer import _source_resolver
 from untell.rewriter.local_policy import _TRAIN_PROMPT
+from untell.training.reward import batch_rewards, fluency, humanness_reward
+from untell.training.rl_humanizer import _source_resolver
 
 
 def test_resolver_returns_the_source_for_a_known_prompt():
@@ -58,7 +58,7 @@ def test_batch_rewards_defaults_to_the_backend_bar_not_a_hardcoded_one(monkeypat
     assert inspect.signature(batch_rewards).parameters["sim_floor"].default is None
 
     seen = []
-    import training.reward as reward_mod
+    import untell.training.reward as reward_mod
 
     monkeypatch.setattr(reward_mod, "humanness_reward", lambda o, c, **kw: seen.append(kw) or 0.0)
     reward_mod.batch_rewards("original text", ["a", "b"])
@@ -77,12 +77,12 @@ class TestTrainerDefaults:
     def test_reward_sim_floor_defers_to_recommended_bar(self):
         import inspect
 
-        from training.rl_humanizer import train
+        from untell.training.rl_humanizer import train
 
         assert inspect.signature(train).parameters["reward_sim_floor"].default is None
 
     def test_the_cli_flag_defers_too(self):
-        from training.rl_humanizer import build_parser
+        from untell.training.rl_humanizer import build_parser
 
         action = next(a for a in build_parser()._actions if a.dest == "reward_sim_floor")
         assert action.default is None
@@ -92,14 +92,14 @@ class TestTrainerDefaults:
         built-in sample — five texts, padded by repetition to whatever n was asked for."""
         import inspect
 
-        from training.rl_humanizer import build_parser, train
+        from untell.training.rl_humanizer import build_parser, train
 
         assert "dataset" in inspect.signature(train).parameters
         assert {"dataset", "n"} <= {a.dest for a in build_parser()._actions}
 
     def test_the_cli_forwards_both_to_train(self, monkeypatch):
         """Threading a parameter through the signature is only half the fix — main has to pass it."""
-        import training.rl_humanizer as rl
+        import untell.training.rl_humanizer as rl
 
         seen: dict = {}
         monkeypatch.setattr(rl, "train", lambda **kw: seen.update(kw) or "out/x")
@@ -109,7 +109,7 @@ class TestTrainerDefaults:
         assert seen["reward_sim_floor"] == 0.5
 
     def test_the_cli_defaults_reach_train_unchanged(self, monkeypatch):
-        import training.rl_humanizer as rl
+        import untell.training.rl_humanizer as rl
 
         seen: dict = {}
         monkeypatch.setattr(rl, "train", lambda **kw: seen.update(kw) or "out/x")
@@ -119,8 +119,8 @@ class TestTrainerDefaults:
         assert seen["reward_sim_floor"] is None
 
     def test_build_dataset_honours_the_name_it_is_given(self, monkeypatch):
-        import eval.datasets as ds
-        import training.rl_humanizer as rl
+        import untell.bench.datasets as ds
+        import untell.training.rl_humanizer as rl
 
         seen: dict = {}
 
@@ -136,8 +136,8 @@ class TestTrainerDefaults:
 
     def test_the_builtin_set_is_not_loaded_strictly(self, monkeypatch):
         """Strictness is for a named corpus. The built-in set IS the fallback; it cannot fall back."""
-        import eval.datasets as ds
-        import training.rl_humanizer as rl
+        import untell.bench.datasets as ds
+        import untell.training.rl_humanizer as rl
 
         seen: dict = {}
 

@@ -29,7 +29,7 @@ import os
 
 import pytest
 
-from eval.datasets import load_pairs
+from untell.bench.datasets import load_pairs
 from untell.scripts.score import batch_score_texts
 from untell.text_split import split_sentences
 

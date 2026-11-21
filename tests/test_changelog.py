@@ -54,7 +54,11 @@ def test_section_headings_are_from_the_standard_set() -> None:
 
 
 def test_every_release_has_at_least_one_section() -> None:
+    # `[Unreleased]` is allowed to be empty: right after a release cut it is, by definition
+    # (Keep a Changelog keeps the heading so the next change has somewhere to go).
     for release, sections in _releases().items():
+        if release.startswith("[Unreleased]"):
+            continue
         assert sections, f"{release} has no entries"
 
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import pytest
 
-from eval.baselines import (
+from untell.bench.baselines import (
     STRATEGIES,
     LoopResult,
     full_loop,
@@ -29,7 +29,7 @@ def test_every_strategy_scores_at_the_tier_it_was_given(name, monkeypatch):
     scored by a different detector set than the strategies it was the control for. The existing
     tests all passed tier="lite" explicitly, which is the value that happened to be hardcoded.
     """
-    import eval.baselines as baselines
+    import untell.bench.baselines as baselines
 
     seen: list[str] = []
 
@@ -113,7 +113,7 @@ def test_strength_zero_changes_no_content():
     Compared on normalised whitespace, because splitting into sentences and rejoining collapses
     newlines — see the `rewrite` docstring.
     """
-    from eval.baselines import rewrite
+    from untell.bench.baselines import rewrite
 
     text = (
         "Moreover, artificial intelligence has transformed industry.\n\n"
@@ -127,7 +127,7 @@ def test_strength_zero_changes_no_content():
 
 def test_transition_stripping_is_monotone_in_strength():
     """More strength must never strip fewer openers."""
-    from eval.baselines import rewrite
+    from untell.bench.baselines import rewrite
 
     text = " ".join(
         f"{opener}, this is sentence number {i} in the paragraph."

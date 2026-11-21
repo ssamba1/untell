@@ -9,11 +9,11 @@ property the scorer stands for. Nothing here had ever checked the difference.
 adversarially trained against a paraphraser, and it is gated behind ``UNTELL_ENABLE_RADAR=1``, so it
 has never appeared in a selection set or in a published number. That gate is what makes it a
 holdout, and it is why this module refuses to run when the gate is open: with RADAR inside the tier
-the loop optimises against it and the arm measures nothing. ``eval/benchmark.py --enable-radar``
+the loop optimises against it and the arm measures nothing. ``untell/bench/benchmark.py --enable-radar``
 does precisely that, deliberately — it asks "can we beat RADAR when we try", which is a different
 question from the one here.
 
-    python -m eval.holdout --dataset raid --n 10 --seed 0
+    python -m untell.bench.holdout --dataset raid --n 10 --seed 0
 
 MEASURED at n=10 on RAID, shipped configuration, three seeds:
 
@@ -46,7 +46,7 @@ import json
 import os
 import statistics
 
-from eval.datasets import load_pairs
+from untell.bench.datasets import load_pairs
 from untell.scripts.run import untell_text
 from untell.scripts.score import DEFAULT_THRESHOLD
 

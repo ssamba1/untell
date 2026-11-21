@@ -1,4 +1,4 @@
-"""Killing tests for eval/datasets.py mutation survivors (2026-08-14 sweep).
+"""Killing tests for untell/bench/datasets.py mutation survivors (2026-08-14 sweep).
 
   line 350  constant: 30 -> 31      hc3 answer min length (exactly 30 words).
   line 364  constant: 30 -> 31      RAID generation min length (exactly 30 words).
@@ -11,7 +11,7 @@ or network-path-dependent — annotated in survivors.md.
 
 from __future__ import annotations
 
-from eval import datasets as D
+from untell.bench import datasets as D
 
 
 def _monkeypatch_load(monkeypatch, rows):

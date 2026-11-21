@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from eval.benchmark import run
-from eval.report import _bypass_rate, render, summarize
+from untell.bench.benchmark import run
+from untell.bench.report import _bypass_rate, render, summarize
 
 
 def _by():
@@ -66,7 +66,7 @@ def test_unscored_samples_are_not_counted_as_bypasses():
     """score_text returns max: 0.0 as a PLACEHOLDER when no detector produced a number, and
     0.0 < threshold is true - so a benchmark run against a broken ML stack reported a 100%
     bypass rate, the most flattering number available, produced by measuring nothing."""
-    from eval.report import _bypass_rate
+    from untell.bench.report import _bypass_rate
 
     class _R:
         def __init__(self, post):
@@ -115,7 +115,7 @@ class TestOneDenominatorPerRow:
     def test_mean_post_max_excludes_unscored_placeholders(self):
         """Measured: 5 samples at 0.35 plus 5 unscored gave mean_post_max 0.175 — comfortably under
         a 0.30 threshold, so the strategy read as succeeding — next to a bypass rate of 0%."""
-        from eval.report import summarize
+        from untell.bench.report import summarize
 
         rows = [self._r(0.9, 0.35) for _ in range(5)] + [self._r(0.9, 0.0, scored=False) for _ in range(5)]
         st = summarize({"test": rows}, 0.30)["strategies"]["test"]
@@ -126,7 +126,7 @@ class TestOneDenominatorPerRow:
         """The project's headline claim. Measured: full_loop with 1 pass and 9 unscored reported a
         100% bypass rate against single_pass's genuine 50% (5 of 10), and the thesis "passed" — while
         single_pass was five times better in absolute terms."""
-        from eval.report import summarize
+        from untell.bench.report import summarize
 
         by = {
             "full_loop": [self._r(0.9, 0.1)] + [self._r(0.9, 0.0, scored=False) for _ in range(9)],
@@ -138,7 +138,7 @@ class TestOneDenominatorPerRow:
 
     def test_thesis_still_passes_when_everything_scored(self):
         """The guard must not make the thesis unprovable."""
-        from eval.report import summarize
+        from untell.bench.report import summarize
 
         by = {
             "full_loop": [self._r(0.9, 0.1) for _ in range(8)] + [self._r(0.9, 0.9) for _ in range(2)],
@@ -149,7 +149,7 @@ class TestOneDenominatorPerRow:
         assert "thesis_undecided" not in s
 
     def test_table_shows_the_real_denominator(self):
-        from eval.report import render
+        from untell.bench.report import render
 
         rows = [self._r(0.9, 0.35) for _ in range(5)] + [self._r(0.9, 0.0, scored=False) for _ in range(5)]
         out = render({"test": rows}, 0.30)
@@ -157,7 +157,7 @@ class TestOneDenominatorPerRow:
         assert "scored/total" in out
 
     def test_table_stays_clean_when_nothing_is_unscored(self):
-        from eval.report import render
+        from untell.bench.report import render
 
         out = render({"test": [self._r(0.9, 0.1) for _ in range(4)]}, 0.30)
         assert "| 4 |" in out

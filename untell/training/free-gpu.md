@@ -17,21 +17,21 @@ option** (30 GPU-hrs/week, reliable); Colab is easiest but flakier.
 !git clone https://github.com/ssamba1/untell.git    # private repo: use a token URL or upload a zip
 %cd untell
 !pip install -q -e ".[train,full,eval]"
-!python -m training.rl_humanizer --smoke               # free dry-run, proves the loop works (~minutes)
+!python -m untell.training.rl_humanizer --smoke               # free dry-run, proves the loop works (~minutes)
 
 # STEP 0 — the part that actually matters. Training against our LOCAL ensemble does NOT transfer to
 # GPTZero/Originality (measured: RADAR 0.008 vs GPTZero 100% on the same humanized text). So first
 # build a SURROGATE of the target detector — a small local model that mimics it — and make THAT the
 # reward. Free path: public HC3/RAID. Targeted path: a CSV of (text, gptzero_score) from the API.
-!python -m training.surrogate --dataset hc3 --n 3000 --out out/surrogate     # ~minutes on a T4
+!python -m untell.training.surrogate --dataset hc3 --n 3000 --out out/surrogate     # ~minutes on a T4
 # (targeted, once you've collected GPTZero labels:)
-# !python -m training.surrogate --dataset gptzero_labels.csv --out out/surrogate
+# !python -m untell.training.surrogate --dataset gptzero_labels.csv --out out/surrogate
 
 # real train with REWARD = the surrogate (set UNTELL_SURROGATE_DIR — this is the whole point).
 # With a surrogate the local detector tier is irrelevant to the reward, so --tier lite saves VRAM/time.
 import os; os.environ["UNTELL_SURROGATE_DIR"] = "out/surrogate"
-!python -m training.rl_humanizer --model Qwen/Qwen2.5-3B-Instruct --tier lite --steps 150 --load-4bit
-# or DPO (often steadier): !python -m training.dpo_humanizer --model Qwen/Qwen2.5-3B-Instruct --tier lite --load-4bit
+!python -m untell.training.rl_humanizer --model Qwen/Qwen2.5-3B-Instruct --tier lite --steps 150 --load-4bit
+# or DPO (often steadier): !python -m untell.training.dpo_humanizer --model Qwen/Qwen2.5-3B-Instruct --tier lite --load-4bit
 ```
 3. Download `out/rl-humanizer` from the notebook's Output. Done — $0. The trainer checkpoints every
    25 steps, so a session killed at the wall still leaves a usable adapter (`out/rl-humanizer/checkpoint-*`).

@@ -47,7 +47,7 @@ def _quiet(caplog):
 @pytest.fixture(scope="module")
 def human_texts() -> list[str]:
     pytest.importorskip("datasets")
-    from eval.datasets import load_pairs
+    from untell.bench.datasets import load_pairs
 
     pairs = load_pairs("hc3", n=100, min_words=60)
     texts = [h for h, _ in pairs][:100]

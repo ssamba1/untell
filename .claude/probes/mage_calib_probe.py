@@ -1,7 +1,7 @@
 """Slice 10 (wave 6, issue #22): robust mage FPR-vs-cut sweep on HC3 + RAID.
 
 Deterministic re-derivation of the shipped `mage_calib_sweep.py` curves using
-the PROVEN-importable load path (same `eval.datasets.load_pairs` +
+the PROVEN-importable load path (same `untell.bench.datasets.load_pairs` +
 `collapse_layout` measurement the shipped sweep and the detector audit use).
 The shipped sweep's `from datasets import load_dataset` is flaky inside the
 Longformer-heavy process here, but the identical sequence works when `datasets`
@@ -29,8 +29,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 _script_dir = str(Path(__file__).resolve().parent)
 sys.path[:] = [p for p in sys.path if p != _script_dir]
 
-from eval.datasets import load_pairs  # noqa: E402
-from eval.detector_audit import auroc, collapse_layout  # noqa: E402
+from untell.bench.datasets import load_pairs  # noqa: E402
+from untell.bench.detector_audit import auroc, collapse_layout  # noqa: E402
 from untell.detectors.mage import MageDetector  # noqa: E402
 
 

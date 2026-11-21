@@ -9,7 +9,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 PY = ROOT / ".venv" / "Scripts" / "python.exe"
-MOD = "eval.ceiling"
+MOD = "untell.bench.ceiling"
 
 env = dict(__import__("os").environ)
 env["PYTHONPATH"] = ""

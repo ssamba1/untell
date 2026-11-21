@@ -27,7 +27,7 @@ import logging
 
 import pytest
 
-from eval.tells_auroc import LENGTH_MARGIN_FLOOR, measure, render
+from untell.bench.tells_auroc import LENGTH_MARGIN_FLOOR, measure, render
 
 HUMAN = (
     "Salt lowers the freezing point of water, which is why councils spread it on roads once the "

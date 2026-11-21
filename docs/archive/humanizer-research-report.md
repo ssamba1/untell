@@ -1,3 +1,10 @@
+> **Archived (2026-11-21).** This is the June 2026 research survey written when untell was being
+> built as a humanizer. The project has since been refocused on auditing detectors — measuring
+> what their verdicts are worth — and this document is kept for the record and because other
+> pages cite it. Its build thesis (detector-feedback evasion) is not the project's goal; the
+> project's own measurements found the loop's gains do not transfer to detectors it has not
+> optimised against. See [the README](../../README.md) for what untell is for now.
+
 # Building a Superior AI-Text Humanizer — Research Synthesis
 
 **Question:** Technical + market research to build a superior AI-text humanizer product — detector internals, humanizer landscape, working bypass techniques, academic robustness evidence, watermarking/arms-race dynamics, and solvable gaps.

@@ -279,7 +279,7 @@ def test_full_path_ranks_real_sentences_far_above_chance():
     if os.environ.get("UNTELL_TEST_SENTENCE_AUROC") != "1":
         pytest.skip("set UNTELL_TEST_SENTENCE_AUROC=1 (downloads HC3, ~1min)")
 
-    from eval.datasets import load_pairs
+    from untell.bench.datasets import load_pairs
     from untell.detectors.perplexity_burstiness import PerplexityBurstinessDetector
     from untell.text_split import split_sentences
 

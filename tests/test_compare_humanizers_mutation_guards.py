@@ -1,4 +1,4 @@
-"""Killing tests for eval/compare_humanizers.py mutation survivors (2026-08-14 sweep).
+"""Killing tests for untell/bench/compare_humanizers.py mutation survivors (2026-08-14 sweep).
 
   line 70   logic: is False -> is True   _ai_max scored-gate.
   line 178  logic: != -> ==             none-baseline similarity branch.
@@ -9,7 +9,7 @@ Killed here via _ai_max and compare() with monkeypatched deps. Other survivors
 
 from __future__ import annotations
 
-from eval import compare_humanizers as C
+from untell.bench import compare_humanizers as C
 
 
 class TestAiMaxScoredGate:

@@ -17,13 +17,13 @@ Two data paths:
 The trained surrogate exposes ``score(text) -> P(AI) in [0,1]`` (the `Detector` protocol), so
 `reward.py` (set `UNTELL_SURROGATE_DIR`) or the ensemble can use it as a drop-in target.
 
-    python -m training.surrogate --dataset hc3 --n 3000 --out out/surrogate     # free, ~minutes on a GPU
-    python -m training.surrogate --dataset gptzero_labels.csv --out out/surrogate # targeted (paid labels)
-    python -m training.surrogate --smoke                                          # tiny CPU dry-run
+    python -m untell.training.surrogate --dataset hc3 --n 3000 --out out/surrogate     # free, ~minutes on a GPU
+    python -m untell.training.surrogate --dataset gptzero_labels.csv --out out/surrogate # targeted (paid labels)
+    python -m untell.training.surrogate --smoke                                          # tiny CPU dry-run
 
 Then point RL training at it:
 
-    UNTELL_SURROGATE_DIR=out/surrogate python -m training.rl_humanizer --model Qwen/Qwen2.5-3B-Instruct
+    UNTELL_SURROGATE_DIR=out/surrogate python -m untell.training.rl_humanizer --model Qwen/Qwen2.5-3B-Instruct
 """
 
 from __future__ import annotations
@@ -271,7 +271,7 @@ def main(argv: list[str] | None = None) -> int:
         a.out, dataset=a.dataset, base=a.base, n=a.n, epochs=a.epochs, lr=a.lr, batch=a.batch, smoke=a.smoke
     )
     print(f"surrogate saved -> {out}")
-    print(f"use it as the RL reward target:  UNTELL_SURROGATE_DIR={out} python -m training.rl_humanizer ...")
+    print(f"use it as the RL reward target:  UNTELL_SURROGATE_DIR={out} python -m untell.training.rl_humanizer ...")
     return 0
 
 

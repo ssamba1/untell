@@ -28,7 +28,7 @@ import logging
 
 import pytest
 
-from eval.detector_audit import audit_detector
+from untell.bench.detector_audit import audit_detector
 
 HUMAN = [
     "I drove up on Friday and the traffic was awful past the junction near the bridge.",

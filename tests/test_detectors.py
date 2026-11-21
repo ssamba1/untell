@@ -477,7 +477,7 @@ class TestDetectorsDoNotFlagHumanWriting:
 
     @staticmethod
     def _human_probes():
-        from eval.detector_audit import HUMAN_PROBES
+        from untell.bench.detector_audit import HUMAN_PROBES
 
         return HUMAN_PROBES
 
@@ -507,7 +507,7 @@ class TestDetectorsDoNotFlagHumanWriting:
         """
         import statistics
 
-        from eval.detector_audit import AI_PROBES
+        from untell.bench.detector_audit import AI_PROBES
         from untell.scripts.score import score_text
 
         human = [float(score_text(t, tier=tier)["max"]) for t in self._human_probes()]
@@ -634,7 +634,7 @@ class TestDegenerateRepetitionIsNotHuman:
 
     def test_the_term_is_silent_on_every_real_hc3_text(self):
         """A new term in a detector with published FPR/TPR has to be provably inert on real text."""
-        from eval.datasets import _BUILTIN
+        from untell.bench.datasets import _BUILTIN
         from untell.detectors.perplexity_burstiness import _repetition_signal
 
         for text in _BUILTIN:

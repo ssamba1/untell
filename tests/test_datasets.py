@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import pytest
 
-from eval.datasets import _BUILTIN, load_samples
+from untell.bench.datasets import _BUILTIN, load_samples
 
 
 def test_builtin_returns_expected_count():
@@ -29,7 +29,7 @@ def test_padding_the_builtin_pool_is_not_silent(caplog):
     """
     import logging
 
-    with caplog.at_level(logging.WARNING, logger="eval.datasets"):
+    with caplog.at_level(logging.WARNING, logger="untell.bench.datasets"):
         samples = load_samples("builtin", n=100)
 
     assert len(samples) == 100
@@ -42,7 +42,7 @@ def test_padding_the_builtin_pool_is_not_silent(caplog):
 def test_no_warning_when_the_pool_covers_the_request(caplog):
     import logging
 
-    with caplog.at_level(logging.WARNING, logger="eval.datasets"):
+    with caplog.at_level(logging.WARNING, logger="untell.bench.datasets"):
         load_samples("builtin", n=len(_BUILTIN))
     assert not [r for r in caplog.records if "padded" in r.getMessage()]
 
@@ -105,7 +105,7 @@ class TestPairedCorporaBeyondHC3:
         quietly falls back to HC3 while reporting whatever name was asked for."""
         import inspect
 
-        from eval import datasets as ds
+        from untell.bench import datasets as ds
 
         src = inspect.getsource(ds.load_pairs)
         for name in ("raid", "mage"):
@@ -115,7 +115,7 @@ class TestPairedCorporaBeyondHC3:
     def test_unknown_dataset_returns_empty_rather_than_substituting(self):
         """Substituting another corpus under the requested name is how a demo corpus ends up
         reported as real-text results."""
-        from eval.datasets import load_pairs
+        from untell.bench.datasets import load_pairs
 
         assert load_pairs("no-such-corpus", n=3) == []
 
@@ -124,7 +124,7 @@ class TestPairedCorporaBeyondHC3:
         'how does a detector survive an attack' instead of the question being asked."""
         import inspect
 
-        from eval import datasets as ds
+        from untell.bench import datasets as ds
 
         assert "attack" in inspect.getsource(ds._raid_pairs)
 
@@ -133,12 +133,12 @@ class TestPairedCorporaBeyondHC3:
         domain prefix. Reporting that as equivalent to HC3/RAID pairing would overstate it."""
         import inspect
 
-        doc = inspect.getdoc(__import__("eval.datasets", fromlist=["_mage_pairs"])._mage_pairs)
+        doc = inspect.getdoc(__import__("untell.bench.datasets", fromlist=["_mage_pairs"])._mage_pairs)
         assert "not** prompt-paired" in doc or "not prompt-paired" in doc.replace("**", "")
 
     def test_raid_pairs_are_distinct_and_meet_min_words(self):
         """Network-dependent: skipped when the corpus cannot be reached."""
-        from eval.datasets import load_pairs
+        from untell.bench.datasets import load_pairs
 
         pairs = load_pairs("raid", n=4, min_words=60)
         if not pairs:

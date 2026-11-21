@@ -3,7 +3,7 @@
 **Scope of the claim.** "Best humanizer *repo* available" means best **open-source** humanizer codebase
 on GitHub. Commercial tools (Undetectable.ai, StealthGPT, WriteHuman…) are closed SaaS, not repos —
 out of scope. We surveyed the open field ourselves (GitHub topics, papers-with-code, ~110 repos; see
-`humanizer-research-report.md`), and re-swept it on 2026-08-05 across 624 distinct queries turning up
+`docs/archive/humanizer-research-report.md`), and re-swept it on 2026-08-05 across 624 distinct queries turning up
 **1287 candidate repos, 435 read individually** ([`humanizer-census.md`](humanizer-census.md)) — see the box
 below for what that census changed. Verdict below is evidenced, not asserted, and states honestly where we are *not* #1.
 
@@ -11,7 +11,7 @@ below for what that census changed. Verdict below is evidenced, not asserted, an
 
 ## The decisive finding
 
-Our own deep-research survey of the field ([`humanizer-research-report.md`](https://github.com/ssamba1/untell/blob/main/humanizer-research-report.md))
+Our own deep-research survey of the field ([`humanizer-research-report.md`](https://github.com/ssamba1/untell/blob/main/docs/archive/humanizer-research-report.md))
 ranks the exploitable gaps. Its **first** one, quoted exactly:
 
 > "**Closed-loop detector-feedback rewriting.** No shipping product does iterative rewrite against
@@ -77,7 +77,7 @@ Against our own four criteria, this repo has all four:
 | (a) validated vs **multiple live detectors** | 8 local adapters — 5 run by default (RoBERTa-OpenAI, HC3, Fast-DetectGPT, MAGE, GPT-2 perplexity); RADAR is opt-in via `UNTELL_ENABLE_RADAR=1` (non-commercial license) and Binoculars needs CUDA — + **8 commercial API adapters** + browser checkers; **live-proven 100%→0% on ZeroGPT** (measured 2026-06-25 on the formulaic demo paragraphs; a third-party site that can change without notice — re-run `--browser zerogpt` before citing it) |
 | (b) quality/meaning **verifier** | semantic-similarity gate + preserve-lock (citations/numbers/entities) + `untell-verify` |
 | (c) **iterative detector-feedback loop at inference** | the core loop + **per-sentence targeting** (rewrite only the flagged sentences) |
-| (d) **user-installable package** | `pip install` + **26** console scripts (`untell`, `-score`, `-loop`, `-humanize`, `-verify`, `-prove`, `-sentences`, `-tells`, `-voice`, `-humanness`, `-hedges`, `-numbers`, `-scrub`, `-explain`, `-batch`, `-watch`, `-compare`, `-ceiling`, `-detector-audit`, `-eval-policy`, `-distill`, `-surrogate`, `-server`, `-mcp`, `-audit`, `-latex`) **and** an MCP server, a REST API and a Claude skill |
+| (d) **user-installable package** | `pip install` + **34** console scripts (`untell`, `-brief`, `-stability`, `-variants`, `-flagmath`, `-report-card`, `-drift`, `-capsule`, `-probe`, `-score`, `-loop`, `-humanize`, `-verify`, `-prove`, `-sentences`, `-tells`, `-voice`, `-humanness`, `-hedges`, `-numbers`, `-scrub`, `-explain`, `-batch`, `-watch`, `-compare`, `-ceiling`, `-detector-audit`, `-eval-policy`, `-distill`, `-surrogate`, `-server`, `-mcp`, `-audit`, `-latex`) **and** an MCP server, a REST API and a Claude skill |
 
 ---
 
@@ -223,7 +223,7 @@ Three things worth stating plainly:
   needs a paid LLM to run — but "nobody has claimed it" would be false, and the honest position is
   that we have not tested it rather than that it does not exist.
 - **HMGC is the approach this repo roadmaps as its own next step** (surrogate distillation — see
-  `training/surrogate.py`). It is not a gap in the argument, it is prior art for our own plan, and
+  `untell/training/surrogate.py`). It is not a gap in the argument, it is prior art for our own plan, and
   citing it is better than presenting the idea as novel.
 - **Only chengez is inference-time per text**, which is the shape our loop has. SICO optimises once
   and then applies a fixed prompt; HMGC trains. Those are different products with different costs.

@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
-from eval.report import summarize
+from untell.bench.report import summarize
 
 THRESHOLD = 0.30
 

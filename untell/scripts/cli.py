@@ -47,16 +47,19 @@ _COMMANDS: dict[str, str] = {
     "report-card": "untell.evidence.cli:report_card_main",
     "drift": "untell.evidence.cli:drift_main",
     "capsule": "untell.evidence.cli:capsule_main",
+    # The detector-in-the-loop rewrite. `probe` is the primary name: it is a robustness test of a
+    # detector. `humanize` and `loop` stay as aliases so existing scripts keep working.
+    "probe": "untell.scripts.run:main",
     "humanize": "untell.scripts.run:main",
     "loop": "untell.scripts.run:main",  # alias
     "score": "untell.scripts.score:main",
     "tells": "untell.scripts.tells:main",
     "verify": "untell.scripts.verify:main",
-    "prove": "eval.prove:main",
+    "prove": "untell.bench.prove:main",
     "sentences": "untell.scripts.sentences:main",
-    "compare": "eval.compare_humanizers:main",
-    "ceiling": "eval.ceiling:main",
-    "detector-audit": "eval.detector_audit:main",
+    "compare": "untell.bench.compare_humanizers:main",
+    "ceiling": "untell.bench.ceiling:main",
+    "detector-audit": "untell.bench.detector_audit:main",
     "humanness": "untell.humanness:main",
     "scrub": "untell.scripts.scrub:main",
     "numbers": "untell.scripts.numerals:main",
@@ -82,7 +85,7 @@ _ONE_LINER = {
     "report-card": "measure a detector on a human corpus: FPR by slice, CIs, stability",
     "drift": "compare two report cards for a silent detector model change",
     "capsule": "build a pre-LLM human corpus from a git repository's history",
-    "humanize": "run the closed detector-feedback loop (alias: loop)",
+    "probe": "robustness probe: rewrite under a meaning gate against a detector (alias: humanize)",
     "score": "score text with the local AI-detector ensemble",
     "tells": "count the AI writing tells in text (naturalness; lower = more human)",
     "verify": "honest pass/fail per detector (exit 0 only if all pass)",
@@ -103,7 +106,7 @@ _ONE_LINER = {
 
 def _usage() -> str:
     lines = [
-        "untell: humanize AI text via a detector-feedback loop.",
+        "untell: measure what an AI detector's verdict is worth.",
         "",
         "Usage:",
         "  untell <command> [options]     run a specific command",
@@ -118,8 +121,9 @@ def _usage() -> str:
     lines += [
         "",
         "Run 'untell <command> --help' for that command's options.",
-        "No key needed: 'untell humanize \"text\" --rewriter composite' runs the loop for $0.",
-        "In Claude Code, just use the /untell skill (Claude is the rewriter).",
+        "Start here: 'untell brief --file essay.txt --detector local' (or --detector manual:scores.csv",
+        "for a detector with no API — 'untell variants' makes the scoring kit).",
+        "In Claude Code, use the /untell skill. Offline in a browser: docs/brief.html.",
     ]
     return "\n".join(lines)
 
@@ -391,7 +395,7 @@ def _build_parser() -> argparse.ArgumentParser:
     """Build a top-level argument parser for tab completion."""
     import argparse
 
-    parser = argparse.ArgumentParser(prog="untell", add_help=False, description="AI-text humanizer")
+    parser = argparse.ArgumentParser(prog="untell", add_help=False, description="AI-detector auditing toolkit")
     parser.add_argument("subcommand", nargs="?", choices=list(_COMMANDS) + ["--check", "--demo"],
                         help="subcommand to run")
     return parser

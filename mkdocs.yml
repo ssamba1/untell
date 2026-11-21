@@ -64,6 +64,9 @@ markdown_extensions:
 nav:
   - Home: index.md
   - Quick Start: quickstart.md
+  - Auditing guide: auditing.md
+  - Observatory: observatory/README.md
+  - Reference: reference.md
   - API Server: api-server.md
   - Demo Page: demo.html
 

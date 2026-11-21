@@ -4,7 +4,7 @@ Fuzz-found: `preserve._spacy_entity_spans_impl` guards against a missing model, 
 import, and >1MB text — but not against lone surrogates (U+D800..U+DFFF). spaCy's tokenizer
 utf-8-encodes tokens to hash them, and a surrogate has no UTF-8 form, so `nlp(text)` raised
 UnicodeEncodeError. It cannot arrive via UTF-8 stdin/files/argv (all validated elsewhere),
-but it CAN arrive as a JSON-escaped `"\ud800"` in a REST body or from a library caller.
+but it CAN arrive as a JSON-escaped `"\\ud800"` in a REST body or from a library caller.
 MEASURED on this slice: POST /humanize with one surrogate in the text -> HTTP 500
 Internal Server Error (network-reachable crash); `untell-explain` on the same text -> exit 1
 with a spacy traceback.

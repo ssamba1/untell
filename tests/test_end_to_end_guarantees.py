@@ -254,8 +254,8 @@ class TestFactsSurviveAtScaleOnRealProse:
     ]
 
     def _corpus(self):
-        from eval.ceiling import _SAMPLE
-        from eval.datasets import _BUILTIN
+        from untell.bench.ceiling import _SAMPLE
+        from untell.bench.datasets import _BUILTIN
 
         return list(_BUILTIN) + list(_SAMPLE)
 

@@ -9,9 +9,11 @@ note wrong; the seam is a stub model.
 """
 from unittest.mock import patch
 
-import torch
+import pytest  # noqa: E402
 
-import untell.detectors.mage as mage
+torch = pytest.importorskip("torch")
+
+import untell.detectors.mage as mage  # noqa: E402
 
 
 class _Cfg:

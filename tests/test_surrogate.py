@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from training import reward as reward_mod
-from training.surrogate import _builtin_labeled, load_labeled
+from untell.training import reward as reward_mod
+from untell.training.surrogate import _builtin_labeled, load_labeled
 
 
 def test_builtin_labeled_balanced():
@@ -78,7 +78,7 @@ def test_reward_uses_surrogate_when_env_set(monkeypatch):
         def score(self, _text):
             return 0.02  # surrogate says "human"
 
-    import training.surrogate as surr
+    import untell.training.surrogate as surr
 
     monkeypatch.setattr(surr, "SurrogateDetector", FakeSurrogate)
     reward_mod._SURROGATE = None
@@ -108,7 +108,7 @@ def test_surrogate_no_signal_is_not_a_reward(monkeypatch):
         def score(self, _text):
             return None
 
-    import training.surrogate as surr
+    import untell.training.surrogate as surr
 
     monkeypatch.setattr(surr, "SurrogateDetector", FakeSurrogate)
     reward_mod._SURROGATE = None

@@ -1,6 +1,6 @@
 """Killing test: untell-prove missing file must exit 2 naming the file, not traceback.
 
-eval/prove.py opened args.file with a raw open() -> FileNotFoundError
+untell/bench/prove.py opened args.file with a raw open() -> FileNotFoundError
 traceback leaked on a missing file. Every other CLI uses read_file_or_exit
 (exit 2, one line naming the file — the T18 contract).
 """
@@ -22,7 +22,7 @@ env["UNTELL_LITE_NO_TORCH"] = "1"
 
 def test_prove_missing_file_no_traceback():
     proc = subprocess.run(
-        [str(PY), "-m", "eval.prove", "--file", "nope_missing_xyz.txt"],
+        [str(PY), "-m", "untell.bench.prove", "--file", "nope_missing_xyz.txt"],
         capture_output=True,
         text=True, encoding="utf-8",
         errors="replace",

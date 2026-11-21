@@ -97,7 +97,7 @@ ROSTER = {
 _DIRECT_READ = re.compile(
     r'os\.environ\.(?:get|pop)\(\s*"([A-Z][A-Z0-9_]+)"|os\.getenv\(\s*"([A-Z][A-Z0-9_]+)"'
 )
-_SCAN_DIRS = ("untell", "eval", "training")
+_SCAN_DIRS = ("untell",)
 
 
 def _read_sites() -> set[str]:

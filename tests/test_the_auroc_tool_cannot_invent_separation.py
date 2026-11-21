@@ -3,7 +3,7 @@
 Four times in one session a probe produced a false finding through its own flaw: a harness that
 swallowed a traceback, a dead-function scan that wrote its subject into its own haystack, a marker
 scanner that matched itself, a constant sweep that ignored module scope. Each was a throwaway script.
-`eval/tells_auroc.py` is not throwaway — its output is quoted throughout the catalogue as the
+`untell/bench/tells_auroc.py` is not throwaway — its output is quoted throughout the catalogue as the
 evidence that a tell separates the classes — and nothing asked it the same question.
 
 Three known-answers, none of which needs a corpus download:
@@ -26,7 +26,7 @@ import logging
 
 import pytest
 
-from eval.tells_auroc import auroc, measure, precision_table
+from untell.bench.tells_auroc import auroc, measure, precision_table
 
 # Tell-dense on one side, plain on the other. Deliberately synthetic: this file must run without a
 # dataset download, and the claim is about the TOOL's behaviour, not about any corpus.

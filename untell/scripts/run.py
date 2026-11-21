@@ -68,7 +68,7 @@ _TELLS_EPS = 0.02
 #            cannot be selected for exploiting a member that is absent from the subset it was judged
 #            on. This is the transfer hypothesis stated as a mechanism.
 #
-# MEASURED AND REFUTED. RAID n=10, three seeds each, held-out RADAR (`python -m eval.holdout`):
+# MEASURED AND REFUTED. RAID n=10, three seeds each, held-out RADAR (`python -m untell.bench.holdout`):
 #
 #     mode      held-out mean, per seed          held-out flagged
 #     max       0.5035  0.4981  0.4391           4 / 4 / 4
@@ -686,7 +686,7 @@ def untell_text(
     # default stayed at 1, so a direct library call still got the weak path with nothing to say so.
     # That is the same defect the MCP and REST fixes were for, one layer down.
     #
-    # eval/ceiling.py is unaffected and stays at 1: measuring the single-draw baseline is its job,
+    # untell/bench/ceiling.py is unaffected and stays at 1: measuring the single-draw baseline is its job,
     # and it passes the value explicitly.
     best_of: int = 3,
     detector_thresholds: dict[str, float] | None = None,
@@ -1135,7 +1135,9 @@ def _untell_text(
             try:
                 from untell.rich_output import progress_iteration
 
-                progress_iteration(i, max_iters, tier, best_score.get("max"))
+                # The EFFECTIVE tier, not the requested one: with no ML stack a "full" request runs
+                # lite, and the progress line used to say tier=full over lite-tier numbers.
+                progress_iteration(i, max_iters, best_score.get("tier", tier), best_score.get("max"))
             except Exception:  # a progress line must never break a run
                 pass
         # Targeted feedback: name the specific sentences that read as AI (cheap lite scoring), so the
@@ -1950,7 +1952,9 @@ def _render(result: dict) -> str:
     if isinstance(before, int) and isinstance(after, int):
         lines.append(f"AI tells: {before} -> {after}  ({after - before:+d})")
     if result.get("warning"):
-        lines.append(f"\nNOTE: {result['warning']}")
+        from untell.rich_output import condense_warning
+
+        lines.append(f"\nNOTE: {condense_warning(result['warning'])}")
 
     lines.append("\nper-detector (pre -> post):")
     for name in pre.get("detectors", {}):

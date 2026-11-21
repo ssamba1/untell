@@ -20,7 +20,7 @@ import subprocess
 
 import pytest
 
-from eval.ceiling import _code_state, _render
+from untell.bench.ceiling import _code_state, _render
 
 BASE = {
     "tier": "full",

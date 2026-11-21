@@ -107,7 +107,7 @@ logger = logging.getLogger(__name__)
 #
 #     This finding used to carry the claim that overall separation was WORSE on RAID than HC3
 #     (AUROC 0.638 vs 0.705, tells/100w gap +0.227 vs +0.307). That ordering has inverted, and the
-#     figures were stale rather than wrong — re-derive them with `python -m eval.tells_auroc`:
+#     figures were stale rather than wrong — re-derive them with `python -m untell.bench.tells_auroc`:
 #
 #                       AUROC            tells/100w human    ai      gap
 #         RAID (200)    0.9555                    1.139   12.823   +11.683
@@ -144,11 +144,11 @@ logger = logging.getLogger(__name__)
 #     corpus of modern chat output would be the thing that validates them; none is in this repo.
 #
 #     Layout was checked at the same time, since RAID separates its own halves at AUROC 1.0000 on
-#     newline density alone and `eval/detector_audit.py` collapses layout for exactly that reason.
+#     newline density alone and `untell/bench/detector_audit.py` collapses layout for exactly that reason.
 #     It does not affect this metric: collapsing whitespace moves the AUROC by +0.0000 on RAID, HC3
 #     and MAGE, because the three line-anchored categories fire on 0, 1 and 1 of 400 documents. So
 #     layout is deliberately NOT collapsed here — those categories are line-anchored by design and
-#     silencing them would delete signal, not bias. `eval.tells_auroc` reports the delta every run.
+#     silencing them would delete signal, not bias. `untell.bench.tells_auroc` reports the delta every run.
 #
 # They are NOT dropped or reweighted. Ten categories never fire on HC3 at all —
 # chatbot_artifact, cutoff_disclaimer, aphorism, notability_padding and the formatting ones — and
@@ -184,7 +184,7 @@ logger = logging.getLogger(__name__)
 #
 #     Read the DENOMINATOR before acting on any precision in these tables — it is per FIRING, not
 #     per document scanned, and "0 out of 400 documents" is 7 firings. Re-derived with
-#     `python -m eval.tells_auroc --precision`, which now reports n and a 95% Wilson interval:
+#     `python -m untell.bench.tells_auroc --precision`, which now reports n and a 95% Wilson interval:
 #
 #         em_dash            human 7  ai 0   n=7    0.000  [0.00, 0.35]   p=0.016
 #         semicolon_crutch   human 6  ai 1   n=7    0.143  [0.03, 0.51]   p=0.125

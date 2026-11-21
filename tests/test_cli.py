@@ -6,7 +6,7 @@ import json
 
 import pytest
 
-from eval.benchmark import main as bench_main
+from untell.bench.benchmark import main as bench_main
 from untell.scripts.preserve import lock, restore
 from untell.scripts.preserve import main as preserve_main
 from untell.scripts.quality import main as quality_main

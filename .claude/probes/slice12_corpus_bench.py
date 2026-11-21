@@ -2,7 +2,7 @@
 
 Measures, per document: wall time for the full loop (score -> rewrite -> re-score),
 adoption (did the loop rewrite it), and pre/post flag rate at the default threshold.
-Runs the SAME pipeline eval.ceiling drives (lite tier, composite rewriter) so the
+Runs the SAME pipeline untell.bench.ceiling drives (lite tier, composite rewriter) so the
 numbers line up with the L8 recipes (length-short / length-long / human-false-positives).
 
 Two modes, selected by env:

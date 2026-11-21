@@ -204,7 +204,7 @@ def test_best_of_default_matches_the_cli_on_every_surface():
 
     MEASURED over 6 real HC3 paragraphs: best_of=1 -> 33% still flagged, best_of=3 -> 0%.
 
-    The ceiling surfaces are deliberately excluded — eval/ceiling.py's CLI also defaults to 1,
+    The ceiling surfaces are deliberately excluded — untell/bench/ceiling.py's CLI also defaults to 1,
     because measuring the single-draw baseline is the point of that tool.
     """
     import inspect

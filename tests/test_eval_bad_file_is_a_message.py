@@ -25,7 +25,7 @@ env = dict(os.environ)
 env["PYTHONPATH"] = ""
 env["UNTELL_LITE_NO_TORCH"] = "1"
 
-COMMANDS = ["eval.ceiling", "eval.compare_humanizers"]
+COMMANDS = ["untell.bench.ceiling", "untell.bench.compare_humanizers"]
 BAD_FILES = [
     [str(ROOT / "no-such-file-untell-fuzz.txt")],
     [str(ROOT / "untell")],  # a directory, not a corpus file

@@ -1,7 +1,7 @@
 """humanness_reward: hard gates return -1, faithful candidates get real rewards."""
 import json, os
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
-from training.reward import humanness_reward, _GATE_REWARD
+from untell.training.reward import humanness_reward, _GATE_REWARD
 
 out = {}
 # 1. None candidate -> gate

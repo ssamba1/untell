@@ -1,4 +1,4 @@
-"""Killing tests for eval/ceiling.py mutation survivors (2026-08-14 sweep).
+"""Killing tests for untell/bench/ceiling.py mutation survivors (2026-08-14 sweep).
 
   line 148  logic: or -> and       parallel gate (workers>1 AND len>1 AND name).
   line 239  logic: is-not -> is    scored-flag inclusion (`scored is not False`).
@@ -9,11 +9,11 @@ input, 254/265 killed by suite, 89 killed by suite) annotated in survivors.md.
 
 from __future__ import annotations
 
-from eval.ceiling import _each_text
+from untell.bench.ceiling import _each_text
 
 
 class TestParallelGate:
-    """Survivor eval/ceiling.py:148 — `parallel_ok` mutated `and` -> `or`.
+    """Survivor untell/bench/ceiling.py:148 — `parallel_ok` mutated `and` -> `or`.
 
     workers=1 must force the serial path (nothing to gain). The mutation makes
     `workers and (workers > 1 or ...)` truthy when workers=1, starting a pool
@@ -40,7 +40,7 @@ class TestParallelGate:
 
 
 class TestScoredFlagInclusion:
-    """Survivor eval/ceiling.py:239 — `post.get("scored") is not False` -> `is not True`.
+    """Survivor untell/bench/ceiling.py:239 — `post.get("scored") is not False` -> `is not True`.
 
     A result with `scored=True` must be INCLUDED in post_max/run_posts. The
     mutation (`is not True`) excludes it, undercounting the mean."""
@@ -48,7 +48,7 @@ class TestScoredFlagInclusion:
     def test_scored_true_included_in_mean(self, monkeypatch) -> None:
         # Drive measure_ceiling's aggregation with a stubbed _each_text whose
         # result carries scored=True; run_post_means must reflect the 0.3 post.
-        from eval import ceiling as C
+        from untell.bench import ceiling as C
 
         res = {
             "pre": {"max": 0.5, "mean": 0.5},

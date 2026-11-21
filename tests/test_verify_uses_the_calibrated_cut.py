@@ -54,7 +54,7 @@ def test_the_two_surfaces_agree_across_real_corpus_text():
     loop's 0.30 target and the calibrated 0.45 verdict.
     """
     try:
-        from eval.datasets import load_pairs
+        from untell.bench.datasets import load_pairs
 
         pairs = load_pairs("hc3", n=40, min_words=60)
     except Exception as exc:  # pragma: no cover - environment without the corpus
@@ -88,7 +88,7 @@ def test_a_text_between_the_two_cuts_now_passes():
     to 0.30 and the band closes. It has to be real text through the real path.
     """
     try:
-        from eval.datasets import load_pairs
+        from untell.bench.datasets import load_pairs
 
         pairs = load_pairs("hc3", n=40, min_words=60)
     except Exception as exc:  # pragma: no cover - environment without the corpus

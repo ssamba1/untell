@@ -4,18 +4,26 @@
     "name": "ssamba1",
     "url": "https://github.com/ssamba1"
   },
-  "description": "untell — an AI-detector auditing toolkit for Claude Code (detector-in-the-loop measurement).",
+  "description": "untell \u2014 an AI-detector auditing toolkit for Claude Code (detector-in-the-loop measurement).",
   "plugins": [
     {
       "name": "untell",
       "source": "./",
-      "description": "Humanize AI-generated text via a closed-loop detector-feedback rewrite. Preserves meaning, citations and facts.",
-      "version": "0.3.0",
-      "author": { "name": "ssamba1" },
+      "description": "Audit AI-text detectors: evidence briefs for a flagged document (verdict stability under edits that change no words, cited error rates, Bayes on the flag), detector report cards and drift, plus a detector-in-the-loop robustness probe.",
+      "version": "0.4.0",
+      "author": {
+        "name": "ssamba1"
+      },
       "homepage": "https://ssamba1.github.io/untell/",
       "repository": "https://github.com/ssamba1/untell",
       "license": "MIT",
-      "keywords": ["ai-detection", "detector-evaluation", "false-positives", "gptzero", "turnitin"],
+      "keywords": [
+        "ai-detection",
+        "detector-evaluation",
+        "false-positives",
+        "gptzero",
+        "turnitin"
+      ],
       "category": "writing"
     }
   ]

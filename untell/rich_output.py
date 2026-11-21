@@ -328,7 +328,7 @@ def print_humanize_result(
         # So a caller without the extra ran the loop, got a number, and was never told the number
         # came from the path where 64% of human text scores above the threshold.
         if warning:
-            print(f"\nNOTE: {warning}")
+            print(f"\nNOTE: {condense_warning(warning)}")
         print(f"\n--- Original ---\n{original}")
         print(f"\n--- Humanized ---\n{final}")
         return
@@ -437,7 +437,7 @@ def print_humanize_result(
     # asked to keep (`--no-scrub`) still travels in that output, and nothing else says so.
     if warning:
         _CONSOLE.print()
-        _CONSOLE.print(_Panel(_Text(warning), title="Warning", border_style="red"))
+        _CONSOLE.print(_Panel(_Text(condense_warning(warning)), title="Warning", border_style="red"))
     _CONSOLE.print()
 
 
@@ -512,6 +512,30 @@ def print_humanness(score: float, cls: str):
     _CONSOLE.print(f"\nHumanness: [bold {color}]{score:.1f}/100[/]  ({cls})")
     _CONSOLE.print(f"[{color}]{bar}[/]")
     _CONSOLE.print()
+
+
+def condense_warning(warning: str, width: int = 170) -> str:
+    """One line per caveat: its first sentence, with the measured detail left in ``--json``.
+
+    The result's ``warning`` is every caveat that applies, concatenated, and each carries its own
+    measurement. That is right for the JSON a program reads and wrong for a terminal: a run on a
+    short paragraph printed ~400 words of notes, and the caveat that mattered most was the third.
+    Nothing is dropped — each caveat still gets a line, and each line says what it is about.
+    """
+    import re
+
+    if not warning or len(warning) <= width:
+        return warning
+    parts = [p.strip() for p in re.split(r"\s*Also:\s*", warning) if p.strip()]
+    lines = []
+    for part in parts:
+        m = re.match(r"(.+?[.!?])(\s|$)", part)
+        first = (m.group(1) if m else part).strip()
+        if len(first) > width:
+            first = first[: width - 1].rstrip() + "…"
+        lines.append(f"- {first}")
+    lines.append("  (each caveat's measured detail: re-run with --json and read `warning`)")
+    return "\n".join(lines)
 
 
 def progress_iteration(current: int, total: int, tier: str, score: float | None = None) -> str | None:

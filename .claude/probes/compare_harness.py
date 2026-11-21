@@ -1,7 +1,7 @@
 """compare_humanizers: each technique returns per-technique scores with corpus named."""
 import json, os
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
-from eval.compare_humanizers import compare, _SAMPLE
+from untell.bench.compare_humanizers import compare, _SAMPLE
 
 out = {}
 r = compare(list(_SAMPLE), tier="lite", corpus="built-in sample")

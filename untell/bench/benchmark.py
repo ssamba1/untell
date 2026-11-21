@@ -1,7 +1,7 @@
 """Run the untell benchmark: compare noop / single_pass / full_loop on a dataset.
 
-    python -m eval.benchmark --dataset builtin --n 5
-    python -m eval.benchmark --dataset hc3 --n 100 --threshold 0.3
+    python -m untell.bench.benchmark --dataset builtin --n 5
+    python -m untell.bench.benchmark --dataset hc3 --n 100 --threshold 0.3
 
 Success criterion (the report's thesis): ``full_loop`` reaches a higher bypass rate than
 ``single_pass`` at equal-or-better semantic similarity. With only the lite tier installed the
@@ -14,9 +14,9 @@ from __future__ import annotations
 import argparse
 import logging
 
-from eval.baselines import STRATEGIES
-from eval.datasets import load_samples
-from eval.report import render
+from untell.bench.baselines import STRATEGIES
+from untell.bench.datasets import load_samples
+from untell.bench.report import render
 from untell.detectors.base import _TIER_RANK
 
 
@@ -37,7 +37,7 @@ def main(argv: list[str] | None = None) -> int:
     from untell.scripts.io_utils import configure_utf8_io
 
     configure_utf8_io()
-    parser = argparse.ArgumentParser(prog="eval.benchmark", description=__doc__)
+    parser = argparse.ArgumentParser(prog="untell.bench.benchmark", description=__doc__)
     parser.add_argument("--dataset", default="builtin", help="builtin | hc3 | raid")
     parser.add_argument("--n", type=int, default=5, help="number of samples")
     # Derived from the loader's table rather than restated: this hand-written list omitted

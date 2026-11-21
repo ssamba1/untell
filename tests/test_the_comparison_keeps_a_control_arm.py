@@ -30,7 +30,7 @@ import logging
 
 import pytest
 
-from eval.baselines import noop, single_pass
+from untell.bench.baselines import noop, single_pass
 
 PROBE = (
     "Moreover, the framework leverages a robust approach to deliver transformative outcomes at "
@@ -80,7 +80,7 @@ def test_the_comparison_declares_a_control_arm() -> None:
     MEASURED once, by hand, and recorded in this file's docstring: the control reports sim 1.000
     against 0.807-0.947 for the strategies, so the row does behave as a control and not merely
     exist under that name."""
-    import eval.compare_humanizers as mod
+    import untell.bench.compare_humanizers as mod
 
     source = inspect.getsource(mod)
     assert "none (raw AI)" in source, "the comparison lost its do-nothing arm"

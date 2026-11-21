@@ -1,6 +1,6 @@
 """auroc: perfect separation 1.0, inverted 0.0, ties half, empty None."""
 import json
-from eval.detector_audit import auroc
+from untell.bench.detector_audit import auroc
 
 out = {}
 out["perfect"] = auroc([0.9, 0.8], [0.2, 0.1]) == 1.0

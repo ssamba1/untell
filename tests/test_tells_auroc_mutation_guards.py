@@ -1,4 +1,4 @@
-"""Killing tests for eval/tells_auroc.py mutation survivors (2026-08-14 sweep).
+"""Killing tests for untell/bench/tells_auroc.py mutation survivors (2026-08-14 sweep).
 
   line 271  logic: and -> or        direction-holds note gate.
 
@@ -27,8 +27,8 @@ class TestDirectionNoteGate:
         def _pairs(dataset, n=200, min_words=60):
             return [(human, ai) for _ in range(10)]
 
-        monkeypatch.setattr("eval.datasets.load_pairs", _pairs)
-        from eval.tells_auroc import main
+        monkeypatch.setattr("untell.bench.datasets.load_pairs", _pairs)
+        from untell.bench.tells_auroc import main
 
         main(["--precision", "--dataset", "raid", "--pairs", "10"])
         out = capsys.readouterr().out

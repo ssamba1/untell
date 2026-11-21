@@ -132,8 +132,8 @@ class TestDuplicateRows:
     visible instead of silent)."""
 
     def test_counts_identical_lines(self, tmp_path, monkeypatch) -> None:
-        row = {"recipe": "lite-builtin", "seconds": 64.6, "argv": ["-m", "eval.ceiling"]}
-        other = {"recipe": "lite-builtin", "seconds": 60.6, "argv": ["-m", "eval.ceiling"]}
+        row = {"recipe": "lite-builtin", "seconds": 64.6, "argv": ["-m", "untell.bench.ceiling"]}
+        other = {"recipe": "lite-builtin", "seconds": 60.6, "argv": ["-m", "untell.bench.ceiling"]}
         path = tmp_path / "measurements.jsonl"
         path.write_text(
             json.dumps(row) + "\n" + json.dumps(row) + "\n" + json.dumps(other) + "\n",

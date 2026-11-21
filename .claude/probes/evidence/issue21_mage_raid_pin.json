@@ -3,7 +3,7 @@
   "issue": 21,
   "threshold": 0.3,
   "n": 30,
-  "load_path": "eval.datasets.load_pairs('raid', n) + collapse_layout",
+  "load_path": "untell.bench.datasets.load_pairs('raid', n) + collapse_layout",
   "fpr": 0.1667,
   "tpr": 1.0,
   "flagged_n": 5,

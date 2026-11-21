@@ -175,7 +175,7 @@ def test_the_tier_vocabulary_is_the_loaders_own():
 def test_no_cli_accepts_a_narrower_tier_vocabulary_than_the_loader():
     """Every `--tier` in the tree restates the tier list, and a restated vocabulary drifts.
 
-    Two had: `untell-humanness` and `eval/benchmark.py` omitted "commercial", so both exited 2 on a
+    Two had: `untell-humanness` and `untell/bench/benchmark.py` omitted "commercial", so both exited 2 on a
     tier their own code passes straight to score_text and that every other CLI accepts.
 
     Scans the SOURCE rather than building each parser, because most of these still construct their
@@ -194,8 +194,8 @@ def test_no_cli_accepts_a_narrower_tier_vocabulary_than_the_loader():
     # A literal `choices=[...]` list attached to a --tier argument, however the call is wrapped.
     pattern = re.compile(r'"--tier".{0,400}?choices=\[([^\]]*)\]', re.S)
     checked, narrow = 0, []
-    for path in sorted(list(root.glob("untell/**/*.py")) + list(root.glob("eval/*.py"))
-                       + list(root.glob("training/*.py"))):
+    for path in sorted(list(root.glob("untell/**/*.py")) + list(root.glob("untell/bench/*.py"))
+                       + list(root.glob("untell/training/*.py"))):
         for match in pattern.finditer(path.read_text(encoding="utf-8")):
             checked += 1
             listed = set(re.findall(r'"([^"]*)"', match.group(1)))
@@ -243,9 +243,9 @@ def test_the_free_rewriter_list_matches_the_cli_minus_its_three_special_names():
 
 
 def test_the_ceiling_cli_offers_the_same_backends():
-    """eval/ceiling.py restates the list too; it omits only "base", which is not an evasion path."""
-    from eval.ceiling import build_parser as ceiling_parser
-    from eval.ceiling import main as ceiling_main  # noqa: F401
+    """untell/bench/ceiling.py restates the list too; it omits only "base", which is not an evasion path."""
+    from untell.bench.ceiling import build_parser as ceiling_parser
+    from untell.bench.ceiling import main as ceiling_main  # noqa: F401
 
     action = next(a for a in ceiling_parser()._actions if a.dest == "rewriter")
     assert set(action.choices) - {"auto"} == set(api._FREE_REWRITERS)
@@ -264,7 +264,7 @@ class TestBestOfIsThreeOnEverySurfaceThatHumanizes:
     weak path with nothing to indicate a knob was missing. Same defect, one layer down each time,
     which is why this is a test rather than a comment.
 
-    eval/ceiling.py is the deliberate exception and is asserted separately: measuring the
+    untell/bench/ceiling.py is the deliberate exception and is asserted separately: measuring the
     single-draw baseline is its purpose, and it passes the value explicitly.
     """
 

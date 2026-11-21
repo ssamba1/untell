@@ -1,4 +1,4 @@
-"""Killing tests for eval/report.py mutation survivors (2026-08-14 sweep).
+"""Killing tests for untell/bench/report.py mutation survivors (2026-08-14 sweep).
 
   line 53   boundary: < -> <=      beat = post < threshold (strict).
   line 123  logic: != -> ==        full-vs-single bypass comparison gate.
@@ -11,7 +11,7 @@ Killed here with synthetic results through the real summarize/render.
 
 from __future__ import annotations
 
-from eval.report import _per_detector, render
+from untell.bench.report import _per_detector, render
 
 
 class _R:
@@ -44,7 +44,7 @@ class TestFullVsSingle:
     skips the bypass comparison entirely, falling to mean_post_max."""
 
     def _summarize(self, fl_bypass, sp_bypass, fl_post, sp_post):
-        from eval.report import summarize as _sum
+        from untell.bench.report import summarize as _sum
 
         by_strategy = {
             "full_loop": [
@@ -80,7 +80,7 @@ class TestHardestFallback:
     the name. Either way the render differs."""
 
     def test_render_without_hardest_detector(self) -> None:
-        from eval.report import _hardest_detector
+        from untell.bench.report import _hardest_detector
 
         by_strategy = {
             "full_loop": [

@@ -6,9 +6,6 @@ unkillable with the reason. Written by `mutate.py --record`.
 
 | module | line | mutation | source | analysis |
 | --- | --- | --- | --- | --- |
-<<<<<<< Updated upstream
-=======
->>>>>>> Stashed changes
 
 # Rows below rebuilt 2026-08-15 from me2 worktree HEAD (564) + sibling-unique (45)
 
@@ -464,109 +461,109 @@ unkillable with the reason. Written by `mutate.py --record`.
 
 | module | line | mutation | status |
 |---|---|---|---|
-| eval/ceiling.py | 89 | < -> <= | KILLED by existing suite |
-| eval/ceiling.py | 148 | or -> and (parallel gate) | KILLED by test_ceiling_mutation_guards (workers=1 must stay serial) |
-| eval/ceiling.py | 148 | > -> >= (boundary) | UNKILLABLE: TIMEOUT — mutant loops forever on degenerate input; not a behavior difference |
-| eval/ceiling.py | 239 | is-not -> is (scored flag) | KILLED by test_ceiling_mutation_guards (scored=True must be included in run_post_means) |
-| eval/ceiling.py | 254 | or -> and | KILLED by existing suite |
-| eval/ceiling.py | 265 | >= -> > | KILLED by existing suite |
-| eval/report.py | 53 | boundary: < -> <= | `beat = [1.0 if post < threshold else 0.0 for _, post in paired]` |
-| eval/report.py | 123 | logic: != -> == | `if fl["bypass_rate"] != sp["bypass_rate"]:` |
-| eval/report.py | 124 | boundary: > -> >= | `better, basis = fl["bypass_rate"] > sp["bypass_rate"], "bypass_rate"` |
-| eval/report.py | 210 | logic: or -> and | `hardest = st.get("hardest_detector") or "-"` |
-| eval/report.py | 215 | logic: and -> or | `if hd and hd in best["per_detector"]:` |
-| eval/baselines.py | 66 | constant: 2 -> 3 | `if len(sentences) < 2:` |
-| eval/baselines.py | 71 | constant: 4 -> 5 | `merge_period = 4 - int(round(2 * strength))  # strength 0 -> every 4th, 1 -> eve` |
-| eval/baselines.py | 72 | constant: 2 -> 3 | `merge_period = max(2, merge_period)` |
-| eval/baselines.py | 113 | logic: and -> or | `if s and s[0].islower():` |
-| eval/baselines.py | 118 | boundary: >= -> > | `if strength >= 0.34:` |
-| eval/baselines.py | 190 | boundary: >= -> > | `if cand_sim >= sim_bar and cand_score["max"] <= best_score["max"]:` |
-| eval/baselines.py | 190 | boundary: <= -> < | `if cand_sim >= sim_bar and cand_score["max"] <= best_score["max"]:` |
-| eval/baselines.py | 190 | logic: and -> or | `if cand_sim >= sim_bar and cand_score["max"] <= best_score["max"]:` |
-| eval/baselines.py | 209 | constant: 5 -> 6 | `max_iters: int = 5,` |
-| eval/baselines.py | 230 | identity: is not -> is | `if rw is not None:` |
-| eval/baselines.py | 240 | logic: and -> or | `if cand_sim >= sim_bar and cand_score["max"] <= best_score["max"]:` |
-| eval/holdout.py | 89 | constant: 10 -> 11 | `n: int = 10,` |
-| eval/holdout.py | 93 | constant: 3 -> 4 | `best_of: int = 3,` |
-| eval/holdout.py | 94 | constant: 5 -> 6 | `max_iters: int = 5,` |
-| eval/holdout.py | 99 | constant: 60 -> 61 | `pairs = load_pairs(dataset, n=n, min_words=60)` |
-| eval/holdout.py | 164 | boundary: >= -> > | `pinned = all(r["pre_max"] >= 0.99 and r["post_max"] >= 0.99 for r in scored)` |
-| eval/holdout.py | 168 | boundary: > -> >= | `paired_wins = sum(r["holdout_pre"] > r["holdout_human"] for r in scored)` |
-| eval/holdout.py | 172 | boundary: >= -> > | `("confident", [r for r in scored if r["holdout_pre"] >= CONVICTION]),` |
-| eval/holdout.py | 173 | boundary: < -> <= | `("unsure", [r for r in scored if r["holdout_pre"] < CONVICTION]),` |
-| eval/holdout.py | 195 | boundary: >= -> > | `"separates": paired_wins >= 0.75 * len(scored),` |
-| eval/holdout.py | 201 | boundary: >= -> > | `"flagged_pre": sum(r["pre_max"] >= FLAG_BAR for r in scored),` |
-| eval/holdout.py | 202 | boundary: >= -> > | `"flagged_post": sum(r["post_max"] >= FLAG_BAR for r in scored),` |
-| eval/holdout.py | 207 | boundary: >= -> > | `"flagged_pre": sum(r["holdout_pre"] >= FLAG_BAR for r in scored),` |
-| eval/holdout.py | 208 | boundary: >= -> > | `"flagged_post": sum(r["holdout_post"] >= FLAG_BAR for r in scored),` |
-| eval/holdout.py | 209 | boundary: < -> <= | `"improved_on": sum(r["holdout_post"] < r["holdout_pre"] for r in scored),` |
-| eval/holdout.py | 213 | membership: not in -> in | `"rows": [{k: v for k, v in r.items() if k not in ("final", "source", "human")}` |
-| eval/holdout.py | 278 | constant: 2 -> 3 | `print(json.dumps(result, indent=2) if args.json else render(result))` |
-| eval/datasets.py | 136 | logic: or -> and | `if i >= scan_cap or len(pairs) >= n:` |
-| eval/datasets.py | 140 | logic: or -> and | `text = (row.get("generation") or "").strip()` |
-| eval/datasets.py | 147 | membership: not in -> in | `if key not in seen and key in humans and key in machines:` |
-| eval/datasets.py | 199 | boundary: < -> <= | `if not text or len(text.split()) < min_words:` |
-| eval/datasets.py | 204 | logic: == -> != | `bucket = humans if row.get("label") == 1 else machines` |
-| eval/datasets.py | 221 | constant: 50 -> 51 | `def load_pairs(dataset: str = "hc3", n: int = 50, min_words: int = 60) -> list[t` |
-| eval/datasets.py | 246 | logic: and -> or | `humans = [a for a in (row.get("human_answers") or []) if a and len(a.split()) >=` |
-| eval/datasets.py | 247 | logic: and -> or | `bots = [a for a in (row.get("chatgpt_answers") or []) if a and len(a.split()) >=` |
-| eval/datasets.py | 247 | boundary: >= -> > | `bots = [a for a in (row.get("chatgpt_answers") or []) if a and len(a.split()) >=` |
-| eval/datasets.py | 292 | constant: 40 -> 41 | `floor = 40` |
-| eval/datasets.py | 350 | constant: 30 -> 31 | `if a and len(a.split()) > 30:` |
-| eval/datasets.py | 353 | boundary: >= -> > | `if len(texts) >= n:` |
-| eval/datasets.py | 360 | constant: True -> False | `ds = load_dataset("liamdugan/raid", split="train", streaming=True)` |
-| eval/datasets.py | 364 | constant: 30 -> 31 | `if gen and row.get("model", "human") != "human" and len(gen.split()) > 30:` |
-| eval/datasets.py | 373 | constant: True -> False | `ds = load_dataset("yaful/MAGE", split="test", streaming=True)` |
-| eval/datasets.py | 380 | boundary: >= -> > | `if len(texts) >= n:` |
-| eval/eval_policy.py | 42 | logic: and -> or | `"scored": pre_r.get("scored") is not False and post_r.get("scored") is not False` |
-| eval/eval_policy.py | 42 | constant: False -> True | `"scored": pre_r.get("scored") is not False and post_r.get("scored") is not False` |
-| eval/eval_policy.py | 68 | boundary: < -> <= | `bypass = sum(1 for r in scored if r["post"] < threshold) / len(scored)` |
-| eval/eval_policy.py | 85 | constant: 25 -> 26 | `p.add_argument("--n", type=int, default=25)` |
-| eval/eval_policy.py | 104 | constant: 2 -> 3 | `return 2` |
-| eval/eval_policy.py | 111 | constant: False -> True | `base = LocalPolicyRewriter(adapter_dir=a.policy, use_adapter=False)` |
-| eval/eval_policy.py | 116 | constant: 2 -> 3 | `return 2` |
-| eval/eval_policy.py | 123 | constant: 2 -> 3 | `print(json.dumps(out, indent=2) if a.json else "\n".join(lines))` |
-| eval/tells_auroc.py | 126 | constant: 3 -> 4 | `"ci_high": round(hi, 3),` |
-| eval/tells_auroc.py | 133 | boundary: <= -> < | `"informative": (hi - lo) <= UNINFORMATIVE_CI_WIDTH,` |
-| eval/tells_auroc.py | 136 | logic: or -> and | `rows.sort(key=lambda r: (-(r["precision"] or 0), -r["n"]))` |
-| eval/tells_auroc.py | 145 | constant: 100 -> 101 | `return 100 * sum(v for k, v in cats.items() if k not in exclude) / words` |
-| eval/tells_auroc.py | 190 | constant: 3 -> 4 | `"human_mean": round(hm, 3),` |
-| eval/tells_auroc.py | 198 | constant: 4 -> 5 | `"layout_delta": round(collapsed - full, 4),` |
-| eval/tells_auroc.py | 199 | constant: 4 -> 5 | `"auroc_without_layout_categories": round(prose_only, 4),` |
-| eval/tells_auroc.py | 241 | constant: 200 -> 201 | `ap.add_argument("--pairs", type=int, default=200)` |
-| eval/tells_auroc.py | 260 | constant: 2 -> 3 | `return 2` |
-| eval/tells_auroc.py | 265 | constant: 2 -> 3 | `print(json.dumps({"dataset": args.dataset, "categories": rows}, indent=2))` |
-| eval/tells_auroc.py | 271 | logic: and -> or | `if not r["informative"] and r["p_direction"] and r["p_direction"] <= 0.05:` |
-| eval/prove.py | 34 | constant: 5 -> 6 | `max_iters: int = 5,` |
-| eval/prove.py | 108 | constant: 5 -> 6 | `parser.add_argument("--max-iters", type=int, default=5)` |
-| eval/prove.py | 134 | constant: 2 -> 3 | `return 2` |
-| eval/prove.py | 140 | constant: True -> False | `print(json.dumps(v, ensure_ascii=True, indent=2) if args.json else _render(v))` |
-| eval/prove.py | 140 | constant: 2 -> 3 | `print(json.dumps(v, ensure_ascii=True, indent=2) if args.json else _render(v))` |
-| eval/prove.py | 153 | logic: or -> and | `if "error" in (v or {}) or not after.get("configured"):` |
-| eval/compare_humanizers.py | 70 | constant: False -> True | `return None if res.get("scored") is False else float(res["max"])` |
-| eval/compare_humanizers.py | 79 | constant: 10 -> 11 | `return surgical_substitute(t, tier=tier, threshold=threshold, max_subs=10)["text` |
-| eval/compare_humanizers.py | 92 | constant: 5 -> 6 | `t, tier=tier, threshold=threshold, max_iters=5,` |
-| eval/compare_humanizers.py | 133 | constant: 3 -> 4 | `"ours_loop (composite)": _ours("composite", 3),` |
-| eval/compare_humanizers.py | 178 | logic: != -> == | `sims.append(similarity(t, out) if name != "none (raw AI)" else 1.0)` |
-| eval/compare_humanizers.py | 197 | constant: 4 -> 5 | `"ai_max_mean": round(sum(measured) / len(measured), 4) if measured else None,` |
-| eval/compare_humanizers.py | 198 | constant: 2 -> 3 | `"tells_per_100w_mean": round(sum(tell_rates) / n, 2),` |
-| eval/compare_humanizers.py | 200 | constant: 3 -> 4 | `"sim_mean": round(sum(sims) / n, 3),` |
-| eval/compare_humanizers.py | 267 | constant: 8 -> 9 | `parser.add_argument("--n", type=int, default=8, help="samples to draw from --dat` |
-| eval/compare_humanizers.py | 290 | constant: 2 -> 3 | `return 2` |
-| eval/compare_humanizers.py | 295 | constant: 2 -> 3 | `print(json.dumps(result, ensure_ascii=True, indent=2) if args.json else _render(` |
-| eval/benchmark.py | 42 | constant: 5 -> 6 | `parser.add_argument("--n", type=int, default=5, help="number of samples")` |
-| eval/benchmark.py | 68 | membership: not in -> in | `unknown = [s for s in strategies if s not in STRATEGIES]` |
-| eval/detector_audit.py | 218 | constant: 1000 -> 1001 | `return 1000 * t.count("\n") / max(len(_WORD_RE.findall(t)), 1)` |
-| eval/detector_audit.py | 275 | boundary: >= -> > | `fpr = sum(1 for x in human if x >= DEFAULT_THRESHOLD) / len(human)` |
-| eval/detector_audit.py | 280 | identity: is not -> is | `elif au is not None and au < INVERT_AUROC:` |
-| eval/detector_audit.py | 288 | boundary: > -> >= | `elif fpr > MAX_FPR:` |
-| eval/detector_audit.py | 301 | constant: 4 -> 5 | `"ai_mean": round(am, 4),` |
-| eval/detector_audit.py | 303 | constant: 4 -> 5 | `"range": round(rng, 4),` |
-| eval/detector_audit.py | 304 | constant: 4 -> 5 | `"auroc": round(au, 4) if au is not None else None,` |
-| eval/detector_audit.py | 398 | constant: 10 -> 11 | `out += [s for s in split_sentences(para) if len(s.split()) >= 10]` |
-| eval/detector_audit.py | 398 | boundary: >= -> > | `out += [s for s in split_sentences(para) if len(s.split()) >= 10]` |
-| eval/detector_audit.py | 433 | logic: or -> and | `or r.get("auroc") is None` |
-| eval/detector_audit.py | 477 | identity: is not -> is | `tpr = f"{r['tpr']:6.0%}" if r.get("tpr") is not None else "     -"` | KILLED by tests/test_real_tpr_renders_as_percentage.py: row with tpr=0.75 -> original renders '75%', mutant (is None) takes the placeholder branch and hides the value ('     -'). The FPR/TPR columns are what caught the two scale-miscalibrated detectors at AUROC 0.999+. Red on mutation, green on original. |
+| untell/bench/ceiling.py | 89 | < -> <= | KILLED by existing suite |
+| untell/bench/ceiling.py | 148 | or -> and (parallel gate) | KILLED by test_ceiling_mutation_guards (workers=1 must stay serial) |
+| untell/bench/ceiling.py | 148 | > -> >= (boundary) | UNKILLABLE: TIMEOUT — mutant loops forever on degenerate input; not a behavior difference |
+| untell/bench/ceiling.py | 239 | is-not -> is (scored flag) | KILLED by test_ceiling_mutation_guards (scored=True must be included in run_post_means) |
+| untell/bench/ceiling.py | 254 | or -> and | KILLED by existing suite |
+| untell/bench/ceiling.py | 265 | >= -> > | KILLED by existing suite |
+| untell/bench/report.py | 53 | boundary: < -> <= | `beat = [1.0 if post < threshold else 0.0 for _, post in paired]` |
+| untell/bench/report.py | 123 | logic: != -> == | `if fl["bypass_rate"] != sp["bypass_rate"]:` |
+| untell/bench/report.py | 124 | boundary: > -> >= | `better, basis = fl["bypass_rate"] > sp["bypass_rate"], "bypass_rate"` |
+| untell/bench/report.py | 210 | logic: or -> and | `hardest = st.get("hardest_detector") or "-"` |
+| untell/bench/report.py | 215 | logic: and -> or | `if hd and hd in best["per_detector"]:` |
+| untell/bench/baselines.py | 66 | constant: 2 -> 3 | `if len(sentences) < 2:` |
+| untell/bench/baselines.py | 71 | constant: 4 -> 5 | `merge_period = 4 - int(round(2 * strength))  # strength 0 -> every 4th, 1 -> eve` |
+| untell/bench/baselines.py | 72 | constant: 2 -> 3 | `merge_period = max(2, merge_period)` |
+| untell/bench/baselines.py | 113 | logic: and -> or | `if s and s[0].islower():` |
+| untell/bench/baselines.py | 118 | boundary: >= -> > | `if strength >= 0.34:` |
+| untell/bench/baselines.py | 190 | boundary: >= -> > | `if cand_sim >= sim_bar and cand_score["max"] <= best_score["max"]:` |
+| untell/bench/baselines.py | 190 | boundary: <= -> < | `if cand_sim >= sim_bar and cand_score["max"] <= best_score["max"]:` |
+| untell/bench/baselines.py | 190 | logic: and -> or | `if cand_sim >= sim_bar and cand_score["max"] <= best_score["max"]:` |
+| untell/bench/baselines.py | 209 | constant: 5 -> 6 | `max_iters: int = 5,` |
+| untell/bench/baselines.py | 230 | identity: is not -> is | `if rw is not None:` |
+| untell/bench/baselines.py | 240 | logic: and -> or | `if cand_sim >= sim_bar and cand_score["max"] <= best_score["max"]:` |
+| untell/bench/holdout.py | 89 | constant: 10 -> 11 | `n: int = 10,` |
+| untell/bench/holdout.py | 93 | constant: 3 -> 4 | `best_of: int = 3,` |
+| untell/bench/holdout.py | 94 | constant: 5 -> 6 | `max_iters: int = 5,` |
+| untell/bench/holdout.py | 99 | constant: 60 -> 61 | `pairs = load_pairs(dataset, n=n, min_words=60)` |
+| untell/bench/holdout.py | 164 | boundary: >= -> > | `pinned = all(r["pre_max"] >= 0.99 and r["post_max"] >= 0.99 for r in scored)` |
+| untell/bench/holdout.py | 168 | boundary: > -> >= | `paired_wins = sum(r["holdout_pre"] > r["holdout_human"] for r in scored)` |
+| untell/bench/holdout.py | 172 | boundary: >= -> > | `("confident", [r for r in scored if r["holdout_pre"] >= CONVICTION]),` |
+| untell/bench/holdout.py | 173 | boundary: < -> <= | `("unsure", [r for r in scored if r["holdout_pre"] < CONVICTION]),` |
+| untell/bench/holdout.py | 195 | boundary: >= -> > | `"separates": paired_wins >= 0.75 * len(scored),` |
+| untell/bench/holdout.py | 201 | boundary: >= -> > | `"flagged_pre": sum(r["pre_max"] >= FLAG_BAR for r in scored),` |
+| untell/bench/holdout.py | 202 | boundary: >= -> > | `"flagged_post": sum(r["post_max"] >= FLAG_BAR for r in scored),` |
+| untell/bench/holdout.py | 207 | boundary: >= -> > | `"flagged_pre": sum(r["holdout_pre"] >= FLAG_BAR for r in scored),` |
+| untell/bench/holdout.py | 208 | boundary: >= -> > | `"flagged_post": sum(r["holdout_post"] >= FLAG_BAR for r in scored),` |
+| untell/bench/holdout.py | 209 | boundary: < -> <= | `"improved_on": sum(r["holdout_post"] < r["holdout_pre"] for r in scored),` |
+| untell/bench/holdout.py | 213 | membership: not in -> in | `"rows": [{k: v for k, v in r.items() if k not in ("final", "source", "human")}` |
+| untell/bench/holdout.py | 278 | constant: 2 -> 3 | `print(json.dumps(result, indent=2) if args.json else render(result))` |
+| untell/bench/datasets.py | 136 | logic: or -> and | `if i >= scan_cap or len(pairs) >= n:` |
+| untell/bench/datasets.py | 140 | logic: or -> and | `text = (row.get("generation") or "").strip()` |
+| untell/bench/datasets.py | 147 | membership: not in -> in | `if key not in seen and key in humans and key in machines:` |
+| untell/bench/datasets.py | 199 | boundary: < -> <= | `if not text or len(text.split()) < min_words:` |
+| untell/bench/datasets.py | 204 | logic: == -> != | `bucket = humans if row.get("label") == 1 else machines` |
+| untell/bench/datasets.py | 221 | constant: 50 -> 51 | `def load_pairs(dataset: str = "hc3", n: int = 50, min_words: int = 60) -> list[t` |
+| untell/bench/datasets.py | 246 | logic: and -> or | `humans = [a for a in (row.get("human_answers") or []) if a and len(a.split()) >=` |
+| untell/bench/datasets.py | 247 | logic: and -> or | `bots = [a for a in (row.get("chatgpt_answers") or []) if a and len(a.split()) >=` |
+| untell/bench/datasets.py | 247 | boundary: >= -> > | `bots = [a for a in (row.get("chatgpt_answers") or []) if a and len(a.split()) >=` |
+| untell/bench/datasets.py | 292 | constant: 40 -> 41 | `floor = 40` |
+| untell/bench/datasets.py | 350 | constant: 30 -> 31 | `if a and len(a.split()) > 30:` |
+| untell/bench/datasets.py | 353 | boundary: >= -> > | `if len(texts) >= n:` |
+| untell/bench/datasets.py | 360 | constant: True -> False | `ds = load_dataset("liamdugan/raid", split="train", streaming=True)` |
+| untell/bench/datasets.py | 364 | constant: 30 -> 31 | `if gen and row.get("model", "human") != "human" and len(gen.split()) > 30:` |
+| untell/bench/datasets.py | 373 | constant: True -> False | `ds = load_dataset("yaful/MAGE", split="test", streaming=True)` |
+| untell/bench/datasets.py | 380 | boundary: >= -> > | `if len(texts) >= n:` |
+| untell/bench/eval_policy.py | 42 | logic: and -> or | `"scored": pre_r.get("scored") is not False and post_r.get("scored") is not False` |
+| untell/bench/eval_policy.py | 42 | constant: False -> True | `"scored": pre_r.get("scored") is not False and post_r.get("scored") is not False` |
+| untell/bench/eval_policy.py | 68 | boundary: < -> <= | `bypass = sum(1 for r in scored if r["post"] < threshold) / len(scored)` |
+| untell/bench/eval_policy.py | 85 | constant: 25 -> 26 | `p.add_argument("--n", type=int, default=25)` |
+| untell/bench/eval_policy.py | 104 | constant: 2 -> 3 | `return 2` |
+| untell/bench/eval_policy.py | 111 | constant: False -> True | `base = LocalPolicyRewriter(adapter_dir=a.policy, use_adapter=False)` |
+| untell/bench/eval_policy.py | 116 | constant: 2 -> 3 | `return 2` |
+| untell/bench/eval_policy.py | 123 | constant: 2 -> 3 | `print(json.dumps(out, indent=2) if a.json else "\n".join(lines))` |
+| untell/bench/tells_auroc.py | 126 | constant: 3 -> 4 | `"ci_high": round(hi, 3),` |
+| untell/bench/tells_auroc.py | 133 | boundary: <= -> < | `"informative": (hi - lo) <= UNINFORMATIVE_CI_WIDTH,` |
+| untell/bench/tells_auroc.py | 136 | logic: or -> and | `rows.sort(key=lambda r: (-(r["precision"] or 0), -r["n"]))` |
+| untell/bench/tells_auroc.py | 145 | constant: 100 -> 101 | `return 100 * sum(v for k, v in cats.items() if k not in exclude) / words` |
+| untell/bench/tells_auroc.py | 190 | constant: 3 -> 4 | `"human_mean": round(hm, 3),` |
+| untell/bench/tells_auroc.py | 198 | constant: 4 -> 5 | `"layout_delta": round(collapsed - full, 4),` |
+| untell/bench/tells_auroc.py | 199 | constant: 4 -> 5 | `"auroc_without_layout_categories": round(prose_only, 4),` |
+| untell/bench/tells_auroc.py | 241 | constant: 200 -> 201 | `ap.add_argument("--pairs", type=int, default=200)` |
+| untell/bench/tells_auroc.py | 260 | constant: 2 -> 3 | `return 2` |
+| untell/bench/tells_auroc.py | 265 | constant: 2 -> 3 | `print(json.dumps({"dataset": args.dataset, "categories": rows}, indent=2))` |
+| untell/bench/tells_auroc.py | 271 | logic: and -> or | `if not r["informative"] and r["p_direction"] and r["p_direction"] <= 0.05:` |
+| untell/bench/prove.py | 34 | constant: 5 -> 6 | `max_iters: int = 5,` |
+| untell/bench/prove.py | 108 | constant: 5 -> 6 | `parser.add_argument("--max-iters", type=int, default=5)` |
+| untell/bench/prove.py | 134 | constant: 2 -> 3 | `return 2` |
+| untell/bench/prove.py | 140 | constant: True -> False | `print(json.dumps(v, ensure_ascii=True, indent=2) if args.json else _render(v))` |
+| untell/bench/prove.py | 140 | constant: 2 -> 3 | `print(json.dumps(v, ensure_ascii=True, indent=2) if args.json else _render(v))` |
+| untell/bench/prove.py | 153 | logic: or -> and | `if "error" in (v or {}) or not after.get("configured"):` |
+| untell/bench/compare_humanizers.py | 70 | constant: False -> True | `return None if res.get("scored") is False else float(res["max"])` |
+| untell/bench/compare_humanizers.py | 79 | constant: 10 -> 11 | `return surgical_substitute(t, tier=tier, threshold=threshold, max_subs=10)["text` |
+| untell/bench/compare_humanizers.py | 92 | constant: 5 -> 6 | `t, tier=tier, threshold=threshold, max_iters=5,` |
+| untell/bench/compare_humanizers.py | 133 | constant: 3 -> 4 | `"ours_loop (composite)": _ours("composite", 3),` |
+| untell/bench/compare_humanizers.py | 178 | logic: != -> == | `sims.append(similarity(t, out) if name != "none (raw AI)" else 1.0)` |
+| untell/bench/compare_humanizers.py | 197 | constant: 4 -> 5 | `"ai_max_mean": round(sum(measured) / len(measured), 4) if measured else None,` |
+| untell/bench/compare_humanizers.py | 198 | constant: 2 -> 3 | `"tells_per_100w_mean": round(sum(tell_rates) / n, 2),` |
+| untell/bench/compare_humanizers.py | 200 | constant: 3 -> 4 | `"sim_mean": round(sum(sims) / n, 3),` |
+| untell/bench/compare_humanizers.py | 267 | constant: 8 -> 9 | `parser.add_argument("--n", type=int, default=8, help="samples to draw from --dat` |
+| untell/bench/compare_humanizers.py | 290 | constant: 2 -> 3 | `return 2` |
+| untell/bench/compare_humanizers.py | 295 | constant: 2 -> 3 | `print(json.dumps(result, ensure_ascii=True, indent=2) if args.json else _render(` |
+| untell/bench/benchmark.py | 42 | constant: 5 -> 6 | `parser.add_argument("--n", type=int, default=5, help="number of samples")` |
+| untell/bench/benchmark.py | 68 | membership: not in -> in | `unknown = [s for s in strategies if s not in STRATEGIES]` |
+| untell/bench/detector_audit.py | 218 | constant: 1000 -> 1001 | `return 1000 * t.count("\n") / max(len(_WORD_RE.findall(t)), 1)` |
+| untell/bench/detector_audit.py | 275 | boundary: >= -> > | `fpr = sum(1 for x in human if x >= DEFAULT_THRESHOLD) / len(human)` |
+| untell/bench/detector_audit.py | 280 | identity: is not -> is | `elif au is not None and au < INVERT_AUROC:` |
+| untell/bench/detector_audit.py | 288 | boundary: > -> >= | `elif fpr > MAX_FPR:` |
+| untell/bench/detector_audit.py | 301 | constant: 4 -> 5 | `"ai_mean": round(am, 4),` |
+| untell/bench/detector_audit.py | 303 | constant: 4 -> 5 | `"range": round(rng, 4),` |
+| untell/bench/detector_audit.py | 304 | constant: 4 -> 5 | `"auroc": round(au, 4) if au is not None else None,` |
+| untell/bench/detector_audit.py | 398 | constant: 10 -> 11 | `out += [s for s in split_sentences(para) if len(s.split()) >= 10]` |
+| untell/bench/detector_audit.py | 398 | boundary: >= -> > | `out += [s for s in split_sentences(para) if len(s.split()) >= 10]` |
+| untell/bench/detector_audit.py | 433 | logic: or -> and | `or r.get("auroc") is None` |
+| untell/bench/detector_audit.py | 477 | identity: is not -> is | `tpr = f"{r['tpr']:6.0%}" if r.get("tpr") is not None else "     -"` | KILLED by tests/test_real_tpr_renders_as_percentage.py: row with tpr=0.75 -> original renders '75%', mutant (is None) takes the placeholder branch and hides the value ('     -'). The FPR/TPR columns are what caught the two scale-miscalibrated detectors at AUROC 0.999+. Red on mutation, green on original. |
 | .claude/verify.py | 33 | constant: True -> False | `capture_output=True,` |
 | .claude/verify.py | 39 | constant: False -> True | `return False, "TIMEOUT"` |
 | .claude/verify.py | 40 | logic: == -> != | `return p.returncode == 0, next(iter(reversed((p.stdout or "").strip().splitlines` |
@@ -639,21 +636,21 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/detectors/local_judge.py | 51 | logic: or -> and | `_DEFAULT_MODEL = os.environ.get("UNTELL_JUDGE_MODEL") or LIGHT_MODEL` |
 | untell/detectors/local_judge.py | 152 | logic: or -> and | `if not self.available() or not text.strip():` |
 | untell/detectors/llm_judge.py | 98 | logic: or -> and | `m = _NUM.search(out or "")` |
-| eval/report.py | 15 | identity: is not -> is | `scored = [r for r in results if r.post.get("scored") is not False]` |
-| eval/report.py | 88 | constant: False -> True | `scored = [r for r in results if r.post.get("scored") is not False]` |
-| eval/report.py | 110 | logic: and -> or | `comparable = fl["n_scored"] == fl["n"] and sp["n_scored"] == sp["n"]` |
-| eval/report.py | 172 | logic: == -> != | `n_cell = str(st["n"]) if st["n_scored"] == st["n"] else f"{st['n_scored']}/{st['` |
-| eval/report.py | 201 | logic: or -> and | `if not pd or not pd.get("n"):` |
-| eval/prove.py | 41 | constant: 3 -> 4 | `best_of: int = 3,` |
-| eval/prove.py | 110 | constant: 3 -> 4 | `"--best-of", type=int, default=3,` |
-| eval/prove.py | 135 | constant: 2 -> 3 | `return 2` |
-| eval/prove.py | 141 | constant: 2 -> 3 | `print(json.dumps(v, ensure_ascii=True, indent=2) if args.json else _render(v))` |
-| eval/prove.py | 141 | constant: True -> False | `print(json.dumps(v, ensure_ascii=True, indent=2) if args.json else _render(v))` |
-| eval/prove.py | 155 | constant: 2 -> 3 | `return 2` |
-| eval/detector_audit.py | 284 | logic: and -> or | `elif au is not None and au < WEAK_AUROC:` | KILLED by tests/test_separated_detector_is_not_weak.py: stub detector with human [0.1,0.2] / ai [0.7,0.8] -> au 1.0, fpr 0.0, original OK_SEPARATED; mutant or makes the branch fire whenever au is present, downgrading a perfectly-separated detector to WEAK. Red on mutation, green on original. |
-| eval/detector_audit.py | 398 | constant: 10 -> 11 | `out += [s for s in split_sentences(para) if len(s.split()) >= 10]` | KILLED by tests/test_ten_word_sentences_become_probes.py: paragraph of exactly-10-word sentences -> sentence pass gets (10,10) derived probes under original; mutant >= -> > yields 0 derived, falls back to the 6 packaged probes (sentence pass (6,6) or none). Pinned via the audit_detector spy. Red on mutation, green on original. |
-| eval/detector_audit.py | 398 | boundary: >= -> > | `out += [s for s in split_sentences(para) if len(s.split()) >= 10]` | Same kill as the constant row above: tests/test_ten_word_sentences_become_probes.py (exactly-10-word sentences excluded under mutant -> probe fallback). Duplicate row, same verdict. |
-| eval/detector_audit.py | 495 | logic: and -> or | `and r["auroc"] > SENTENCE_BROKEN_AUROC` | KILLED by tests/test_near_chance_sentence_detector_not_excused.py: sentence detector with verdict INVERTED + auroc 0.1 (< bar 0.2) -> original keeps it in broken (no 'Not counted'); mutant or bypasses the AUROC guard whenever auroc is present, excusing the near-chance detector. Red on mutation, green on original. |
+| untell/bench/report.py | 15 | identity: is not -> is | `scored = [r for r in results if r.post.get("scored") is not False]` |
+| untell/bench/report.py | 88 | constant: False -> True | `scored = [r for r in results if r.post.get("scored") is not False]` |
+| untell/bench/report.py | 110 | logic: and -> or | `comparable = fl["n_scored"] == fl["n"] and sp["n_scored"] == sp["n"]` |
+| untell/bench/report.py | 172 | logic: == -> != | `n_cell = str(st["n"]) if st["n_scored"] == st["n"] else f"{st['n_scored']}/{st['` |
+| untell/bench/report.py | 201 | logic: or -> and | `if not pd or not pd.get("n"):` |
+| untell/bench/prove.py | 41 | constant: 3 -> 4 | `best_of: int = 3,` |
+| untell/bench/prove.py | 110 | constant: 3 -> 4 | `"--best-of", type=int, default=3,` |
+| untell/bench/prove.py | 135 | constant: 2 -> 3 | `return 2` |
+| untell/bench/prove.py | 141 | constant: 2 -> 3 | `print(json.dumps(v, ensure_ascii=True, indent=2) if args.json else _render(v))` |
+| untell/bench/prove.py | 141 | constant: True -> False | `print(json.dumps(v, ensure_ascii=True, indent=2) if args.json else _render(v))` |
+| untell/bench/prove.py | 155 | constant: 2 -> 3 | `return 2` |
+| untell/bench/detector_audit.py | 284 | logic: and -> or | `elif au is not None and au < WEAK_AUROC:` | KILLED by tests/test_separated_detector_is_not_weak.py: stub detector with human [0.1,0.2] / ai [0.7,0.8] -> au 1.0, fpr 0.0, original OK_SEPARATED; mutant or makes the branch fire whenever au is present, downgrading a perfectly-separated detector to WEAK. Red on mutation, green on original. |
+| untell/bench/detector_audit.py | 398 | constant: 10 -> 11 | `out += [s for s in split_sentences(para) if len(s.split()) >= 10]` | KILLED by tests/test_ten_word_sentences_become_probes.py: paragraph of exactly-10-word sentences -> sentence pass gets (10,10) derived probes under original; mutant >= -> > yields 0 derived, falls back to the 6 packaged probes (sentence pass (6,6) or none). Pinned via the audit_detector spy. Red on mutation, green on original. |
+| untell/bench/detector_audit.py | 398 | boundary: >= -> > | `out += [s for s in split_sentences(para) if len(s.split()) >= 10]` | Same kill as the constant row above: tests/test_ten_word_sentences_become_probes.py (exactly-10-word sentences excluded under mutant -> probe fallback). Duplicate row, same verdict. |
+| untell/bench/detector_audit.py | 495 | logic: and -> or | `and r["auroc"] > SENTENCE_BROKEN_AUROC` | KILLED by tests/test_near_chance_sentence_detector_not_excused.py: sentence detector with verdict INVERTED + auroc 0.1 (< bar 0.2) -> original keeps it in broken (no 'Not counted'); mutant or bypasses the AUROC guard whenever auroc is present, excusing the near-chance detector. Red on mutation, green on original. |
 | untell/api_server.py | 428 | boundary: <= -> < | `if len(_rate_buckets) <= _RATE_BUCKET_SOFT_CAP:` | KILLED by tests/test_eviction_noop_at_exact_cap.py: exactly 4096 buckets (one stale) -> original no-op (stale bucket survives, len stays 4096); mutant < runs eviction, drops ALL stale buckets (len 0). The cap boundary is exactly observable. Red on mutation, green on original. |
 | untell/api_server.py | 496 | logic: or -> and | `retry_after = _rate_limited(request, x_key or auth or "")` | KILLED by tests/test_rate_limit_keyed_by_api_key.py: captured credential passed to _rate_limited is 'secret' (the caller's X-API-Key) under original; mutant `x_key and auth and ""` always yields "" — every credentialed caller lands in the anonymous bucket, so one client's flood throttles all others. Red on mutation, green on original. |
 | untell/api_server.py | 682 | constant: True -> False | `"results": {"type": "object", "additionalProperties": True},` |
@@ -686,22 +683,22 @@ unkillable with the reason. Written by `mutate.py --record`.
 | .claude/experiment.py | 198 | boundary: > -> >= | `if any(abs(d) > band for d in deltas.values()):` |
 | .claude/experiment.py | 211 | constant: True -> False | `stream.reconfigure(encoding="utf-8", errors="replace", line_buffering=True)` |
 | .claude/experiment.py | 220 | logic: == -> != | `if a.cmd == "run":` |
-| eval/baselines.py | 78 | logic: == -> != | `and i % merge_period == 0` |
-| eval/baselines.py | 78 | logic: and -> or | `and i % merge_period == 0` |
-| eval/ceiling.py | 254 | logic: or -> and | `if res.get("rewrites") or res.get("final", _source) != _source:` |
-| eval/ceiling.py | 338 | logic: or -> and | `pre, post = r.get("per_detector_pre") or {}, r.get("per_detector_post") or {}` |
-| eval/ceiling.py | 345 | boundary: >= -> > | `if deltas.get(top, 0.0) >= _PINNED_DELTA:` |
-| eval/ceiling.py | 347 | boundary: >= -> > | `movers = [k for k, d in deltas.items() if d >= _PINNED_DELTA]` |
-| eval/ceiling.py | 388 | constant: 10 -> 11 | `capture_output=True, text=True, timeout=10,` |
-| eval/ceiling.py | 388 | constant: True -> False | `capture_output=True, text=True, timeout=10,` |
-| eval/ceiling.py | 564 | constant: True -> False | `texts = load_samples(args.dataset, args.n, strict=True)` |
-| eval/ceiling.py | 89 | boundary: < -> <= | `if len(xs) < 2:` |
-| eval/compare_humanizers.py | 202 | boundary: >= -> > | `round(sum(1 for s in measured if s >= threshold) / len(measured), 3)` |
-| eval/compare_humanizers.py | 276 | boundary: <= -> < | `if args.n <= 0:` |
-| eval/compare_humanizers.py | 303 | constant: 2 -> 3 | `print(json.dumps(result, ensure_ascii=True, indent=2) if args.json else _render(` |
-| eval/eval_policy.py | 42 | identity: is not -> is | `"scored": pre_r.get("scored") is not False and post_r.get("scored") is not False` |
-| eval/tells_auroc.py | 201 | constant: 2 -> 3 | `"documents": len(pairs) * 2,` |
-| eval/tells_auroc.py | 63 | logic: == -> != | `return sum((a > h) + 0.5 * (a == h) for a in ai for h in human) / (len(ai) * len` |
+| untell/bench/baselines.py | 78 | logic: == -> != | `and i % merge_period == 0` |
+| untell/bench/baselines.py | 78 | logic: and -> or | `and i % merge_period == 0` |
+| untell/bench/ceiling.py | 254 | logic: or -> and | `if res.get("rewrites") or res.get("final", _source) != _source:` |
+| untell/bench/ceiling.py | 338 | logic: or -> and | `pre, post = r.get("per_detector_pre") or {}, r.get("per_detector_post") or {}` |
+| untell/bench/ceiling.py | 345 | boundary: >= -> > | `if deltas.get(top, 0.0) >= _PINNED_DELTA:` |
+| untell/bench/ceiling.py | 347 | boundary: >= -> > | `movers = [k for k, d in deltas.items() if d >= _PINNED_DELTA]` |
+| untell/bench/ceiling.py | 388 | constant: 10 -> 11 | `capture_output=True, text=True, timeout=10,` |
+| untell/bench/ceiling.py | 388 | constant: True -> False | `capture_output=True, text=True, timeout=10,` |
+| untell/bench/ceiling.py | 564 | constant: True -> False | `texts = load_samples(args.dataset, args.n, strict=True)` |
+| untell/bench/ceiling.py | 89 | boundary: < -> <= | `if len(xs) < 2:` |
+| untell/bench/compare_humanizers.py | 202 | boundary: >= -> > | `round(sum(1 for s in measured if s >= threshold) / len(measured), 3)` |
+| untell/bench/compare_humanizers.py | 276 | boundary: <= -> < | `if args.n <= 0:` |
+| untell/bench/compare_humanizers.py | 303 | constant: 2 -> 3 | `print(json.dumps(result, ensure_ascii=True, indent=2) if args.json else _render(` |
+| untell/bench/eval_policy.py | 42 | identity: is not -> is | `"scored": pre_r.get("scored") is not False and post_r.get("scored") is not False` |
+| untell/bench/tells_auroc.py | 201 | constant: 2 -> 3 | `"documents": len(pairs) * 2,` |
+| untell/bench/tells_auroc.py | 63 | logic: == -> != | `return sum((a > h) + 0.5 * (a == h) for a in ai for h in human) / (len(ai) * len` |
 | untell/attacks/back_translation.py | 35 | False -> True (available import branch) | UNKILLABLE in this env: only observable if an import fails inside available(); transformers/torch/sentencepiece all import here |
 | untell/attacks/back_translation.py | 50 | 512->513 (_MAX_TOKENS) | KILLED by swarm test_back_translation_mutation_kills |
 | untell/attacks/back_translation.py | 67 | 16->17 (budget margin) | KILLED by swarm (exact-fill stays one piece) |
@@ -786,3 +783,66 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/text_split.py | 273 | logic: and -> or | `if ca.strip() and cb.strip():` | Empty-chunk filter; proportional cuts cannot produce an empty chunk (k <= min(len) always), difflib-path duplicates are anchored/monotone. Unreachable in practice. |
 | untell/layout.py | 188 | logic: and -> or | `if fence is None and line.strip() == "$$":` | KILLED by tests/test_layout_fence_math_state_isolation.py (slice4): the or-mutant toggles in_math on a $$ inside a fence, locking the prose after it. Red on mutation (7 failed), green on original. |
 | untell/layout.py | 170 | logic: and -> or | `if not in_math: if fence is None: ...` | KILLED by tests/test_layout_fence_math_state_isolation.py (slice4): the or-mutant opens a fence on a ``` inside a math block, leaking fence state past the closing $$. |
+| untell/text_split.py | 55 | constant: True -> False | `return True` | KILLED by tests/test_dict_abbreviation_does_not_end_a_sentence.py: 'Dr. Smith arrived.' splits into ['Dr.', 'Smith arrived.'] under the mutant (dict lookup returns False, fallthrough treats 'dr' as sentence-ender); original keeps one sentence. Prior 'dead branch' note superseded. |
+| untell/text_split.py | 74 | logic: and -> or | `return all(p.isdigit() for p in parts) and tail == fragment.strip()` | KILLED by tests/test_sentence_final_number_is_not_an_abbreviation.py: 'The mean was 3.5.' must NOT be an abbreviation; mutant merges 'The mean was 3.5. Variance was low.' into ONE sentence — the documented PRIOR defect, reintroduced. 2 failed under mutation. |
+| untell/text_split.py | 74 | logic: == -> != | same | KILLED by same test: '3.5.' as whole fragment is a list marker (abbrev, no split); != makes it split mid-list-item. 3 failed under mutation. |
+| untell/text_split.py | 95 | logic: and -> or | `return bool(_ELLIPSIS_END_RE.search(previous.rstrip())) and nxt.lstrip()[:1].islower()` | KILLED by tests/test_lowercase_continuation_without_ellipsis_does_not_merge.py: 'Hello world. next thing' merges to ONE sentence under the mutant (False or True), splitting correctly as two under the original. Prior note ('corpus doesn't cover ellipsis-after-lowercase') wrong — the distinguishing input has NO ellipsis. |
+| untell/text_split.py | 143 | logic: or -> and | same | KILLED by tests/test_tiny_side_returns_the_pair_whole.py: 100-word vs 1-word pair falls through to chunking, re-cutting the long side to 50 words; original returns the pair whole. Prior 'very short texts rare' note wrong — the distinguishing input has ONE tiny side. |
+| untell/scripts/preserve.py | 691 | boundary: <= -> < | `if start <= last_end:  # overlap or touch` | KILLED by tests/test_touching_spans_lock_as_one_fact.py: '2023-05-0542' produces touching spans (date 0-7, number 7-12); original merges to one sentinel, mutant splits into two. Prior 'unkillable' note (corpus lacks touching spans) superseded — a killing test constructs them. |
+| untell/scripts/numerals.py | 88 | constant: 10 -> 11 | `"ten": 10, "eleven": 11, "twelve": 12` | KILLED by tests/test_spelled_number_dict_values_are_exact.py: _spelled_value('ten') -> '10' original, '11' mutant. Prior 'test corpus doesn't use ten' note wrong — the dict value is the parser's output. Red on mutation, green on original. |
+| untell/scripts/sentences.py | 93 | logic: != -> == | `if modes.get("perplexity_burstiness") != "stdlib":` | Same: stdlib path not exercised |
+| untell/scripts/sentences.py | 163 | boundary: < -> <= | `if len(scores) < _MIN_SENTENCES_FOR_SPREAD:` | KILLED by tests/test_exactly_min_sentences_still_checks_spread.py: exactly 3 sentences with spread 0.02 < 0.05 bar -> original True (unrankable), mutant False. Prior note ('corpus lacks exactly 3 at the boundary') superseded — the boundary is the test. |
+| untell/scripts/sentences.py | 165 | boundary: < -> <= | `return (max(scores) - min(scores)) < _TARGETING_SPREAD_BAR` | Spread check: test corpus scores have sufficient spread to cross bar regardless of boundary |
+| untell/scripts/sentences.py | 209 | boundary: < -> <= | `elif top < 0:` | KILLED by tests/test_top_zero_flags_nothing.py: top=0 must flag nothing (empty list), mutant raises ValueError. Prior note ('corpus doesn't produce negative indices') wrong — the distinguishing input is top=0, the boundary itself. |
+| untell/scripts/sentences.py | 265 | logic: and -> or | `if text.strip() and looks_non_english(text):` | KILLED by tests/test_english_text_is_not_warned_as_non_english.py: ordinary English text must NOT get the 'reads as a Latin-script language other than English' caveat; mutant fires it on any non-empty text (1 failed under mutation). Prior 'English-only corpus' note wrong — English text IS the distinguishing input. |
+| untell/scripts/quality.py | 263 | boundary: >= -> > | `return similarity(a, b) >= bar` | KILLED by tests/test_similarity_exactly_at_bar_passes.py: with _model=None the token path yields exact rationals — 1 shared of 4 unique = Dice 0.5 = TOKEN_BAR exactly; original passes, mutant rejects. Prior 'measure-zero with real embeddings' note wrong: the token path makes equality exact. |
+| untell/scripts/quality.py | 302 | boundary: >= -> > | `"passes": sim >= bar,` | KILLED by tests/test_quality_cli_exact_bar.py: CLI computes sim >= bar INLINE (never calls passes()) — old note 'same test kills it via shared logic' was WRONG, mutation run proved 302 survived with the 263-killer in the set. Exact-bar pair (cat dog/cat tree, Dice 0.5=TOKEN_BAR) through quality_main; red on >=->> (verified), green on original. |
+| untell/scripts/scrub.py | 119 | constant: True -> False | `ensure_ascii=True,  # portable: never crash on a non-UTF-8 stdout` | KILLED by tests/test_scrub_cli_ascii_safe.py: non-ASCII input (café+ZWSP) through --json asserts output encodes ascii. Mutant emits literal é -> encode('ascii') raises. Red on mutation (verified), green on original. Same class as quality.py:304/voice.py:265. |
+| untell/scripts/io_utils.py | 50 | boundary: > -> >= | `return os.path.getsize(path) > 0` | KILLED by tests/test_empty_file_is_reported_empty_not_corrupt.py: mutant makes empty .docx report 'not a readable .docx (corrupt)' instead of 'is empty, so there is no .docx to read'. Prior note ('caught by the not-_has_bytes path anyway') wrong — the DIFFERENT MESSAGE is the observable. |
+| untell/scripts/io_utils.py | 52 | constant: True -> False | `return True  # unreadable size is not evidence of emptiness` | KILLED by tests/test_unreadable_size_is_not_empty.py: monkeypatched getsize raises OSError -> original True (defensive, parser's message stands), mutant False (unreadable file reads as empty). Prior 'can't force getsize to raise' note wrong — monkeypatch does it. |
+| untell/scripts/io_utils.py | 264 | constant: 2 -> 3 | `raise SystemExit(2) from None` | KILLED by tests/test_read_file_or_exit_exits_two.py: missing file -> SystemExit(2) original, (3) mutant. The docstring says exit 2 matches argparse's usage-error convention — the exact code is the contract. Red on mutation, green on original. |
+| untell/scripts/io_utils.py | 267 | constant: 2 -> 3 | `raise SystemExit(2) from None` | KILLED by same test (OSError case): monkeypatched read_file raises OSError -> SystemExit(2) original, (3) mutant. Red on mutation, green on original. |
+| untell/scripts/verify.py | 106 | boundary: < -> <= | `"passes": val < verdict_cut,` | KILLED by tests/test_detector_at_exact_cut_does_not_pass.py: fake score_text returns a detector value EXACTLY 0.45 == published verdict_cut; original passes=False, mutant True. The cut is a published constant, so exact equality is reachable — 'measure-zero' note wrong. Red on mutation, green on original. |
+| untell/scripts/verify.py | 123 | constant: 4 -> 5 | `round(local["max"], 4)` | KILLED by tests/test_verify_ai_rounded_to_four_decimals.py: fake max 0.123456 -> aggregate row reports 0.1235 (4dp), mutant 0.12346 (5dp). verify()'s result rows are the published contract. Red on mutation, green on original. |
+| untell/scripts/verify.py | 144 | constant: 4 -> 5 | `round(ai, 4)` | KILLED by same test (commercial case; real line is 147): fake commercial detector 0.123456 -> row 0.1235 (4dp), mutant 0.12346 (5dp). Prior 'tests use tolerant assertions' note wrong — exact values are the contract. |
+| untell/scripts/verify.py | 145 | boundary: < -> <= | `"passes": ai < verdict_cut,` | KILLED by tests/test_detector_at_exact_cut_does_not_pass.py (commercial case): fake detector returns EXACTLY the caller's threshold (0.30); original passes=False, mutant True. Same exact-boundary construction as 106. |
+| untell/scripts/verify.py | 174 | constant: False -> True | `results[key] = {"ai": None, "passes": False, ...}` | KILLED by tests/test_a_raising_detector_is_not_a_pass.py: monkeypatched commercial_detectors -> [fake detector whose score raises]; row must be {"ai": None, "passes": False, error}. Mutant reports passes:True — red on the mutation, green on original. Prior note ('test corpus never hits this branch') superseded — the branch is forced. |
+| untell/scripts/voice.py | 156 | constant: 4 -> 5 | `"burst": round(st.pstdev(lengths) / mean_len, 4) if mean_len else 0.0,` | KILLED by tests/test_burst_rounded_to_four_decimals.py: sentence word-counts (1,1,1,2) -> burst 0.346410...; original returns 0.3464 (4dp), mutant 0.34641 (5dp). style_profile is a published per-feature dict — exact values are the API. Red on mutation, green on original. |
+| untell/scripts/voice.py | 157 | constant: 100 -> 101 | `"comma_per_100w": round(text.count(",") / n_words * 100, 4),` | KILLED by tests/test_per_100w_rates_use_100_multiplier.py: 2 commas / 7 words -> 28.5714 at 100, 28.8571 at 101. style_profile is a published dict — exact values are the API. Red on mutation, green on original. |
+| untell/scripts/voice.py | 160 | constant: 100 -> 101 | `"first_person_per_100w": round(len(_FIRST_PERSON.findall(text)) / n_words * 100,` | KILLED by same test: 'I went to the shop and I bought some milk.' -> 20.0 at 100, 20.2 at 101. Red on mutation, green on original. |
+| untell/scripts/voice.py | 185 | logic: or -> and | `if _WARNED_THIN_SAMPLE or len(_WORD.findall(sample)) >= MIN_SAMPLE_WORDS:` | KILLED by tests/test_sufficient_voice_sample_does_not_warn.py: sufficient (200-word) sample with _WARNED=False must NOT warn; mutant falls through and logs a false 'under 150 words' warning. Red on mutation, green on original. |
+| untell/scripts/voice.py | 187 | constant: True -> False | `_WARNED_THIN_SAMPLE = True` | KILLED by tests/test_thin_sample_warns_only_once.py: the flag latches after the first thin-sample warning; mutant never sets it, so the second call warns again (spamming the log). Red on mutation, green on original. |
+| untell/scripts/voice.py | 218 | boundary: < -> <= | `if sample_words < MIN_SAMPLE_WORDS:` | KILLED by tests/test_sample_at_min_words_has_no_warning.py: exactly 150 words -> no warning under original; mutant fires a self-contradictory 'sample is 150 words; below 150...' warning. The boundary is the documented usable-signal point. Red on mutation, green on original. |
+| untell/scripts/voice.py | 228 | boundary: < -> <= | `if abs(gap) < 0.25:` | KILLED by tests/test_gap_at_boundary_is_not_a_match.py: gap exactly 0.25 -> original 'more varied rhythm (+0.25)', mutant 'matches' (hides a real between-author distance). Pure function. Red on mutation, green on original. |
+| untell/scripts/verify.py | 139 | constant: False -> True | `results[d.name] = {"ai": None, "passes": False, "error": "detector returned NaN"` | | KILLED by tests/test_nan_detector_is_not_a_pass.py: fake detector returning float('nan') -> row {ai: None, passes: False, error: 'detector returned NaN'} under original, passes:True under mutant (un-scored text reads as clean). Red on mutation, green on original.
+| untell/scripts/verify.py | 364 | constant: 2 -> 3 | `return 2` | KILLED by tests/test_no_input_exits_two.py: read_stdin_or_none patched to None (TTY) -> main([]) exits 2, mutant exits 3. The no-input usage-error code is now pinned alongside the whitespace (368) and no-results (400) paths. Red on mutation, green on original. |
+| untell/scripts/verify.py | 368 | constant: 2 -> 3 | `return 2` | KILLED by tests/test_whitespace_input_exits_two.py: main(['   ']) exits 2 (empty-input path), mutant exits 3. The no-results path (400) was already pinned; this pins the whitespace path. Red on mutation (2 failed), green on original. |
+| untell/scripts/tells.py | 708 | boundary: < -> <= | `if len(words) < _MIN_WORDS_FOR_REPETITION:` | KILLED by tests/test_exactly_min_words_still_counts_repeated_trigrams.py: exactly 60 words with a repeated trigram -> original 55, mutant 0 (detector silent at its own boundary). Below-min (57 words) returns 0 under both. |
+| untell/scripts/tells.py | 921 | constant: 2 -> 3 | `("diff_anchored", len(_DIFF_ANCHOR_RE.findall(body)), 2),` | KILLED by tests/test_exactly_two_diff_anchored_lines_count.py: exactly 2 diff-anchored lines -> original reports diff_anchored=2, mutant reports nothing (floor 3). The threshold boundary is the test. Red on mutation, green on original. |
+| untell/scripts/tells.py | 945 | constant: 4 -> 5 | `return round((var**0.5) / mean, 4)` | KILLED by tests/test_burstiness_cv_rounded_to_four_decimals.py: sentence lengths (5,5,10) -> CV 0.353553...; original returns 0.3536 (4dp), mutant 0.35355 (5dp). The CV is a returned detector signal, not display — the exact value is part of the API. Red on mutation, green on original. |
+| untell/scripts/score.py | 1129 | UNKILLABLE: detector-load guard needs specific failure shapes logic: and -> or | `and d.name not in scores` | KILLED by tests/test_scored_detector_is_not_named_missing.py — same fake-detector construction as the membership row; `or` names a scored detector as missing (1 failed under the mutation). Prior 'needs specific failure shapes' note wrong: a fake detector is the shape. |
+| untell/scripts/score.py | 1129 | membership: not in -> in | `and d.name not in scores` | KILLED by tests/test_scored_detector_is_not_named_missing.py: fake detector (tier=full, unavailable, not opt-in) — in scores -> original None (correct), mutant names it as 'ran without fake_det' (inverted). Both tests red on mutation, green on original. |
+| untell/scripts/score.py | 1130 | UNKILLABLE: detector-load guard needs specific failure shapes logic: and -> or | `and d.name not in _OPT_IN_DETECTORS` | KILLED by tests/test_scored_detector_is_not_named_missing.py — fake detector not in _OPT_IN_DETECTORS; `or` names a scored detector as missing (1 failed under the mutation). |
+| untell/scripts/score.py | 1131 | UNKILLABLE: detector-load guard needs specific failure shapes logic: and -> or | `and not d.available()` | KILLED by tests/test_scored_detector_is_not_named_missing.py — fake detector unavailable; `or` names a scored detector as missing (1 failed under the mutation). |
+| untell/scripts/score.py | 1203 | UNKILLABLE: lone-note boundary needs specific block structure boundary: < -> <= | `if len(prose) < _MIN_BLOCKS_FOR_LONE_NOTE:` | KILLED by tests/test_lone_block_warning_fires_at_exactly_min.py: exactly 3 single-sentence blocks (lone share 1.0 > 0.80) -> original fires the note, mutant None. Prior 'needs specific block structure' note wrong — 3 one-sentence paragraphs is exactly that structure. |
+| untell/scripts/run.py | 196 | UNKILLABLE: saturation guard needs live rewrite cycle boundary: < -> <= | `if a < _SATURATED_MAX or b < _SATURATED_MAX:` | KILLED by tests/test_saturation_caveat_fires_at_exactly_max.py: pure function — at exactly 0.99 original emits the 'pinned' caveat, mutant returns None (silent). Prior 'needs live rewrite cycle' note wrong. Red on mutation, green on original. |
+| untell/rich_output.py | 316 | UNKILLABLE: count style, ANSI codes dropped in captured output constant: 3 -> 4 | `style = "red" if count >= 3 else ("yellow" if count >= 2 else "white")` | KILLED by tests/test_tell_category_count_three_renders_red.py — the prior 'ANSI codes dropped' note was wrong: the rich markup SURVIVES in the args to Table.add_row, so count 3 -> [red] vs mutant yellow is observable. Same test kills the >= -> > boundary. |
+| untell/rich_output.py | 316 | boundary: >= -> > | `style = "red" if count >= 3 else ("yellow" if count >= 2 else "white")` | KILLED by tests/test_tell_category_count_three_renders_red.py: count 3 must render [red]hedging[/], count 2 [yellow] — captured via Table.add_row interception. Mutant demotes count==3 to yellow (red on mutation, green on original). |
+| untell/scripts/numerals.py | 93 | constant: 80 -> 81 | `"eighty": 80, "ninety": 90,` | KILLED by tests/test_spelled_number_dict_values_are_exact.py: _spelled_value('eighty') -> '80' original, '81' mutant. Red on mutation, green on original. |
+| untell/scripts/numerals.py | 376 | constant: True -> False | `print(json.dumps({"missing": missing, "kept": not missing}, ensure_ascii=True))` |
+| untell/layout.py | 156 | logic: and -> or | `if lines and lines[0].strip() == "---":` | KILLED by tests/test_non_front_matter_doc_is_not_consumed.py: 'Hello\n...\nWorld' -> original blocks ['Hello\n...', 'World'], mutant ['World'] (the '...' line is scanned as a front-matter terminator and the preceding prose is consumed/dropped). Red on mutation, green on original. |
+| untell/layout.py | 226 | logic: or -> and | `if not buffer and (line.startswith("    ") or line.startswith("\t")):` |
+| untell/scripts/quality.py | 174 | logic: or -> and | `if a_empty or b_empty:` |
+| untell/scripts/quality.py | 214 | identity: is not -> is | `if cos is not None:` |
+| untell/scripts/quality.py | 291 | constant: 2 -> 3 | `return 2` |
+| untell/detectors/perplexity_burstiness.py | 202 | UNKILLABLE: tell-density tuning constant logic: or -> and | `density = float(score_tells(text).get("tells_per_100w") or 0.0)` |
+| untell/detectors/perplexity_burstiness.py | 211 | UNKILLABLE: TTR window tuning constant constant: 100 -> 101 | `_TTR_WINDOW = 100` |
+| untell/detectors/mage.py | 64 | logic: or -> and | `i2l = raw.get("id2label") or {}` | UNKILLABLE: id2label config parse, needs live snapshot_download
+| untell/detectors/mage.py | 65 | logic: and -> or | `if not (i2l and all(isinstance(v, str) for v in i2l.values())):` | UNKILLABLE: config validation, needs live model dir
+| untell/detectors/mage.py | 69 | constant: 2 -> 3 | `raw["num_labels"] = 2` | UNKILLABLE: num_labels rewrite in config fix, needs live load
+| untell/detectors/mage.py | 112 | logic: or -> and | `if "machine" in str(v).lower() or str(v).lower() in ("label_0", "ai", "fake")` | UNKILLABLE: ai_idx label regex needs live model.config
+| untell/detectors/mage.py | 121 | logic: or -> and | `if "human" in str(v).lower() or str(v).lower() in ("label_1", "real")` | UNKILLABLE: human_idx label regex needs live model.config
+| untell/detectors/mage.py | 127 | constant: 700 -> 701 | `p = windowed_max(text, lambda w: 1.0 - float(_probs(w)[human_idx]), 700)` | UNKILLABLE: window 700 constant, model-dependent
+| untell/detectors/mage.py | 129 | constant: 700 -> 701 | `p = windowed_max(text, lambda w: float(_probs(w)[ai_idx]), 700)` | UNKILLABLE: window 700 constant, model-dependent
+| untell/scripts/sentences.py | 338 | constant: True -> False | `print(json.dumps(result, ensure_ascii=True, indent=2))` | KILLED by tests/test_sentences_cli_ascii_safe.py: non-ASCII input through --json asserts output encodes ascii. Mutant emits literal é -> encode('ascii') raises. Red on mutation (verified), green on original. Same class as scrub.py:119/quality.py:304. |
+| untell/scripts/sentences.py | 356 | constant: 2 -> 3 | `return 2` |

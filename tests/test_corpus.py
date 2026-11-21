@@ -39,7 +39,7 @@ class TestBuild:
 
         monkeypatch.setattr(C, "OUT", tmp_path)
         monkeypatch.setattr(C, "ROOT", tmp_path)
-        monkeypatch.setattr("eval.datasets.load_pairs", _load_pairs)
+        monkeypatch.setattr("untell.bench.datasets.load_pairs", _load_pairs)
         rc = C.build("hc3", "long", 2)
         assert rc == 0, f"expected rc 0, got {rc}"
         files = list(tmp_path.iterdir())
@@ -49,7 +49,7 @@ class TestBuild:
 
     def test_empty_bucket_refuses(self, tmp_path, monkeypatch) -> None:
         monkeypatch.setattr(C, "OUT", tmp_path)
-        monkeypatch.setattr("eval.datasets.load_pairs", lambda dataset, n, min_words: [])
+        monkeypatch.setattr("untell.bench.datasets.load_pairs", lambda dataset, n, min_words: [])
         with pytest.raises(SystemExit):
             C.build("hc3", "long", 2)
 
@@ -65,7 +65,7 @@ class TestBuild:
 
         monkeypatch.setattr(C, "OUT", tmp_path)
         monkeypatch.setattr(C, "ROOT", tmp_path)
-        monkeypatch.setattr("eval.datasets.load_pairs", _load_pairs)
+        monkeypatch.setattr("untell.bench.datasets.load_pairs", _load_pairs)
         with pytest.raises(SystemExit):
             C.build("hc3", "long", 1)
 
@@ -80,6 +80,6 @@ class TestBuild:
 
         monkeypatch.setattr(C, "OUT", tmp_path)
         monkeypatch.setattr(C, "ROOT", tmp_path)
-        monkeypatch.setattr("eval.datasets.load_pairs", _load_pairs)
+        monkeypatch.setattr("untell.bench.datasets.load_pairs", _load_pairs)
         rc = C.build("hc3", "long", 1)
         assert rc == 0, f"exact-floor text must be accepted (rc={rc})"

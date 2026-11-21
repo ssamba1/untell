@@ -1,13 +1,13 @@
 """Separation of the tells catalogue on paired human/AI text, against layout and length baselines.
 
-The detector ensemble has `eval/detector_audit.py`. The tells catalogue had nothing: its headline
+The detector ensemble has `untell/bench/detector_audit.py`. The tells catalogue had nothing: its headline
 figures lived only in a comment, were computed by hand, and went stale the moment a category was
 added. The overall AUROC in `untell/scripts/tells.py` read 0.638 on RAID while the shipped catalogue
 scored 0.9555, because the two repetition tells landed after the number was written and nothing
 re-derived it. This module exists so that cannot happen quietly again.
 
-    python -m eval.tells_auroc --dataset raid --pairs 200
-    python -m eval.tells_auroc --dataset raid --pairs 200 --json
+    python -m untell.bench.tells_auroc --dataset raid --pairs 200
+    python -m untell.bench.tells_auroc --dataset raid --pairs 200 --json
 
 Layout is reported rather than silently removed, which is the opposite of the choice
 `detector_audit` makes, and deliberately so. Three catalogue categories are line-anchored BY DESIGN
@@ -248,7 +248,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = ap.parse_args(argv)
 
-    from eval.datasets import load_pairs
+    from untell.bench.datasets import load_pairs
 
     pairs = load_pairs(args.dataset, args.pairs, args.min_words)
     if not pairs:

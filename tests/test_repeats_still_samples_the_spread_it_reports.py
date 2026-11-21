@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import pytest
 
-from eval.ceiling import measure_ceiling
+from untell.bench.ceiling import measure_ceiling
 
 
 @pytest.fixture(scope="module")

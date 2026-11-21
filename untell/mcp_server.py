@@ -223,7 +223,7 @@ def _server():
         #     best_of=3  mean 0.601 -> 0.256,  0% still flagged
         # The CLI moved to 3 after best-of-1 was identified as a root cause of understated
         # evasion. MCP and the REST API were left on 1, so every non-CLI caller got the weak
-        # path. (The `ceiling` tool below stays at 1 — that matches ITS cli, eval/ceiling.py,
+        # path. (The `ceiling` tool below stays at 1 — that matches ITS cli, untell/bench/ceiling.py,
         # where measuring the single-draw baseline is the point.)
         best_of: int = 3,
         margin: float = 0.0,
@@ -460,7 +460,7 @@ def _server():
             best_of: Candidates per iteration.
             n: Number of test paragraphs (from the built-in sample).
         """
-        from eval.ceiling import measure_ceiling
+        from untell.bench.ceiling import measure_ceiling
         from untell.rewriter import get_rewriter
 
         # The tool `_bad_args` was written for and never wired into. Its docstring names both of
@@ -487,7 +487,7 @@ def _server():
         if rewriter not in _FREE_REWRITERS and rewriter != "auto":
             # MEASURED: this used to hand the name to measure_ceiling, whose aggregation DROPS
             # the per-text `{"error": ...}` dicts untell_text returns for an unknown name
-            # (eval/ceiling.py: `if "error" not in res and "post" in res`). The result then
+            # (untell/bench/ceiling.py: `if "error" not in res and "post" in res`). The result then
             # reported `"rewriter": "wat"` — a name that does not exist — as the rewriter that
             # produced the numbers, after running the whole measurement (106 s on full tier).
             # The CLI refuses the same name at parse time (argparse `choices`) and REST answers
@@ -508,7 +508,7 @@ def _server():
         # so texts=None always meant "use the whole built-in sample" and the result came back with
         # n=3 regardless — making it look like the caller's value had been honoured. Slice the
         # sample here so the parameter does what its docstring says.
-        from eval.ceiling import _SAMPLE
+        from untell.bench.ceiling import _SAMPLE
 
         texts = list(_SAMPLE)[: max(1, n)]
         return measure_ceiling(
@@ -538,7 +538,7 @@ def _server():
         # nine results in this repository once generalised from a demo corpus, so a comparison that
         # cannot name its own is unquotable. The CLI passes "built-in sample" for this corpus and
         # this tool now says the same thing rather than inventing a second name for it.
-        from eval.compare_humanizers import _SAMPLE, compare
+        from untell.bench.compare_humanizers import _SAMPLE, compare
 
         bad = _bad_args(tier=(tier, "tier"))
         if bad:

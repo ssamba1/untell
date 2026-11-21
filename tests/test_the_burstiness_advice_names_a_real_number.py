@@ -74,7 +74,7 @@ def test_the_quoted_medians_match_the_corpus() -> None:
     than trusted. Tolerant by 0.08, because the sample is 40 texts per corpus and this must not
     fail on sampling noise."""
     pytest.importorskip("datasets")
-    from eval.datasets import load_pairs
+    from untell.bench.datasets import load_pairs
 
     def cv(text: str) -> float | None:
         lens = [len(s.split()) for s in split_sentences(text) if s.strip()]

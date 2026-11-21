@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import eval.compare_humanizers as C
-from eval.compare_humanizers import _read_corpus, _render, compare
+import untell.bench.compare_humanizers as C
+from untell.bench.compare_humanizers import _read_corpus, _render, compare
 
 
 def test_read_corpus_splits_on_blank_lines(tmp_path):
@@ -83,7 +83,7 @@ def test_silent_noop_technique_is_not_published_as_a_measurement(monkeypatch):
     Recording the numbers anyway publishes the raw-AI baseline — sim_mean 1.0, ai and tells
     identical to the untouched text — as if it were a real measurement of the technique. Those
     numbers then get quoted in the docs as the technique's performance."""
-    import eval.compare_humanizers as c
+    import untell.bench.compare_humanizers as c
 
     monkeypatch.setattr(c, "_ai_max", lambda out, tier: 0.5)
     monkeypatch.setattr(
@@ -124,7 +124,7 @@ class TestTheHeadToHeadCanRunOnAPublicCorpus:
         import contextlib
         import io
 
-        from eval.compare_humanizers import main
+        from untell.bench.compare_humanizers import main
 
         help_text = io.StringIO()
         with contextlib.redirect_stdout(help_text), contextlib.suppress(SystemExit):
@@ -136,21 +136,21 @@ class TestTheHeadToHeadCanRunOnAPublicCorpus:
             assert name in out, f"{name} is not offered as a corpus"
 
     def test_the_result_records_its_corpus(self):
-        from eval.compare_humanizers import compare
+        from untell.bench.compare_humanizers import compare
 
         result = compare(["Moreover, the system leverages robust methodologies."], tier="lite")
         # `compare` itself does not set it; `main` does, because only main knows the source.
         assert "corpus" not in result or isinstance(result["corpus"], str)
 
     def test_the_renderer_shows_the_corpus(self):
-        from eval.compare_humanizers import _render
+        from untell.bench.compare_humanizers import _render
 
         line = _render({"corpus": "hc3 n=6", "tier": "full", "n": 6, "threshold": 0.3,
                         "techniques": {}}).splitlines()[0]
         assert "hc3 n=6" in line, f"the corpus is not in the header: {line}"
 
     def test_an_unnamed_corpus_does_not_crash_the_renderer(self):
-        from eval.compare_humanizers import _render
+        from untell.bench.compare_humanizers import _render
 
         line = _render({"tier": "full", "n": 3, "threshold": 0.3, "techniques": {}}).splitlines()[0]
         assert "unknown" in line

@@ -1,6 +1,6 @@
 """Slice 18 (wave 4, issue #22): mage FPR-vs-cut calibration curves.
 
-Reuses the EXACT load path of `eval.detector_audit --pairs` — `eval.datasets.load_pairs`
+Reuses the EXACT load path of `untell.bench.detector_audit --pairs` — `untell.bench.datasets.load_pairs`
 plus `collapse_layout` — so the curves sit on the same measurement the shipped FPR
 figures (README heavy-tier note) come from. Measures mage's human false-positive rate
 and AI true-positive rate at every cut on HC3/RAID/MAGE paired corpora (30 pairs each).
@@ -21,8 +21,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from eval.datasets import load_pairs  # noqa: E402
-from eval.detector_audit import auroc, collapse_layout  # noqa: E402
+from untell.bench.datasets import load_pairs  # noqa: E402
+from untell.bench.detector_audit import auroc, collapse_layout  # noqa: E402
 from untell.detectors.mage import MageDetector  # noqa: E402
 
 

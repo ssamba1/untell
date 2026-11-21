@@ -45,7 +45,7 @@ def test_the_measured_doc_keeps_its_corpus_warning() -> None:
 
 
 def test_a_quoted_ceiling_carries_a_spread_or_a_repeat_count() -> None:
-    """The rewriters are randomised. `eval/ceiling.py --repeats` says "use >=3 before quoting"."""
+    """The rewriters are randomised. `untell/bench/ceiling.py --repeats` says "use >=3 before quoting"."""
     assert "±" in _REPORT or "repeats" in _REPORT.lower(), (
         "ceiling figures are quoted with neither a spread nor a repeat count"
     )

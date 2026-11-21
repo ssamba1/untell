@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from eval.prove import main, prove
+from untell.bench.prove import main, prove
 from untell.detectors import commercial as C
 
 _ENV = [
@@ -99,12 +99,12 @@ class TestProveRunsTheStrongLoop:
     def test_best_of_defaults_to_three(self):
         import inspect
 
-        from eval.prove import prove
+        from untell.bench.prove import prove
 
         assert inspect.signature(prove).parameters["best_of"].default == 3
 
     def test_it_reaches_the_loop(self, monkeypatch):
-        import eval.prove as prove_mod
+        import untell.bench.prove as prove_mod
 
         seen: dict = {}
         monkeypatch.setattr(
@@ -119,7 +119,7 @@ class TestProveRunsTheStrongLoop:
         assert seen["tier"] == "commercial"
 
     def test_the_cli_exposes_and_forwards_it(self, monkeypatch):
-        import eval.prove as prove_mod
+        import untell.bench.prove as prove_mod
 
         seen: dict = {}
         monkeypatch.setattr(prove_mod, "prove", lambda text, **kw: seen.update(kw) or {
@@ -131,7 +131,7 @@ class TestProveRunsTheStrongLoop:
 
     def test_the_cli_default_matches_untell_humanize(self, monkeypatch):
         """Read both defaults rather than restating either — that is how they drift apart."""
-        import eval.prove as prove_mod
+        import untell.bench.prove as prove_mod
         from untell.scripts.run import build_parser
 
         seen: dict = {}

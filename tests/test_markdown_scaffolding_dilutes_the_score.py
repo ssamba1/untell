@@ -94,7 +94,7 @@ def test_no_markdown_form_changes_a_verdict() -> None:
     This is the assertion worth having. If scaffolding ever starts pushing genuine AI text under the
     threshold, the tool silently stops offering to help exactly the documents people paste most."""
     pytest.importorskip("datasets")
-    from eval.datasets import load_pairs
+    from untell.bench.datasets import load_pairs
 
     try:
         pairs = load_pairs("hc3", n=40, min_words=60)

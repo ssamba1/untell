@@ -1,14 +1,16 @@
-# Roadmap — how untell becomes the best, and what "best" can honestly mean
+# Roadmap — what untell is for, and what is left
 
-Restored and rewritten 2026-08-05 against the [435-repo census](docs/humanizer-census.md). The
-previous version was deleted on 2026-07-28 inside an unrelated commit, together with
-`humanizer-research-report.md`, while the README, `CHANGELOG.md` and `why-best-open-repo.md` kept
-linking to both.
+**Refocused 2026-11-21.** untell measures AI detectors: what a verdict is worth, per document,
+per detector version, per kind of writer. The axes that matter now are **validity** (does the
+measurement mean what it says), **reproducibility** (dated, versioned, fingerprinted, re-checked in
+CI) and **usefulness to the person on the receiving end of a flag**. Evasion strength is no longer
+a goal: the project's own measurements found the rewriting loop's gains do not transfer to a
+detector it has not seen, and that negative result is now one of the things the toolkit reports.
 
-**Honest framing.** "Best ever" is not "passes everything forever" — detectors update, disagree, and
-re-score the same text differently. The goal is the best point on three axes at once:
-**evasion strength × meaning integrity × trust (honest, reproducible numbers)**. No shipping tool
-holds all three. That is the opening.
+Sections 0–9 below are the roadmap from the humanizer era (written 2026-08-05 against the
+[435-repo census](docs/humanizer-census.md)), kept as the record of what was measured and ruled
+out. Section 10 is the audit roadmap. The research report the old roadmap cites is archived at
+[`docs/archive/humanizer-research-report.md`](docs/archive/humanizer-research-report.md).
 
 Legend: ✅ shipped · 🔜 buildable now · ⛔ needs a GPU · ❌ ruled out, with the measurement that ruled it out.
 
@@ -37,10 +39,18 @@ drifts from the plan it summarises is worse than none, because it is the part pe
 | 11 | Refuse to fake non-English input | ✅ done | — |
 | 12 | Per-language catalogue **registry** | ✅ done — additive, ships with English only | — |
 | 13 | The per-language **catalogues** | 🔜 open | **people who speak those languages.** Not ours to write: Korean 번역체 calques and Chinese academic-register tells are not guessable from outside, and a catalogue needs the paired-corpus precision measurement every English figure has. [How to add one](CONTRIBUTING.md#adding-a-language). |
-| 14 | `pip install untell` claims the top-level names `eval` and `training` | 📦 open | **your decision.** The fix is mechanical — move them under `untell/` — but it is 179 references across 47 files and breaks anyone importing `eval.ceiling` directly. A published package's import surface is not something to change in passing. |
+| 14 | `pip install untell` claims the top-level names `eval` and `training` | ✅ done — moved to `untell.bench` / `untell.training` | — |
 | 15 | Surrogate distillation | ⛔ blocked | a GPU |
 | 16 | RL-against-ensemble | ⛔ blocked | a GPU |
 | 17 | Alignment rewriter | ⛔ blocked | a GPU |
+| 18 | Evidence brief, verdict stability, flag arithmetic | ✅ done | — |
+| 19 | Report cards, drift, and the git time-capsule corpus | ✅ done | — |
+| 20 | Offline browser evidence kit | ✅ done | — |
+| 21 | Pangram adapter; audit tools over MCP and REST | ✅ done | — |
+| 22 | First report cards for commercial detectors | 🔜 open | **API keys** as repository secrets, and a check of each provider's terms of service |
+| 23 | Corpora where detectors are known to fail: non-native, student, short text | 🔜 open | **partners with consented data** (writing centres, ESL programmes, integrity offices) |
+| 24 | Verify every `summary`-marked published rate against its primary source | 🔜 open | **network access** to the primary PDFs (epoch.ai and arXiv were unreachable from the build session) |
+| 25 | First PyPI release | 🔜 open | **your PyPI account**: register the trusted publisher for `.github/workflows/release.yml`, then tag `v0.4.0` |
 
 Three things are ruled out rather than pending, each with the measurement that ruled it out: raw
 evasion strength against GPU-trained policies, adoption, and beating GPTZero / Originality /
@@ -238,7 +248,7 @@ describes.
 its deletion-importance ranking buys nothing. `prefer_tells=True` ships for our rewriter
 (tells/100w 0.571 → 0.233 vs 0.458, and 2.3× faster).
 
-The one open question was whether the competitor baseline row in `eval/compare_humanizers.py`
+The one open question was whether the competitor baseline row in `untell/bench/compare_humanizers.py`
 should also switch to the tells objective. It should not, and the reason is not a close call: that
 row exists to report what **PWWS actually does**. Giving it our objective would make the comparison
 measure our idea implemented twice and label one of them as the competition — the row would improve
@@ -313,7 +323,10 @@ does not depend on marketing.
 
 ---
 
-### 📦 `pip install untell` claims the names `eval` and `training` — needs your decision
+### ✅ `pip install untell` claimed the names `eval` and `training` — done 2026-11-21
+
+Moved to `untell.bench` and `untell.training`; the console-script names did not change. The
+record of why it mattered is kept below.
 
 Found 2026-08-09 by building a wheel and installing it into a clean virtualenv. Confirmed
 empirically there, not inferred:
@@ -335,7 +348,7 @@ ours or is overwritten by it, and a user with a `training.py` in their working d
 the installed one, so `untell-distill` breaks with an import error that names none of this.
 
 The fix is to move them to `untell/eval/` and `untell/training/`. Mechanical but not small: 179
-references across 47 files, and it **breaks anyone importing `eval.ceiling` directly**. The
+references across 47 files, and it **breaks anyone importing `untell.bench.ceiling` directly**. The
 console-script names would not change, and the documented public surface is `untell.*` plus those
 scripts, so the blast radius is probably small — but "probably" is doing work in that sentence and
 it is a published package, so it is your call rather than one to make in passing.
@@ -346,7 +359,7 @@ does not let it quietly grow.
 
 ## 6. The moat — needs a GPU
 
-- ⛔ **Surrogate distillation** (HMGC, COLING 2024 — prior art for what `training/surrogate.py`
+- ⛔ **Surrogate distillation** (HMGC, COLING 2024 — prior art for what `untell/training/surrogate.py`
   scaffolds). Distil the victim detector, attack the surrogate. Highest ROI of the GPU paths.
 - ⛔ **RL-against-ensemble** (StealthRL-style GRPO + LoRA). Reward = evasion vs our ensemble +
   semantic similarity. The literature shows it **transfers to detectors it never trained on**.
@@ -391,3 +404,53 @@ Not stars. These:
 - **`neural` default clears ≥ 50% of real HC3 text** at full tier, replicated at `--repeats ≥ 3`
 - **a `.tex` file round-trips** and still compiles, with every citation key intact
 - **one non-English catalogue contributed by a native speaker** — the platform test
+
+---
+
+## 10. The audit roadmap (2026-11-21)
+
+### ✅ Evidence brief, verdict stability, flag arithmetic
+
+`untell brief`, `untell stability`, `untell flagmath` ([`untell/evidence/`](untell/evidence/)).
+The stability test re-scores a document under edits that change no words, verified mechanically;
+the brief adds cited published rates, Bayes on the flag and per-person risk, and never contains
+the document text.
+
+### ✅ Report cards, drift, and the git time-capsule corpus
+
+`untell report-card`, `untell drift`, `untell capsule`. The first report card is in
+[`docs/observatory/`](docs/observatory/README.md): the lite tier on 80 PEPs committed before
+2022-11-30, 1/80 false positives against 30% on HC3 forum answers — the register effect, measured.
+
+### ✅ Offline browser evidence kit
+
+[`docs/brief.html`](docs/brief.html): the same null-edit test, the same Bayes arithmetic and a
+printable brief, with a content-security policy that forbids any network connection.
+
+### ✅ Pangram adapter; audit tools over MCP and REST
+
+The Pangram adapter follows the official SDK's async task API. MCP and REST expose `brief`,
+`stability`, `variants` (and `flagmath` over MCP); both refuse `cmd:`/`manual:` specs.
+
+### 🔜 First report cards for commercial detectors
+
+The [observatory workflow](.github/workflows/observatory.yml) runs every detector whose key is a
+repository secret. Nothing commercial has been measured yet. Waiting on keys and a terms-of-service
+check per provider.
+
+### 🔜 Corpora where detectors are known to fail
+
+The published evidence locates detector failure in non-native writers, short text and lightly
+edited text. Measuring it needs consented corpora with provenance; `report-card` already slices by
+`group` and `author`. Waiting on partners.
+
+### 🔜 Verify every published rate against its primary source
+
+Several entries in [`published_rates.json`](untell/evidence/published_rates.json) are marked
+`summary` because the primary PDF could not be fetched from the build session. Each needs reading
+at source and re-marking `primary` or correcting.
+
+### 🔜 First PyPI release
+
+`.github/workflows/release.yml` publishes with PyPI trusted publishing on a `v*` tag. Waiting on
+the project's PyPI account to register the publisher.

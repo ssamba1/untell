@@ -181,7 +181,7 @@ def test_stdlib_per_sentence_auroc_below_chance_ceiling_hc3() -> None:
     we want, but if it happens the warning message and docstrings must be
     updated to reflect the new measurement.
     """
-    from eval.datasets import load_pairs
+    from untell.bench.datasets import load_pairs
     from untell.detectors.perplexity_burstiness import lite_score
     from untell.text_split import split_sentences
 
@@ -241,7 +241,7 @@ def test_stdlib_per_sentence_auroc_below_chance_ceiling_raid() -> None:
     MIN_WORDS=8).  Root cause: 44% of sentences pin to 0.25 on RAID (lower than
     HC3 because RAID generators vary more, producing more AI-characteristic tells).
     """
-    from eval.datasets import load_pairs
+    from untell.bench.datasets import load_pairs
     from untell.detectors.perplexity_burstiness import lite_score
     from untell.text_split import split_sentences
 

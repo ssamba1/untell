@@ -289,8 +289,8 @@ def test_quotes_attributed_to_the_research_report_actually_appear_in_it():
     from pathlib import Path
 
     root = Path(__file__).resolve().parents[1]
-    report = root / "humanizer-research-report.md"
-    assert report.exists(), "humanizer-research-report.md is cited by README and docs but missing"
+    report = root / "docs" / "archive" / "humanizer-research-report.md"
+    assert report.exists(), "the archived research report is cited by docs but missing"
     body = report.read_text(encoding="utf-8")
 
     # The phrases that made the fabricated quote distinctive. If any reappears in a doc, it must
@@ -316,7 +316,7 @@ def test_the_research_report_link_resolves():
 
     root = Path(__file__).resolve().parents[1]
     readme = (root / "README.md").read_text(encoding="utf-8")
-    for target in re.findall(r"\]\((humanizer-research-report\.md)\)", readme):
+    for target in re.findall(r"\]\(([^)]*humanizer-research-report\.md)\)", readme):
         assert (root / target).exists(), f"README links to {target}, which does not exist"
 
 

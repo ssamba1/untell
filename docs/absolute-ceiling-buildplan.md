@@ -47,15 +47,15 @@ list is **done**. The genuine gaps:
 | 4 | **BERTScore quality gate** (upgrade, not replace) | [quality.py:27-96](https://github.com/ssamba1/untell/blob/main/untell/scripts/quality.py), pyproject `[quality]` extra | Current gate = MiniLM cosine (0.76 bar) w/ token-overlap fallback. Add BERTScore-F1 as top-tier backend (bar 0.88): its *recall* catches propositional drift in prose that cosine misses. Sentinel lock already covers facts/numbers. | `test_bertscore_paraphrase_above_bar`, `test_bertscore_semantic_drift_below_bar` (skip if pkg absent) | 3 h |
 | 5 | **`--rewriter base` mode** | [run.py:309](https://github.com/ssamba1/untell/blob/main/untell/scripts/run.py), [local_policy.py:116](https://github.com/ssamba1/untell/blob/main/untell/rewriter/local_policy.py) | `LocalPolicyRewriter(use_adapter=False)` already exists for base-vs-adapter A/B; just expose it in CLI + `UNTELL_POLICY_NO_SYSTEM=1`. Hosted LLM rewriters already send no system prompt — no change there. | `test_cli_rewriter_base_errors_without_policy_base` | 1 h |
 
-**Exit criteria (measurable):** all 5 tests green; `pytest tests/ -x` no regressions; browser-mode composite no longer calls `score_text` internally; MT-pivot preserves 100% of sentinels under identity mock and falls back on loss; average `iterations` not increased on `eval/ceiling.py` fixtures.
+**Exit criteria (measurable):** all 5 tests green; `pytest tests/ -x` no regressions; browser-mode composite no longer calls `score_text` internally; MT-pivot preserves 100% of sentinels under identity mock and falls back on loss; average `iterations` not increased on `untell/bench/ceiling.py` fixtures.
 
 ---
 
 # Phase 2 — Surrogate distillation (the highest-ROI lever)
 
-**Reality:** [`surrogate.py`](https://github.com/ssamba1/untell/blob/main/training/surrogate.py) already trains RoBERTa on soft `text,score` CSV with
+**Reality:** [`surrogate.py`](https://github.com/ssamba1/untell/blob/main/untell/training/surrogate.py) already trains RoBERTa on soft `text,score` CSV with
 `BCEWithLogitsLoss` — **no label-format mismatch** (GPTZero's `class_probabilities.ai` is already [0,1],
-commercial.py:114). [`reward.py`](https://github.com/ssamba1/untell/blob/main/training/reward.py) already routes to a surrogate via
+commercial.py:114). [`reward.py`](https://github.com/ssamba1/untell/blob/main/untell/training/reward.py) already routes to a surrogate via
 `UNTELL_SURROGATE_DIR`. [`commercial.py`](https://github.com/ssamba1/untell/blob/main/untell/detectors/commercial.py) adapters + `_retry` backoff
 exist. Gaps: single-name surrogate, single-slot reward, no proactive rate limit, no harvest script, and
 **no adversarial-transfer guard.**
@@ -70,8 +70,8 @@ spot-check every 50 GRPO steps that aborts if `mean_real − mean_surrogate > 0.
 | # | Task | File | Change | Time / Cost |
 |---|---|---|---|---|
 | 1 | **`scripts/harvest_labels.py`** (new) | imports `commercial.py` adapters | 4000 texts/detector (HC3 human+AI, RAID) → `text,score` CSV. Token-bucket throttle (GPTZero 6.5s, Originality 1.1s, Sapling 2.1s) on top of `_retry` backoff. SHA256 resumability + dedup. | 2 h + 6–14 h run, $40–100 |
-| 2 | **`surrogate.py` `--detector-name`** | [surrogate.py:229](https://github.com/ssamba1/untell/blob/main/training/surrogate.py) | Named checkpoints (`out/surrogates/gptzero/`); write `detector_name.txt`; `SurrogateDetector.name` self-restores (currently hardcoded `"surrogate"` at :204). Loss/format unchanged. | 1 h |
-| 3 | **Multi-detector ensemble reward** | [reward.py:24-39](https://github.com/ssamba1/untell/blob/main/training/reward.py) | `UNTELL_SURROGATE_DIRS=gptzero:...,originality:...` + `_WEIGHTS` (0.4/0.35/0.25) + `_AGG=mean\|max`. Backward-compatible with single `UNTELL_SURROGATE_DIR`. | 1.5 h |
+| 2 | **`surrogate.py` `--detector-name`** | [surrogate.py:229](https://github.com/ssamba1/untell/blob/main/untell/training/surrogate.py) | Named checkpoints (`out/surrogates/gptzero/`); write `detector_name.txt`; `SurrogateDetector.name` self-restores (currently hardcoded `"surrogate"` at :204). Loss/format unchanged. | 1 h |
+| 3 | **Multi-detector ensemble reward** | [reward.py:24-39](https://github.com/ssamba1/untell/blob/main/untell/training/reward.py) | `UNTELL_SURROGATE_DIRS=gptzero:...,originality:...` + `_WEIGHTS` (0.4/0.35/0.25) + `_AGG=mean\|max`. Backward-compatible with single `UNTELL_SURROGATE_DIR`. | 1.5 h |
 | 4 | **`scripts/validate_surrogate.py`** (new) | — | Spearman ρ + AUROC of surrogate vs live API on 20% held-out. **Go/no-go: ρ≥0.85 AND AUROC≥0.90.** Fail → do not train. Consider Platt scaling if compressed. | 1 h |
 | 5 | **`scripts/check_surrogate_drift.py`** (new) | — | Monthly: 50 texts, real-API-now vs surrogate; alert if ρ<0.80 (commercial detector retrained → re-harvest). | 0.5 h |
 
@@ -81,8 +81,8 @@ spot-check every 50 GRPO steps that aborts if `mean_real − mean_surrogate > 0.
 
 # Phase 3 — RL policy (GPU, the ceiling-raiser)
 
-**Reality:** [`rl_humanizer.py`](https://github.com/ssamba1/untell/blob/main/training/rl_humanizer.py) is a working GRPO trainer (Qwen2.5-3B, LoRA r=32,
-`--smoke`, `--load-4bit`, `--hub-id`, `--resume`; the `--steps` dup is fixed). [`dpo_humanizer.py`](https://github.com/ssamba1/untell/blob/main/training/dpo_humanizer.py)
+**Reality:** [`rl_humanizer.py`](https://github.com/ssamba1/untell/blob/main/untell/training/rl_humanizer.py) is a working GRPO trainer (Qwen2.5-3B, LoRA r=32,
+`--smoke`, `--load-4bit`, `--hub-id`, `--resume`; the `--steps` dup is fixed). [`dpo_humanizer.py`](https://github.com/ssamba1/untell/blob/main/untell/training/dpo_humanizer.py)
 exists but lacks checkpoint/resume/hub flags. [`local_policy.py`](https://github.com/ssamba1/untell/blob/main/untell/rewriter/local_policy.py) integration
 is **already correct** — set `UNTELL_POLICY_DIR` and `get_rewriter()` picks it up (base.py:135), HF-Hub IDs work directly.
 
@@ -91,20 +91,20 @@ is **already correct** — set `UNTELL_POLICY_DIR` and `get_rewriter()` picks it
 | # | Task | File:line | Change | Time |
 |---|---|---|---|---|
 | 1 | **Un-break MAGE** | [mage.py:36-63](https://github.com/ssamba1/untell/blob/main/untell/detectors/mage.py) | Bypass `pipeline()`; `AutoModelForSequenceClassification.from_pretrained()` + patch `id2label` to str keys + direct softmax inference. Eliminates the numpy-C-API path that breaks. | 2 h |
-| 2 | **Multi-detector weighted reward + hard gate** | [reward.py:51-75](https://github.com/ssamba1/untell/blob/main/training/reward.py) | `R = Σwᵢ(1−Pᵢ) − λ_tells·tells_per_100w − λ_burst·low_burstiness`; **hard return −1.0** if MiniLM sim<0.82 or len<0.5×orig (DEPO-style, prevents StealthRL's 2.5/5 quality collapse). Weights: gptzero_surrogate .40, mage .22, radar .18, hc3 .10, fastdetect .07, ppl .03. Replace gameable bigram `fluency()` with `score_tells()`. | 5 h |
-| 3 | **DPO human-corpus warm-start + prod flags** | [dpo_humanizer.py:21-79](https://github.com/ssamba1/untell/blob/main/training/dpo_humanizer.py) | `build_pairs_human()`: HC3 `human_answers`=chosen, `chatgpt_answers`=rejected (natural domain match, **no API key**). Add `save_steps=25`, `resume`, `hub_id`, finally-guard, size check (parity w/ rl_humanizer). | 4 h |
-| 4 | **DPO→GRPO bridge `--dpo-init`** | [rl_humanizer.py:118](https://github.com/ssamba1/untell/blob/main/training/rl_humanizer.py) | `PeftModel.from_pretrained(base, dpo_dir).merge_and_unload()` then fresh r=32 LoRA on top. VRAM peak ~12GB on merge (tight on T4). | 3 h |
-| 5 | **Wire reward + real-API guard + `--reward-sim-floor`** | [rl_humanizer.py:123](https://github.com/ssamba1/untell/blob/main/training/rl_humanizer.py) | Reward call site backward-compatible; add the every-50-step real-API abort guard (Phase 2 risk). `UNTELL_ENABLE_RADAR=1` in runbook. | 2 h |
+| 2 | **Multi-detector weighted reward + hard gate** | [reward.py:51-75](https://github.com/ssamba1/untell/blob/main/untell/training/reward.py) | `R = Σwᵢ(1−Pᵢ) − λ_tells·tells_per_100w − λ_burst·low_burstiness`; **hard return −1.0** if MiniLM sim<0.82 or len<0.5×orig (DEPO-style, prevents StealthRL's 2.5/5 quality collapse). Weights: gptzero_surrogate .40, mage .22, radar .18, hc3 .10, fastdetect .07, ppl .03. Replace gameable bigram `fluency()` with `score_tells()`. | 5 h |
+| 3 | **DPO human-corpus warm-start + prod flags** | [dpo_humanizer.py:21-79](https://github.com/ssamba1/untell/blob/main/untell/training/dpo_humanizer.py) | `build_pairs_human()`: HC3 `human_answers`=chosen, `chatgpt_answers`=rejected (natural domain match, **no API key**). Add `save_steps=25`, `resume`, `hub_id`, finally-guard, size check (parity w/ rl_humanizer). | 4 h |
+| 4 | **DPO→GRPO bridge `--dpo-init`** | [rl_humanizer.py:118](https://github.com/ssamba1/untell/blob/main/untell/training/rl_humanizer.py) | `PeftModel.from_pretrained(base, dpo_dir).merge_and_unload()` then fresh r=32 LoRA on top. VRAM peak ~12GB on merge (tight on T4). | 3 h |
+| 5 | **Wire reward + real-API guard + `--reward-sim-floor`** | [rl_humanizer.py:123](https://github.com/ssamba1/untell/blob/main/untell/training/rl_humanizer.py) | Reward call site backward-compatible; add the every-50-step real-API abort guard (Phase 2 risk). `UNTELL_ENABLE_RADAR=1` in runbook. | 2 h |
 | 6 | **Deploy checkpoint** | env only | `UNTELL_POLICY_DIR=out/rl-humanizer` (or HF-Hub id). No code change. | 0.5 h |
 
 ### Free-GPU runbook (Kaggle T4, two ≤9h sessions, <30h/week)
 ```
-pip install -e ".[train,full,eval]"; python -m training.rl_humanizer --smoke   # verify first
-python -m training.surrogate --dataset hc3 --n 3000 --out out/surrogate --epochs 2   # ~30m
-python -m training.dpo_humanizer --dataset hc3 --n 500 --load-4bit --out out/dpo --hub-id USER/untell-dpo
+pip install -e ".[train,full,eval]"; python -m untell.training.rl_humanizer --smoke   # verify first
+python -m untell.training.surrogate --dataset hc3 --n 3000 --out out/surrogate --epochs 2   # ~30m
+python -m untell.training.dpo_humanizer --dataset hc3 --n 500 --load-4bit --out out/dpo --hub-id USER/untell-dpo
 #   merge dpo→base (merge_and_unload) → out/dpo-merged
 UNTELL_SURROGATE_DIR=out/surrogate UNTELL_ENABLE_RADAR=1 \
-python -m training.rl_humanizer --model out/dpo-merged --tier full --steps 150 --k 6 \
+python -m untell.training.rl_humanizer --model out/dpo-merged --tier full --steps 150 --k 6 \
   --load-4bit --out out/rl-humanizer --hub-id USER/untell-grpo   # ~4.2h; resume next session with --resume
 ```
 **Incremental HF push** (avoid the "trained 4h, push 401'd" loss at rl_humanizer.py:110): background `huggingface-cli upload` thread every 10 min, or add a `--push-interval-steps` flag.
@@ -118,19 +118,19 @@ python -m training.rl_humanizer --model out/dpo-merged --tier full --steps 150 -
 # Phase 4 — Honest eval (the credibility backbone)
 
 **Reality:** the current harness commits every sin that makes the field's numbers uncredible —
-[`eval_policy.py:13`](https://github.com/ssamba1/untell/blob/main/eval/eval_policy.py) literally confesses the circularity (loop key == eval key);
-[`report.py:6`](https://github.com/ssamba1/untell/blob/main/eval/report.py) reports bypass at an uncalibrated 0.30; single-query despite detector
+[`eval_policy.py:13`](https://github.com/ssamba1/untell/blob/main/untell/bench/eval_policy.py) literally confesses the circularity (loop key == eval key);
+[`report.py:6`](https://github.com/ssamba1/untell/blob/main/untell/bench/report.py) reports bypass at an uncalibrated 0.30; single-query despite detector
 non-determinism; discards GPTZero's `ai_paraphrase` anti-humanizer sub-label; no Pareto; no overlap guard.
 
 | # | Task | File | Change | Time |
 |---|---|---|---|---|
-| 1 | **Eval-key isolation** | new `eval/held_out_detectors.py`, [commercial.py:57](https://github.com/ssamba1/untell/blob/main/untell/detectors/commercial.py) | `EvalGPTZeroDetector` reads `GPTZERO_EVAL_KEY` (never the training key). `require_eval_keys()` guard at eval entry → exit 1 if absent. Extract `KEY_VAR` constants for clean subclassing. | 4 h |
-| 2 | **Human calibration corpus** | [datasets.py:68](https://github.com/ssamba1/untell/blob/main/eval/datasets.py) | `load_human_calibration_samples()` from HC3 `human_answers` + builtin fallback; provably disjoint from AI eval samples. | 3 h |
-| 3 | **Multi-query averaging** | new `eval/multi_query.py` | 3× per sample, mean±std, `noisy` if std>0.10; noisy samples reported separately, not in headline. | 4 h |
+| 1 | **Eval-key isolation** | new `untell/bench/held_out_detectors.py`, [commercial.py:57](https://github.com/ssamba1/untell/blob/main/untell/detectors/commercial.py) | `EvalGPTZeroDetector` reads `GPTZERO_EVAL_KEY` (never the training key). `require_eval_keys()` guard at eval entry → exit 1 if absent. Extract `KEY_VAR` constants for clean subclassing. | 4 h |
+| 2 | **Human calibration corpus** | [datasets.py:68](https://github.com/ssamba1/untell/blob/main/untell/bench/datasets.py) | `load_human_calibration_samples()` from HC3 `human_answers` + builtin fallback; provably disjoint from AI eval samples. | 3 h |
+| 3 | **Multi-query averaging** | new `untell/bench/multi_query.py` | 3× per sample, mean±std, `noisy` if std>0.10; noisy samples reported separately, not in headline. | 4 h |
 | 4 | **Counter-detection stratum** | [commercial.py:112](https://github.com/ssamba1/untell/blob/main/untell/detectors/commercial.py), report.py | `GPTZeroDetector.score_full()` surfaces `ai_paraphrase`; a "pass" with `ai_paraphrase>0.30` is flagged `counter_detected`. Turnitin bypasser stub column (N/A until institutional key). | 4 h |
-| 5 | **TPR@1%FPR / @5%FPR** | new `eval/calibrate.py`, report.py | Threshold calibrated to ≤1%/5% FPR on the human corpus; report TPR there **alongside** the legacy 0.30 number. | 4 h |
-| 6 | **Pareto sweep** | [benchmark.py:34](https://github.com/ssamba1/untell/blob/main/eval/benchmark.py) | `--lambda-sweep` over BERTScore 0.75→0.95; ASR-vs-quality curve; Pareto-dominance flag vs baselines. Makes cherry-picking one quality level structurally impossible. | 5 h |
-| 7 | **Train/eval overlap guard** | new `eval/overlap_guard.py` | SHA256 fingerprints; assert zero eval texts in any training/harvest CSV; exit non-zero on contamination. | 3 h |
+| 5 | **TPR@1%FPR / @5%FPR** | new `untell/bench/calibrate.py`, report.py | Threshold calibrated to ≤1%/5% FPR on the human corpus; report TPR there **alongside** the legacy 0.30 number. | 4 h |
+| 6 | **Pareto sweep** | [benchmark.py:34](https://github.com/ssamba1/untell/blob/main/untell/bench/benchmark.py) | `--lambda-sweep` over BERTScore 0.75→0.95; ASR-vs-quality curve; Pareto-dominance flag vs baselines. Makes cherry-picking one quality level structurally impossible. | 5 h |
+| 7 | **Train/eval overlap guard** | new `untell/bench/overlap_guard.py` | SHA256 fingerprints; assert zero eval texts in any untell/training/harvest CSV; exit non-zero on contamination. | 3 h |
 
 ### The credible-number checklist (all 8 required to publish a %)
 1. eval key ≠ training key · 2. threshold calibrated to ≤1% FPR on held-out humans · 3. 3× queried, noisy (std>0.1) excluded · 4. `ai_paraphrase`/bypasser surfaced · 5. named BERTScore bar ≥0.87 + full Pareto shown · 6. zero train/eval fingerprint overlap · 7. n≥100 unique AI texts · 8. Wilson 95% CI reported.

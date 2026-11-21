@@ -115,7 +115,7 @@ cut applied where sentence scores enter the ensemble, NOT a global threshold mov
 6. **Validation protocol.** After any change, re-run this sweep (`.claude/probes/
    calibration_sweep.py`) and require: FPR <= 0.20 at sentence granularity per detector,
    TPR held within a stated margin, and the paragraph audit
-   (`-m eval.detector_audit --pairs 20 --dataset hc3 --json`) unchanged.
+   (`-m untell.bench.detector_audit --pairs 20 --dataset hc3 --json`) unchanged.
 7. **Scoping risks.** mage's sentence scores are bimodal (a mode at ~1.0 on some human
    sentences); excluding it from sentence targeting trades its 71.7% sentence FPR for a
    sentence-TPR contribution of 0 (its sentence TPR at any usable cut is 0). And the sweep

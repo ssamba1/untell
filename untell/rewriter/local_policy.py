@@ -1,6 +1,6 @@
 """Local LoRA-policy rewriter — the RL-trained moat as a rewriter backend.
 
-Loads the GRPO/LoRA adapter produced by ``training/rl_humanizer.py`` (path in ``UNTELL_POLICY_DIR``)
+Loads the GRPO/LoRA adapter produced by ``untell/training/rl_humanizer.py`` (path in ``UNTELL_POLICY_DIR``)
 on top of its base instruct model and rewrites in a SINGLE forward pass — the whole point of the moat:
 no API key, no inference loop, runs local (GPU, or CPU slowly). Heavy deps (torch/transformers/peft)
 are imported lazily so this module stays importable on a no-GPU box; ``available()`` just returns
@@ -289,7 +289,7 @@ class LocalPolicyRewriter:
         if self.use_adapter and (not self.adapter_dir or not os.path.isdir(self.adapter_dir)):
             return (
                 "UNTELL_POLICY_DIR is not set (or points to a missing directory); set it to "
-                "the trained adapter dir (see training/rl_humanizer.py)."
+                "the trained adapter dir (see untell/training/rl_humanizer.py)."
             )
         missing = []
         for module, hint in _MISSING_DEP_HINTS.items():

@@ -36,7 +36,7 @@ BUCKETS = {
 
 
 def build(dataset: str, bucket: str, n: int) -> int:
-    from eval.datasets import load_pairs
+    from untell.bench.datasets import load_pairs
 
     low, high, why = BUCKETS[bucket]
     # 40x the ask because the length buckets are thin: HC3 answers are mostly a few hundred

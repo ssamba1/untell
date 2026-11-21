@@ -368,7 +368,7 @@ class TestPreferTellsObjective:
     )
 
     def test_default_is_unchanged_so_the_competitor_baseline_is_faithful(self, monkeypatch):
-        """eval/compare_humanizers.py uses this as the QuillBot/TextFooler stand-in. That row must
+        """untell/bench/compare_humanizers.py uses this as the QuillBot/TextFooler stand-in. That row must
         keep modelling THEIR technique, not inherit ours."""
         monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
         from untell.attacks import surgical_substitute

@@ -14,7 +14,7 @@ pass** (no inference loop) while preserving meaning. StealthRL (arXiv 2602.08934
 ## Run (GPU)
 ```bash
 pip install -e ".[train,full]"            # trl + peft + transformers + torch + our detectors
-python -m training.rl_humanizer --model Qwen/Qwen2.5-3B-Instruct --tier full --steps 500
+python -m untell.training.rl_humanizer --model Qwen/Qwen2.5-3B-Instruct --tier full --steps 500
 # stronger / transfer-robust: --tier commercial (real detector APIs as reward, AuthorMist style — costs credits)
 ```
 LoRA on a 3-4B model fits ~16-24GB VRAM; StealthRL reports a usable policy from ~10K samples. After
@@ -24,7 +24,7 @@ training, use the saved policy as the rewriter backend (replaces the API loop; r
 
 Plain GRPO-vs-one-detector is the floor. The strongest pipeline for us:
 
-1. **Distill our own loop (the edge).** `python -m training.distill --dataset raid --n 2000 --tier full`
+1. **Distill our own loop (the edge).** `python -m untell.training.distill --dataset raid --n 2000 --tier full`
    runs our Claude + detector-feedback loop (a strong teacher), keeps outputs that pass the ensemble +
    keep meaning, and writes SFT pairs. Most repos have no teacher this good.
 2. **SFT** a small model (Qwen2.5-0.5B–3B) on that JSONL → a fast model that already untells well.

@@ -2,8 +2,8 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "untell",
   "displayName": "untell",
-  "version": "0.3.0",
-  "description": "Humanize AI-generated text via a closed-loop, detector-feedback rewrite. Optimizes against GPTZero, ZeroGPT, Originality.ai and other Turnitin-class checkers while preserving meaning, citations and facts. Research/defensive tool.",
+  "version": "0.4.0",
+  "description": "Audit AI-text detectors: evidence briefs for a flagged document (verdict stability under edits that change no words, cited error rates, Bayes on the flag), detector report cards and drift, plus a detector-in-the-loop robustness probe.",
   "author": {
     "name": "ssamba1",
     "url": "https://github.com/ssamba1/untell"
@@ -11,6 +11,14 @@
   "homepage": "https://ssamba1.github.io/untell/",
   "repository": "https://github.com/ssamba1/untell",
   "license": "MIT",
-  "keywords": ["ai-detection", "detector-evaluation", "false-positives", "gptzero", "turnitin", "zerogpt", "claude-code-skill"],
+  "keywords": [
+    "ai-detection",
+    "detector-evaluation",
+    "false-positives",
+    "gptzero",
+    "turnitin",
+    "zerogpt",
+    "claude-code-skill"
+  ],
   "skills": "./"
 }

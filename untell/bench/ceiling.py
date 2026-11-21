@@ -560,7 +560,7 @@ def main(argv: list[str] | None = None) -> int:
     elif args.dataset.lower() in ("builtin", "sample"):
         texts, corpus = list(_SAMPLE), "builtin"
     else:
-        from eval.datasets import DatasetUnavailable, load_samples
+        from untell.bench.datasets import DatasetUnavailable, load_samples
 
         # strict=True: load_samples otherwise substitutes the built-in sample when `datasets` is
         # missing or the load fails, and reporting that as an hc3 ceiling would attach real-corpus

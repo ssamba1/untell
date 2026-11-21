@@ -23,7 +23,7 @@ import json
 
 import pytest
 
-from eval.prove import main
+from untell.bench.prove import main
 
 TEXT = (
     "Moreover, the framework leverages robust methodologies to deliver outcomes at scale. "
@@ -69,7 +69,7 @@ def test_the_message_says_what_to_do(capsys):
 
 def test_a_failing_verdict_still_exits_one(monkeypatch, capsys):
     """The distinction is only worth anything if the other branch keeps its own code."""
-    import eval.prove as prove_module
+    import untell.bench.prove as prove_module
 
     monkeypatch.setattr(
         prove_module,
@@ -88,7 +88,7 @@ def test_a_failing_verdict_still_exits_one(monkeypatch, capsys):
 
 
 def test_a_passing_verdict_exits_zero(monkeypatch, capsys):
-    import eval.prove as prove_module
+    import untell.bench.prove as prove_module
 
     monkeypatch.setattr(
         prove_module,

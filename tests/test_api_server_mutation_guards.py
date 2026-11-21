@@ -12,7 +12,10 @@ schema-description-only. All recorded as unkillable in survivors.md.
 
 from __future__ import annotations
 
-from untell import api_server as A
+import pytest
+
+pytest.importorskip("fastapi")
+from untell import api_server as A  # noqa: E402
 
 
 class TestPortFromEnv:

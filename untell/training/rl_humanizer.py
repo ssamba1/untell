@@ -7,9 +7,9 @@ StealthRL (2602.08934) shows this transfers to detectors it never trained on.
 
 Setup:
     pip install -e ".[train,full]"          # trl + peft + transformers + torch + our detectors
-    python -m training.rl_humanizer --model Qwen/Qwen2.5-3B-Instruct --tier full --steps 500
+    python -m untell.training.rl_humanizer --model Qwen/Qwen2.5-3B-Instruct --tier full --steps 500
 
-Design: GRPO samples K paraphrases per source; the reward (training.reward.humanness_reward) =
+Design: GRPO samples K paraphrases per source; the reward (untell.training.reward.humanness_reward) =
 (1 - max P(AI) across the ensemble) - meaning-drift penalty. The policy learns to untell. Train
 against ``--tier full`` (free OSS detectors incl. RADAR) or ``--tier commercial`` (real APIs, AuthorMist
 style — costs credits) for the strongest, transfer-robust policy.
@@ -21,8 +21,8 @@ import argparse
 import logging
 import os
 
-from training.model_utils import load_model as _load_model
-from training.reward import humanness_reward
+from untell.training.model_utils import load_model as _load_model
+from untell.training.reward import humanness_reward
 
 logger = logging.getLogger(__name__)
 
@@ -37,8 +37,8 @@ SMOKE_MODEL = "Qwen/Qwen2.5-0.5B-Instruct"
 
 
 def build_dataset(name: str = "builtin", n: int = 2000):
-    """Build {prompt, source} rows from AI-text samples to untell (RAID/MAGE/HC3 via eval.datasets)."""
-    from eval.datasets import load_samples
+    """Build {prompt, source} rows from AI-text samples to untell (RAID/MAGE/HC3 via untell.bench.datasets)."""
+    from untell.bench.datasets import load_samples
 
     # strict for anything but the built-in set: a GRPO run reports the dataset it trained on, and
     # a silent fallback would train on 5 padded paragraphs under a real corpus's name.
@@ -103,7 +103,7 @@ def train(
     # `build_dataset` has always taken a name, and `train` never passed one — so every GRPO run
     # used the built-in sample regardless. That sample holds five texts; `_builtin` pads by
     # repeating them, so a 2000-prompt run trains on five distinct sources repeated 400 times.
-    # training/distill.py already exposes --dataset; the reinforcement path, which is the one that
+    # untell/training/distill.py already exposes --dataset; the reinforcement path, which is the one that
     # most needs source diversity, was the one that could not select data.
     dataset: str = "builtin",
     n: int | None = None,
@@ -158,7 +158,7 @@ def train(
     # Free-path note (not a warning): without a surrogate the reward is the FREE weighted open-detector
     # ensemble — the intended $0 path. It reaches the open-detector ceiling (StealthRL-style) and
     # transfers to held-out OPEN detectors, but does NOT *guarantee* beating commercial detectors. To
-    # target those, distill a surrogate (training.surrogate, needs paid keys) and set UNTELL_SURROGATE_DIR.
+    # target those, distill a surrogate (untell.training.surrogate, needs paid keys) and set UNTELL_SURROGATE_DIR.
     if not smoke and not os.environ.get("UNTELL_SURROGATE_DIR"):
         logger.info(
             "No UNTELL_SURROGATE_DIR -> reward = FREE weighted open-detector ensemble (tier=%s). $0 "
@@ -288,7 +288,7 @@ def build_parser() -> argparse.ArgumentParser:
     Three of them (reward-sim-floor, dataset, n) had drifted away from what train() should do, and
     a test that restated the expected values here would have drifted with them.
     """
-    parser = argparse.ArgumentParser(prog="training.rl_humanizer", description=__doc__)
+    parser = argparse.ArgumentParser(prog="untell.training.rl_humanizer", description=__doc__)
     parser.add_argument("--model", default=DEFAULT_MODEL)
     parser.add_argument("--tier", default="full", choices=["lite", "full", "heavy", "commercial"])
     parser.add_argument("--k", type=int, default=6)
@@ -303,7 +303,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--dataset",
         default="builtin",
         help="source of AI texts to untell: builtin (5 offline samples), hc3, raid, mage. "
-        "Needs .[eval] for anything but builtin. Matches training/distill.py's --dataset.",
+        "Needs .[eval] for anything but builtin. Matches untell/training/distill.py's --dataset.",
     )
     parser.add_argument(
         "--n",

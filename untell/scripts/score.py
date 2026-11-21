@@ -862,7 +862,7 @@ def _score_with_detectors_uncached(
         if clamped != raw:
             # Recorded OUTSIDE the detectors dict on purpose. Every consumer that iterates
             # `detectors` filters sidecars by `endswith("__error")` — run.py, verify.py and
-            # training/reward.py all do — so adding a differently-suffixed FLOAT key here silently
+            # untell/training/reward.py all do — so adding a differently-suffixed FLOAT key here silently
             # broke them: reward.py folded the raw 100.0 from a 0-100-scale API into its weighted
             # mean as a phantom detector, turning a correct ~0.75 reward into -49.5. Keeping the
             # diagnostic out of the dict removes that trap for every present and future consumer.

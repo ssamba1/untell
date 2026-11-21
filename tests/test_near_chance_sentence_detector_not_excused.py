@@ -1,13 +1,13 @@
 """A near-chance sentence detector is not excused from broken.
 
-eval/detector_audit.py:495: `and r["auroc"] > SENTENCE_BROKEN_AUROC` — a
+untell/bench/detector_audit.py:495: `and r["auroc"] > SENTENCE_BROKEN_AUROC` — a
 sentence-granularity detector with a bad verdict is excused ONLY when its
 AUROC is above the small-sample bar (0.2); near-chance AUROC must count as
 broken. The mutation and -> or at that position bypasses the AUROC guard
 whenever auroc is present, excusing a 0.1-AUROC detector. The rendered report
 gains a 'Not counted' line that must not exist.
 """
-from eval.detector_audit import render
+from untell.bench.detector_audit import render
 
 ROW = {
     "detector": "s_det",

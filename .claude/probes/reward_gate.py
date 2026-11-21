@@ -1,6 +1,6 @@
 import json, os
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
-from training.reward import humanness_reward, _GATE_REWARD
+from untell.training.reward import humanness_reward, _GATE_REWARD
 
 out = {}
 a = "The system reads the incoming file and processes every record in order."

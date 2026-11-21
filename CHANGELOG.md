@@ -5,7 +5,37 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-21
+
 ### Added
+- **`untell brief` — an evidence brief for one detector verdict on one document.** Re-scores the
+  document under null edits (same words, verified mechanically) and light copy-edits, and reports
+  whether the verdict moves; adds the detector's published error rates (cited, each marked
+  `primary` / `summary` / `vendor`), P(AI | flagged) by Bayes across base rates, the per-person
+  false-flag risk, and the questions to ask. Markdown, HTML or JSON; carries the document's
+  SHA-256, never its text.
+- **`untell stability`, `untell variants`, `untell flagmath`.** The stability test on its own; a
+  scoring kit (variant files + `scores.csv`) for detectors with no API, such as Turnitin; and the
+  Bayes / per-person arithmetic.
+- **`untell report-card` and `untell drift`.** A detector over a corpus: false-positive rate by
+  group and length with Wilson 95% intervals, per-writer rollups, null-edit stability, recall at
+  capped false-positive rates; dated, versioned, fingerprinted. `drift` compares two cards and exits
+  1 on a significant change, including any document whose verdict flipped.
+- **`untell capsule` — human text proven by timestamp.** Prose from a git repository as it stood
+  before 2022-11-30, with commit and date on every document.
+- **Scorer specs `cmd:<command>` and `manual:<scores.csv>`**, so any detector can be audited:
+  anything callable from a shell, or scores a person recorded from a web interface.
+- **Pangram detector adapter** (async task API, following the official SDK).
+- **MCP tools `variants`, `stability`, `brief`, `flagmath`; REST `POST /variants`, `/stability`,
+  `/brief`.** Network surfaces refuse `cmd:`/`manual:` specs; REST needs
+  `UNTELL_API_ALLOW_COMMERCIAL=1` to spend the operator's API credit.
+- **`docs/brief.html` — the evidence kit in a browser**, offline, with a content-security policy
+  that forbids network connections.
+- **The Detector Observatory**: a monthly workflow that rebuilds a pre-LLM corpus from git,
+  measures every detector with a configured key, and opens a PR with the report cards and drift.
+  First card: the lite tier on 80 pre-2022 PEPs, 1/80 false positives.
+- **`docs/auditing.md`**, and a release workflow using PyPI trusted publishing.
+
 - **`untell batch` -- directory-tree humanization with JSON manifest.** `untell batch DIR` walks
   a directory tree, humanizes every `.txt`/`.md` file with the same loop as `untell humanize`,
   mirrors the structure into `DIR_humanized/`, and writes a `manifest.json` recording input path,
@@ -58,7 +88,69 @@ All notable changes to this project are documented here. The format is based on
   module and writes the output to `PATH`; echoes the path to stderr so stdout stays clean
   for piping. (`a5a1dbd`)
 
+### Changed
+- **`eval` and `training` moved to `untell.bench` and `untell.training`.** A published wheel no
+  longer claims those top-level names. Console-script names are unchanged; code importing
+  `eval.*` or `training.*` must update its imports.
+- **`untell probe` is the primary name for the loop**; `humanize` and `loop` remain aliases.
+- **The README is a short introduction**; the full manual moved, unabridged, to
+  `docs/reference.md`. `SKILL.md` leads with the audit workflows.
+- **Warnings print one line per caveat** in the terminal, with the measured detail kept in
+  `--json`. A run on a short paragraph used to print about 400 words of notes.
+- `humanizer-research-report.md` archived to `docs/archive/` with a note on the refocus.
+
+- **The server no longer blocks itself.** Every endpoint was `async def` calling a blocking worker
+  directly, so a rewrite ran on the event loop: measured against an 11.20s `/humanize` with
+  `/health` polled every 20ms, 0 health responses landed during it. Five workers are now offloaded
+  (324 responses during the same rewrite). `/health` itself resolved the detector list on first
+  call — 9.34s cold against 0.0026s warm — which is exactly the call an orchestrator makes before
+  restarting a container that never served a request; it is now resolved during startup, before
+  traffic is accepted. This does not make concurrent rewrites parallel: they still serialise, off
+  the event loop instead of on it.
+- **`mt_pivot` drew three identical candidates and paid for three.** Its decode is beam search with
+  no sampling, so `best_of` bought nothing. Declaring it deterministic collapsed 6 rewrite calls to
+  2 on one document, with byte-identical output and an identical score.
+
+- **Released the accumulated notes as 0.3.0.** 0.2.0 and 0.3.0 both shipped without a
+  changelog heading: the entries stayed under `[Unreleased]` while `pyproject`,
+  `untell.__version__`, `plugin.json`, `marketplace.json` and `CITATION.cff` all moved to
+  0.3.0, so anyone who installed 0.3.0 and opened this file was told the latest release was
+  0.1.0. They are recorded under 0.3.0 rather than split between the two, because the
+  boundary is not recoverable from the file and inventing one would be worse than saying so.
+  `tests/test_changelog.py` now ties the newest heading to the shipped version — the existing
+  tests there checked the file's shape (standard sections, no duplicate headings, no orphaned
+  entries) and all of them passed throughout.
+
+- **Supervised detector scoring is 1.4-9.3x faster on multi-window documents.** The four
+  window-based adapters (`roberta_openai`, `hc3_roberta`, `fast_detectgpt`, `mage`) previously
+  scored each window with a separate model call; a 15-window document cost 15 forwards.
+  `base.batched_windowed_max` and per-detector `_score_batch` now score all windows in a
+  small number of padded forwards; scores are bit-identical to the sequential path. Measured:
+  `mage` 121.8s -> 13.1s (hc3-human), `roberta_openai` 53.4s -> 6.5s (hc3-human). (`bdc2c8b`)
+- **Detector scores are cached across loop iterations.** On iterations where the rewriter
+  produced no change, the per-text cache is hit and detectors are not called again. (`3fccf19`)
+- **`count_hidden` was O(n^2).** The character-walk replacement now runs in O(n). (`9aeccd8`)
+- **CLI startup no longer imports the FastAPI stack for command-line bounds.** `run.py`
+  imported `api_server` to read a port-range constant, pulling FastAPI, uvicorn, and their
+  dependency trees into every CLI invocation. The constant was moved. (`be9b15d`)
+- **spaCy NER results are now cached per document.** Repeated per-sentence NER calls were
+  replaced by one call per document, and degenerate-input guards and a quadratic code-pattern
+  anchor were also fixed. (`9e02182`)
+- **CI: ruff lint gate job and fast-suite deselection in the lite tier job.** The ruff gate
+  runs with zero tolerance on shipped code (probe files are exempted by documented policy);
+  the lite job deselects `pytest-slow` so CI answers in minutes while the full job runs
+  everything. (`518758f`)
+
 ### Fixed
+- The loop's progress line printed the **requested** tier (`tier=full`) while running lite.
+- `pip install untell[mcp]` resolved to mcp 2.x, where `FastMCP` no longer exists, so the MCP
+  server could not start. Pinned `mcp<2`.
+- Eleven test modules crashed at collection without optional extras (torch, fastapi, rich,
+  bert-score); they now skip. A lone surrogate in a test docstring broke collection on Python 3.13.
+- `.claude/survivors.md` carried unresolved merge-conflict markers, and 63 rows existed only in
+  three `surv_*_tmp.md` files at the repository root; merged and the temporaries removed.
+- Licence metadata uses an SPDX string (the table form stops building in February 2027).
+
 - **`--tier full` without torch told you to re-run at `--tier full`.** On a base install the ML
   stack cannot load, scoring falls back to the stdlib lite path, and the note it attached ended
   "re-run at --tier full before trusting a flag OR a clear" -- which is what the user had just
@@ -77,7 +169,7 @@ All notable changes to this project are documented here. The format is based on
 - **`load_samples("raid")` returned adversarially attacked rows.** RAID ships perturbed copies
   (homoglyph, whitespace, synonym) beside baseline `attack='none'` rows in the same split.
   `_raid_pairs` filtered them; `load_samples` did not, so `untell-ceiling --dataset raid`,
-  `eval.benchmark` and `untell-eval-policy` all silently measured a mixed population. (`1d6c239`)
+  `untell.bench.benchmark` and `untell-eval-policy` all silently measured a mixed population. (`1d6c239`)
 - **A passive comparison swap escaped the role veto.** The argument-swap scan missed `nsubjpass`,
   so a rewrite that reversed the direction of a passive comparison passed the meaning gate.
   (`862e201`)
@@ -450,49 +542,6 @@ All notable changes to this project are documented here. The format is based on
   verdicts.** The summary showed derived-probe counts rather than raw-probe counts, and the
   verdict classification was applied to the wrong column. (`0e1729c`)
 
-### Changed
-- **The server no longer blocks itself.** Every endpoint was `async def` calling a blocking worker
-  directly, so a rewrite ran on the event loop: measured against an 11.20s `/humanize` with
-  `/health` polled every 20ms, 0 health responses landed during it. Five workers are now offloaded
-  (324 responses during the same rewrite). `/health` itself resolved the detector list on first
-  call — 9.34s cold against 0.0026s warm — which is exactly the call an orchestrator makes before
-  restarting a container that never served a request; it is now resolved during startup, before
-  traffic is accepted. This does not make concurrent rewrites parallel: they still serialise, off
-  the event loop instead of on it.
-- **`mt_pivot` drew three identical candidates and paid for three.** Its decode is beam search with
-  no sampling, so `best_of` bought nothing. Declaring it deterministic collapsed 6 rewrite calls to
-  2 on one document, with byte-identical output and an identical score.
-
-- **Released the accumulated notes as 0.3.0.** 0.2.0 and 0.3.0 both shipped without a
-  changelog heading: the entries stayed under `[Unreleased]` while `pyproject`,
-  `untell.__version__`, `plugin.json`, `marketplace.json` and `CITATION.cff` all moved to
-  0.3.0, so anyone who installed 0.3.0 and opened this file was told the latest release was
-  0.1.0. They are recorded under 0.3.0 rather than split between the two, because the
-  boundary is not recoverable from the file and inventing one would be worse than saying so.
-  `tests/test_changelog.py` now ties the newest heading to the shipped version — the existing
-  tests there checked the file's shape (standard sections, no duplicate headings, no orphaned
-  entries) and all of them passed throughout.
-
-- **Supervised detector scoring is 1.4-9.3x faster on multi-window documents.** The four
-  window-based adapters (`roberta_openai`, `hc3_roberta`, `fast_detectgpt`, `mage`) previously
-  scored each window with a separate model call; a 15-window document cost 15 forwards.
-  `base.batched_windowed_max` and per-detector `_score_batch` now score all windows in a
-  small number of padded forwards; scores are bit-identical to the sequential path. Measured:
-  `mage` 121.8s -> 13.1s (hc3-human), `roberta_openai` 53.4s -> 6.5s (hc3-human). (`bdc2c8b`)
-- **Detector scores are cached across loop iterations.** On iterations where the rewriter
-  produced no change, the per-text cache is hit and detectors are not called again. (`3fccf19`)
-- **`count_hidden` was O(n^2).** The character-walk replacement now runs in O(n). (`9aeccd8`)
-- **CLI startup no longer imports the FastAPI stack for command-line bounds.** `run.py`
-  imported `api_server` to read a port-range constant, pulling FastAPI, uvicorn, and their
-  dependency trees into every CLI invocation. The constant was moved. (`be9b15d`)
-- **spaCy NER results are now cached per document.** Repeated per-sentence NER calls were
-  replaced by one call per document, and degenerate-input guards and a quadratic code-pattern
-  anchor were also fixed. (`9e02182`)
-- **CI: ruff lint gate job and fast-suite deselection in the lite tier job.** The ruff gate
-  runs with zero tolerance on shipped code (probe files are exempted by documented policy);
-  the lite job deselects `pytest-slow` so CI answers in minutes while the full job runs
-  everything. (`518758f`)
-
 ## [0.3.0]
 
 ### Added
@@ -609,7 +658,7 @@ All notable changes to this project are documented here. The format is based on
   more human-reading — the right yardstick for "is this output more natural." Honest scope: it mechanizes
   the regex-able readable tells, not the semantic ones (no-concrete-particulars, false both-sides
   balance, over-comprehensiveness) or the statistical ones only a trained detector sees.
-- **`untell compare` / `eval/compare_humanizers.py`** — runs a fixed corpus through the humanizer
+- **`untell compare` / `untell/bench/compare_humanizers.py`** — runs a fixed corpus through the humanizer
   technique classes (synonym-swap, back-translation, our loop) and scores all three ways.
 - **Unified `untell <subcommand>` CLI** (`untell humanize|score|tells|verify|compare|ceiling|…`) — one
   discoverable entry point instead of eight `untell-*` scripts (which still work). `untell` with no args

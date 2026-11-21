@@ -1,12 +1,12 @@
 """A well-separated detector must not be called WEAK.
 
-eval/detector_audit.py:284: `elif au is not None and au < WEAK_AUROC: verdict =
+untell/bench/detector_audit.py:284: `elif au is not None and au < WEAK_AUROC: verdict =
 "WEAK"` — WEAK requires an AUROC below 0.65. The mutation and -> or makes the
 branch fire whenever au is present (always True), so a detector with AUROC 1.0
 and perfect separation is downgraded from OK_SEPARATED to WEAK — a healthy
 detector reported as barely-responding.
 """
-from eval.detector_audit import audit_detector
+from untell.bench.detector_audit import audit_detector
 
 
 class _Det:

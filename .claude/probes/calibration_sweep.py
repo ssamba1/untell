@@ -6,10 +6,10 @@ detectors fired at FPR 33-57% on human sentences at that threshold. This probe m
 actual FPR-vs-threshold curve for every locally-runnable detector at sentence granularity so
 a calibration (per-detector threshold table) can be designed from data instead of guesswork.
 
-Reuses the audit's data path exactly: `eval.datasets.load_pairs('hc3', n)`, layout collapse
+Reuses the audit's data path exactly: `untell.bench.datasets.load_pairs('hc3', n)`, layout collapse
 (both halves — HC3's ChatGPT half is newline-formatted, its human half is not), sentence
 split via `untell.text_split.split_sentences`, sentences < 10 words dropped (same rule as
-`eval/detector_audit.py`). Sentences are capped at `--max-sentences` per class so the run
+`untell/bench/detector_audit.py`). Sentences are capped at `--max-sentences` per class so the run
 stays bounded (mage is ~4.6s/call warm).
 
 Outputs (all saved, nothing printed-only):
@@ -34,13 +34,13 @@ if __package__ in (None, ""):
             sys.path.insert(0, str(_p))
             break
 
-from eval.datasets import load_pairs  # noqa: E402
-from eval.detector_audit import auroc, collapse_layout  # noqa: E402
+from untell.bench.datasets import load_pairs  # noqa: E402
+from untell.bench.detector_audit import auroc, collapse_layout  # noqa: E402
 from untell.text_split import split_sentences  # noqa: E402
 
 SHIPPED = 0.30  # DEFAULT_THRESHOLD in untell.scripts.score; targeted.py min_score
 
-# Same locally-runnable set as eval/detector_audit.py. radar/local_judge/binoculars are
+# Same locally-runnable set as untell/bench/detector_audit.py. radar/local_judge/binoculars are
 # opt-in UNAVAILABLE in this environment (as in slice 11).
 _SPECS = [
     ("perplexity_burstiness", "untell.detectors.perplexity_burstiness", "PerplexityBurstinessDetector"),

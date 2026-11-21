@@ -18,9 +18,9 @@ _CANONICAL = "untell/rewriter/local_policy.py"
 
 
 def test_every_trainer_uses_the_same_prompt_object():
-    from training.distill import _PROMPT as distill_prompt
-    from training.dpo_humanizer import _PROMPT as dpo_prompt
-    from training.rl_humanizer import _PROMPT as rl_prompt
+    from untell.training.distill import _PROMPT as distill_prompt
+    from untell.training.dpo_humanizer import _PROMPT as dpo_prompt
+    from untell.training.rl_humanizer import _PROMPT as rl_prompt
 
     assert distill_prompt is _TRAIN_PROMPT
     assert dpo_prompt is _TRAIN_PROMPT
@@ -31,8 +31,8 @@ def test_no_module_re_types_the_prompt_as_a_literal():
     """Equality today is not the property that matters — a single source of truth is."""
     needle = "Rewrite the following text so it reads as natural human writing"
     offenders = []
-    for path in list(_ROOT.glob("training/*.py")) + list(_ROOT.glob("untell/**/*.py")) + list(
-        _ROOT.glob("eval/*.py")
+    for path in list(_ROOT.glob("untell/training/*.py")) + list(_ROOT.glob("untell/**/*.py")) + list(
+        _ROOT.glob("untell/bench/*.py")
     ):
         rel = path.relative_to(_ROOT).as_posix()
         if rel == _CANONICAL:
