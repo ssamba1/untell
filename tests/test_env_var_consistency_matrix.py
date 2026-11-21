@@ -92,6 +92,7 @@ ROSTER = {
     ("sapling", "commercial"),
     ("zerogpt", "commercial"),
     ("copyleaks", "commercial"),
+    ("pangram", "commercial"),
 }
 
 _DIRECT_READ = re.compile(
@@ -115,7 +116,8 @@ def _read_sites() -> set[str]:
 
 
 def _readme() -> str:
-    return (REPO / "README.md").read_text(encoding="utf-8", errors="replace")
+    # The env-var and tier tables moved to the full manual with the refocus.
+    return (REPO / "docs" / "reference.md").read_text(encoding="utf-8", errors="replace")
 
 
 # -----------------------------------------------------------------------------------

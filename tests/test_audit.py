@@ -192,7 +192,8 @@ def test_the_legacy_prefix_is_scanned_too(tmp_path):
 
 def test_the_legacy_aliases_the_code_honours_are_documented():
     """The two that exist today. Both are read at runtime, so both are user-facing config."""
-    readme = (REPO / "README.md").read_text(encoding="utf-8")
+    # The configuration tables live in the full manual (docs/reference.md) since the refocus.
+    readme = (REPO / "docs" / "reference.md").read_text(encoding="utf-8")
     for var in ("HUMANIZE_BROWSER_SITES", "HUMANIZE_ENABLE_RADAR"):
         assert var in readme, f"{var} is honoured by the code and documented nowhere"
 
@@ -200,7 +201,7 @@ def test_the_legacy_aliases_the_code_honours_are_documented():
 def test_the_meaning_gate_kill_switches_are_documented_as_such():
     """These two remove a guarantee the README makes elsewhere, and nothing warns at runtime when
     they are set — so the documentation is the only place a user can learn it."""
-    readme = (REPO / "README.md").read_text(encoding="utf-8")
+    readme = (REPO / "docs" / "reference.md").read_text(encoding="utf-8")
     for var in ("UNTELL_DISABLE_NLI", "UNTELL_DISABLE_ROLES"):
         assert var in readme, f"{var} disables a meaning gate and is undocumented"
     section = readme.split("## Environment variables", 1)[-1].split("## Troubleshooting", 1)[0]

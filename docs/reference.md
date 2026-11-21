@@ -622,7 +622,7 @@ Dropping `hc3_roberta` weakly dominates the default everywhere and costs no AI r
 **`mage` cannot be dropped.** It is the only detector reaching some AI text on two of three corpora — removing it costs 0.125 recall on RAID and 0.250 on MAGE — while on HC3 it flags **6 of 8 human texts**, single-handedly why the default sits at 0.625 balanced accuracy there. One member, load-bearing on two corpora and precision-catastrophic on the third; there is no composition that is best everywhere.
 
 Still **not acted on**: dropping a detector from a shipped default is a product decision, and this is n=8 (n=4 on MAGE), one threshold, one rewriter. What it does establish is that the two members behave oppositely and that the case against `hc3_roberta` no longer has a counterargument from recall. The 15% figure is left in place above because it is what the heavy-tier comparison was made against. A 1.5B model asked "rate how likely this is AI" answers high almost regardless of input; that is instruction-following, not detection. |
-| **commercial** | `pip install -e ".[commercial]"` + your keys | + Originality.ai, GPTZero, Winston, Sapling, ZeroGPT, Copyleaks, **LLM-as-judge** | The real checkers. Key-gated; nothing runs or bills unless you set a key. LLM-as-judge = a frontier model rates AI-likelihood against the ai-tells catalog (often the best free-of-proxy signal). |
+| **commercial** | `pip install -e ".[commercial]"` + your keys | + Originality.ai, GPTZero, Winston, Sapling, ZeroGPT, Copyleaks, Pangram, **LLM-as-judge** | The real checkers. Key-gated; nothing runs or bills unless you set a key. LLM-as-judge = a frontier model rates AI-likelihood against the ai-tells catalog (often the best free-of-proxy signal). |
 
 ```bash
 untell-score "Your text here" --tier full --threshold 0.3
@@ -668,6 +668,7 @@ Originality.ai, Turnitin-class, Copyleaks, ZeroGPT, Winston, Sapling** — wire 
 pip install -e ".[commercial]"
 export GPTZERO_API_KEY=...      ORIGINALITY_API_KEY=...   WINSTON_API_KEY=...
 export SAPLING_API_KEY=...      ZEROGPT_API_KEY=...       COPYLEAKS_EMAIL=...  COPYLEAKS_API_KEY=...
+export PANGRAM_API_KEY=...
 
 untell-loop  "text" --tier commercial      # rewrite until EVERY configured checker passes
 untell-verify "text" --threshold 0.30      # pass/fail per checker + overall verdict (exit 0 = all pass)

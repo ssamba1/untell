@@ -141,6 +141,10 @@ def test_no_detector_load_requires_accelerate():
     for path in sorted(root.rglob("*.py")):
         if path.name in allowed:
             continue
+        # untell/training/ is GPU training code behind the `train` extra, which DOES declare
+        # accelerate; it came under this scan when training/ moved inside the package.
+        if path.relative_to(root).parts[0] == "training":
+            continue
         for i, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
             stripped = line.strip()
             if stripped.startswith("#"):

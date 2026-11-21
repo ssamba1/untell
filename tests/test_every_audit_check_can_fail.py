@@ -253,7 +253,7 @@ def test_dynamic_env_vars(repo) -> None:
     # blind spot it was written for. A free-standing `os.environ.get` literal is outside its scope
     # (the first mutation added one and it rightly passed), and so is `UNTELL_API_KEY`, which is
     # written out in the source and caught by the literal scanner instead.
-    victim = repo / "README.md"
+    victim = repo / "docs" / "reference.md"
     original = victim.read_bytes()
     try:
         mutate(victim, lambda t: t.replace("`UNTELL_TIER`", "`UNTELL_RENAMED_AWAY`", 1))

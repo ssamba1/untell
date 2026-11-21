@@ -27,6 +27,12 @@ REPO = pathlib.Path(__file__).resolve().parent.parent
 
 # module path -> {constant: (value, why this number)}
 FLOORS: dict[str, dict[str, tuple[float, str]]] = {
+    # Came into this census's scan when eval/ moved under untell/bench/; the constant itself is old.
+    "untell/bench/detector_audit.py": {
+        "_MAX_SENTENCE_PROBES": (30, "a runtime cap, not a measurement floor: each probe costs two "
+                                     "local_judge calls at ~3.7s, and the audit only needs to know "
+                                     "whether a detector separates sentences at all"),
+    },
     "untell/detectors/perplexity_burstiness.py": {
         "_MIN_WORDS_FOR_SIGNAL": (5, "burstiness is a variance over sentences; under five words "
                                      "there is no distribution to take a variance of"),

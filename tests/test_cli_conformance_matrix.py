@@ -103,6 +103,14 @@ MINIMAL: dict[str, dict] = {
     "untell-hedges": {"argv": ["It may be possible.", "It might be possible."], "expect": 0},
     "untell-explain": {"argv": [TEXT], "expect": 0},
     "untell-batch": {"argv": ["__DIR__", "--dry-run", "--tier", "lite"], "expect": 0, "files": ["__DIR__"]},
+    "untell-brief": {"argv": [TEXT, "--detector", "local:lite"], "expect": 0},
+    "untell-stability": {"argv": [TEXT, "--detector", "local:lite"], "expect": 0},
+    "untell-variants": {"argv": [TEXT, "--out", "__DIR__"], "expect": 0, "files": ["__DIR__"]},
+    "untell-flagmath": {"argv": ["--fpr", "0.01"], "expect": 0},
+    "untell-report-card": {"argv": ["--help"], "expect": 0},
+    "untell-drift": {"argv": ["--help"], "expect": 0},
+    "untell-capsule": {"argv": ["--help"], "expect": 0},
+    "untell-probe": {"argv": [TEXT, "--tier", "lite", "--max-iters", "1"], "expect": 0},
     # watch is a long-running loop; a bounded invocation is the documented clean run.
     "untell-watch": {"argv": ["__DIR__", "--timeout", "2", "--poll-interval", "0.1", "--tier", "lite"], "expect": 0, "files": ["__DIR__"]},
 }

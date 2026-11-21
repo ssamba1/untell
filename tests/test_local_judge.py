@@ -116,6 +116,6 @@ def test_the_readme_documents_both_sizes():
 
     from untell.detectors.local_judge import HEAVY_MODEL, LIGHT_MODEL
 
-    readme = (Path(__file__).resolve().parents[1] / "README.md").read_text(encoding="utf-8")
+    readme = (Path(__file__).resolve().parents[1] / "docs" / "reference.md").read_text(encoding="utf-8")
     assert LIGHT_MODEL in readme, "the default judge model is not documented"
     assert HEAVY_MODEL in readme, "the larger option is not documented"

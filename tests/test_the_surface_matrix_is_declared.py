@@ -36,6 +36,11 @@ DECLARED_ASYMMETRIES = {
         {"rest"},
         "a liveness probe for an HTTP server; there is nothing for an MCP client to probe",
     ),
+    "flagmath": (
+        {"mcp"},
+        "pure arithmetic over numbers the caller already has; a REST client computes it locally, "
+        "and the /brief response already carries the same Bayes figures for a real document",
+    ),
     "compare": (
         {"mcp"},
         "a benchmark harness that runs every technique over a corpus — minutes of compute per "

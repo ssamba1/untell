@@ -15,7 +15,11 @@ if __package__ in (None, ""):
             sys.path.insert(0, str(_p))
             break
 
-from untell.evidence.cli import variants_main as main  # noqa: E402
+from untell.evidence.cli import variants_main  # noqa: E402
+
+
+def main(argv: list[str] | None = None) -> int:
+    return variants_main(argv)
 
 if __name__ == "__main__":
     raise SystemExit(main())

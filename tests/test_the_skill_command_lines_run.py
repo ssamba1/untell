@@ -59,6 +59,13 @@ def _run(argv: list[str]) -> subprocess.CompletedProcess:
 # The flag combinations SKILL.md gives, with its placeholders filled in.
 INVOCATIONS = {
     "scrub.py": (AI, "--json"),
+    # The audit workflows (SKILL.md sections A-C). report_card needs a corpus file; --help proves
+    # it loads, and tests/test_evidence_engine.py runs it on a real corpus.
+    "brief.py": (AI, "--detector", "local:lite", "--documents", "12", "--format", "md"),
+    "stability.py": (AI, "--detector", "local:lite"),
+    "variants.py": ("--help",),
+    "flagmath.py": ("--detector", "turnitin", "--documents", "30"),
+    "report_card.py": ("--help",),
     "preserve.py": ("See Smith (2020) for the 42% figure.",),
     "score.py": (AI, "--threshold", "0.30"),
     "quality.py": (AI, REWRITE),

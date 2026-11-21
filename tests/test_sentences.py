@@ -133,6 +133,10 @@ def test_no_module_keeps_its_own_sentence_splitter():
     for path in sorted((root / "untell").rglob("*.py")):
         if path.name in ("text_split.py", "targeted.py"):
             continue
+        # The competitor baselines reproduce a NAIVE technique on purpose, splitter included;
+        # "fixing" it would misreport the competitor. Scanned since eval/ moved to untell/bench/.
+        if path.as_posix().endswith("untell/bench/baselines.py"):
+            continue
         for i, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
             if pattern.search(line):
                 offenders.append(f"{path.relative_to(root)}:{i}: {line.strip()}")

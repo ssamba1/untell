@@ -585,7 +585,7 @@ class TestLiteTierFalsePositiveRateIsDocumented:
         """A caveat of 'weak' does not tell a user that most human text gets flagged."""
         from pathlib import Path
 
-        readme = Path(__file__).resolve().parents[1] / "README.md"
+        readme = Path(__file__).resolve().parents[1] / "docs" / "reference.md"
         row = [ln for ln in readme.read_text(encoding="utf-8").splitlines()
                if ln.startswith("| **lite**")]
         assert row, "the lite tier row is missing from the README tier table"

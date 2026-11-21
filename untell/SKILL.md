@@ -69,6 +69,10 @@ interpreter lacks a working ML stack — re-run with a venv python that has `.[f
    ```
    python scripts/brief.py --file doc.txt --detector gptzero --documents 12 --format md
    ```
+   To see only the stability table (no brief):
+   ```
+   python scripts/stability.py --file doc.txt --detector gptzero
+   ```
    Detector specs: `local` / `local:lite`, a commercial name (`gptzero`, `pangram`, `originality`,
    `copyleaks`, `winston`, `sapling`, `zerogpt` — each needs its API key), `cmd:<command>` (text on
    stdin, score on stdout), or `manual:<scores.csv>`.
@@ -83,7 +87,7 @@ interpreter lacks a working ML stack — re-run with a venv python that has `.[f
    ```
    python scripts/brief.py --file doc.txt --detector manual:kit/scores.csv --name turnitin --documents 12
    ```
-   The browser version (`docs/brief.html` on the project site) does the same offline.
+   The browser version (https://ssamba1.github.io/untell/brief.html) does the same offline.
 4. Report the **finding** sentence from section 1 verbatim, the per-person false-flag figure, and
    the questions in section 4. Be exact about what it shows:
    - flips under *null* edits (same words, only typography) mean the verdict is about formatting,
