@@ -1,0 +1,853 @@
+{
+  "kind": "untell.report_card",
+  "schema": 1,
+  "generated_at": "2026-11-21T17:44:47+00:00",
+  "untell_version": "dev",
+  "detector": {
+    "name": "untell-local-lite",
+    "kind": "local",
+    "threshold": null,
+    "version": null
+  },
+  "corpus": {
+    "name": "python-peps@2022-11-29",
+    "fingerprint": "1780ebf0627c2b26c920f865f223df212932e8b62799bd6b37b19a9ba3e01e77",
+    "human": 80,
+    "ai": 0,
+    "unscored": 0
+  },
+  "false_positive_rate": {
+    "overall": {
+      "n": 80,
+      "k": 1,
+      "rate": 0.0125,
+      "ci95": [
+        0.0022099755204522745,
+        0.06746270077668665
+      ]
+    },
+    "by_group": {
+      "peps": {
+        "n": 80,
+        "k": 1,
+        "rate": 0.0125,
+        "ci95": [
+          0.0022099755204522745,
+          0.06746270077668665
+        ]
+      }
+    },
+    "by_length": {
+      "150\u2013299": {
+        "n": 20,
+        "k": 0,
+        "rate": 0.0,
+        "ci95": [
+          0.0,
+          0.16112515805281938
+        ]
+      },
+      "300\u2013599": {
+        "n": 24,
+        "k": 1,
+        "rate": 0.041666666666666664,
+        "ci95": [
+          0.0073934561655057685,
+          0.20241806478655938
+        ]
+      },
+      "600+": {
+        "n": 36,
+        "k": 0,
+        "rate": 0.0,
+        "ci95": [
+          0.0,
+          0.09641862859446367
+        ]
+      }
+    }
+  },
+  "human_score_distribution": {
+    "min": 0.0419,
+    "p25": 0.160375,
+    "median": 0.20584999999999998,
+    "p75": 0.283375,
+    "p95": 0.40906499999999996,
+    "max": 0.5142
+  },
+  "honest_writer_projection": {
+    "fpr_used": 0.06746270077668665,
+    "basis": "upper end of the 95% CI on the overall rate",
+    "table": [
+      {
+        "documents": 1,
+        "p_at_least_one_false_flag": 0.06746270077668659,
+        "flagged_per_1000": 67.46270077668659
+      },
+      {
+        "documents": 5,
+        "p_at_least_one_false_flag": 0.29476954670968514,
+        "flagged_per_1000": 294.76954670968513
+      },
+      {
+        "documents": 10,
+        "p_at_least_one_false_flag": 0.5026500077519371,
+        "flagged_per_1000": 502.65000775193715
+      },
+      {
+        "documents": 20,
+        "p_at_least_one_false_flag": 0.7526429852108517,
+        "flagged_per_1000": 752.6429852108517
+      },
+      {
+        "documents": 40,
+        "p_at_least_one_false_flag": 0.9388145072346011,
+        "flagged_per_1000": 938.8145072346011
+      }
+    ]
+  },
+  "null_edit_stability": {
+    "documents": 20,
+    "variant_flip_rate": {
+      "n": 100,
+      "k": 0,
+      "rate": 0.0,
+      "ci95": [
+        3.469446951953614e-18,
+        0.03699349820698568
+      ]
+    },
+    "documents_with_any_flip": {
+      "n": 20,
+      "k": 0,
+      "rate": 0.0,
+      "ci95": [
+        0.0,
+        0.16112515805281938
+      ]
+    },
+    "median_score_spread": 0.0019500000000000212
+  },
+  "documents": [
+    {
+      "id": "peps:CONTRIBUTING.rst",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 289,
+      "score": 0.4085,
+      "flagged": false
+    },
+    {
+      "id": "peps:README.rst",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 171,
+      "score": 0.3442,
+      "flagged": false
+    },
+    {
+      "id": "peps:docs/rendering_system.rst",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 356,
+      "score": 0.5142,
+      "flagged": true
+    },
+    {
+      "id": "peps:pep-0001.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 780,
+      "score": 0.3811,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0002.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 227,
+      "score": 0.4254,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0004.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 157,
+      "score": 0.1075,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0005.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 197,
+      "score": 0.1086,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0006.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 772,
+      "score": 0.1678,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0008.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 785,
+      "score": 0.1172,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0010.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 233,
+      "score": 0.206,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0011.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 736,
+      "score": 0.3561,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0012.rst",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 777,
+      "score": 0.1298,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0013.rst",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 773,
+      "score": 0.1844,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0042.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 276,
+      "score": 0.1558,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0100.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 781,
+      "score": 0.148,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0101.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 727,
+      "score": 0.2171,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0102.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 766,
+      "score": 0.23,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0103.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 773,
+      "score": 0.1375,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0200.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 467,
+      "score": 0.1782,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0201.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 349,
+      "score": 0.3616,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0203.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 795,
+      "score": 0.2854,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0204.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 754,
+      "score": 0.2335,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0205.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 760,
+      "score": 0.1861,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0206.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 241,
+      "score": 0.1619,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0207.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 744,
+      "score": 0.2173,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0208.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 703,
+      "score": 0.3147,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0209.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 528,
+      "score": 0.2004,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0211.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 445,
+      "score": 0.2112,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0212.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 161,
+      "score": 0.0645,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0213.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 535,
+      "score": 0.2138,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0214.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 761,
+      "score": 0.2057,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0215.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 305,
+      "score": 0.2924,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0216.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 407,
+      "score": 0.4198,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0218.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 555,
+      "score": 0.1869,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0219.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 748,
+      "score": 0.421,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0221.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 201,
+      "score": 0.3339,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0222.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 356,
+      "score": 0.3803,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0223.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 437,
+      "score": 0.1183,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0224.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 678,
+      "score": 0.1908,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0225.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 771,
+      "score": 0.316,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0226.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 390,
+      "score": 0.2896,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0227.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 771,
+      "score": 0.1423,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0228.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 409,
+      "score": 0.1781,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0229.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 177,
+      "score": 0.1715,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0230.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 784,
+      "score": 0.22,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0231.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 387,
+      "score": 0.0787,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0232.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 492,
+      "score": 0.2207,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0233.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 159,
+      "score": 0.2112,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0234.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 505,
+      "score": 0.2827,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0235.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 481,
+      "score": 0.1465,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0236.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 502,
+      "score": 0.2209,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0237.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 563,
+      "score": 0.1821,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0238.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 769,
+      "score": 0.2928,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0239.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 289,
+      "score": 0.1266,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0240.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 218,
+      "score": 0.0511,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0241.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 605,
+      "score": 0.1142,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0242.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 484,
+      "score": 0.1682,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0243.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 291,
+      "score": 0.1224,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0244.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 449,
+      "score": 0.3812,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0245.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 762,
+      "score": 0.187,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0246.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 753,
+      "score": 0.2532,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0247.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 396,
+      "score": 0.25,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0248.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 640,
+      "score": 0.1829,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0249.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 773,
+      "score": 0.2521,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0250.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 278,
+      "score": 0.1263,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0251.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 200,
+      "score": 0.0419,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0252.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 787,
+      "score": 0.3013,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0253.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 786,
+      "score": 0.2504,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0255.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 782,
+      "score": 0.3639,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0256.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 704,
+      "score": 0.2704,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0257.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 765,
+      "score": 0.243,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0258.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 765,
+      "score": 0.0892,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0259.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 254,
+      "score": 0.163,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0260.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 152,
+      "score": 0.198,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0261.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 680,
+      "score": 0.1813,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0262.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 795,
+      "score": 0.2014,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0263.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 494,
+      "score": 0.2256,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0264.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 260,
+      "score": 0.1723,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0265.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 664,
+      "score": 0.2168,
+      "flagged": false
+    },
+    {
+      "id": "peps:pep-0266.txt",
+      "label": "human",
+      "group": "peps",
+      "author": null,
+      "words": 364,
+      "score": 0.1512,
+      "flagged": false
+    }
+  ]
+}

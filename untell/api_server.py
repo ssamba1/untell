@@ -466,6 +466,28 @@ class ScrubRequest(_Request):
     text: str = _TEXT
 
 
+class VariantsRequest(_Request):
+    text: str = _TEXT
+
+
+class StabilityRequest(_Request):
+    text: str = _TEXT
+    # local:lite / local:full, or a commercial detector when UNTELL_API_ALLOW_COMMERCIAL=1.
+    # `cmd:` and `manual:` specs are CLI-only and refused here (see untell/evidence/service.py).
+    detector: str = "local:lite"
+    threshold: _Probability | None = None
+    # Scores recorded by hand from any detector, keyed by variant id ('base', 'N1', ...).
+    scores: dict | None = None
+
+
+class BriefRequest(StabilityRequest):
+    name: str | None = None
+    documents: int = Field(1, ge=1, le=10000)
+    fpr: _Probability | None = None
+    tpr: _Probability = 0.9
+    detector_version: str | None = None
+
+
 class SentencesRequest(_Request):
     text: str = _TEXT
     tier: _TIER = "lite"
@@ -772,6 +794,39 @@ _TELLS_RESPONSES = _obj(
         },
     },
     required=["words", "tells", "tells_per_100w", "by_category", "language_supported"],
+)
+
+_VARIANTS_RESPONSES = _obj(
+    "Formatting-only (same words, verified) and light copy-edit variants of the text.",
+    {"variants": {"type": "array", "items": {"type": "object"}}, "how_to_use": _STR},
+    required=["variants", "how_to_use"],
+)
+
+_STABILITY_RESPONSES = _obj(
+    "Whether the detector's verdict survives edits that cannot change authorship.",
+    {
+        "scorer": {"type": "object"},
+        "base": {"type": "object", "description": "score and verdict on the original text"},
+        "variants": {"type": "array", "items": {"type": "object"}},
+        "summary": {"type": "object",
+                    "description": "per tier: flips, flip_rate, its 95% CI, score spread; plus "
+                                   "`finding`, a plain-language sentence"},
+    },
+    required=["scorer", "base", "variants", "summary"],
+)
+
+_BRIEF_RESPONSES = _obj(
+    "Evidence brief: stability, the detector's cited published error rates, Bayes on the flag, "
+    "per-person false-flag risk. Contains the document's SHA-256, never its text.",
+    {
+        "kind": _STR, "schema": _INT, "generated_at": _STR, "untell_version": _STR,
+        "detector": {"type": "object"}, "document": {"type": "object"},
+        "observed": {"type": "object"}, "stability": {"type": ["object", "null"]},
+        "published_rates": {"type": "array", "items": {"type": "object"}},
+        "bayes": {"type": "object"}, "questions": {"type": "array", "items": _STR},
+        "context": _STR, "disclaimer": _STR,
+    },
+    required=["kind", "detector", "document", "stability", "published_rates", "bayes"],
 )
 
 _SCRUB_RESPONSES = _obj(
@@ -1139,6 +1194,44 @@ async def scrub(body: ScrubRequest) -> dict:
     from untell.attacks import count_hidden, scrub_hidden
 
     return {"clean": scrub_hidden(body.text), "hidden_chars_removed": count_hidden(body.text)}
+
+
+def _refused(exc: Exception) -> JSONResponse:
+    return JSONResponse(status_code=400, content={"error": str(exc)})
+
+
+@app.post("/variants", responses=_VARIANTS_RESPONSES)
+async def variants(body: VariantsRequest) -> dict:
+    """Same-words variants of a text, to score with any detector (including web-only ones)."""
+    from untell.evidence.service import variants_payload
+
+    return variants_payload(body.text)
+
+
+@app.post("/stability", responses=_STABILITY_RESPONSES)
+async def stability(body: StabilityRequest):
+    """Re-score a text under formatting-only edits and report how often the verdict changes."""
+    from untell.evidence.service import RefusedSpec, http_allows_commercial, stability_payload
+
+    try:
+        return await _offload(stability_payload, body.text, body.detector, body.threshold,
+                              body.scores, allow_commercial=http_allows_commercial())
+    except RefusedSpec as exc:
+        return _refused(exc)
+
+
+@app.post("/brief", responses=_BRIEF_RESPONSES)
+async def brief(body: BriefRequest):
+    """Evidence brief for one detector verdict on one document (JSON; render it client-side)."""
+    from untell.evidence.service import RefusedSpec, brief_payload, http_allows_commercial
+
+    try:
+        return await _offload(
+            brief_payload, body.text, body.detector, body.name, body.threshold, body.scores,
+            body.documents, body.fpr, body.tpr, body.detector_version,
+            allow_commercial=http_allows_commercial())
+    except RefusedSpec as exc:
+        return _refused(exc)
 
 
 @app.post("/sentences", responses=_SENTENCES_RESPONSES)

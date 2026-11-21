@@ -1,0 +1,108 @@
+name: observatory
+
+# The Detector Observatory: re-measure detectors on a fixed, provenance-checked human corpus and
+# compare against the last published report card, so a silent model change shows up as a measured
+# one. The corpus is prose from python/peps as it stood before ChatGPT's release (2022-11-30) —
+# human by timestamp, not by trust — rebuilt from git on every run and fingerprinted.
+#
+# untell's own local detector always runs, so the pipeline is exercised with no secrets. Each
+# commercial detector runs only when its API key is configured as a repository secret, and costs
+# that provider's per-call price (80 documents + 20 x up to 10 stability variants per detector).
+# Before enabling one, check that its terms of service permit benchmarking: docs/auditing.md.
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: "Open a PR adding the new report cards under docs/observatory/"
+        type: boolean
+        default: false
+  schedule:
+    - cron: '17 7 1 * *'  # monthly
+
+permissions:
+  contents: read
+
+jobs:
+  measure:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install
+        run: pip install -e ".[commercial]"
+
+      - name: Rebuild the pre-LLM corpus from git history
+        run: |
+          git clone -q --filter=blob:none --no-checkout https://github.com/python/peps.git /tmp/peps
+          untell capsule /tmp/peps --before 2022-11-30 --limit 80 --out /tmp/corpus.jsonl
+
+      - name: Measure every configured detector
+        env:
+          GPTZERO_API_KEY: ${{ secrets.GPTZERO_API_KEY }}
+          PANGRAM_API_KEY: ${{ secrets.PANGRAM_API_KEY }}
+          ORIGINALITY_API_KEY: ${{ secrets.ORIGINALITY_API_KEY }}
+          WINSTON_API_KEY: ${{ secrets.WINSTON_API_KEY }}
+          SAPLING_API_KEY: ${{ secrets.SAPLING_API_KEY }}
+          ZEROGPT_API_KEY: ${{ secrets.ZEROGPT_API_KEY }}
+          COPYLEAKS_EMAIL: ${{ secrets.COPYLEAKS_EMAIL }}
+          COPYLEAKS_API_KEY: ${{ secrets.COPYLEAKS_API_KEY }}
+        run: |
+          set -euo pipefail
+          day=$(date -u +%Y-%m-%d)
+          mkdir -p out
+          run() {  # $1 = scorer spec, $2 = folder name
+            mkdir -p "out/$2"
+            untell report-card --detector "$1" --human /tmp/corpus.jsonl \
+              --name python-peps@2022-11-29 --json-out "out/$2/$day.json" --out "out/$2/$day.md"
+            prev=$(ls docs/observatory/"$2"/*.json 2>/dev/null | sort | tail -1 || true)
+            if [ -n "$prev" ]; then
+              untell drift "$prev" "out/$2/$day.json" | tee "out/$2/$day.drift.txt" || true
+            fi
+            cat "out/$2/$day.md" >> "$GITHUB_STEP_SUMMARY"
+          }
+          run local:lite untell-local-lite
+          if [ -n "${GPTZERO_API_KEY:-}" ]; then run gptzero gptzero; else echo "gptzero: no key, skipped"; fi
+          if [ -n "${PANGRAM_API_KEY:-}" ]; then run pangram pangram; else echo "pangram: no key, skipped"; fi
+          if [ -n "${ORIGINALITY_API_KEY:-}" ]; then run originality originality; else echo "originality: no key, skipped"; fi
+          if [ -n "${WINSTON_API_KEY:-}" ]; then run winston winston; else echo "winston: no key, skipped"; fi
+          if [ -n "${SAPLING_API_KEY:-}" ]; then run sapling sapling; else echo "sapling: no key, skipped"; fi
+          if [ -n "${ZEROGPT_API_KEY:-}" ]; then run zerogpt zerogpt; else echo "zerogpt: no key, skipped"; fi
+          if [ -n "${COPYLEAKS_API_KEY:-}" ]; then run copyleaks copyleaks; else echo "copyleaks: no key, skipped"; fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: observatory-report-cards
+          path: out/
+
+  publish:
+    needs: measure
+    if: ${{ inputs.publish }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: observatory-report-cards
+          path: out
+      - name: Open a PR with the new report cards
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          branch="observatory/$(date -u +%Y-%m-%d)-${GITHUB_RUN_ID}"
+          git switch -c "$branch"
+          cp -r out/. docs/observatory/
+          git add docs/observatory
+          git -c user.name="untell observatory" -c user.email="observatory@users.noreply.github.com" \
+            commit -m "observatory: report cards $(date -u +%Y-%m-%d)"
+          git push origin "$branch"
+          gh pr create --title "observatory: report cards $(date -u +%Y-%m-%d)" \
+            --body "Automated monthly re-measurement. Drift summaries are in the *.drift.txt files."

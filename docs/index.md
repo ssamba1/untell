@@ -22,7 +22,7 @@ That iterative, detector-feedback approach is the strongest *training-free* tech
 | Capability | untell | Others |
 |---|---|---|
 | **Closed detector-feedback loop** | ✅ | ❌ blind single pass |
-| **Real detectors in the loop** | ✅ 8 local + 7 commercial | ❌ internal proxy only |
+| **Real detectors in the loop** | ✅ 8 local + 8 commercial | ❌ internal proxy only |
 | **Semantic meaning gate** | ✅ NLI entailment + contradiction veto, over a similarity bar | ❌ no verification |
 | **Per-sentence targeting** | ✅ rewrite only the flagged spans | ❌ whole-text reroll |
 | **Citation lock** | ✅ byte-for-byte preserve | ❌ facts get mangled |

@@ -11,7 +11,7 @@ lite/full/heavy detector *plus* every configured commercial one, and the loop mu
 
 Env vars:
   ORIGINALITY_API_KEY · WINSTON_API_KEY · GPTZERO_API_KEY · SAPLING_API_KEY · ZEROGPT_API_KEY
-  COPYLEAKS_EMAIL + COPYLEAKS_API_KEY
+  COPYLEAKS_EMAIL + COPYLEAKS_API_KEY · PANGRAM_API_KEY
 """
 
 from __future__ import annotations
@@ -271,6 +271,77 @@ class CopyleaksDetector:
             return None
 
 
+def _get_json(url: str, headers: dict, timeout: float = 30.0) -> dict:
+    """GET JSON (isolated, like ``_post_json``, so tests can monkeypatch it)."""
+    import requests
+
+    resp = requests.get(url=url, headers=headers, timeout=timeout)
+    resp.raise_for_status()
+    return resp.json()
+
+
+class PangramDetector:
+    """Pangram's text API (async: submit a task, poll until it finishes).
+
+    Endpoint, payload and response fields follow the official ``pangram-sdk`` 1.2.0 client
+    (``TextClassifier.predict``): ``POST {host}/task`` with ``{"text", "model"}`` returns a
+    ``task_id``; ``GET {host}/task/{id}`` returns ``stage`` and, on ``STAGE_SUCCESS``,
+    ``fraction_ai`` / ``fraction_ai_assisted`` / ``prediction_short`` / ``version``.
+
+    The score is ``fraction_ai`` — the fraction of the text Pangram classifies as AI-written,
+    which is what its own headline is built from. ``fraction_ai_assisted`` is deliberately NOT
+    folded in: mixing "AI-assisted" into "AI-written" would manufacture a stronger accusation
+    than the detector made. Both, plus the model version, are kept on ``last_result``.
+    """
+
+    name = "pangram"
+    tier = "commercial"
+    host = "https://text.external-api.pangram.com"
+
+    def __init__(self, model: str = "default", poll_interval: float = 1.0, timeout: float = 300.0):
+        self.model = model
+        self.poll_interval = poll_interval
+        self.timeout = timeout
+        self.version: str | None = None
+        self.last_result: dict | None = None
+
+    def available(self) -> bool:
+        return _has("PANGRAM_API_KEY")
+
+    def score(self, text: str) -> float | None:
+        if not self.available() or not text.strip():
+            return None
+        headers = {"x-api-key": os.environ["PANGRAM_API_KEY"]}
+        try:
+            task = _post_json(f"{self.host}/task", headers, {"text": text, "model": self.model})
+            task_id = task.get("task_id")
+            if not task_id:
+                _unusable(self.name, task)
+                return None
+            deadline = time.monotonic() + self.timeout
+            while True:
+                data = _get_json(f"{self.host}/task/{task_id}", headers)
+                stage = data.get("stage")
+                if stage == "STAGE_SUCCESS":
+                    break
+                if stage == "STAGE_FAILED" or stage is None or time.monotonic() >= deadline:
+                    _unusable(self.name, data)
+                    return None
+                time.sleep(self.poll_interval)
+            frac = data.get("fraction_ai")
+            if frac is None:
+                _unusable(self.name, data)
+                return None
+            self.version = data.get("version") or self.version
+            self.last_result = {k: data.get(k) for k in (
+                "version", "prediction_short", "headline", "fraction_ai",
+                "fraction_ai_assisted", "fraction_human")}
+            return clamp01(float(frac))
+        except (KeyError, TypeError, ValueError) as exc:
+            _unusable(self.name, locals().get("data"), exc)
+            return None
+
+
 def commercial_detectors() -> list:
     """Every commercial adapter (cheap to instantiate; no network until score())."""
     return [
@@ -280,4 +351,5 @@ def commercial_detectors() -> list:
         SaplingDetector(),
         ZeroGPTDetector(),
         CopyleaksDetector(),
+        PangramDetector(),
     ]

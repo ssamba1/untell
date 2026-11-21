@@ -35,6 +35,7 @@ key is set and falls back to the free local composite path otherwise. (`rewriter
 | `UNTELL_RATE_LIMIT` | `60` | Requests per 60s per caller. `0` disables. |
 | `UNTELL_HOST` | `127.0.0.1` | Bind address |
 | `UNTELL_PORT` | `8000` | Port |
+| `UNTELL_API_ALLOW_COMMERCIAL` | *(none)* | `1` lets `/stability` and `/brief` run commercial detectors with the server's API keys. Unset = refused, because each call spends the operator's credit. `cmd:` and `manual:` detector specs are always refused over HTTP. |
 | `UNTELL_CORS_ORIGINS` | *(none)* | Comma-separated origins allowed cross-origin **with credentials**. Unset = any origin may call, credentials NOT allowed (the spec-legal wildcard); setting a list restricts to exactly those origins and enables credentials. |
 
 ### Rate limiting

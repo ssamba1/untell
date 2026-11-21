@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'">
+<title>Detector Evidence Kit — untell</title>
+<meta name="description" content="A free, in-browser kit for anyone facing an AI-detector verdict: test whether the verdict survives edits that change no words, see what a flag actually means for a given false-positive rate, and print an evidence brief. Your text never leaves your device.">
+<link rel="canonical" href="https://ssamba1.github.io/untell/brief.html">
+<meta name="theme-color" content="#0d1117">
+<meta name="referrer" content="no-referrer">
+<style>
+  :root{
+    --bg:#ffffff;--panel:#f6f8fa;--panel2:#eef1f4;--border:#d0d7de;--white:#1f2328;--gray:#59636e;
+    --accent:#7c3aed;--accent-ink:#ffffff;--green:#1a7f37;--red:#cf222e;--warn:#9a6700;
+    --field:#ffffff;--grid-ai:#c9d1d9;color-scheme:light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0d1117;--panel:#161b22;--panel2:#1c2129;--border:#30363d;--white:#e6edf3;--gray:#8b949e;
+      --accent:#aa6eff;--accent-ink:#ffffff;--green:#3fb950;--red:#f85149;--warn:#d29922;
+      --field:#0d1117;--grid-ai:#30363d;color-scheme:dark;
+    }
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--bg);color:var(--white);font:17px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;overflow-wrap:break-word}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .wrap{max-width:920px;margin:0 auto;padding:0 24px}
+  nav.top{border-bottom:1px solid var(--border);background:var(--panel)}
+  nav.top .wrap{display:flex;flex-wrap:wrap;align-items:center;gap:6px 20px;padding-top:10px;padding-bottom:10px}
+  nav.top .brand{font-weight:800;color:var(--white);font-size:18px;margin-right:auto}
+  nav.top a{font-size:15px}
+  header{padding:40px 0 8px}
+  h1{font-size:40px;line-height:1.2;margin:0 0 10px}
+  h2{font-size:28px;line-height:1.25;margin:52px 0 14px;border-bottom:1px solid var(--border);padding-bottom:8px}
+  h3{font-size:19px;margin:28px 0 8px}
+  .lede{font-size:21px;color:var(--gray);margin:0 0 18px}
+  .note{color:var(--gray);font-size:14px}
+  .step{display:inline-block;background:var(--accent);color:var(--accent-ink);border-radius:999px;font-size:14px;font-weight:700;padding:0 10px;margin-right:8px;vertical-align:4px}
+  .privacy{background:var(--panel);border:1px solid var(--border);border-left:4px solid var(--green);border-radius:10px;padding:12px 16px;margin:18px 0;font-size:15px}
+  .callout{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin:16px 0}
+  label{font-weight:600;font-size:15px}
+  textarea,input[type=number],input[type=text],input[type=date],select{
+    font:inherit;font-size:16px;color:var(--white);background:var(--field);border:1px solid var(--border);border-radius:8px;padding:8px 10px;max-width:100%}
+  textarea{width:100%;min-height:180px;line-height:1.5;resize:vertical;display:block;margin:6px 0 10px}
+  input:focus-visible,textarea:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  button{font:inherit;font-size:15px;font-weight:600;cursor:pointer;border-radius:8px;padding:8px 14px;border:1px solid var(--border);background:var(--panel2);color:var(--white)}
+  button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+  button:disabled{opacity:.5;cursor:default}
+  .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  .muted{color:var(--gray)}
+  .badge{display:inline-block;font-size:12px;font-weight:700;border-radius:999px;padding:1px 9px;border:1px solid var(--border);white-space:nowrap}
+  .badge.ok{color:var(--green);border-color:var(--green)}
+  .badge.noop{color:var(--gray)}
+  .badge.light{color:var(--warn);border-color:var(--warn)}
+  .badge.id{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+  .variants{display:grid;gap:12px;margin:14px 0}
+  .vcard{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:14px 16px;min-width:0}
+  .vcard.is-noop{opacity:.72}
+  .vcard.is-orig{border-color:var(--accent)}
+  .vhead{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center}
+  .vhead strong{font-size:16px}
+  .vdesc{margin:4px 0 8px;font-size:15px;color:var(--gray)}
+  .vcard details{margin:0 0 10px}
+  .vcard summary{cursor:pointer;font-size:14px;color:var(--accent)}
+  .vtext{white-space:pre-wrap;font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--field);border:1px solid var(--border);border-radius:8px;padding:10px;max-height:220px;overflow:auto;margin:6px 0 0}
+  .vctl{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center}
+  .vctl input[type=number]{width:96px}
+  .seg{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+  .seg button{border:0;border-radius:0;background:transparent;padding:7px 12px;font-size:14px}
+  .seg button+button{border-left:1px solid var(--border)}
+  .seg button[aria-pressed=true].f{background:var(--red);color:#fff}
+  .seg button[aria-pressed=true].h{background:var(--green);color:#fff}
+  .finding{font-size:18px;border-left:4px solid var(--accent);background:var(--panel);border-radius:0 10px 10px 0;padding:14px 16px;margin:16px 0}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:12px 0}
+  .stat{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px 14px;min-width:0}
+  .stat .v{font-size:24px;font-weight:800;font-variant-numeric:tabular-nums}
+  .stat .k{font-size:13px;color:var(--gray)}
+  .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px 16px;margin:12px 0}
+  .form-grid > div{display:flex;flex-direction:column;gap:4px;min-width:0}
+  .form-grid input,.form-grid select{width:100%}
+  .hint{font-size:13px;color:var(--gray);font-weight:400}
+  .preset-src{font-size:14px;margin:6px 0 0}
+  .iconbox{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-start;margin:14px 0}
+  .icons{display:grid;grid-template-columns:repeat(10,18px);gap:3px;flex:none}
+  .icons span{width:18px;height:18px;border-radius:4px;background:var(--grid-ai)}
+  .icons span.hm{background:var(--accent)}
+  .legend{font-size:14px;flex:1 1 240px;min-width:0}
+  .legend i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-right:6px}
+  table{border-collapse:collapse;width:100%;font-size:14px;margin:10px 0}
+  .tablewrap{overflow-x:auto;max-width:100%}
+  th,td{border:1px solid var(--border);padding:6px 9px;text-align:left;vertical-align:top}
+  th{background:var(--panel)}
+  #brief-output{display:none;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:20px;margin:18px 0}
+  #brief-output.ready{display:block}
+  #brief-output h2{margin-top:0}
+  #brief-output h3{margin-top:22px}
+  #brief-output ol,#brief-output ul{padding-left:22px}
+  .brief-foot{border-top:1px solid var(--border);margin-top:22px;padding-top:10px;font-size:14px;color:var(--gray)}
+  footer{text-align:center;color:var(--gray);font-size:14px;padding:40px 0;border-top:1px solid var(--border);margin-top:56px}
+  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--white);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none}
+  .toast.show{opacity:1}
+  @media (max-width:600px){
+    .wrap{padding:0 16px}
+    h1{font-size:30px}
+    h2{font-size:23px;margin-top:40px}
+    .lede{font-size:18px}
+    .finding{font-size:16px}
+    #brief-output{padding:14px}
+    #brief-output table{font-size:13px}
+    #brief-output th,#brief-output td{padding:5px 6px}
+  }
+  @media print{
+    :root{--bg:#fff;--panel:#fff;--panel2:#fff;--border:#999;--white:#000;--gray:#333;--accent:#000;--green:#000;--red:#000}
+    body{background:#fff;color:#000;font-size:11pt;line-height:1.45}
+    nav.top,header,footer,.no-print,#intro,#null-edits,#flag-meaning,.brief-controls,.toast{display:none !important}
+    #evidence-brief > h2{display:none}
+    #brief-output{display:block !important;border:0;padding:0;margin:0}
+    .wrap{max-width:none;padding:0}
+    #brief-output a{word-break:break-all}
+    @page{margin:16mm}
+    table{font-size:9.5pt}
+    tr,li,.finding{break-inside:avoid}
+    h2,h3{break-after:avoid}
+    .finding{border-left:3px solid #000}
+  }
+</style>
+</head>
+<body>
+<nav class="top" aria-label="Site">
+  <div class="wrap">
+    <a class="brand" href="./">untell</a>
+    <a href="./">Home</a>
+    <a href="demo.html">Free detector</a>
+    <a href="https://github.com/ssamba1/untell">GitHub</a>
+  </div>
+</nav>
+
+<header class="wrap">
+  <h1>Detector Evidence Kit</h1>
+  <p class="lede">For a student, advisor, counsel or integrity officer looking at an AI-detector verdict. It tests the detector's verdict, explains what a flag is worth, and prints a short evidence brief.</p>
+</header>
+
+<main class="wrap">
+
+<section id="intro" aria-labelledby="intro-h">
+  <h2 id="intro-h" class="sr">What this is</h2>
+  <p>An AI detector gives one number for one document. That number is being used as evidence. This page lets you check two things about it. <strong>Is the verdict stable?</strong> If the same words, with different quote marks or line breaks, get a different verdict, the verdict is reacting to formatting rather than authorship. <strong>What does a flag mean?</strong> Even a detector with a low false-positive rate flags honest writers, and the chance that a flagged document is human-written depends on numbers the score itself does not show.</p>
+  <p>This is a kit for <em>testing a verdict</em>. It is not a way to evade a detector. The "null edits" below change no words, so they cannot make AI-written text read as human in any meaningful sense. They only show whether the verdict is about the words.</p>
+  <div class="privacy" role="note"><strong>Your text never leaves your device.</strong> Everything on this page runs in your browser. The page makes no network requests (its Content Security Policy forbids them), sends nothing to untell or anyone else, and saves nothing unless you tick "remember my text on this device". You copy each version into the detector yourself.</div>
+</section>
+
+<section id="null-edits" aria-labelledby="null-h">
+  <h2 id="null-h"><span class="step">1</span>Does the verdict survive edits that change no words?</h2>
+  <p>Paste the text that was flagged. The page makes <strong>same-words versions</strong> (N1–N10) that change only formatting: quote style, spacing, line wrapping, invisible characters. Each one is checked here to contain exactly the same words in the same order. A second tier (L1–L4) makes <strong>light edits</strong> a human editor might make: contractions, the Oxford comma, US/UK spelling.</p>
+  <p>Run the original and each version through the detector in question. Record the score and whether it was flagged. The page then works out how often the verdict changed.</p>
+
+  <label for="src-text">Your text</label>
+  <textarea id="src-text" spellcheck="false" placeholder="Paste the text the detector scored…"></textarea>
+  <div class="row no-print">
+    <button type="button" class="primary" id="gen-btn">Make versions</button>
+    <label class="hint" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="remember"> Remember my text on this device</label>
+    <span class="note" id="text-meta" aria-live="polite"></span>
+  </div>
+
+  <div id="variants-area" hidden>
+    <h3>Versions to test</h3>
+    <p class="note">Score: the detector's number as it shows it (e.g. 87 for "87% AI"). Verdict: what the detector said. "No-op" means the edit found nothing to change, so that version is identical to the original and is left out of the counts.</p>
+    <div class="variants" id="variants-list"></div>
+
+    <h3>Result</h3>
+    <div class="stats" id="stability-stats"></div>
+    <div class="finding" id="stability-finding" aria-live="polite"></div>
+    <p class="note" id="light-finding"></p>
+  </div>
+</section>
+
+<section id="flag-meaning" aria-labelledby="flag-h">
+  <h2 id="flag-h"><span class="step">2</span>What a flag actually means</h2>
+  <p>"The detector is 99% accurate" does not mean "there is a 99% chance this was AI". Reading it that way is the prosecutor's fallacy. Whether a flagged document is likely to be human-written depends on the detector's false-positive rate and on how common AI-written work is in this setting. And anyone who submits many documents gets many chances to be flagged by mistake.</p>
+
+  <div class="form-grid">
+    <div style="grid-column:1/-1">
+      <label for="preset">Detector figures</label>
+      <select id="preset"></select>
+      <div class="preset-src" id="preset-src"></div>
+    </div>
+    <div><label for="fpr">False-positive rate (%) <span class="hint">human text wrongly flagged</span></label><input type="number" id="fpr" min="0" max="100" step="any" value="1"></div>
+    <div><label for="tpr">True-positive rate (%) <span class="hint" id="tpr-hint">AI text correctly flagged</span></label><input type="number" id="tpr" min="0" max="100" step="any" value="90"></div>
+    <div><label for="prior">AI-written share here (%) <span class="hint">base rate, your best estimate</span></label><input type="number" id="prior" min="0" max="100" step="any" value="10"></div>
+    <div><label for="kdocs">Documents submitted (k) <span class="hint">by this person</span></label><input type="number" id="kdocs" min="1" step="1" value="8"></div>
+    <div><label for="cohort">Cohort size (N) <span class="hint">honest writers</span></label><input type="number" id="cohort" min="1" step="1" value="1000"></div>
+  </div>
+
+  <div class="stats" id="bayes-stats"></div>
+  <div class="iconbox">
+    <div class="icons" id="bayes-icons" role="img" aria-label=""></div>
+    <div class="legend" id="bayes-legend"></div>
+  </div>
+  <p id="bayes-sentence"></p>
+  <p id="bayes-rollup" class="finding"></p>
+  <p class="note">The roll-up assumes each document is an independent draw at the stated false-positive rate. In practice errors cluster: a writer whose style a detector dislikes (non-native English, formulaic genres, heavy editing tools) is flagged far more often than the average rate, so some honest writers are flagged repeatedly. The base rate is a judgement call. Try several values.</p>
+</section>
+
+<section id="evidence-brief" aria-labelledby="brief-h">
+  <h2 id="brief-h"><span class="step">3</span>Printable evidence brief</h2>
+  <p class="no-print">Put the results above into a one-page brief you can print, save as PDF, or download as Markdown. The brief includes the word count but <strong>not your text</strong>. It also gives a SHA-256 fingerprint, so a reader can confirm which text was tested without seeing it.</p>
+  <div class="brief-controls">
+    <div class="form-grid">
+      <div><label for="det-name">Detector name</label><input type="text" id="det-name" placeholder="e.g. Turnitin AI writing"></div>
+      <div><label for="det-version">Detector version / model</label><input type="text" id="det-version" placeholder="as shown on the report, if any"></div>
+      <div><label for="run-date">Date the versions were tested</label><input type="date" id="run-date"></div>
+    </div>
+    <div class="row">
+      <button type="button" class="primary" id="brief-btn">Generate brief</button>
+      <button type="button" id="print-btn">Print / Save as PDF</button>
+      <button type="button" id="md-btn">Download as Markdown</button>
+    </div>
+  </div>
+  <article id="brief-output" aria-live="polite"></article>
+</section>
+
+</main>
+
+<footer class="wrap">
+  <p>untell · open-source AI-detector auditing toolkit · <a href="https://github.com/ssamba1/untell">GitHub</a> · <a href="https://github.com/ssamba1/untell/blob/main/LICENSE">MIT License</a><br>
+  Not legal advice. This page measures the detector, not the writer.</p>
+</footer>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+/* untell:variants:begin */
+// Pure functions only: no DOM, no globals beyond the UntellVariants namespace. Exercised in node by
+// tests/test_brief_page.py.
+var UntellVariants = (function () {
+  'use strict';
+  var ZW = /[​-‍⁠﻿]/g;
+  var BIDI = /[‪-‮⁦-⁩]/g;
+
+  function toStraight(s) {
+    return s.replace(/[“”„‟]/g, '"').replace(/[‘’‚‛]/g, "'");
+  }
+
+  // Word sequence used for the "same words" self-check: Unicode-compatibility folded, invisible
+  // characters dropped, curly quotes straightened, lower-cased, any run of non-letter/digit treated
+  // as a separator.
+  function wordsOf(s) {
+    var t = String(s).normalize('NFKC').replace(ZW, '').replace(BIDI, '');
+    t = toStraight(t).toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+    return t ? t.split(/\s+/) : [];
+  }
+
+  function sameWords(a, b) {
+    var x = wordsOf(a), y = wordsOf(b);
+    if (x.length !== y.length) return false;
+    for (var i = 0; i < x.length; i++) if (x[i] !== y[i]) return false;
+    return true;
+  }
+
+  function wordCount(s) {
+    var t = String(s).trim();
+    return t ? t.split(/\s+/).length : 0;
+  }
+
+  function toCurly(s) {
+    var out = '';
+    for (var i = 0; i < s.length; i++) {
+      var c = s[i], p = i === 0 ? '' : s[i - 1], n = s[i + 1] || '';
+      if (c === '"') {
+        out += (p === '' || /[\s(\[{—–\-\/‘]/.test(p)) ? '“' : '”';
+      } else if (c === "'") {
+        if (/[\p{L}\p{N}]/u.test(p)) out += '’';                 // it's, dogs'
+        else if (p === '' || /[\s(\[{—–\-\/“]/.test(p)) {
+          out += /\d/.test(n) ? '’' : '‘';                   // '90s vs 'quote
+        } else out += '’';
+      } else out += c;
+    }
+    return out;
+  }
+
+  function sentenceSpacing(s) {
+    var two = /([.!?]["'”’)]?) {2,}(?=["'“‘(]?[A-Z])/g;
+    if (two.test(s)) {
+      return { text: s.replace(two, '$1 '), desc: 'Two spaces after sentence ends collapsed to one.' };
+    }
+    return {
+      text: s.replace(/([.!?]["'”’)]?) (?=["'“‘(]?[A-Z])/g, '$1  '),
+      desc: 'Two spaces after each sentence-ending . ! or ? (typewriter style).'
+    };
+  }
+
+  function dashes(s) {
+    if (/--/.test(s)) {
+      return { text: s.replace(/[ \t]*--[ \t]*/g, '—'), desc: 'Double hyphens (--) replaced by an em dash (—).' };
+    }
+    if (/[ \t]—|—[ \t]/.test(s)) {
+      return { text: s.replace(/[ \t]*—[ \t]*/g, '—'), desc: 'Spaced em dashes ( — ) closed up (—).' };
+    }
+    if (/—/.test(s)) {
+      return { text: s.replace(/—/g, ' — '), desc: 'Closed em dashes (—) given spaces ( — ).' };
+    }
+    return { text: s, desc: 'Em dash style: none found, nothing to change.' };
+  }
+
+  function ellipsis(s) {
+    if (/…/.test(s)) return { text: s.replace(/…/g, '...'), desc: 'Ellipsis character (…) written as three periods (...).' };
+    if (/\.\.\./.test(s)) return { text: s.replace(/\.\.\./g, '…'), desc: 'Three periods (...) written as one ellipsis character (…).' };
+    return { text: s, desc: 'Ellipsis style: none found, nothing to change.' };
+  }
+
+  var PARA_SEP = /(\n[ \t]*\n\s*)/;
+
+  function hardWrap(s, width) {
+    var parts = s.replace(/\r\n?/g, '\n').split(PARA_SEP);
+    for (var i = 0; i < parts.length; i += 2) {
+      var toks = parts[i].split(/\s+/).filter(Boolean), lines = [], line = '';
+      for (var j = 0; j < toks.length; j++) {
+        if (line && (line.length + 1 + toks[j].length) > width) { lines.push(line); line = toks[j]; }
+        else line = line ? line + ' ' + toks[j] : toks[j];
+      }
+      if (line) lines.push(line);
+      parts[i] = lines.join('\n');
+    }
+    return parts.join('');
+  }
+
+  function unwrap(s) {
+    var parts = s.replace(/\r\n?/g, '\n').split(PARA_SEP);
+    for (var i = 0; i < parts.length; i += 2) parts[i] = parts[i].replace(/[ \t]*\n[ \t]*/g, ' ');
+    return parts.join('');
+  }
+
+  function cleanUnicode(s) {
+    return s.normalize('NFKC').replace(/[   ]/g, ' ').replace(ZW, '').replace(BIDI, '');
+  }
+
+  function dropBlankLines(s) { return s.replace(/\r\n?/g, '\n').replace(/\n(?:[ \t]*\n)+/g, '\n'); }
+
+  function stripTrailing(s) { return s.replace(/\r\n?/g, '\n').replace(/[ \t]+$/gm, ''); }
+
+  function matchCase(src, repl) {
+    if (src.length > 1 && src === src.toUpperCase() && src !== src.toLowerCase()) return repl.toUpperCase();
+    if (src[0] && src[0] !== src[0].toLowerCase()) return repl[0].toUpperCase() + repl.slice(1);
+    return repl;
+  }
+
+  var CONTRACTIONS = [
+    ["it's", 'it is'], ["don't", 'do not'], ["can't", 'cannot'], ["won't", 'will not'],
+    ["I'm", 'I am'], ["they're", 'they are'], ["we're", 'we are'], ["isn't", 'is not'],
+    ["doesn't", 'does not'], ["didn't", 'did not'], ["I've", 'I have'], ["you're", 'you are'],
+    ["that's", 'that is']
+  ];
+  var L = '\\p{L}\\p{N}';
+
+  function expandContractions(s) {
+    var out = s;
+    CONTRACTIONS.forEach(function (pair) {
+      var re = new RegExp('(?<![' + L + '])' + pair[0].replace("'", "['’]") + '(?![' + L + '])', 'giu');
+      out = out.replace(re, function (m) { return pair[1] === 'I am' || pair[1] === 'I have' ? pair[1] : matchCase(m, pair[1]); });
+    });
+    return out;
+  }
+
+  function contract(s) {
+    var curly = (s.match(/’/g) || []).length > (s.match(/'/g) || []).length;
+    var out = s;
+    CONTRACTIONS.forEach(function (pair) {
+      var tail = '(?=\\s+[\\p{L}])';
+      if (pair[1] === 'I have') tail = '(?=\\s+(?:been|had|done|seen|made|never|always|just|already|written|read|tried|found|not)(?![' + L + ']))';
+      var re = new RegExp('(?<![' + L + '])' + pair[1].replace(' ', '\\s+') + tail, 'giu');
+      var short = curly ? pair[0].replace("'", '’') : pair[0];
+      out = out.replace(re, function (m) { return /^I\s/.test(m) || m === 'I' ? short : matchCase(m, short); });
+    });
+    return out;
+  }
+
+  var W = "[\\p{L}\\p{N}'’-]+";
+  // "A, B and C" where A follows a lower-case word (so not "However, x and y" at a sentence start),
+  // A is not a bare number ("In 2020, the team and I"), and C is not a pronoun starting a clause.
+  var LIST_HEAD = '(?<=[\\p{Ll}\\p{N}] )(?!\\p{N}+,)(' + W + ', ' + W + '(?: ' + W + ')?)';
+  var LIST_TAIL = '((?:and|or) )(?!(?:I|we|he|she|they|you|it)(?![\\p{L}]))';
+
+  function oxfordComma(s) {
+    var has = new RegExp(LIST_HEAD + ', ' + LIST_TAIL, 'gu');
+    if (has.test(s)) {
+      return { text: s.replace(has, '$1 $2'), desc: 'Oxford comma removed from simple "A, B, and C" lists.' };
+    }
+    var no = new RegExp(LIST_HEAD + ' ' + LIST_TAIL, 'gu');
+    return { text: s.replace(no, '$1, $2'), desc: 'Oxford comma added to simple "A, B and C" lists. Check it reads correctly.' };
+  }
+
+  var SPELL = [
+    ['color', 'colour', '(?:s|ed|ing|ful|less)?'], ['behavior', 'behaviour', '(?:s|al|ally)?'],
+    ['favorite', 'favourite', '(?:s)?'], ['center', 'centre', '(?:s)?'],
+    ['organiz', 'organis', '(?:e|es|ed|ing|ation|ations|er|ers)'], ['analyz', 'analys', '(?:e|ed|ing)'],
+    ['realiz', 'realis', '(?:e|es|ed|ing|ation)']
+  ];
+
+  function spellRe(stem, suf) { return new RegExp('(?<![\\p{L}])' + stem + suf + '(?![\\p{L}])', 'giu'); }
+
+  function spelling(s) {
+    var us = 0, uk = 0;
+    SPELL.forEach(function (p) {
+      us += (s.match(spellRe(p[0], p[2])) || []).length;
+      uk += (s.match(spellRe(p[1], p[2])) || []).length;
+    });
+    if (!us && !uk) return { text: s, desc: 'US/UK spelling: none of the mapped words found.' };
+    var toUK = us >= uk, out = s;
+    SPELL.forEach(function (p) {
+      var from = toUK ? p[0] : p[1], to = toUK ? p[1] : p[0];
+      out = out.replace(spellRe(from, p[2]), function (m) { return matchCase(m.slice(0, from.length), to) + m.slice(from.length); });
+    });
+    return { text: out, desc: toUK ? 'American spellings switched to British (color → colour, organize → organise…).'
+                                    : 'British spellings switched to American (colour → color, organise → organize…).' };
+  }
+
+  // Character edits between two strings: Myers O(ND), with common prefix/suffix trimmed.
+  // Returns max(insertions, deletions), so a substituted character counts once; -1 if over cap.
+  function diffCount(a, b, cap) {
+    if (a === b) return 0;
+    cap = cap || 4000;
+    var s = 0;
+    while (s < a.length && s < b.length && a[s] === b[s]) s++;
+    var ea = a.length, eb = b.length;
+    while (ea > s && eb > s && a[ea - 1] === b[eb - 1]) { ea--; eb--; }
+    a = a.slice(s, ea); b = b.slice(s, eb);
+    var N = a.length, M = b.length, max = Math.min(N + M, cap);
+    var V = new Int32Array(2 * max + 3), off = max + 1;
+    for (var D = 0; D <= max; D++) {
+      for (var k = -D; k <= D; k += 2) {
+        var x = (k === -D || (k !== D && V[off + k - 1] < V[off + k + 1])) ? V[off + k + 1] : V[off + k - 1] + 1;
+        var y = x - k;
+        while (x < N && y < M && a[x] === b[y]) { x++; y++; }
+        V[off + k] = x;
+        if (x >= N && y >= M) return Math.max((D + (M - N)) / 2, (D - (M - N)) / 2);
+      }
+    }
+    return -1;
+  }
+
+  function fixed(desc) { return function (f) { return function (s) { return { text: f(s), desc: desc }; }; }; }
+
+  var SPECS = [
+    ['N1', 'null', 'Curly quotes', fixed('Straight quotes and apostrophes ("" \'\') made curly (“” ‘’).')(toCurly)],
+    ['N2', 'null', 'Straight quotes', fixed('Curly quotes and apostrophes made straight.')(toStraight)],
+    ['N3', 'null', 'Sentence spacing', sentenceSpacing],
+    ['N4', 'null', 'Em dash style', dashes],
+    ['N5', 'null', 'Ellipsis style', ellipsis],
+    ['N6', 'null', 'Hard-wrapped at 72', fixed('Each paragraph broken into lines of at most 72 characters; paragraph breaks kept.')(function (s) { return hardWrap(s, 72); })],
+    ['N7', 'null', 'Unwrapped lines', fixed('Single line breaks inside a paragraph joined into one line.')(unwrap)],
+    ['N8', 'null', 'Unicode cleaned', fixed('Unicode NFKC normalisation, non-breaking spaces to spaces, zero-width and direction-control characters removed.')(cleanUnicode)],
+    ['N9', 'null', 'No blank lines', fixed('Blank lines between paragraphs removed (single line break between them).')(dropBlankLines)],
+    ['N10', 'null', 'Trailing whitespace', fixed('Spaces at line ends removed; Windows line endings (CRLF) changed to LF.')(stripTrailing)],
+    ['L1', 'light', 'Contractions expanded', fixed('Common contractions written out (it’s → it is, don’t → do not…).')(expandContractions)],
+    ['L2', 'light', 'Contractions used', fixed('Common two-word forms contracted (it is → it’s, do not → don’t…).')(contract)],
+    ['L3', 'light', 'Oxford comma', oxfordComma],
+    ['L4', 'light', 'US/UK spelling', spelling]
+  ];
+
+  function generateVariants(input) {
+    var out = [], dropped = [];
+    SPECS.forEach(function (spec) {
+      var r = spec[3](input), noop = r.text === input;
+      var v = { id: spec[0], tier: spec[1], label: spec[2], desc: r.desc, text: r.text, noop: noop,
+                sameWords: sameWords(input, r.text), chars: noop ? 0 : diffCount(input, r.text) };
+      if (v.tier === 'null' && !v.sameWords) { dropped.push(v.id); return; }
+      out.push(v);
+    });
+    return { variants: out, dropped: dropped };
+  }
+
+  return {
+    wordsOf: wordsOf, sameWords: sameWords, wordCount: wordCount, toCurly: toCurly, toStraight: toStraight,
+    sentenceSpacing: sentenceSpacing, dashes: dashes, ellipsis: ellipsis, hardWrap: hardWrap, unwrap: unwrap,
+    cleanUnicode: cleanUnicode, dropBlankLines: dropBlankLines, stripTrailing: stripTrailing,
+    expandContractions: expandContractions, contract: contract, oxfordComma: oxfordComma, spelling: spelling,
+    diffCount: diffCount, generateVariants: generateVariants
+  };
+})();
+/* untell:variants:end */
+
+(function () {
+  'use strict';
+  var V = UntellVariants;
+  var $ = function (id) { return document.getElementById(id); };
+  var STORE_KEY = 'untell.brief.text';
+
+  var PRESETS = [
+    { id: 'custom', name: 'Custom (enter your own figures)', fpr: null, tpr: null },
+    { id: 'nber-pangram', name: 'Chicago Booth/NBER 2025 — Pangram, long text', fpr: 0.1, tpr: 95, tprAssumed: false,
+      url: 'https://www.nber.org/system/files/working_papers/w34223/w34223.pdf' },
+    { id: 'nber-roberta', name: 'Chicago Booth/NBER 2025 — open-source RoBERTa baseline', fpr: 30, tpr: 90, tprAssumed: false,
+      url: 'https://www.nber.org/system/files/working_papers/w34223/w34223.pdf',
+      extra: 'FPR is the low end of the reported 30–78% range.' },
+    { id: 'epoch-originality', name: 'Epoch AI 2026 — Originality, 495 human passages', fpr: 3.8, tpr: 90, tprAssumed: true,
+      url: 'https://epoch.ai/data-insights/ai-detectors-false-negatives' },
+    { id: 'turnitin-claim', name: "Turnitin's own published claim (<1% document-level FPR above 20% AI)", fpr: 1, tpr: 85, tprAssumed: true,
+      url: 'https://www.turnitin.com/blog/understanding-false-positives-within-our-ai-writing-detection-capabilities' }
+  ];
+  var WSU_URL = 'https://provost.wsu.edu/documents/2026/02/cancellation-of-turnitin-ai-detection-software_memo-to-instructors_provost-office_spring-2026.pdf';
+
+  var state = { text: '', variants: [], orig: { score: null, verdict: null }, rec: {}, hash: null };
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; });
+  }
+  function toast(msg) {
+    var t = $('toast'); t.textContent = msg; t.classList.add('show');
+    clearTimeout(toast._h); toast._h = setTimeout(function () { t.classList.remove('show'); }, 1600);
+  }
+  function fmtNum(x) { return Math.round(x).toLocaleString('en-US'); }
+  function fmtPct(p) {
+    if (p == null || !isFinite(p)) return '—';
+    var v = p * 100;
+    if (v === 0) return '0%';
+    if (v < 0.01) return '<0.01%';
+    if (v < 1) return v.toFixed(2).replace(/0+$/, '').replace(/\.$/, '') + '%';
+    if (v > 99.99 && v < 100) return '>99.99%';
+    if (v > 99) return v.toFixed(2).replace(/0+$/, '').replace(/\.$/, '') + '%';
+    return (Math.round(v * 10) / 10) + '%';
+  }
+  function fmtScore(x) { return x == null ? '—' : String(Math.round(x * 100) / 100); }
+
+  /* ---------- storage (optional, per device) ---------- */
+  function storeGet() { try { return window.localStorage.getItem(STORE_KEY); } catch (e) { return null; } }
+  function storeSet(v) { try { if (v == null) window.localStorage.removeItem(STORE_KEY); else window.localStorage.setItem(STORE_KEY, v); } catch (e) { /* unavailable */ } }
+
+  /* ---------- section 1 ---------- */
+  function copyText(text) {
+    function fallback() {
+      var ta = document.createElement('textarea');
+      ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      var ok = false; try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+      document.body.removeChild(ta);
+      toast(ok ? 'Copied' : 'Copy failed: select the text in the preview instead');
+    }
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(function () { toast('Copied'); }, fallback);
+    } else fallback();
+  }
+
+  function recordControls(key, label) {
+    return '<div class="vctl">' +
+      '<button type="button" data-copy="' + key + '">Copy</button>' +
+      '<label class="hint" style="display:flex;gap:6px;align-items:center">Score <input type="number" step="any" inputmode="decimal" data-score="' + key + '" aria-label="Detector score for ' + esc(label) + '"></label>' +
+      '<span class="seg" role="group" aria-label="Verdict for ' + esc(label) + '">' +
+        '<button type="button" class="f" data-verdict="' + key + '" data-val="flagged" aria-pressed="false">Flagged</button>' +
+        '<button type="button" class="h" data-verdict="' + key + '" data-val="clear" aria-pressed="false">Not flagged</button>' +
+      '</span></div>';
+  }
+
+  function renderVariants() {
+    var html = '<div class="vcard is-orig"><div class="vhead"><span class="badge id">Original</span><strong>Your text as submitted</strong></div>' +
+      '<p class="vdesc">Record the verdict the detector gives the unedited text. Every flip is counted against this.</p>' +
+      recordControls('orig', 'original') + '</div>';
+    state.variants.forEach(function (v) {
+      var badges = '<span class="badge id">' + v.id + '</span><strong>' + esc(v.label) + '</strong>';
+      if (v.tier === 'null') badges += '<span class="badge ok" title="Checked: identical word sequence">✓ same words</span>';
+      else badges += '<span class="badge light">' + (v.sameWords ? 'light edit, punctuation only' : 'light edit, a few words change') + '</span>';
+      if (v.noop) badges += '<span class="badge noop">no-op</span>';
+      else badges += '<span class="note">' + (v.chars < 0 ? 'over 4,000' : fmtNum(v.chars)) + ' character' + (v.chars === 1 ? '' : 's') + ' changed</span>';
+      html += '<div class="vcard' + (v.noop ? ' is-noop' : '') + '" id="vc-' + v.id + '"><div class="vhead">' + badges + '</div>' +
+        '<p class="vdesc">' + esc(v.desc) + '</p>' +
+        (v.noop ? '<p class="note" style="margin:0">Identical to the original, so there is nothing to test.</p>' :
+          '<details><summary>Show this version</summary><div class="vtext">' + esc(v.text) + '</div></details>' + recordControls(v.id, v.id)) +
+        '</div>';
+    });
+    $('variants-list').innerHTML = html;
+    $('variants-area').hidden = false;
+  }
+
+  function generate() {
+    var text = $('src-text').value;
+    if (!text.trim()) { toast('Paste some text first'); return; }
+    var hasRecords = state.orig.verdict || state.orig.score != null || Object.keys(state.rec).length;
+    if (text !== state.text && hasRecords && !window.confirm('The text changed. Making new versions clears the scores you recorded. Continue?')) return;
+    if (text !== state.text) { state.orig = { score: null, verdict: null }; state.rec = {}; }
+    state.text = text;
+    var g = V.generateVariants(text);
+    g.dropped.forEach(function (id) { console.warn('untell: dropped null variant ' + id + ' because it failed the same-words check'); });
+    state.variants = g.variants;
+    renderVariants();
+    restoreRecords();
+    updateStability();
+    updateMeta();
+    state.hash = null;
+    sha256(text).then(function (h) { state.hash = h; });
+    if ($('remember').checked) storeSet(text);
+  }
+
+  function restoreRecords() {
+    var all = Object.assign({ orig: state.orig }, state.rec);
+    Object.keys(all).forEach(function (k) {
+      var r = all[k]; if (!r) return;
+      var inp = document.querySelector('[data-score="' + k + '"]'); if (inp && r.score != null) inp.value = r.score;
+      document.querySelectorAll('[data-verdict="' + k + '"]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-val') === r.verdict)); });
+    });
+  }
+
+  function recFor(key) {
+    if (key === 'orig') return state.orig;
+    return state.rec[key] || (state.rec[key] = { score: null, verdict: null });
+  }
+
+  function tierStats(tier) {
+    var vs = state.variants.filter(function (v) { return v.tier === tier && !v.noop; });
+    var tested = vs.filter(function (v) { return state.rec[v.id] && state.rec[v.id].verdict; });
+    var base = state.orig.verdict;
+    var flips = base ? tested.filter(function (v) { return state.rec[v.id].verdict !== base; }) : [];
+    var scores = vs.map(function (v) { return state.rec[v.id] && state.rec[v.id].score; }).filter(function (x) { return x != null; });
+    return { eligible: vs.length, tested: tested.length, flips: flips.length, flipIds: flips.map(function (v) { return v.id; }), scores: scores, base: base };
+  }
+
+  function findings() {
+    var n = tierStats('null'), l = tierStats('light');
+    var scores = n.scores.slice(); if (state.orig.score != null) scores.push(state.orig.score);
+    var min = scores.length ? Math.min.apply(null, scores) : null, max = scores.length ? Math.max.apply(null, scores) : null;
+    var main, lightTxt = '';
+    if (!state.orig.verdict) main = "Record the detector's verdict on the original text (Flagged / Not flagged) to compare the versions against it.";
+    else if (!n.tested) main = 'Run the same-words versions through the detector and record each verdict.';
+    else if (n.flips) {
+      main = "The detector's verdict changed in " + n.flips + ' of ' + n.tested + ' versions that contain exactly the same words. ' +
+        'A verdict that depends on quote style or spacing is not a measurement of who wrote the words.';
+    } else {
+      main = 'The verdict was stable under these edits: none of the ' + n.tested + ' same-word versions changed it. ' +
+        'This test found no instability; that is not evidence either way about authorship.';
+    }
+    if (state.orig.verdict && n.tested && n.tested < n.eligible) main += ' (' + (n.eligible - n.tested) + ' of ' + n.eligible + ' same-word versions not yet recorded.)';
+    if (scores.length >= 2 && max - min > 0) main += ' On the same words, scores ranged from ' + fmtScore(min) + ' to ' + fmtScore(max) + ' (a spread of ' + fmtScore(max - min) + ').';
+    if (state.orig.verdict && l.tested) {
+      lightTxt = 'Light edits (contractions, Oxford comma, spelling): the verdict changed in ' + l.flips + ' of ' + l.tested + ' versions. ' +
+        'These can change a few words, so a flip here is weaker evidence than a same-words flip, but a detector that measures authorship should not care about them either.';
+    }
+    return { n: n, l: l, min: min, max: max, spread: scores.length ? max - min : null, nScores: scores.length, main: main, light: lightTxt };
+  }
+
+  function updateStability() {
+    var f = findings();
+    var rate = f.n.tested && state.orig.verdict ? f.n.flips / f.n.tested : null;
+    $('stability-stats').innerHTML =
+      stat(rate == null ? '—' : Math.round(rate * 100) + '%', 'verdict flip rate, same-words versions' + (f.n.tested ? ' (' + f.n.flips + '/' + f.n.tested + ')' : '')) +
+      stat(f.min == null ? '—' : fmtScore(f.min) + '–' + fmtScore(f.max), 'score min–max, original + same words') +
+      stat(f.spread == null ? '—' : fmtScore(f.spread), 'score spread (points)') +
+      stat(f.l.tested && state.orig.verdict ? f.l.flips + '/' + f.l.tested : '—', 'flips, light-edit versions');
+    $('stability-finding').textContent = f.main;
+    $('light-finding').textContent = f.light;
+  }
+  function stat(v, k) { return '<div class="stat"><div class="v">' + esc(v) + '</div><div class="k">' + esc(k) + '</div></div>'; }
+
+  function updateMeta() {
+    var t = $('src-text').value;
+    $('text-meta').textContent = t.trim() ? V.wordCount(t).toLocaleString('en-US') + ' words' : '';
+  }
+
+  /* ---------- section 2 ---------- */
+  function num(id, lo, hi, def) {
+    var x = parseFloat($(id).value);
+    if (!isFinite(x)) return def;
+    return Math.min(hi, Math.max(lo, x));
+  }
+  function bayes() {
+    var fpr = num('fpr', 0, 100, 0) / 100, tpr = num('tpr', 0, 100, 0) / 100, prior = num('prior', 0, 100, 0) / 100;
+    var k = Math.max(1, Math.round(num('kdocs', 1, 1e6, 1))), N = Math.max(1, Math.round(num('cohort', 1, 1e9, 1000)));
+    var pf = tpr * prior + fpr * (1 - prior);
+    var pAI = pf > 0 ? tpr * prior / pf : null;
+    var pH = pf > 0 ? 1 - pAI : null;
+    var atLeast = 1 - Math.pow(1 - fpr, k);
+    var preset = PRESETS.filter(function (p) { return p.id === $('preset').value; })[0] || PRESETS[0];
+    return { fpr: fpr, tpr: tpr, prior: prior, k: k, N: N, pAI: pAI, pH: pH, atLeast: atLeast, expected: N * atLeast, preset: preset,
+             per1000: { ai: 1000 * prior, aiFlag: 1000 * prior * tpr, hum: 1000 * (1 - prior), humFlag: 1000 * (1 - prior) * fpr } };
+  }
+  function sentences(b) {
+    var f = b.per1000, s1;
+    if (b.pH == null) s1 = 'With these figures the detector never flags anything, so a flag cannot occur.';
+    else s1 = 'Suppose 1,000 documents are submitted in this setting. About ' + approx(f.ai) + ' are AI-written and the detector flags about ' + approx(f.aiFlag) +
+      ' of them. Of the ' + approx(f.hum) + ' human-written ones, it wrongly flags about ' + approx(f.humFlag) + '. So of the ' + approx(f.aiFlag + f.humFlag) +
+      ' flagged documents, about ' + fmtPct(b.pH) + ' were written by a human.';
+    var s2 = 'Of ' + fmtNum(b.N) + ' honest writers each submitting ' + b.k + ' document' + (b.k === 1 ? '' : 's') + ', about ' + approx(b.expected) +
+      ' would be flagged at least once (' + fmtPct(b.atLeast) + ' each), assuming independent errors.';
+    return { s1: s1, s2: s2 };
+  }
+  function approx(x) {
+    if (x === 0) return '0';
+    if (x < 1) return x < 0.1 ? 'fewer than 0.1' : x.toFixed(1);
+    if (x < 10) return (Math.round(x * 10) / 10).toString();
+    return fmtNum(x);
+  }
+  function updateBayes() {
+    var b = bayes(), s = sentences(b);
+    $('bayes-stats').innerHTML =
+      stat(fmtPct(b.pAI), 'P(AI-written | flagged)') + stat(fmtPct(b.pH), 'P(human-written | flagged)') +
+      stat(fmtPct(b.atLeast), 'P(≥1 false flag in ' + b.k + ' docs), honest writer') +
+      stat(approx(b.expected), 'expected honest writers flagged, of ' + fmtNum(b.N));
+    var hm = b.pH == null ? 0 : Math.round(b.pH * 100);
+    var cells = '';
+    for (var i = 0; i < 100; i++) cells += '<span' + (i < hm ? ' class="hm"' : '') + '></span>';
+    $('bayes-icons').innerHTML = cells;
+    $('bayes-icons').setAttribute('aria-label', 'Of 100 flagged documents, about ' + hm + ' are human-written.');
+    var tiny = b.pH != null && b.pH > 0 && hm === 0 ? ' (fewer than 1 in 100: ' + fmtPct(b.pH) + ')' : '';
+    $('bayes-legend').innerHTML = '<p style="margin-top:0"><strong>If 100 documents were flagged</strong></p>' +
+      '<p><i style="background:var(--accent)"></i>about ' + hm + ' written by a human' + esc(tiny) + '</p>' +
+      '<p><i style="background:var(--grid-ai)"></i>about ' + (100 - hm) + ' AI-written</p>';
+    $('bayes-sentence').textContent = s.s1;
+    $('bayes-rollup').textContent = s.s2;
+  }
+  function renderPresetSrc() {
+    var p = PRESETS.filter(function (x) { return x.id === $('preset').value; })[0];
+    if (!p || !p.url) { $('preset-src').innerHTML = '<span class="note">Enter figures from the detector vendor, an independent study, or your institution.</span>'; $('tpr-hint').textContent = 'AI text correctly flagged'; return; }
+    $('preset-src').innerHTML = '<span class="note">Published figure, check the source; detectors change versions. ' + (p.extra ? esc(p.extra) + ' ' : '') +
+      (p.tprAssumed ? 'The true-positive rate is an <strong>assumed</strong> illustrative value, not from this source. ' : '') +
+      'Source: </span><a href="' + esc(p.url) + '" target="_blank" rel="noopener noreferrer">' + esc(p.url) + '</a>';
+    $('tpr-hint').textContent = p.tprAssumed ? 'assumed, not from the source' : 'AI text correctly flagged';
+  }
+
+  /* ---------- section 3 ---------- */
+  function sha256(text) {
+    try {
+      if (!(window.crypto && crypto.subtle && window.TextEncoder)) return Promise.resolve(null);
+      return crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)).then(function (buf) {
+        return Array.prototype.map.call(new Uint8Array(buf), function (x) { return ('0' + x.toString(16)).slice(-2); }).join('');
+      }, function () { return null; });
+    } catch (e) { return Promise.resolve(null); }
+  }
+
+  var QUESTIONS = [
+    "What is the detector's measured false-positive rate on text of this length and register (genre, level, first-language background)?",
+    'Was the score the only evidence?',
+    'Which model version of the detector produced the score, and on what date?',
+    'Was the result reproduced, by re-running the same text or a same-words copy?',
+    "Does the institution's own policy permit a detector score as the sole evidence?"
+  ];
+
+  function verdictLabel(v) { return v === 'flagged' ? 'Flagged' : v === 'clear' ? 'Not flagged' : '—'; }
+
+  function buildBrief() {
+    var f = findings(), b = bayes(), s = sentences(b);
+    var det = $('det-name').value.trim() || 'not stated', ver = $('det-version').value.trim() || 'not stated';
+    var runDate = $('run-date').value || 'not stated';
+    var today = new Date().toISOString().slice(0, 10);
+    var wc = V.wordCount(state.text || $('src-text').value);
+    var rows = [{ id: 'Original', label: 'As submitted', same: '—', rec: state.orig, changed: '—' }];
+    state.variants.forEach(function (v) {
+      if (v.noop) return;
+      var r = state.rec[v.id] || {};
+      rows.push({ id: v.id, label: v.label, same: v.tier === 'null' ? 'yes' : (v.sameWords ? 'yes (light edit)' : 'no (light edit)'), rec: r,
+        changed: state.orig.verdict && r.verdict ? (r.verdict !== state.orig.verdict ? 'YES' : 'no') : '—' });
+    });
+    var noops = state.variants.filter(function (v) { return v.noop; }).map(function (v) { return v.id; });
+    var src = b.preset.url ? b.preset : null;
+    return { f: f, b: b, s: s, det: det, ver: ver, runDate: runDate, today: today, wc: wc, rows: rows, noops: noops, src: src, hash: state.hash };
+  }
+
+  function briefHTML(d) {
+    var h = '<h2>Detector evidence brief</h2>';
+    h += '<table><tbody>' +
+      '<tr><th>Brief generated</th><td>' + esc(d.today) + '</td></tr>' +
+      '<tr><th>Detector</th><td>' + esc(d.det) + '</td></tr>' +
+      '<tr><th>Version / model</th><td>' + esc(d.ver) + '</td></tr>' +
+      '<tr><th>Versions tested on</th><td>' + esc(d.runDate) + '</td></tr>' +
+      '<tr><th>Text</th><td>' + d.wc.toLocaleString('en-US') + ' words' + (d.hash ? '<br><span class="note">SHA-256: <code style="word-break:break-all">' + d.hash + '</code></span>' : '') + '</td></tr>' +
+      '</tbody></table>';
+    h += '<h3>1. Is the verdict stable when no words change?</h3>';
+    h += '<div class="tablewrap"><table><thead><tr><th>Version</th><th>Edit</th><th>Same words</th><th>Score</th><th>Verdict</th><th>Verdict changed</th></tr></thead><tbody>';
+    d.rows.forEach(function (r) {
+      h += '<tr><td>' + esc(r.id) + '</td><td>' + esc(r.label) + '</td><td>' + esc(r.same) + '</td><td>' + esc(fmtScore(r.rec.score)) + '</td><td>' + esc(verdictLabel(r.rec.verdict)) + '</td><td>' + (r.changed === 'YES' ? '<strong>YES</strong>' : esc(r.changed)) + '</td></tr>';
+    });
+    h += '</tbody></table></div>';
+    if (d.noops.length) h += '<p class="note">Not applicable to this text (the edit had nothing to change): ' + esc(d.noops.join(', ')) + '.</p>';
+    h += '<p class="finding">' + esc(d.f.main) + '</p>';
+    if (d.f.light) h += '<p>' + esc(d.f.light) + '</p>';
+    h += '<p class="note">Same-words versions change only formatting (quote style, spacing, line breaks, invisible characters). Each was checked by the generating tool to contain the identical word sequence.</p>';
+    h += '<h3>2. What a flag means at these figures</h3>';
+    h += '<p>Figures: ' + (d.src ? esc(d.src.name) + ' (published figure, check the source; detectors change versions' + (d.src.tprAssumed ? '; true-positive rate assumed' : '') + '). Source: <a href="' + esc(d.src.url) + '">' + esc(d.src.url) + '</a>' : 'entered by the user.') + '</p>';
+    h += '<table><tbody>' +
+      '<tr><th>False-positive rate</th><td>' + fmtPct(d.b.fpr) + '</td></tr>' +
+      '<tr><th>True-positive rate</th><td>' + fmtPct(d.b.tpr) + (d.src && d.src.tprAssumed ? ' (assumed)' : '') + '</td></tr>' +
+      '<tr><th>Assumed share of AI-written work</th><td>' + fmtPct(d.b.prior) + '</td></tr>' +
+      '<tr><th>P(AI-written | flagged)</th><td><strong>' + fmtPct(d.b.pAI) + '</strong></td></tr>' +
+      '<tr><th>P(human-written | flagged)</th><td><strong>' + fmtPct(d.b.pH) + '</strong></td></tr>' +
+      '<tr><th>P(at least one false flag) for an honest writer submitting ' + d.b.k + ' documents</th><td><strong>' + fmtPct(d.b.atLeast) + '</strong></td></tr>' +
+      '</tbody></table>';
+    h += '<p>' + esc(d.s.s1) + '</p><p>' + esc(d.s.s2) + '</p>';
+    h += '<p class="note">Assumes independent errors across documents. Real errors cluster on particular writing styles, so some honest writers are flagged repeatedly.</p>';
+    h += '<h3>3. Questions to ask</h3><ol>';
+    QUESTIONS.forEach(function (q) { h += '<li>' + esc(q) + '</li>'; });
+    h += '</ol>';
+    h += '<p>Context: Washington State University cancelled Turnitin AI detection in February 2026, citing that 33% of its 2023–25 AI-misconduct cases where the detector was the only evidence were dismissed. Source: <a href="' + WSU_URL + '">' + WSU_URL + '</a></p>';
+    h += '<p class="brief-foot">Generated by untell (open source). Not legal advice. This page measures the detector, not the writer.</p>';
+    return h;
+  }
+
+  function mdCell(s) { return String(s).replace(/\|/g, '\\|').replace(/\n/g, ' '); }
+  function briefMD(d) {
+    var L = [];
+    L.push('# Detector evidence brief', '');
+    L.push('- Brief generated: ' + d.today, '- Detector: ' + d.det, '- Version / model: ' + d.ver, '- Versions tested on: ' + d.runDate,
+      '- Text: ' + d.wc + ' words' + (d.hash ? ' (SHA-256 `' + d.hash + '`)' : ''), '');
+    L.push('## 1. Is the verdict stable when no words change?', '');
+    L.push('| Version | Edit | Same words | Score | Verdict | Verdict changed |', '|---|---|---|---|---|---|');
+    d.rows.forEach(function (r) { L.push('| ' + [r.id, r.label, r.same, fmtScore(r.rec.score), verdictLabel(r.rec.verdict), r.changed === 'YES' ? '**YES**' : r.changed].map(mdCell).join(' | ') + ' |'); });
+    L.push('');
+    if (d.noops.length) L.push('Not applicable to this text (nothing to change): ' + d.noops.join(', ') + '.', '');
+    L.push('**Finding:** ' + d.f.main, '');
+    if (d.f.light) L.push(d.f.light, '');
+    L.push('## 2. What a flag means at these figures', '');
+    L.push('Figures: ' + (d.src ? d.src.name + ' (published figure, check the source; detectors change versions' + (d.src.tprAssumed ? '; true-positive rate assumed' : '') + '). Source: ' + d.src.url : 'entered by the user.'), '');
+    L.push('- False-positive rate: ' + fmtPct(d.b.fpr), '- True-positive rate: ' + fmtPct(d.b.tpr) + (d.src && d.src.tprAssumed ? ' (assumed)' : ''),
+      '- Assumed share of AI-written work: ' + fmtPct(d.b.prior), '- P(AI-written | flagged): **' + fmtPct(d.b.pAI) + '**',
+      '- P(human-written | flagged): **' + fmtPct(d.b.pH) + '**',
+      '- P(at least one false flag), honest writer, ' + d.b.k + ' documents: **' + fmtPct(d.b.atLeast) + '**', '');
+    L.push(d.s.s1, '', d.s.s2, '', '_Assumes independent errors across documents; real errors cluster on particular writing styles._', '');
+    L.push('## 3. Questions to ask', '');
+    QUESTIONS.forEach(function (q, i) { L.push((i + 1) + '. ' + q); });
+    L.push('', 'Context: Washington State University cancelled Turnitin AI detection in February 2026, citing that 33% of its 2023–25 AI-misconduct cases where the detector was the only evidence were dismissed. Source: ' + WSU_URL, '');
+    L.push('---', '', '_Generated by untell (open source). Not legal advice. This page measures the detector, not the writer._', '');
+    return L.join('\n');
+  }
+
+  function generateBrief() {
+    var d = buildBrief();
+    var out = $('brief-output');
+    out.innerHTML = briefHTML(d);
+    out.classList.add('ready');
+    return d;
+  }
+
+  /* ---------- wiring ---------- */
+  function init() {
+    $('preset').innerHTML = PRESETS.map(function (p) { return '<option value="' + p.id + '">' + esc(p.name) + '</option>'; }).join('');
+    $('run-date').value = new Date().toISOString().slice(0, 10);
+    var saved = storeGet();
+    if (saved) { $('src-text').value = saved; $('remember').checked = true; }
+    updateMeta();
+
+    $('gen-btn').addEventListener('click', generate);
+    $('src-text').addEventListener('input', function () {
+      updateMeta();
+      if ($('remember').checked) storeSet($('src-text').value);
+    });
+    $('remember').addEventListener('change', function () { storeSet(this.checked ? $('src-text').value : null); });
+
+    $('variants-list').addEventListener('click', function (e) {
+      var t = e.target.closest('button'); if (!t) return;
+      var c = t.getAttribute('data-copy');
+      if (c) {
+        var v = state.variants.filter(function (x) { return x.id === c; })[0];
+        copyText(c === 'orig' ? state.text : v ? v.text : '');
+        return;
+      }
+      var key = t.getAttribute('data-verdict');
+      if (key) {
+        var r = recFor(key), val = t.getAttribute('data-val');
+        r.verdict = r.verdict === val ? null : val;
+        document.querySelectorAll('[data-verdict="' + key + '"]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-val') === r.verdict)); });
+        updateStability();
+      }
+    });
+    $('variants-list').addEventListener('input', function (e) {
+      var key = e.target.getAttribute('data-score'); if (!key) return;
+      var x = parseFloat(e.target.value);
+      recFor(key).score = isFinite(x) ? x : null;
+      updateStability();
+    });
+
+    $('preset').addEventListener('change', function () {
+      var p = PRESETS.filter(function (x) { return x.id === $('preset').value; })[0];
+      if (p && p.fpr != null) { $('fpr').value = p.fpr; $('tpr').value = p.tpr; }
+      renderPresetSrc(); updateBayes();
+    });
+    ['fpr', 'tpr'].forEach(function (id) {
+      $(id).addEventListener('input', function () {
+        if ($('preset').value !== 'custom') { $('preset').value = 'custom'; renderPresetSrc(); }
+        updateBayes();
+      });
+    });
+    ['prior', 'kdocs', 'cohort'].forEach(function (id) { $(id).addEventListener('input', updateBayes); });
+
+    $('brief-btn').addEventListener('click', function () {
+      generateBrief();
+      $('brief-output').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    $('print-btn').addEventListener('click', function () { generateBrief(); window.print(); });
+    window.addEventListener('beforeprint', function () { if (!$('brief-output').classList.contains('ready')) generateBrief(); });
+    $('md-btn').addEventListener('click', function () {
+      var d = generateBrief();
+      var blob = new Blob([briefMD(d)], { type: 'text/markdown;charset=utf-8' });
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'detector-evidence-brief-' + d.today + '.md';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+    });
+
+    renderPresetSrc();
+    updateBayes();
+  }
+  init();
+})();
+</script>
+</body>
+</html>

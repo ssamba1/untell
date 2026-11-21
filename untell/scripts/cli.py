@@ -39,6 +39,14 @@ if __package__ in (None, ""):
 
 # subcommand -> "module:function". Lazy so importing this module stays cheap and offline.
 _COMMANDS: dict[str, str] = {
+    # The audit commands come first: they are what this tool is for.
+    "brief": "untell.evidence.cli:brief_main",
+    "stability": "untell.evidence.cli:stability_main",
+    "variants": "untell.evidence.cli:variants_main",
+    "flagmath": "untell.evidence.cli:flagmath_main",
+    "report-card": "untell.evidence.cli:report_card_main",
+    "drift": "untell.evidence.cli:drift_main",
+    "capsule": "untell.evidence.cli:capsule_main",
     "humanize": "untell.scripts.run:main",
     "loop": "untell.scripts.run:main",  # alias
     "score": "untell.scripts.score:main",
@@ -67,6 +75,13 @@ _STANDALONE_ONLY = frozenset({
 })
 
 _ONE_LINER = {
+    "brief": "evidence brief for one detector verdict: stability, published rates, Bayes",
+    "stability": "does a verdict survive edits that change no words?",
+    "variants": "write same-words variants + a scores.csv to test any detector by hand",
+    "flagmath": "what a flag implies: P(AI | flagged), per-person false-flag risk",
+    "report-card": "measure a detector on a human corpus: FPR by slice, CIs, stability",
+    "drift": "compare two report cards for a silent detector model change",
+    "capsule": "build a pre-LLM human corpus from a git repository's history",
     "humanize": "run the closed detector-feedback loop (alias: loop)",
     "score": "score text with the local AI-detector ensemble",
     "tells": "count the AI writing tells in text (naturalness; lower = more human)",

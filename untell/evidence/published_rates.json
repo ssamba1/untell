@@ -1,0 +1,148 @@
+{
+  "_about": "Published error-rate figures for named AI detectors. Every entry names its source. 'checked' records how far this project verified it: 'primary' = read in the primary source; 'summary' = seen only via a search summary or secondary report; 'vendor' = the detector's own claim. Detectors change models silently: a figure describes the version that was tested, on the text that was tested. Last reviewed 2026-11-21.",
+  "entries": [
+    {
+      "detector": "pangram",
+      "metric": "false_positive_rate",
+      "value": 0.0,
+      "upper": 0.01,
+      "condition": "long-form human text, vendor default threshold",
+      "source": "Jabarian & Imas, 'Artificial Writing and Automated Detection', NBER Working Paper 34223 (2025)",
+      "url": "https://www.nber.org/system/files/working_papers/w34223/w34223.pdf",
+      "checked": "summary",
+      "note": "Reported as approximately zero; the only detector in that study to keep high recall with FPR capped at 0.5%."
+    },
+    {
+      "detector": "gptzero",
+      "metric": "false_positive_rate",
+      "value": null,
+      "upper": 0.01,
+      "condition": "long-form human text, vendor default threshold",
+      "source": "Jabarian & Imas, NBER Working Paper 34223 (2025)",
+      "url": "https://www.nber.org/system/files/working_papers/w34223/w34223.pdf",
+      "checked": "summary",
+      "note": "Under 1%; recall largely lost after humanizer processing in the same study."
+    },
+    {
+      "detector": "originality",
+      "metric": "false_positive_rate",
+      "value": null,
+      "upper": 0.01,
+      "condition": "long-form human text, vendor default threshold",
+      "source": "Jabarian & Imas, NBER Working Paper 34223 (2025)",
+      "url": "https://www.nber.org/system/files/working_papers/w34223/w34223.pdf",
+      "checked": "summary"
+    },
+    {
+      "detector": "originality",
+      "metric": "false_positive_rate",
+      "value": 0.038,
+      "n": 495,
+      "condition": "495 human-written passages",
+      "source": "Epoch AI data insight (July 2026)",
+      "url": "https://epoch.ai/data-insights/ai-detectors-false-negatives",
+      "checked": "summary"
+    },
+    {
+      "detector": "pangram",
+      "metric": "false_positive_rate",
+      "value": 0.0,
+      "n": 495,
+      "condition": "495 human-written passages",
+      "source": "Epoch AI data insight (July 2026)",
+      "url": "https://epoch.ai/data-insights/ai-detectors-false-negatives",
+      "checked": "summary"
+    },
+    {
+      "detector": "gptzero",
+      "metric": "false_positive_rate",
+      "value": 0.0,
+      "n": 495,
+      "condition": "495 human-written passages",
+      "source": "Epoch AI data insight (July 2026)",
+      "url": "https://epoch.ai/data-insights/ai-detectors-false-negatives",
+      "checked": "summary"
+    },
+    {
+      "detector": "pangram",
+      "metric": "flag_rate_on_presumed_human",
+      "value": 0.149,
+      "condition": "original academic abstracts (authors caution some may be AI-touched)",
+      "source": "arXiv 2608.11256 (2026)",
+      "url": "https://arxiv.org/pdf/2608.11256",
+      "checked": "summary",
+      "note": "Not a clean false-positive rate: provenance of the 'human' abstracts is uncertain."
+    },
+    {
+      "detector": "gptzero",
+      "metric": "flag_rate_on_presumed_human",
+      "value": 0.089,
+      "condition": "original academic abstracts (authors caution some may be AI-touched)",
+      "source": "arXiv 2608.11256 (2026)",
+      "url": "https://arxiv.org/pdf/2608.11256",
+      "checked": "summary",
+      "note": "Not a clean false-positive rate: provenance of the 'human' abstracts is uncertain."
+    },
+    {
+      "detector": "turnitin",
+      "metric": "false_positive_rate",
+      "value": null,
+      "upper": 0.01,
+      "condition": "document level, documents with more than 20% AI writing indicated (vendor claim)",
+      "source": "Turnitin, 'Understanding false positives within our AI writing detection capabilities'",
+      "url": "https://www.turnitin.com/blog/understanding-false-positives-within-our-ai-writing-detection-capabilities",
+      "checked": "vendor",
+      "note": "Vendor claim; no independent 2026 false-positive study of Turnitin was found."
+    },
+    {
+      "detector": "turnitin",
+      "metric": "cases_dismissed_detector_sole_evidence",
+      "value": 0.33,
+      "condition": "Washington State University AI-misconduct cases 2023-25 where the detector was the only evidence; not an error rate",
+      "source": "WSU Provost's Office memo cancelling Turnitin AI detection (Feb 2026)",
+      "url": "https://provost.wsu.edu/documents/2026/02/cancellation-of-turnitin-ai-detection-software_memo-to-instructors_provost-office_spring-2026.pdf",
+      "checked": "summary"
+    },
+    {
+      "detector": "open-source-roberta",
+      "metric": "false_positive_rate",
+      "value": 0.30,
+      "upper": 0.78,
+      "condition": "open-source RoBERTa baseline; range across text types",
+      "source": "Jabarian & Imas, NBER Working Paper 34223 (2025)",
+      "url": "https://www.nber.org/system/files/working_papers/w34223/w34223.pdf",
+      "checked": "summary"
+    },
+    {
+      "detector": "multiple (7 detectors, 2023 versions)",
+      "metric": "false_positive_rate",
+      "value": 0.61,
+      "n": 91,
+      "condition": "TOEFL essays by non-native English writers, averaged across detectors",
+      "source": "Liang, Yuksekgonul, Mao, Wu & Zou, 'GPT detectors are biased against non-native English writers', Patterns 4(7), 2023",
+      "url": "https://doi.org/10.1016/j.patter.2023.100779",
+      "checked": "primary",
+      "note": "2023 detector versions; the bias mechanism (low-perplexity vocabulary) is general."
+    },
+    {
+      "detector": "untell-local-full",
+      "metric": "false_positive_rate",
+      "value": 0.167,
+      "n": 30,
+      "condition": "HC3 human forum answers, shipped threshold",
+      "source": "untell docs/free-ceiling-measured.md",
+      "url": "https://github.com/ssamba1/untell/blob/main/docs/free-ceiling-measured.md",
+      "checked": "primary"
+    },
+    {
+      "detector": "untell-local-lite",
+      "metric": "false_positive_rate",
+      "value": 0.30,
+      "n": 100,
+      "condition": "HC3 human answers, lite tier verdict threshold",
+      "source": "untell docs/free-ceiling-measured.md (Result 43)",
+      "url": "https://github.com/ssamba1/untell/blob/main/docs/free-ceiling-measured.md",
+      "checked": "primary"
+    }
+  ]
+}

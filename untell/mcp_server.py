@@ -1,7 +1,8 @@
-"""MCP server — expose the humanizer as tools to Claude Desktop and other MCP clients.
+"""MCP server — expose the detector-auditing toolkit as tools to Claude Desktop and other clients.
 
 Run: ``untell-mcp`` (after ``pip install -e ".[mcp]"``). Register it in your MCP client's config.
-Tools: ``score``, ``sentences``, ``tells``, ``untell``, ``verify_commercial``, ``compare``,
+Audit tools: ``variants``, ``stability``, ``brief``, ``flagmath``. Also ``score``, ``sentences``,
+``tells``, ``untell`` (the detector-in-the-loop probe), ``verify_commercial``, ``compare``,
 ``ceiling``, ``scrub`` — the authoritative list is ``_TOOL_NAMES`` below, and ``untell-mcp
 --list-tools`` prints it. (This line said ``verify``; no such tool has ever been registered.)
 
@@ -29,7 +30,7 @@ _TIERS = ("lite", "full", "heavy", "commercial")
 # tests/test_mcp_server.py asserts this matches what the server actually registers, so the two
 # cannot drift apart silently.
 _TOOL_NAMES = ("score", "sentences", "tells", "untell", "verify_commercial",
-               "ceiling", "compare", "scrub")
+               "ceiling", "compare", "variants", "stability", "brief", "flagmath", "scrub")
 
 
 # Module level, not nested in `_server`, so the checks are testable without the optional `mcp`
@@ -543,6 +544,91 @@ def _server():
         if bad:
             return bad
         return compare(list(_SAMPLE), tier=tier, corpus="built-in sample")
+
+    # --- the audit tools: what a verdict is worth ---------------------------------------------
+
+    @server.tool()
+    def variants(text: str) -> dict:
+        """Formatting-only ("null": same words, verified) and light copy-edit variants of a text.
+
+        Use these to test ANY detector, including web-only ones: score the original ('base') and
+        each variant, then pass the scores to `stability` or `brief` as scores={'base': .., 'N1': ..}.
+        """
+        from untell.evidence.service import variants_payload
+
+        return _text_too_long(text) or variants_payload(text)
+
+    @server.tool()
+    def stability(text: str, detector: str = "local:lite", threshold: float | None = None,
+                  scores: dict | None = None) -> dict:
+        """Does a detector's verdict on this text survive edits that change no words?
+
+        `detector`: local, local:lite, local:full, or a commercial name (gptzero, pangram, ...;
+        needs its API key). Or pass `scores` recorded by hand from any detector, keyed by variant
+        id (see `variants`). Returns per-variant verdicts, the flip rate, and a quotable finding.
+        """
+        from untell.evidence.service import RefusedSpec, stability_payload
+
+        bad = _text_too_long(text)
+        if bad:
+            return bad
+        try:
+            return stability_payload(text, detector, threshold, scores, allow_commercial=True)
+        except RefusedSpec as exc:
+            return {"error": str(exc)}
+
+    @server.tool()
+    def brief(text: str, detector: str = "local:lite", name: str | None = None,
+              documents: int = 1, scores: dict | None = None, fpr: float | None = None,
+              detector_version: str | None = None, format: str = "markdown") -> dict:
+        """Evidence brief for one detector verdict: stability test on the document, the
+        detector's published error rates (cited), P(AI | flagged) by Bayes, and the per-person
+        false-flag risk for someone who submitted `documents` documents. Measures the detector,
+        not the writer; never includes the document text (only its SHA-256).
+
+        `name` is the detector to look up published rates for (e.g. 'turnitin') when the scores
+        came from `scores`. `format`: markdown | json | html.
+        """
+        from untell.evidence.brief import render_html, render_markdown
+        from untell.evidence.service import RefusedSpec, brief_payload
+
+        bad = _text_too_long(text)
+        if bad:
+            return bad
+        if format not in ("markdown", "json", "html"):
+            return {"error": "format must be markdown, json or html"}
+        try:
+            b = brief_payload(text, detector, name, scores=scores, documents=documents, fpr=fpr,
+                              detector_version=detector_version, allow_commercial=True)
+        except RefusedSpec as exc:
+            return {"error": str(exc)}
+        if format == "json":
+            return b
+        return {"brief": render_markdown(b) if format == "markdown" else render_html(b)}
+
+    @server.tool()
+    def flagmath(fpr: float | None = None, detector: str | None = None, tpr: float = 0.9,
+                 prior: float = 0.1, documents: int = 10) -> dict:
+        """What a detector flag implies: P(AI | flagged) by Bayes and P(an honest writer is
+        flagged at least once across `documents` documents). Give `fpr`, or a `detector` whose
+        published false-positive rate is on file."""
+        from untell.evidence import stats as S
+        from untell.evidence.rates import best_fpr_estimate
+
+        src = "given"
+        if fpr is None and detector:
+            est = best_fpr_estimate(detector)
+            if est:
+                fpr, src = est["fpr"], est["source"]
+        if fpr is None:
+            return {"error": "need fpr, or a detector with a published rate on file"}
+        try:
+            return {"fpr": fpr, "fpr_source": src, "tpr_assumed": tpr, "prior": prior,
+                    "p_ai_given_flag": S.posterior_ai_given_flag(fpr, tpr, prior),
+                    "p_at_least_one_false_flag": S.p_any_false_flag(fpr, max(0, documents)),
+                    "documents": documents}
+        except ValueError as exc:
+            return {"error": str(exc)}
 
     @server.tool()
     def scrub(text: str) -> dict:

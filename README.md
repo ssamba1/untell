@@ -804,7 +804,7 @@ For broader cross-detector benchmarking, [IMGTB](https://github.com/kinit-sk/IMG
 untell/            # THE SKILL (this dir is what you install)
   SKILL.md           # trigger + loop procedure + rewrite rubric
   scripts/           # cli (unified `untell`) · score · tells · preserve · quality · sentences · run · verify
-  detectors/         # base protocol + tiered adapters (8 local + 7 commercial incl. LLM-as-judge)
+  detectors/         # base protocol + tiered adapters (8 local + 8 commercial incl. LLM-as-judge and Pangram)
   rewriter/          # optional rewriters: hosted (Anthropic/OpenAI) · surgical (no-key) · local LoRA policy
   attacks/           # surgical substitution · homoglyph · scrub · back-translation
   references/         # thresholds.md · prompt-rubric.md · ai-tells.md
@@ -841,6 +841,7 @@ without a row here.
 | `UNTELL_API_KEY` | bearer token the REST server requires; unset means no auth |
 | `UNTELL_HOST` / `UNTELL_PORT` | bind address for `untell-server` (default `127.0.0.1:8000`) |
 | `UNTELL_RATE_LIMIT` | requests per minute per client for the REST server |
+| `UNTELL_API_ALLOW_COMMERCIAL` | `1` lets REST callers of `/stability` and `/brief` run commercial detectors on the server's API keys (spends the operator's credit); unset = refused |
 | `UNTELL_CORS_ORIGINS` | comma-separated origins the REST server allows with credentials; unset = any origin may call, credentials NOT allowed (the spec-legal wildcard) |
 | `UNTELL_BROWSER_SITES` | comma-separated free web detectors for `--browser` |
 | `UNTELL_LITE_NO_TORCH` | force the pure-stdlib lite path even when torch is installed. The two paths differ by 11.5x in false positives, so this is how you pin which one you are measuring |
