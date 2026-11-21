@@ -19,7 +19,8 @@ from __future__ import annotations
 import pathlib
 import re
 
-_README = pathlib.Path("README.md").read_text(encoding="utf-8")
+# The tier and env-var tables quoting these figures live in the full manual since the refocus.
+_README = pathlib.Path("docs/reference.md").read_text(encoding="utf-8")
 _SOURCE = pathlib.Path("untell/detectors/local_judge.py").read_text(encoding="utf-8")
 
 _AUROC = re.compile(r"AUROC \*{0,2}(0\.\d+)\*{0,2}")

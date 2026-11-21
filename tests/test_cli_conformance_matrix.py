@@ -147,6 +147,8 @@ def _run(target: str, argv: list[str], *, timeout: int, stdin_closed: bool = Fal
 ALIASES: dict[str, set[str]] = {
     "untell-loop": {"untell-humanize"},
     "untell-humanize": {"untell-loop"},
+    # `untell-probe` is the loop's name since the refocus; it shares the loop's parser.
+    "untell-probe": {"untell-humanize"},
 }
 
 

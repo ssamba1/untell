@@ -24,14 +24,16 @@ DETECTOR_HELP = (
 )
 
 
-def _read_text(args: argparse.Namespace) -> str:
+def _read_text(ap: argparse.ArgumentParser, args: argparse.Namespace) -> str:
     if getattr(args, "file", None):
         return Path(args.file).read_text(encoding="utf-8")
     if getattr(args, "text", None):
         return args.text
     if not sys.stdin.isatty():
-        return sys.stdin.read()
-    raise SystemExit("give the text as an argument, with --file, or on stdin")
+        text = sys.stdin.read()
+        if text.strip():
+            return text
+    ap.error("give the text as an argument, with --file, or on stdin")  # exits 2, like argparse
 
 
 def _write(out: str | None, content: str) -> None:
@@ -58,7 +60,7 @@ def brief_main(argv: list[str] | None = None) -> int:
     from .stability import measure_stability
 
     ap = argparse.ArgumentParser(
-        prog="untell brief",
+        prog="untell-brief",
         description="Evidence brief for one detector verdict on one document: stability under "
                     "formatting-only edits, the detector's published error rates, and what a flag "
                     "implies. Measures the detector, not the writer.")
@@ -81,7 +83,7 @@ def brief_main(argv: list[str] | None = None) -> int:
     ap.add_argument("--out", "-o", help="write to this file instead of stdout")
     args = ap.parse_args(argv)
 
-    text = _read_text(args)
+    text = _read_text(ap, args)
     name = args.name or args.detector or "unspecified"
     stability = None
     if args.detector:
@@ -105,7 +107,7 @@ def stability_main(argv: list[str] | None = None) -> int:
     from .stability import measure_stability
 
     ap = argparse.ArgumentParser(
-        prog="untell stability",
+        prog="untell-stability",
         description="Re-score a document under edits that cannot change its authorship and report "
                     "how often the verdict changes.")
     ap.add_argument("text", nargs="?")
@@ -115,7 +117,7 @@ def stability_main(argv: list[str] | None = None) -> int:
     ap.add_argument("--tiers", type=_tiers, default=("null", "light"))
     ap.add_argument("--json", action="store_true", help="print the full JSON result")
     args = ap.parse_args(argv)
-    res = measure_stability(_read_text(args), resolve_scorer(args.detector, args.threshold),
+    res = measure_stability(_read_text(ap, args), resolve_scorer(args.detector, args.threshold),
                             tiers=args.tiers).to_dict()
     if args.json:
         print(json.dumps(res, indent=2))
@@ -141,7 +143,7 @@ def variants_main(argv: list[str] | None = None) -> int:
     from .perturb import all_variants
 
     ap = argparse.ArgumentParser(
-        prog="untell variants",
+        prog="untell-variants",
         description="Write formatting-only and light-edit variants of a document to a folder, plus "
                     "a scores.csv template. Paste each into the detector under test, fill in the "
                     "CSV, then run: untell brief --file DOC --detector manual:FOLDER/scores.csv")
@@ -150,7 +152,7 @@ def variants_main(argv: list[str] | None = None) -> int:
     ap.add_argument("--out", "-o", default="untell-variants", help="output folder")
     ap.add_argument("--tiers", type=_tiers, default=("null", "light"))
     args = ap.parse_args(argv)
-    text = _read_text(args)
+    text = _read_text(ap, args)
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     (out / "base.txt").write_text(text, encoding="utf-8")
@@ -174,7 +176,7 @@ def flagmath_main(argv: list[str] | None = None) -> int:
     from .rates import best_fpr_estimate
 
     ap = argparse.ArgumentParser(
-        prog="untell flagmath",
+        prog="untell-flagmath",
         description="What a detector flag implies: P(AI | flagged) by Bayes, and the chance an "
                     "honest writer is falsely flagged at least once across k documents.")
     ap.add_argument("--detector", help="look up a published false-positive rate for this detector")
@@ -192,7 +194,7 @@ def flagmath_main(argv: list[str] | None = None) -> int:
         if est:
             fpr, source = est["fpr"], est["source"]
     if fpr is None:
-        raise SystemExit("need --fpr, or a --detector with a published rate on file")
+        ap.error("need --fpr, or a --detector with a published rate on file")
     priors = args.prior or [0.01, 0.05, 0.10, 0.25, 0.50]
     out = {
         "fpr": fpr, "fpr_source": source, "tpr_assumed": args.tpr,
@@ -224,7 +226,7 @@ def report_card_main(argv: list[str] | None = None) -> int:
     from .scorers import resolve_scorer
 
     ap = argparse.ArgumentParser(
-        prog="untell report-card",
+        prog="untell-report-card",
         description="Measure a detector on a corpus of human writing (and optionally AI writing): "
                     "false-positive rate by slice with 95% intervals, per-person risk, verdict "
                     "stability, recall at capped FPR. Dated, versioned, fingerprinted.")
@@ -264,7 +266,7 @@ def drift_main(argv: list[str] | None = None) -> int:
     from .report_card import drift
 
     ap = argparse.ArgumentParser(
-        prog="untell drift",
+        prog="untell-drift",
         description="Compare two report cards (JSON) for the same detector. Exit 1 if anything "
                     "changed significantly (non-overlapping 95% intervals, or any document's "
                     "verdict flipping on an identical corpus).")
@@ -292,7 +294,7 @@ def capsule_main(argv: list[str] | None = None) -> int:
     from .corpus import CHATGPT_RELEASE, git_time_capsule
 
     ap = argparse.ArgumentParser(
-        prog="untell capsule",
+        prog="untell-capsule",
         description="Build a human corpus whose provenance is a timestamp: prose from a git "
                     "repository as it stood before a cut-off (default: ChatGPT's release, "
                     f"{CHATGPT_RELEASE}). Writes JSONL with commit and date on every record.")
@@ -312,3 +314,24 @@ def capsule_main(argv: list[str] | None = None) -> int:
                 n += 1
     print(f"wrote {n} documents to {args.out}")
     return 0
+
+
+_SUBCOMMANDS = {
+    "brief": brief_main, "stability": stability_main, "variants": variants_main,
+    "flagmath": flagmath_main, "report-card": report_card_main, "drift": drift_main,
+    "capsule": capsule_main,
+}
+
+
+def main(argv: list[str] | None = None) -> int:
+    """``python -m untell.evidence.cli <command> ...`` — the same commands as ``untell <command>``."""
+    argv = list(sys.argv[1:] if argv is None else argv)
+    if argv and argv[0] in _SUBCOMMANDS:
+        return _SUBCOMMANDS[argv[0]](argv[1:])
+    print("usage: python -m untell.evidence.cli {" + ",".join(_SUBCOMMANDS) + "} [options]")
+    print(__doc__)
+    return 0 if not argv or argv[0] in ("-h", "--help") else 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
