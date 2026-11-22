@@ -11,8 +11,11 @@ All notable changes to this project are documented here. The format is based on
   learners. Held out: TOEFL 20% (v1 23%), US college 7% (11%), US 8th grade 0% (2.3%), PERSUADE
   English learners 2.5% and others 6.8% (v1 4.0% / 13.0%); race groups 3.4–7.3% (old rule 49–73%);
   AI recall 45%. `untell.bench.persuade` builds the corpora; report cards slice by `--slice-by`.
-- **`hf:<model>` scorer and `untell.bench.open_detectors`**: audit any Hugging Face detector as its
-  card says to run it. First card: Fakespot flags 100% of Stanford CS224N abstracts (AUROC 0.954).
+- **`hf:<model>` scorer, `untell.bench.open_detectors` and a generated leaderboard**
+  (`docs/observatory/open-detectors.md`): five of the most-installed Hugging Face detectors audited
+  on 1,194 pre-2022 human texts (sliced by English-learner status and race) and 352 GPT-3 texts.
+  Desklib and Fakespot (AUROC 0.984) flag 53% / 66% of TOEFL essays at their defaults; ModernBERT
+  flags none and catches 20% of AI text.
 - **Calibrated full-tier verdict (v1).** Each local detector's score is mapped to its percentile
   among 268 held-out pre-2022 human documents, and the verdict flags when the highest percentile
   reaches the fit's 5% cut. Evaluated untouched on held-out corpora: TOEFL essays 92% → 23%

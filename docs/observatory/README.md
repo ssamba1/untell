@@ -97,6 +97,21 @@ recalibrating it is on the [roadmap](../../ROADMAP.md).
 [Liang](untell-local-full/2026-11-22-liang2023-calibrated.md) ·
 [PEPs](untell-local-full/2026-11-22-peps-calibrated.md).
 
+## Open detectors from Hugging Face
+
+Five of the most-installed open detectors, each run as its model card says, on 1,194 pre-2022
+human texts and 352 GPT-3 texts: [leaderboard](open-detectors.md) (generated from the cards).
+
+- **The best separators have the worst defaults.** Desklib (the most downloaded, and RAID's leader)
+  and Fakespot both reach AUROC 0.984, yet at their default 0.5 Desklib flags 52.7% of TOEFL essays
+  and 51% of Stanford students' abstracts, and Fakespot flags 65.9% and 100%.
+- **The careful ones barely detect.** ModernBERT (rasbt) flags 0 of 91 TOEFL essays and 0.6% of all
+  human text — and catches 20.5% of GPT-3 text at its default.
+- **Typography still moves them.** Formatting-only edits flip Desklib's verdict on 8.5% of variants;
+  one trailing space clears 22 of Fakespot's 62 TOEFL flags.
+- **Group gaps are detector-specific.** Among US students, Fakespot flags White writers (7.7%) more
+  than Black writers (1.8%); Desklib the reverse (3.9% vs 6.2%).
+
 ## One trailing space
 
 On short text, a single trailing space reversed every "AI" verdict `hc3_roberta` gave in this
