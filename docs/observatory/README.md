@@ -67,6 +67,32 @@ changes. They are a baseline: re-scoring the same essays against today's version
 are in [`liang-2023/scores/`](liang-2023/scores/); the essays themselves are not stored here and are
 rebuilt from the authors' repository by `python -m untell.bench.liang2023 <clone>`.
 
+## untell's own full ensemble, audited by itself (2026-11-22)
+
+The same report card, pointed at untell's own `local:full` verdict (five local models; flagged
+when the ensemble maximum reaches the shipped 0.30 threshold):
+
+| corpus | false positives on human writing | card |
+|---|---|---|
+| Liang et al. essays (394 human) | **57.4%** (226/394; 95% CI 52.4–62.1%) | [md](untell-local-full/2026-11-22-liang2023.md) |
+| — TOEFL, non-native writers | **92.3%** (84/91) | |
+| — US 8th grade | 40.9% (36/88) | |
+| — US college admissions | 62.9% (44/70) | |
+| — Stanford CS224N abstracts | 42.8% (62/145) | |
+| 80 pre-2022 PEPs | **65.0%** (52/80; 95% CI 54.1–74.5%) | [md](untell-local-full/2026-11-22-peps.md) |
+
+AUROC against the 352 GPT-3 texts is 0.817, but recall is **0%** at every capped false-positive
+rate (0.5%, 1%, 5%): no threshold flags any AI text without flagging more than 5% of these humans.
+Under formatting-only edits, 6 of 55 variants (10.9%) still changed the verdict, with untell's
+input normalisation on.
+
+**What this says.** untell's own verdict, on the full tier, is not fit to be evidence about anyone,
+and flags non-native writers at more than twice the rate of US students. The previously published
+figure (5 of 30 HC3 forum answers, 17%) described one corpus. Taking the maximum of five detectors
+against a 0.30 bar makes the most trigger-happy member decide every verdict. This card is why the
+evidence tools never use untell's own verdict as a stand-in for a commercial detector, and why
+recalibrating it is on the [roadmap](../../ROADMAP.md).
+
 ## One trailing space
 
 On short text, a single trailing space reversed every "AI" verdict `hc3_roberta` gave in this

@@ -6,6 +6,10 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- **untell's own full ensemble, audited by itself.** Report cards (`docs/observatory/untell-local-full/`)
+  show it flags 57% of 394 human essays, 92% of TOEFL essays by non-native writers and 65% of
+  pre-2022 PEPs, with 0% recall at any capped false-positive rate. The README's earlier "17% on 30
+  HC3 answers" figure is replaced; recalibration is roadmap item 26.
 - **The trailing-space finding.** On short text, one trailing space reversed every "AI" verdict
   `hc3_roberta` gave in the Liang corpus (36/36 flagged human TOEFL essays, 88/88 flagged GPT-3
   abstracts; AUROC 0.784 → 0.326); `roberta_openai` lost 9 of 53 TOEFL flags. Measured with the new
@@ -25,6 +29,16 @@ All notable changes to this project are documented here. The format is based on
   Turnitin, the WSU memo) are labelled as unchecked, and the WSU figure is quoted as reported.
 - **`--writer non-native`** (`brief`, `flagmath`, MCP and REST): published rates carry a writer
   population, and a rate measured on one population is never applied to another.
+
+### Fixed
+- Over 6,000 words, the meaning gate rejected every rewrite: `aligned_chunks` cut the rewrite at the
+  source's word positions, so a shortened rewrite drifted out of step (minimum chunk similarity
+  0.27–0.31 vs 0.77 whole-document). Now proportional on each side (0.70).
+- `score_tells` was O(n²) on blank lines (`^\s*` under MULTILINE): 100,000 newlines took ~30 minutes,
+  now 0.2 s, with identical tell counts over 752 texts.
+- `untell-scrub` with empty stdin printed a blank line and exited 0; it now reports no input (exit 2).
+- One trailing space reversed hc3_roberta's verdict on untell's own normalised path; trailing
+  horizontal whitespace is now normalised away.
 
 ## [0.4.0] - 2026-11-21
 

@@ -11,7 +11,7 @@
 
 ## What this is for
 
-An AI detector gives you a number, and that number is increasingly used to make consequential accusations. This measures what it is worth. Measured here, at each tool's own shipped threshold: the full local ensemble flags **17% of genuine human writing**; the lite tier flagged **30%** on conversational prose; one bundled detector flags **6 of 8** human documents and another flags **89%** of them.
+An AI detector gives you a number, and that number is increasingly used to make consequential accusations. This measures what it is worth. Measured here, at each tool's own shipped threshold: the full local ensemble flags **57% of 394 human essays** — 92% of TOEFL essays by non-native writers — in its own report card ([observatory](observatory/README.md)); on 30 HC3 answers it had measured 17%; the lite tier flagged **30%** on conversational prose; one bundled detector flags **6 of 8** human documents and another flags **89%** of them.
 
 The rewrite loop is the instrument, not the product: score, edit under a meaning gate, re-score — because a verdict that collapses under meaning-preserving editing was never measuring authorship. Its result is a negative one, and it is stated as such: the loop moves the detectors it optimises against and **does not move a detector it has never seen**.
 
