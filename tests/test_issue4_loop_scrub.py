@@ -26,8 +26,22 @@ Run: part of the fast suite, lite tier, no torch/keys/network.
 
 from __future__ import annotations
 
+import pytest
+
 from untell.attacks import count_hidden
 from untell.scripts.run import main, untell_text
+
+
+@pytest.fixture(autouse=True)
+def _stdlib_scoring_path(monkeypatch):
+    """Written and measured on the stdlib scoring path (no torch); pin it.
+
+    Ran that way only by accident before: other modules set UNTELL_LITE_NO_TORCH at import time,
+    which leaked into the whole session. With torch installed the lite tier's perplexity detector
+    runs GPT-2 instead, and this module's premises (the stdlib caveat, which drafts are admitted)
+    no longer hold.
+    """
+    monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
 
 AI = (
     "Furthermore, artificial intelligence has fundamentally transformed numerous industries. "

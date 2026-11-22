@@ -24,6 +24,18 @@ import pytest
 from untell.scripts.preserve import lock, restore
 from untell.scripts.run import untell_text
 
+
+@pytest.fixture(autouse=True)
+def _stdlib_scoring_path(monkeypatch):
+    """Written and measured on the stdlib scoring path (no torch); pin it.
+
+    Ran that way only by accident before: other modules set UNTELL_LITE_NO_TORCH at import time,
+    which leaked into the whole session. With torch installed the lite tier's perplexity detector
+    runs GPT-2 instead, and this module's premises (the stdlib caveat, which drafts are admitted)
+    no longer hold.
+    """
+    monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
+
 TAGS = ["code", "pre", "kbd", "samp", "tt", "var"]
 INNER = "run a; then b"
 PROSE = (

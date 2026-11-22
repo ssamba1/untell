@@ -6,7 +6,21 @@ mutation and -> or fires it for ANY non-empty text (including plain English),
 declaring "this text reads as a Latin-script language other than English" about
 an English sentence — a false caveat on the headline warning slot.
 """
+import pytest
+
 from untell.scripts.sentences import _warning_for
+
+
+@pytest.fixture(autouse=True)
+def _stdlib_scoring_path(monkeypatch):
+    """Written and measured on the stdlib scoring path (no torch); pin it.
+
+    Ran that way only by accident before: other modules set UNTELL_LITE_NO_TORCH at import time,
+    which leaked into the whole session. With torch installed the lite tier's perplexity detector
+    runs GPT-2 instead, and this module's premises (the stdlib caveat, which drafts are admitted)
+    no longer hold.
+    """
+    monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
 
 
 def test_english_text_is_not_warned_as_non_english():
