@@ -89,7 +89,10 @@ class TestLineSeparators:
     @pytest.mark.parametrize("name,ch", LINE_SEPARATORS.items(), ids=list(LINE_SEPARATORS))
     def test_translated_to_a_newline_not_deleted(self, name: str, ch: str) -> None:
         """They carry meaning, unlike the invisibles above, so deleting them would join words."""
-        assert normalise_for_scoring(f"one{ch}two") == "one\ntwo"
+        # Translated to a line break, which detector input then unwraps (a break inside a paragraph
+        # is layout; see test_detectors_ignore_layout.py). The point stands: the words are not
+        # glued together into "onetwo".
+        assert normalise_for_scoring(f"one{ch}two") == "one two"
 
     @pytest.mark.parametrize("name,ch", LINE_SEPARATORS.items(), ids=list(LINE_SEPARATORS))
     def test_a_document_scores_the_same_whichever_break_character_encodes_it(

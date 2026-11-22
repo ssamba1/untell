@@ -458,7 +458,7 @@ def test_scoring_normalisation_drops_a_trailing_space_at_the_end_of_the_text():
     from untell.detectors.base import RAW_INPUT, normalise_for_scoring
 
     assert normalise_for_scoring("Ends here.  ") == "Ends here."
-    assert normalise_for_scoring("Line one.  \nLine two.\t") == "Line one.\nLine two."
+    assert normalise_for_scoring("Line one.  \nLine two.\t") == "Line one. Line two."
     token = RAW_INPUT.set(True)
     try:
         assert normalise_for_scoring("Ends here.  ") == "Ends here.  "  # raw: untouched

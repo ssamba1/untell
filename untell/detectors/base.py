@@ -174,7 +174,43 @@ def normalise_for_scoring(text: str) -> str:
         return text
     from untell.attacks import scrub_hidden
 
-    return normalise_whitespace(scrub_hidden(text))
+    return _unwrap_lines(_fold_quotes(normalise_whitespace(scrub_hidden(text))))
+
+
+# Typographic quotes fold to straight ones. MEASURED with the stability test on a TOEFL essay
+# (Liang et al. 2023): curly -> straight moved hc3_roberta by 0.52 on identical words. Which quote
+# glyph a keyboard or word processor produced is not evidence of authorship.
+_QUOTE_FOLD = str.maketrans({"\u2018": "'", "\u2019": "'", "\u201c": '"', "\u201d": '"'})
+
+
+def _fold_quotes(text: str) -> str:
+    return text.translate(_QUOTE_FOLD)
+
+
+# A line break inside a paragraph is layout, not writing: email clients, PDF extractors and
+# plain-text editors hard-wrap at ~72 columns. MEASURED with the stability test (variant N6) on six
+# Liang et al. essays, hard-wrapping the same words moved MAGE by up to 1.000 (mean 0.50),
+# hc3_roberta by up to 0.92 and roberta_openai by up to 0.85. Paragraph breaks (blank lines) are
+# kept, and so is a break before a line that starts like structure — a list item, a heading, a
+# quote or a table row — so lists are not run together into one sentence.
+_STRUCTURAL_LINE = re.compile(r"^\s*(?:[-*+•]\s|\d+[.)]\s|#|>|\|)")
+
+
+def _unwrap_lines(text: str) -> str:
+    out = []
+    for para in re.split(r"(\n\s*\n)", text):
+        if not para or para.isspace():
+            out.append(para)
+            continue
+        lines = para.split("\n")
+        merged = [lines[0]]
+        for line in lines[1:]:
+            if _STRUCTURAL_LINE.match(line) or not merged[-1].strip():
+                merged.append(line)
+            else:
+                merged[-1] = merged[-1].rstrip() + " " + line.lstrip()
+        out.append("\n".join(merged))
+    return "".join(out)
 
 
 # Words per scoring window. The supervised adapters cap at 512 word-piece tokens, which is roughly
