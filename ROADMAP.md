@@ -48,7 +48,7 @@ drifts from the plan it summarises is worse than none, because it is the part pe
 | 20 | Offline browser evidence kit | ✅ done | — |
 | 21 | Pangram adapter; audit tools over MCP and REST | ✅ done | — |
 | 22 | First report cards for commercial detectors | 🔜 open | **API keys** as repository secrets, and a check of each provider's terms of service |
-| 23 | Corpora where detectors are known to fail: non-native, student, short text | 🔜 open — 2023 baseline done from public data; current versions need fresh scoring | **partners with consented data** (writing centres, ESL programmes, integrity offices), and API keys to re-score |
+| 23 | Corpora where detectors are known to fail: non-native, student, short text | 🔜 open — PERSUADE 2.0 (US students, ELL status, race, grade) now in use; adult-learner and short-text corpora still needed | **partners with consented data** (writing centres, ESL programmes, integrity offices), and API keys to re-score |
 | 24 | Verify every `summary`-marked published rate against its primary source | 🔜 open — Epoch and arXiv verified 2026-11-22 | **a person with a browser**: nber.org, turnitin.com and provost.wsu.edu refuse automated fetching (HTTP 403) |
 | 25 | First PyPI release | 🔜 open | **your PyPI account**: register the trusted publisher for `.github/workflows/release.yml`, then tag `v0.4.0` |
 | 26 | Recalibrate untell's own full-tier verdict | ✅ done — calibration v1 | — |
@@ -468,4 +468,4 @@ false-positive rate ([observatory](docs/observatory/README.md)). The verdict is 
 against the 0.30 loop threshold. Fixed by calibration v1 ([docs/observatory/calibration.md](docs/observatory/calibration.md)):
 fitted on 268 human documents from five other pre-2022 projects, evaluated untouched on the cards
 that exposed it — TOEFL 92% → 23%, US 8th grade 41% → 2.3%, PEPs 65% → 0%, AI recall 91% → 46%.
-A second fit on consented essay corpora remains open under item 23.
+Calibration v2 added 600 PERSUADE 2.0 student essays (half by English learners) to the fit: TOEFL 20%, US students 0–7% across race groups, held out. Adult non-native learners (TOEFL-like) remain the worst-served population.

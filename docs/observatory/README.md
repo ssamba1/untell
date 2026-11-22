@@ -93,11 +93,7 @@ against a 0.30 bar makes the most trigger-happy member decide every verdict. Thi
 evidence tools never use untell's own verdict as a stand-in for a commercial detector, and why
 recalibrating it is on the [roadmap](../../ROADMAP.md).
 
-**Fixed the same day** — see [calibration.md](calibration.md): refitted on 268 held-out pre-2022
-human documents, the verdict now flags 7.9% of the 394 human essays (23% of TOEFL essays, 2.3% of
-US 8th-grade essays) and 0% of PEPs, at the cost of AI recall falling from 91% to 46%. With
-line wrapping and quote style normalised, formatting-only edits flipped 0 of 55 variants (was 6 of
-55). Cards for the calibrated verdict:
+**Fixed the same day** — see [calibration.md](calibration.md): refitted on 868 held-out pre-2022 human documents (technical prose and PERSUADE student essays), the verdict now flags 20% of TOEFL essays, 0% of US 8th-grade essays, 2.5% of PERSUADE's English learners and 0% of PEPs, at the cost of AI recall falling from 91% to 45%. With line wrapping and quote style normalised, formatting-only edits flipped 0 of 55 variants (was 6 of 55). Cards for the v1 verdict (v2's numbers are in calibration.md):
 [Liang](untell-local-full/2026-11-22-liang2023-calibrated.md) ·
 [PEPs](untell-local-full/2026-11-22-peps-calibrated.md).
 

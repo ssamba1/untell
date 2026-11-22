@@ -64,7 +64,7 @@ CONDITIONAL = {
     "warning", "voice_warning", "rewriter_warning", "error",
     "detector_errors", "failed_detectors", "matches", "suggestion",
     "out_of_range_detectors", "out_of_range_raw", "unrankable",
-    # Only under verdict_rule "calibrated-v1" (full tier, default threshold).
+    # Only under verdict_rule "calibrated-v2" (full tier, default threshold).
     "verdict_score",
 }
 

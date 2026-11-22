@@ -176,7 +176,7 @@ packages = [
 # glob list describes every data file the wheel ships — tests/test_packaging.py reads it.
 untell = [
     "SKILL.md", "references/*.md", "evidence/published_rates.json",
-    "detectors/calibration_full_v1.json",
+    "detectors/calibration_full_v2.json",
     "training/*.md", "training/*.sh", "training/*.ipynb",
 ]
 
