@@ -25,7 +25,9 @@ from untell.evidence.stats import auroc, wilson_interval
 
 
 def measure(docs: list[dict], detector: str, threshold: float = 0.5, progress=None) -> list[dict]:
-    sc = resolve_scorer(f"raw:{detector}", threshold)
+    """``detector`` is a local detector name (scored ``raw:``) or any full spec (``hf:<model>``)."""
+    spec = detector if ":" in detector else f"raw:{detector}"
+    sc = resolve_scorer(spec, threshold)
     rows = []
     for i, d in enumerate(docs):
         text = d["text"].rstrip(" \t")

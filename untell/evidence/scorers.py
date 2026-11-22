@@ -11,6 +11,8 @@ those are not Python objects. So a scorer is resolved from a short spec string:
     run the command with the text on stdin; read a score from stdout — a bare number, or JSON
     with a ``score`` / ``ai`` / ``probability`` field. Wraps anything: a curl call, a vendor CLI,
     a browser script.
+``hf:<model id>[#<label>]``
+    any Hugging Face text classifier, run as its model card says (see ``hf_scorer``).
 ``raw:<detector name>``
     a local model without untell's input normalisation, as an un-hardened deployment runs it.
 ``manual:<file>``
@@ -242,6 +244,9 @@ def resolve_scorer(spec: str, threshold: float | None = None) -> Scorer:
     thr = 0.5 if threshold is None else float(threshold)
     if spec == "local" or spec.startswith("local:"):
         return _local(spec.split(":", 1)[1] if ":" in spec else "full", threshold)
+    if spec.startswith("hf:"):
+        from .hf_scorer import hf_scorer
+        return hf_scorer(spec[3:], thr)
     if spec.startswith("raw:"):
         return _raw(spec[4:], thr)
     if spec.startswith("cmd:"):
