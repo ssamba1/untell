@@ -736,6 +736,17 @@ _SCORE_RESPONSES = _obj(
             "description": "the calibrated bar `flagged` is decided on; not always `threshold`",
         },
         "flagged": _BOOL,
+        "verdict_rule": {
+            **_STR,
+            "description": "how `flagged` was decided: 'max' (max >= verdict_threshold) or "
+                           "'calibrated-v1' (full tier, default threshold: verdict_score >= "
+                           "verdict_threshold on a held-out human-percentile scale)",
+        },
+        "verdict_score": {
+            **_NUM,
+            "description": "present only under 'calibrated-v1': the highest per-detector "
+                           "percentile among pre-2022 human text",
+        },
         "warning": {**_STR, "description": "present only when the effective tier was downgraded"},
         # score.py clamps any detector value outside [0, 1] and records the raw value separately,
         # so the clamped numeric makes it into `detectors` while the original is still visible.

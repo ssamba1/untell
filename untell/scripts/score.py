@@ -9,9 +9,14 @@ JSON the skill (Claude) reads as feedback:
       "max": 0.71,          # the proxy the loop drives below threshold (multi-detector evasion)
       "mean": 0.71,
       "threshold": 0.30,          # what the rewrite LOOP drives toward
+      "verdict_rule": "max",      # or "calibrated-v1" on the full tier (see below)
       "verdict_threshold": 0.45,  # the calibrated bar `flagged` is decided on
       "flagged": true       # max >= verdict_threshold => report this to the user
     }
+
+On the full tier at the default threshold, ``verdict_rule`` is ``"calibrated-v1"``: ``flagged`` is
+then ``verdict_score >= verdict_threshold``, both on a per-detector human-percentile scale fitted on
+held-out pre-2022 text (see ``calibrated_verdict``), while ``max`` stays the raw loop objective.
 
 ``flagged`` is NOT the loop's stop condition. It compares against ``verdict_threshold``, which is
 raised on the stdlib perplexity path, while ``threshold`` stays where the rewriter is optimising.
@@ -38,6 +43,7 @@ import re
 import sys
 import threading
 from collections import OrderedDict
+from pathlib import Path
 
 # RUN DIRECTLY (`python .../untell/scripts/score.py`) rather than imported as part of the package,
 # put the directory that *contains* the package on sys.path so `import untell` resolves regardless
@@ -313,6 +319,66 @@ def _truncation_warning(text: str) -> str | None:
 # The full tier is unaffected: 6 of 6 documents stayed at exactly 1.0000 when wrapped, so the
 # model-backed detectors see straight through the scaffolding.
 _STDLIB_PERPLEXITY_VERDICT_THRESHOLD = 0.45
+
+
+# --- the calibrated full-tier verdict ------------------------------------------------------------
+# The full-tier verdict used to be `max(detector scores) >= threshold`. Audited by untell's own
+# report card it flagged 57% of 394 human essays (92% of TOEFL essays by non-native writers) and 65%
+# of pre-2022 PEPs, because the five detectors live on different scales and MAGE gives a median of
+# 1.000 to pre-2022 human technical prose: the max was decided by whichever member was most
+# miscalibrated for the register.
+#
+# Calibration v1 (untell/detectors/calibration_full_v1.json) maps each detector's score to its
+# mid-rank percentile among 268 human documents committed before 2022-11-30 (five projects disjoint
+# from every evaluation corpus), and flags when the highest percentile reaches the fit's 95th
+# percentile. Evaluated UNTOUCHED on held-out corpora (docs/observatory/calibration.md):
+#
+#     human false positives   PEPs 65% -> 0%   CS224N 43% -> 0%   US 8th grade 41% -> 2.3%
+#                             US college 63% -> 10%   TOEFL non-native 92% -> 24%
+#     AI recall (GPT-3)       91% -> 46%
+#
+# Fewer false accusations at half the recall, and non-native writers are still flagged ~10x as often
+# as US 8th-graders. It applies only to the default threshold: a caller who passes their own
+# threshold is asking about the raw max, and gets the old rule.
+_CALIBRATION_FILE = Path(__file__).resolve().parents[1] / "detectors" / "calibration_full_v1.json"
+_CALIBRATION_CACHE: dict = {}
+
+
+def _calibration() -> dict | None:
+    if "v1" not in _CALIBRATION_CACHE:
+        try:
+            _CALIBRATION_CACHE["v1"] = json.loads(_CALIBRATION_FILE.read_text(encoding="utf-8"))
+        except Exception:  # a missing table falls back to the old rule, never crashes scoring
+            _CALIBRATION_CACHE["v1"] = None
+    return _CALIBRATION_CACHE["v1"]
+
+
+def calibrated_verdict(scores: dict, modes: dict, threshold: float) -> tuple[float, float] | None:
+    """``(aggregate percentile, cut)`` when the calibrated rule applies, else ``None``.
+
+    Applies only at the default threshold, only when at least two model-backed detectors scored,
+    and only when the perplexity detector (if present) ran on its GPT-2 path, as it did in the fit.
+    """
+    import bisect
+
+    if threshold != DEFAULT_THRESHOLD:
+        return None
+    cal = _calibration()
+    if not cal:
+        return None
+    if modes.get("perplexity_burstiness") == "stdlib":
+        return None
+    tables = cal["detectors"]
+    vals = []
+    for k, v in scores.items():
+        if "__" in k or not isinstance(v, (int, float)) or v != v or k not in tables:
+            continue
+        t = tables[k]
+        lo, hi = bisect.bisect_left(t, v), bisect.bisect_right(t, v)
+        vals.append((k, (lo + 0.5 * (hi - lo)) / len(t)))
+    if len([k for k, _ in vals if k != "perplexity_burstiness"]) < 2:
+        return None
+    return max(p for _, p in vals), float(cal["cut"])
 
 
 def modes_of(live) -> dict:
@@ -889,8 +955,18 @@ def _score_with_detectors_uncached(
     # the same number also decided `flagged`, i.e. what a user is TOLD about their text, and on one
     # scoring path that made it wrong three times in five.
     verdict_threshold = _verdict_threshold(threshold, scores, modes_of(live))
-    result["verdict_threshold"] = verdict_threshold
-    result["flagged"] = bool(numeric) and mx >= verdict_threshold
+    cv = calibrated_verdict(scores, modes_of(live), threshold) if numeric else None
+    if cv is not None:
+        # `verdict_score` is on the calibrated percentile scale, and so is `verdict_threshold`
+        # here; `max` stays the raw score the loop optimises.
+        result["verdict_rule"] = "calibrated-v1"
+        result["verdict_score"] = round(cv[0], 4)
+        result["verdict_threshold"] = round(cv[1], 4)
+        result["flagged"] = cv[0] >= cv[1]
+    else:
+        result["verdict_rule"] = "max"
+        result["verdict_threshold"] = verdict_threshold
+        result["flagged"] = bool(numeric) and mx >= verdict_threshold
     if failed:
         result["failed_detectors"] = failed
     # Some detectors have more than one scoring path under one name, and which one ran changes the

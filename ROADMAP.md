@@ -51,7 +51,7 @@ drifts from the plan it summarises is worse than none, because it is the part pe
 | 23 | Corpora where detectors are known to fail: non-native, student, short text | 🔜 open — 2023 baseline done from public data; current versions need fresh scoring | **partners with consented data** (writing centres, ESL programmes, integrity offices), and API keys to re-score |
 | 24 | Verify every `summary`-marked published rate against its primary source | 🔜 open — Epoch and arXiv verified 2026-11-22 | **a person with a browser**: nber.org, turnitin.com and provost.wsu.edu refuse automated fetching (HTTP 403) |
 | 25 | First PyPI release | 🔜 open | **your PyPI account**: register the trusted publisher for `.github/workflows/release.yml`, then tag `v0.4.0` |
-| 26 | Recalibrate untell's own full-tier verdict | 🔜 open | **a held-out human corpus** to fit on, so the fit is not graded on the data it was tuned to (it flags 57% of the Liang essays and 92% of TOEFL essays at the shipped max ≥ 0.30) |
+| 26 | Recalibrate untell's own full-tier verdict | ✅ done — calibration v1 | — |
 
 Three things are ruled out rather than pending, each with the measurement that ruled it out: raw
 evasion strength against GPU-trained policies, adoption, and beating GPTZero / Originality /
@@ -460,10 +460,12 @@ entries say so and need checking by hand.
 `.github/workflows/release.yml` publishes with PyPI trusted publishing on a `v*` tag. Waiting on
 the project's PyPI account to register the publisher.
 
-### 🔜 Recalibrate untell's own full-tier verdict
+### ✅ Recalibrate untell's own full-tier verdict — calibration v1, 2026-11-22
 
 Audited by its own report card on 2026-11-22, the full ensemble flags 57% of 394 human essays
 (92% of TOEFL essays by non-native writers) and 65% of pre-2022 PEPs, with 0% recall at any capped
 false-positive rate ([observatory](docs/observatory/README.md)). The verdict is the ensemble max
-against the 0.30 loop threshold. A fix must be fitted on one corpus and reported on another, so it
-waits on a held-out human corpus rather than being tuned on the cards that exposed it.
+against the 0.30 loop threshold. Fixed by calibration v1 ([docs/observatory/calibration.md](docs/observatory/calibration.md)):
+fitted on 268 human documents from five other pre-2022 projects, evaluated untouched on the cards
+that exposed it — TOEFL 92% → 24%, US 8th grade 41% → 2.3%, PEPs 65% → 0%, AI recall 91% → 46%.
+A second fit on consented essay corpora remains open under item 23.

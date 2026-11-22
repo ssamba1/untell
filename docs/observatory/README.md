@@ -93,6 +93,12 @@ against a 0.30 bar makes the most trigger-happy member decide every verdict. Thi
 evidence tools never use untell's own verdict as a stand-in for a commercial detector, and why
 recalibrating it is on the [roadmap](../../ROADMAP.md).
 
+**Fixed the same day** — see [calibration.md](calibration.md): refitted on 268 held-out pre-2022
+human documents, the verdict now flags 24% of TOEFL essays, 2.3% of US 8th-grade essays and 0% of
+PEPs, at the cost of AI recall falling from 91% to 46%. Cards for the calibrated verdict:
+[Liang](untell-local-full/2026-11-22-liang2023-calibrated.md) ·
+[PEPs](untell-local-full/2026-11-22-peps-calibrated.md).
+
 ## One trailing space
 
 On short text, a single trailing space reversed every "AI" verdict `hc3_roberta` gave in this

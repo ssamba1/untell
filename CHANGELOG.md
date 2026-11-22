@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- **Calibrated full-tier verdict (v1).** Each local detector's score is mapped to its percentile
+  among 268 held-out pre-2022 human documents, and the verdict flags when the highest percentile
+  reaches the fit's 5% cut. Evaluated untouched on held-out corpora: TOEFL essays 92% → 24%
+  flagged, US 8th grade 41% → 2.3%, PEPs 65% → 0%; AI recall 91% → 46%. Score results carry
+  `verdict_rule` (`max` or `calibrated-v1`) and, under the latter, `verdict_score`. Fitted with
+  `untell/bench/calibrate_full.py`; written up in `docs/observatory/calibration.md`.
 - **untell's own full ensemble, audited by itself.** Report cards (`docs/observatory/untell-local-full/`)
   show it flags 57% of 394 human essays, 92% of TOEFL essays by non-native writers and 65% of
   pre-2022 PEPs, with 0% recall at any capped false-positive rate. The README's earlier "17% on 30
