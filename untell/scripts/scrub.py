@@ -59,7 +59,10 @@ def _read_input(args: argparse.Namespace) -> str | None:
         return args.text
     if not sys.stdin.isatty():
         try:
-            return sys.stdin.read()
+            # Empty stdin (a closed pipe, /dev/null) is "no input", not an empty document:
+            # scrubbing it printed a blank line and exited 0, so a caller that forgot the
+            # argument got a success code and nothing to act on.
+            return sys.stdin.read() or None
         except UnicodeDecodeError:
             # Binary/undecodable stdin — same guard as read_stdin_or_none: clean "no input"
             # path instead of a traceback. MEASURED: b'\xff\xfe' piped here leaked before.

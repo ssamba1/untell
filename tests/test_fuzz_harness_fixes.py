@@ -284,6 +284,11 @@ class TestCliPrintingSurvivesSurrogates:
         configure_utf8_io()
         assert True  # the real check is the subprocess tests below
 
+    @pytest.mark.skipif(
+        sys.platform != "win32",
+        reason="only Windows can put a lone surrogate in argv (UTF-16 command line); on POSIX "
+        "subprocess itself raises UnicodeEncodeError before the child exists",
+    )
     def test_scrub_subprocess_surrogate_argv_does_not_traceback(self):
         repo = Path(__file__).resolve().parents[1]
         # `sys.executable` rather than a hard-coded `.venv/Scripts/python.exe`.
@@ -302,6 +307,11 @@ class TestCliPrintingSurvivesSurrogates:
         assert "Traceback" not in (proc.stderr or ""), proc.stderr
         assert proc.returncode in (0, 2)
 
+    @pytest.mark.skipif(
+        sys.platform != "win32",
+        reason="only Windows can put a lone surrogate in argv (UTF-16 command line); on POSIX "
+        "subprocess itself raises UnicodeEncodeError before the child exists",
+    )
     def test_argparse_surrogate_argv_does_not_traceback(self):
         repo = Path(__file__).resolve().parents[1]
         # `sys.executable` rather than a hard-coded `.venv/Scripts/python.exe`.

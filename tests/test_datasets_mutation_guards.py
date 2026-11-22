@@ -11,6 +11,8 @@ or network-path-dependent — annotated in survivors.md.
 
 from __future__ import annotations
 
+import pytest
+
 from untell.bench import datasets as D
 
 
@@ -23,7 +25,7 @@ def _monkeypatch_load(monkeypatch, rows):
                 return lambda *a, **k: iter(rows)
             raise AttributeError(name)
 
-    import datasets as _real
+    _real = pytest.importorskip("datasets")  # the optional [eval] extra
 
     monkeypatch.setattr(_real, "load_dataset", lambda *a, **k: iter(rows))
 
@@ -35,6 +37,7 @@ class TestHc3MinLength:
     silently shrinking the corpus."""
 
     def test_exactly_31_word_answer_included(self, monkeypatch) -> None:
+        pytest.importorskip("datasets")  # load_samples checks for the [eval] extra first
         exact = "word " * 31  # 31 words: original (>30) includes, mutation (>31) rejects
         monkeypatch.setattr(D, "_hc3_rows", lambda: [{"chatgpt_answers": [exact.strip()]}])
         samples = D.load_samples("hc3", n=1)
@@ -47,6 +50,7 @@ class TestRaidMinLength:
     A RAID generation of EXACTLY 30 words is usable."""
 
     def test_exactly_31_word_raid_included(self, monkeypatch) -> None:
+        pytest.importorskip("datasets")  # load_samples checks for the [eval] extra first
         exact = "gen " * 31  # 31 words: original (>30) includes, mutation (>31) rejects
         _monkeypatch_load(monkeypatch, [{"generation": exact.strip(), "model": "gpt-4"}])
         samples = D.load_samples("raid", n=1)
