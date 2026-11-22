@@ -136,6 +136,17 @@ def _strip_trailing(text: str) -> str:
     return "\n".join(line.rstrip() for line in t.split("\n")).strip("\n")
 
 
+def _trailing_space(text: str) -> str:
+    """End the text with a space (or remove the trailing spaces it already ends with).
+
+    Copying from an editor or a web form often leaves one. Measured to reverse hc3_roberta's
+    verdict on a human essay (0.91 -> 0.001), which is why it is in this set.
+    """
+    if re.search(r"[ \t]+\Z", text):
+        return re.sub(r"[ \t]+\Z", "", text)
+    return text + " "
+
+
 def _french_spacing(text: str) -> str:
     """A space before ; : ! ? — French typographic convention, and a common typing habit."""
     if re.search(r"\S [;:!?]", text):
@@ -160,6 +171,8 @@ _NULL_EDITS = (
      _no_blank_lines),
     ("N10", "Trailing whitespace stripped", "line endings normalised to LF", _strip_trailing),
     ("N11", "Space before ; : ! ?", "French typographic spacing (or its removal)", _french_spacing),
+    ("N12", "Trailing space", "a space after the last character (or trailing spaces removed)",
+     _trailing_space),
 )
 
 

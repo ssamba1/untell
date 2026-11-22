@@ -444,3 +444,23 @@ def test_a_figure_checked_at_source_beats_one_seen_in_a_summary():
     assert est["checked"] == "primary"
     # Turnitin has only its own vendor claim on file, so that is what is used, and labelled so.
     assert best_fpr_estimate("turnitin")["checked"] == "vendor"
+
+
+def test_n12_appends_or_strips_a_trailing_space():
+    vs = {v.id: v for v in null_variants("A plain sentence.")}
+    assert vs["N12"].text == "A plain sentence. " and same_words("A plain sentence.", vs["N12"].text)
+    back = {v.id: v for v in null_variants(vs["N12"].text)}
+    assert back["N12"].text == "A plain sentence."
+
+
+def test_scoring_normalisation_drops_a_trailing_space_at_the_end_of_the_text():
+    """MEASURED: one trailing space took hc3_roberta from 0.9098 to 0.0010 on a human essay."""
+    from untell.detectors.base import RAW_INPUT, normalise_for_scoring
+
+    assert normalise_for_scoring("Ends here.  ") == "Ends here."
+    assert normalise_for_scoring("Line one.  \nLine two.\t") == "Line one.\nLine two."
+    token = RAW_INPUT.set(True)
+    try:
+        assert normalise_for_scoring("Ends here.  ") == "Ends here.  "  # raw: untouched
+    finally:
+        RAW_INPUT.reset(token)

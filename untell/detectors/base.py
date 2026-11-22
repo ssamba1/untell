@@ -103,7 +103,14 @@ def clamp01(x: float) -> float:
 # (0.00 vs 14.50). An AUROC computed over RAID with layout preserved is partly scoring formatting.
 # The figures above avoid it by whitespace-joining both halves, which is a thing to do deliberately.
 _HORIZONTAL_RUN = re.compile(r"[ \t]+")
-_TRAILING_HORIZONTAL = re.compile(r"[ \t]+(?=\n)")
+# Horizontal whitespace before a newline OR at the very end of the text. The end-of-text case was
+# missing, and it is the worst of the class: MEASURED on a human TOEFL essay (Liang et al. 2023),
+# hc3_roberta scored 0.9098 on the text and 0.0010 on the same text plus ONE trailing space (two
+# spaces: 0.0004) — a verdict reversed by a character nobody can see, on untell's own normalised
+# path. A trailing newline moves it only to 0.8133 and a leading space to 0.9498, so the fix is
+# scoped to trailing horizontal whitespace; newlines stay, as the paragraph structure they carry
+# was measured not to matter.
+_TRAILING_HORIZONTAL = re.compile(r"[ \t]+(?=\n|\Z)")
 _SPACE_BEFORE_PUNCT = re.compile(r"[ \t]+([.,;:!?])")
 # Unicode's own line terminators. They render as a line break and are not "\n", so a tokenizer sees
 # an unknown character where a newline belongs. Word, some PDF extractors and a few web editors emit

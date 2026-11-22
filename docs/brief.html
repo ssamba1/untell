@@ -155,7 +155,7 @@
 
 <section id="null-edits" aria-labelledby="null-h">
   <h2 id="null-h"><span class="step">1</span>Does the verdict survive edits that change no words?</h2>
-  <p>Paste the text that was flagged. The page makes <strong>same-words versions</strong> (N1–N11) that change only formatting: quote style, spacing, line wrapping, invisible characters. Each one is checked here to contain exactly the same words in the same order. A second tier (L1–L4) makes <strong>light edits</strong> a human editor might make: contractions, the Oxford comma, US/UK spelling.</p>
+  <p>Paste the text that was flagged. The page makes <strong>same-words versions</strong> (N1–N12) that change only formatting: quote style, spacing, line wrapping, invisible characters. Each one is checked here to contain exactly the same words in the same order. A second tier (L1–L4) makes <strong>light edits</strong> a human editor might make: contractions, the Oxford comma, US/UK spelling.</p>
   <p>Run the original and each version through the detector in question. Record the score and whether it was flagged. The page then works out how often the verdict changed.</p>
 
   <label for="src-text">Your text</label>
@@ -339,6 +339,10 @@ var UntellVariants = (function () {
 
   function dropBlankLines(s) { return s.replace(/\r\n?/g, '\n').replace(/\n(?:[ \t]*\n)+/g, '\n'); }
 
+  function trailingSpace(s) {
+    if (/[ \t]+$/.test(s)) return s.replace(/[ \t]+$/, '');
+    return s + ' ';
+  }
   function frenchSpacing(s) {
     if (/\S [;:!?]/.test(s)) return s.replace(/(\S) ([;:!?])/g, '$1$2');
     return s.replace(/([^\s;:!?])([;:!?])(?=\s|$)/g, '$1 $2');
@@ -459,6 +463,7 @@ var UntellVariants = (function () {
     ['N9', 'null', 'No blank lines', fixed('Blank lines between paragraphs removed (single line break between them).')(dropBlankLines)],
     ['N10', 'null', 'Trailing whitespace', fixed('Spaces at line ends removed; Windows line endings (CRLF) changed to LF.')(stripTrailing)],
     ['N11', 'null', 'Space before ; : ! ?', fixed('French typographic spacing: a space before ; : ! ? (or removed, if the text already has it).')(frenchSpacing)],
+    ['N12', 'null', 'Trailing space', fixed('A space after the last character, as copying from a form or editor often leaves (or trailing spaces removed).')(trailingSpace)],
     ['L1', 'light', 'Contractions expanded', fixed('Common contractions written out (it’s → it is, don’t → do not…).')(expandContractions)],
     ['L2', 'light', 'Contractions used', fixed('Common two-word forms contracted (it is → it’s, do not → don’t…).')(contract)],
     ['L3', 'light', 'Oxford comma', oxfordComma],
