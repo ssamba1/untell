@@ -21,23 +21,25 @@ by whichever member was most miscalibrated for the register at hand.
   [`untell/detectors/calibration_full_v1.json`](../../untell/detectors/calibration_full_v1.json);
   full evaluation [`calibration-v1-evaluation.json`](calibration-v1-evaluation.json).
 
-On the fit corpus itself the old rule flagged **84%** of human documents (226/268).
+On the fit corpus itself the old rule flagged **84%** of human documents (226/268); the calibrated rule flags 4.5%.
+
+Detector input is normalised for line wrapping and quote style before scoring (both were measured to move verdicts on identical words), and the fit and evaluation were run on that input.
 
 ## Held-out results
 
 | corpus | label | old rule (max ≥ 0.30) | calibrated v1 |
 |---|---|---:|---:|
 | PEPs, pre-2022 | human | 52/80 (65.0%) | **0/80 (0.0%)**; 95% CI 0.0–4.6% |
-| Stanford CS224N abstracts | human | 62/145 (42.8%) | **0/145 (0.0%)**; 95% CI 0.0–2.6% |
+| Stanford CS224N abstracts | human | 61/145 (42.1%) | **0/145 (0.0%)**; 95% CI 0.0–2.6% |
 | US 8th-grade essays | human | 36/88 (40.9%) | **2/88 (2.3%)**; 95% CI 0.6–7.9% |
-| US college admissions essays | human | 44/70 (62.9%) | **7/70 (10.0%)**; 95% CI 4.9–19.2% |
-| TOEFL essays, non-native writers | human | 84/91 (92.3%) | **22/91 (24.2%)**; 95% CI 16.5–33.9% |
-| GPT-3 college essays | AI | 31/31 (100%) | 31/31 (100%) |
-| GPT-3 CS224N abstracts | AI | 145/145 (100%) | 109/145 (75.2%) |
+| US college admissions essays | human | 43/70 (61.4%) | **8/70 (11.4%)**; 95% CI 5.9–21.0% |
+| TOEFL essays, non-native writers | human | 84/91 (92.3%) | **21/91 (23.1%)**; 95% CI 15.6–32.7% |
+| GPT-3 college essays | AI | 31/31 (100.0%) | 31/31 (100.0%) |
+| GPT-3 CS224N abstracts | AI | 145/145 (100.0%) | 109/145 (75.2%) |
 | GPT-3 college essays, evasion-prompted | AI | 27/31 (87.1%) | 0/31 (0.0%) |
 | GPT-3 CS224N abstracts, evasion-prompted | AI | 117/145 (80.7%) | 20/145 (13.8%) |
 
-All AI text: recall **91% → 46%**. AUROC of the calibrated aggregate: 0.760.
+All AI text: recall **91% → 46%**. AUROC of the calibrated aggregate: 0.762.
 
 ## What it means
 
@@ -45,7 +47,7 @@ All AI text: recall **91% → 46%**. AUROC of the calibrated aggregate: 0.760.
   of four or more, and to zero on the two technical corpora.
 - **Half the recall.** It now misses about half of GPT-3 text, and almost all of the text GPT-3 was
   prompted to make less detectable. The old rule's recall was bought with flagging most humans.
-- **The bias is reduced, not removed.** TOEFL essays are flagged at 24%, about ten times the US
+- **The bias is reduced, not removed.** TOEFL essays are flagged at 23%, about ten times the US
   8th-grade rate. A verdict from these models on a non-native writer remains weak evidence.
 - **One fit register.** The fit corpus is technical documentation; it transfers well to technical
   text (0% on PEPs and abstracts) and less well to student essays. A fit on consented essay corpora

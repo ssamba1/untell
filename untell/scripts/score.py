@@ -334,7 +334,7 @@ _STDLIB_PERPLEXITY_VERDICT_THRESHOLD = 0.45
 # percentile. Evaluated UNTOUCHED on held-out corpora (docs/observatory/calibration.md):
 #
 #     human false positives   PEPs 65% -> 0%   CS224N 43% -> 0%   US 8th grade 41% -> 2.3%
-#                             US college 63% -> 10%   TOEFL non-native 92% -> 24%
+#                             US college 61% -> 11%   TOEFL non-native 92% -> 23%
 #     AI recall (GPT-3)       91% -> 46%
 #
 # Fewer false accusations at half the recall, and non-native writers are still flagged ~10x as often

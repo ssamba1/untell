@@ -8,7 +8,7 @@ All notable changes to this project are documented here. The format is based on
 ### Added
 - **Calibrated full-tier verdict (v1).** Each local detector's score is mapped to its percentile
   among 268 held-out pre-2022 human documents, and the verdict flags when the highest percentile
-  reaches the fit's 5% cut. Evaluated untouched on held-out corpora: TOEFL essays 92% → 24%
+  reaches the fit's 5% cut. Evaluated untouched on held-out corpora: TOEFL essays 92% → 23%
   flagged, US 8th grade 41% → 2.3%, PEPs 65% → 0%; AI recall 91% → 46%. Score results carry
   `verdict_rule` (`max` or `calibrated-v1`) and, under the latter, `verdict_score`. Fitted with
   `untell/bench/calibrate_full.py`; written up in `docs/observatory/calibration.md`.
@@ -37,6 +37,10 @@ All notable changes to this project are documented here. The format is based on
   population, and a rate measured on one population is never applied to another.
 
 ### Fixed
+- Hard wrapping and quote style moved the verdict on identical words (hard-wrapping at 72 columns
+  moved MAGE by up to 1.000 and hc3_roberta by 0.92; curly -> straight quotes moved hc3_roberta by
+  0.52). Detector input now unwraps line breaks inside a paragraph and folds typographic quotes;
+  the full-tier calibration was refitted on that input.
 - Over 6,000 words, the meaning gate rejected every rewrite: `aligned_chunks` cut the rewrite at the
   source's word positions, so a shortened rewrite drifted out of step (minimum chunk similarity
   0.27–0.31 vs 0.77 whole-document). Now proportional on each side (0.70).

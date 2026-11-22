@@ -467,5 +467,5 @@ Audited by its own report card on 2026-11-22, the full ensemble flags 57% of 394
 false-positive rate ([observatory](docs/observatory/README.md)). The verdict is the ensemble max
 against the 0.30 loop threshold. Fixed by calibration v1 ([docs/observatory/calibration.md](docs/observatory/calibration.md)):
 fitted on 268 human documents from five other pre-2022 projects, evaluated untouched on the cards
-that exposed it — TOEFL 92% → 24%, US 8th grade 41% → 2.3%, PEPs 65% → 0%, AI recall 91% → 46%.
+that exposed it — TOEFL 92% → 23%, US 8th grade 41% → 2.3%, PEPs 65% → 0%, AI recall 91% → 46%.
 A second fit on consented essay corpora remains open under item 23.
