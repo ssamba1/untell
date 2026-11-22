@@ -27,9 +27,21 @@ import time
 import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-os.environ.setdefault("UNTELL_LITE_NO_TORCH", "1")
 
 from untell.rewriter.structural import _FRONTABLE_RE  # type-ignore
+
+
+@pytest.fixture(autouse=True, scope="module")
+def _stdlib_scoring_for_this_module():
+    """This module's tests run on the stdlib scoring path, and only this module's.
+
+    Set at import time before, which runs while pytest COLLECTS every module: the whole session
+    then scored with torch disabled and MAGE removed, and the full-tier tests failed in a combined
+    run while passing alone.
+    """
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setenv("UNTELL_LITE_NO_TORCH", "1")
+        yield
 
 # ---------------------------------------------------------------------------
 # Helpers

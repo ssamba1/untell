@@ -31,7 +31,8 @@ Generated from live calls, not from reading the source.
 
 ```
 score_text        ai_percent, detector_modes, detectors, flagged, max, mean, threshold,
-                  tier, tier_requested, verdict_threshold, warning
+                  tier, tier_requested, verdict_rule, verdict_threshold, warning
+                  + verdict_score, only when verdict_rule is "calibrated-v1"
                   + failed_detectors and detector_errors, only when a detector raised
 
 score_tells       burstiness_cv, by_category, by_evidence, language_supported,
@@ -62,7 +63,10 @@ verify            configured, n_configured, n_passing, passes_all, results, thre
   answer, and not the one a caller who only reads `tier_requested` will see.
 - **`flagged` is decided by `verdict_threshold`, not `threshold`.** `threshold` is what the rewrite
   loop optimises toward; the verdict bar is calibrated separately, because reusing one number made
-  the lite tier flag 60% of genuinely human text.
+  the lite tier flag 60% of genuinely human text. On the full tier at the default threshold,
+  `verdict_rule` is `"calibrated-v1"`: `flagged` is then `verdict_score >= verdict_threshold`, both
+  on a per-detector human-percentile scale (see `docs/observatory/calibration.md`), while `max`
+  stays the raw score the loop optimises.
 - **`language_supported: false` means the counts are not evidence.** The catalogue is English-only,
   so on mostly-non-Latin text `tells: 0` means nothing was looked for, not that nothing was found.
 

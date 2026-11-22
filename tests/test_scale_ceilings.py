@@ -14,7 +14,6 @@ from __future__ import annotations
 
 import cProfile
 import io
-import os
 import pstats
 import statistics
 import sys
@@ -23,8 +22,6 @@ from pathlib import Path
 from typing import Callable
 
 # Force stdlib path BEFORE any untell import.
-os.environ.setdefault("UNTELL_LITE_NO_TORCH", "1")
-os.environ.setdefault("UNTELL_DISABLE_MAGE", "1")
 
 # Make the package importable when run directly.
 for _p in Path(__file__).resolve().parents:
@@ -36,6 +33,20 @@ for _p in Path(__file__).resolve().parents:
 # The sys.path bootstrap above has to run before anything imports `untell`, so every import in
 # this file necessarily follows executable code.
 import pytest  # noqa: E402
+
+
+@pytest.fixture(autouse=True, scope="module")
+def _stdlib_scoring_for_this_module():
+    """This module's tests run on the stdlib scoring path, and only this module's.
+
+    Set at import time before, which runs while pytest COLLECTS every module: the whole session
+    then scored with torch disabled and MAGE removed, and the full-tier tests failed in a combined
+    run while passing alone.
+    """
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setenv("UNTELL_LITE_NO_TORCH", "1")
+        mp.setenv("UNTELL_DISABLE_MAGE", "1")
+        yield
 
 # ---------------------------------------------------------------------------
 # RSS helper

@@ -17,15 +17,26 @@ GATES TESTED
 
 from __future__ import annotations
 
-import os
+import pytest
 
 # Zero-dep path so tests run without torch/transformers.
-os.environ.setdefault("UNTELL_LITE_NO_TORCH", "1")
-os.environ.setdefault("UNTELL_DISABLE_MAGE", "1")
-
 from untell.inspect_report import render_inspect_report
 from untell.scripts.entailment import meaning_preserved_vetoes
 from untell.scripts.run import untell_text
+
+
+@pytest.fixture(autouse=True, scope="module")
+def _stdlib_scoring_for_this_module():
+    """This module's tests run on the stdlib scoring path, and only this module's.
+
+    Set at import time before, which runs while pytest COLLECTS every module: the whole session
+    then scored with torch disabled and MAGE removed, and the full-tier tests failed in a combined
+    run while passing alone.
+    """
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setenv("UNTELL_LITE_NO_TORCH", "1")
+        mp.setenv("UNTELL_DISABLE_MAGE", "1")
+        yield
 
 # ---------------------------------------------------------------------------
 # meaning_preserved_vetoes unit tests

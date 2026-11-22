@@ -17,14 +17,26 @@ Two properties are pinned here:
 
 from __future__ import annotations
 
-import os
 import re
 
-os.environ.setdefault("UNTELL_LITE_NO_TORCH", "1")
+import pytest
 
 from untell.html_report import generate_html_report
 from untell.scripts.explain import explain_spans
 from untell.scripts.preserve import lock
+
+
+@pytest.fixture(autouse=True, scope="module")
+def _stdlib_scoring_for_this_module():
+    """This module's tests run on the stdlib scoring path, and only this module's.
+
+    Set at import time before, which runs while pytest COLLECTS every module: the whole session
+    then scored with torch disabled and MAGE removed, and the full-tier tests failed in a combined
+    run while passing alone.
+    """
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setenv("UNTELL_LITE_NO_TORCH", "1")
+        yield
 
 # ---------------------------------------------------------------------------
 # Helper

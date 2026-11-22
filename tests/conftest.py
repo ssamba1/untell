@@ -92,6 +92,21 @@ def stdlib_lite(monkeypatch):
             fn.cache_clear()
 
 
+@pytest.fixture(autouse=True, scope="module")
+def _restore_environment_after_each_module():
+    """Whatever a module does to os.environ is undone when it finishes.
+
+    Several modules set UNTELL_LITE_NO_TORCH / UNTELL_DISABLE_MAGE directly — some at import time,
+    which runs during COLLECTION and so applied to the whole session. MEASURED: in a full run the
+    full-tier tests saw MAGE missing, torch "not ready" and the embedding gate on token overlap,
+    and failed, while passing when run alone. This contains any such leak to its own module.
+    """
+    saved = dict(os.environ)
+    yield
+    os.environ.clear()
+    os.environ.update(saved)
+
+
 @pytest.fixture(autouse=True)
 def _isolate_score_cache():
     """The per-text score cache must not leak scores between tests.
@@ -123,6 +138,7 @@ _COMMERCIAL_KEY_VARS = (
     "ZEROGPT_API_KEY",
     "COPYLEAKS_EMAIL",
     "COPYLEAKS_API_KEY",
+    "PANGRAM_API_KEY",
 )
 
 

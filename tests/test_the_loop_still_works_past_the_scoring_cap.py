@@ -92,13 +92,12 @@ def run(oversized: str) -> dict:
     finish inside the timeout. Every run here rewrites the whole document; the cost is in the runs,
     so three assertions about one result cost a third of three results.
     """
-    import os
-
-    os.environ["UNTELL_LITE_NO_TORCH"] = "1"
-    return untell_text(
-        oversized, tier="lite", rewriter="composite", max_iters=1, best_of=3,
-        threshold=0.001, seed=3,
-    )
+    with pytest.MonkeyPatch.context() as mp:  # restored after: this leaked into later modules
+        mp.setenv("UNTELL_LITE_NO_TORCH", "1")
+        return untell_text(
+            oversized, tier="lite", rewriter="composite", max_iters=1, best_of=3,
+            threshold=0.001, seed=3,
+        )
 
 
 def test_the_fixture_really_is_over_the_cap(oversized: str) -> None:
