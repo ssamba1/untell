@@ -89,3 +89,27 @@ def test_published_cards_contain_no_essay_text():
         data = json.loads(c.read_text(encoding="utf-8"))
         assert all(set(r) <= {"id", "label", "group", "author", "words", "score", "flagged"}
                    for r in data["documents"])
+
+
+def test_trailing_space_summary_counts_flips_by_group():
+    from untell.bench.trailing_space import summarise
+
+    rows = [
+        {"id": "a", "group": "toefl", "label": "human", "orig": 0.9, "trailing_space": 0.001},
+        {"id": "b", "group": "toefl", "label": "human", "orig": 0.2, "trailing_space": 0.2},
+        {"id": "c", "group": "gpt", "label": "ai", "orig": 0.95, "trailing_space": 0.01},
+    ]
+    s = summarise(rows)
+    assert s["groups"]["toefl"]["verdict_flips"] == 1
+    assert s["groups"]["toefl"]["flip_rate_among_flagged"] == 1.0
+    assert s["auroc_original"] == 1.0 and s["auroc_both_with_trailing_space"] < 1.0
+
+
+def test_the_published_trailing_space_data_has_no_text():
+    from pathlib import Path
+
+    data = json.loads((Path(__file__).resolve().parents[1]
+                       / "docs/observatory/trailing-space/liang-2023.json").read_text(encoding="utf-8"))
+    assert {"hc3_roberta", "roberta_openai"} <= set(data)
+    for res in data.values():
+        assert all("text" not in r for r in res["documents"])

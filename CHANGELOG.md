@@ -6,6 +6,13 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- **The trailing-space finding.** On short text, one trailing space reversed every "AI" verdict
+  `hc3_roberta` gave in the Liang corpus (36/36 flagged human TOEFL essays, 88/88 flagged GPT-3
+  abstracts; AUROC 0.784 → 0.326); `roberta_openai` lost 9 of 53 TOEFL flags. Measured with the new
+  `python -m untell.bench.trailing_space`; written up in `docs/observatory/trailing-space.md`.
+  untell's own normaliser carried the reversal and is fixed; N12 adds the edit to the stability test.
+- **`raw:<detector>`** scores a local model without untell's input normalisation.
+- **N11** (space before `; : ! ?`) in the stability test, CLI and browser.
 - **Report cards for seven commercial detectors' 2023 versions**, from the per-essay scores Liang et
   al. (Patterns, 2023) recorded: GPTZero, Originality.ai, ZeroGPT, Sapling, Crossplag, Quillbot and
   the OpenAI RoBERTa detector, by writer population. They flag 52–76% of TOEFL essays by non-native

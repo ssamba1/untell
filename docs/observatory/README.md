@@ -67,6 +67,11 @@ changes. They are a baseline: re-scoring the same essays against today's version
 are in [`liang-2023/scores/`](liang-2023/scores/); the essays themselves are not stored here and are
 rebuilt from the authors' repository by `python -m untell.bench.liang2023 <clone>`.
 
+## One trailing space
+
+On short text, a single trailing space reversed every "AI" verdict `hc3_roberta` gave in this
+corpus — human and AI text alike. [Write-up and data](trailing-space.md).
+
 ## Live measurements
 
 Commercial detectors' current versions appear here once their API keys are configured as
