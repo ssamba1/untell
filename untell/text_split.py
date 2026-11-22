@@ -440,9 +440,16 @@ def aligned_chunks(a: str, b: str) -> list[tuple[str, str]]:
     # both sides under CHUNK_WORDS and the gates only need pieces small enough to tokenise.
     _EXACT_ALIGN_LIMIT = 6000  # ~18s today, under the exact path; proportional beyond
     if longest > _EXACT_ALIGN_LIMIT:
+        # Proportional on EACH side. This cut `b` at `a`'s word positions, which is only right when
+        # the two are the same length (the identical fast path above). A rewrite that shortens the
+        # text drifts a chunk further out of step at every cut: MEASURED on a 7,456-word document
+        # rewritten to 6,225 words, the last chunks compared different paragraphs, the minimum
+        # chunk similarity fell to 0.27-0.31 against whole-document 0.77, and the loop's meaning gate
+        # rejected EVERY rewrite of every document over 6,000 words (the failure
+        # tests/test_the_loop_still_works_past_the_scoring_cap.py was reporting).
         cuts_a = [round(len(aw) * n / k) for n in range(1, k)]
         bounds_a = [0, *cuts_a, len(aw)]
-        bounds_b = [0, *cuts_a, len(bw)]
+        bounds_b = [0, *[round(len(bw) * n / k) for n in range(1, k)], len(bw)]
         out: list[tuple[str, str]] = []
         for n in range(k):
             ca = " ".join(aw[bounds_a[n] : bounds_a[n + 1]])
