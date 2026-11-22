@@ -145,17 +145,6 @@
       "population": "non-native"
     },
     {
-      "detector": "untell-local-full",
-      "metric": "false_positive_rate",
-      "value": 0.167,
-      "n": 30,
-      "condition": "HC3 human forum answers, shipped threshold",
-      "source": "untell docs/free-ceiling-measured.md",
-      "url": "https://github.com/ssamba1/untell/blob/main/docs/free-ceiling-measured.md",
-      "checked": "primary",
-      "population": "general"
-    },
-    {
       "detector": "untell-local-lite",
       "metric": "false_positive_rate",
       "value": 0.3,
@@ -259,6 +248,28 @@
       "url": "https://arxiv.org/abs/2608.11256",
       "checked": "primary",
       "note": "Light 'refine abstract only' AI edits were flagged at 38-80% in the same study; humanized full rewrites were missed over 96% of the time."
+    },
+    {
+      "detector": "untell-local-full",
+      "metric": "false_positive_rate",
+      "value": 0.079,
+      "n": 394,
+      "population": "general",
+      "condition": "calibrated-v1 verdict; Liang et al. human essays and abstracts (US 8th grade, US college, Stanford CS224N, TOEFL), held out from the fit",
+      "source": "untell report card, 2026-11-22",
+      "url": "https://github.com/ssamba1/untell/blob/main/docs/observatory/calibration.md",
+      "checked": "primary"
+    },
+    {
+      "detector": "untell-local-full",
+      "metric": "false_positive_rate",
+      "value": 0.231,
+      "n": 91,
+      "population": "non-native",
+      "condition": "calibrated-v1 verdict; TOEFL essays by non-native writers, held out from the fit",
+      "source": "untell report card, 2026-11-22",
+      "url": "https://github.com/ssamba1/untell/blob/main/docs/observatory/calibration.md",
+      "checked": "primary"
     }
   ]
 }
