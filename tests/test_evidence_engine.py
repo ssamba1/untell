@@ -464,3 +464,17 @@ def test_scoring_normalisation_drops_a_trailing_space_at_the_end_of_the_text():
         assert normalise_for_scoring("Ends here.  ") == "Ends here.  "  # raw: untouched
     finally:
         RAW_INPUT.reset(token)
+
+
+def test_report_card_slices_by_writer_metadata(tmp_path):
+    rows = [{"text": f"{'word ' * 200}{i}", "group": "g", "meta": {"ell_status": "Yes" if i % 2 else "No",
+             "nested": {"x": 1}}} for i in range(10)]
+    p = tmp_path / "c.jsonl"
+    p.write_text("\n".join(json.dumps(r) for r in rows) + "\n", encoding="utf-8")
+    docs = load_corpus(p)
+    assert docs[0]["meta"] == {"ell_status": "No"}  # nested values are dropped
+    flag_odd = scorer_from_function(lambda t: 0.9 if int(t.rsplit(" ", 1)[1]) % 2 else 0.1)
+    card = run_report_card(flag_odd, docs, stability_sample=0, slice_by=("ell_status",))
+    ell = card["false_positive_rate"]["by_meta"]["ell_status"]
+    assert ell["Yes"]["rate"] == 1.0 and ell["No"]["rate"] == 0.0
+    assert "ell_status: Yes" in render_report_card_markdown(card)

@@ -49,6 +49,13 @@ def _norm(doc: dict, i: int, default_label: str, default_group: str) -> Doc | No
     for k in ("author", "provenance", "source"):
         if doc.get(k) is not None:
             out[k] = doc[k]
+    # Writer metadata (grade, English-learner status, ...) for slicing a report card. Only flat
+    # string values are kept, so a record cannot smuggle structure into the rows a card stores.
+    meta = doc.get("meta")
+    if isinstance(meta, dict):
+        flat = {str(k): str(v) for k, v in meta.items() if isinstance(v, (str, int, float)) and str(v)}
+        if flat:
+            out["meta"] = flat
     return out
 
 

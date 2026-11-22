@@ -62,6 +62,7 @@ def run_report_card(
     corpus_name: str = "corpus",
     detector_version: str | None = None,
     stability_sample: int = 20,
+    slice_by: tuple[str, ...] = (),
     fpr_caps: tuple[float, ...] = (0.005, 0.01, 0.05),
     seed: int = 0,
     progress=None,
@@ -79,7 +80,9 @@ def run_report_card(
         v = scorer.verdict(d["text"], d["id"])
         rows.append({"id": d["id"], "label": d["label"], "group": d.get("group", ""),
                      "author": d.get("author"), "words": len(_WORDS.findall(d["text"])),
-                     "score": v.score, "flagged": v.flagged})
+                     "score": v.score, "flagged": v.flagged,
+                     **({"meta": {k: d["meta"][k] for k in slice_by if k in d.get("meta", {})}}
+                        if slice_by else {})})
         if progress:
             progress(i + 1, len(docs))
 
@@ -115,6 +118,16 @@ def run_report_card(
         },
         "human_score_distribution": _quantiles([r["score"] for r in hrows if r["score"] is not None]),
     }
+    if slice_by:
+        by_meta: dict[str, dict] = {}
+        for field in slice_by:
+            vals: dict[str, list] = defaultdict(list)
+            for r in hrows:
+                v = (r.get("meta") or {}).get(field)
+                if v:
+                    vals[v].append(r)
+            by_meta[field] = {v: fpr_of(rs) for v, rs in sorted(vals.items())}
+        card["false_positive_rate"]["by_meta"] = by_meta
 
     if by_author:
         flagged_people = sum(1 for rs in by_author.values() if any(r["flagged"] for r in rs))
@@ -233,6 +246,9 @@ def render_report_card_markdown(c: dict) -> str:
         L.append(f"| group: {g} | {_fmt_rate(r)} |")
     for g, r in f["by_length"].items():
         L.append(f"| length: {g} | {_fmt_rate(r)} |")
+    for field, vals in (f.get("by_meta") or {}).items():
+        for v, r in vals.items():
+            L.append(f"| {field}: {v} | {_fmt_rate(r)} |")
     L.append("")
     if c.get("per_person"):
         pp = c["per_person"]

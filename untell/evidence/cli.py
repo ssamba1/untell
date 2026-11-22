@@ -243,6 +243,9 @@ def report_card_main(argv: list[str] | None = None) -> int:
     ap.add_argument("--ai", action="append", default=[], help="AI corpus, same formats (repeatable)")
     ap.add_argument("--name", default=None, help="corpus name for the report")
     ap.add_argument("--stability-sample", type=int, default=20)
+    ap.add_argument("--slice-by", action="append", default=[],
+                    help="also report false positives by this writer-metadata field, e.g. "
+                         "ell_status or race_ethnicity (repeatable; needs a 'meta' object per record)")
     ap.add_argument("--json-out", help="write the full JSON report card here (needed for drift)")
     ap.add_argument("--out", "-o", help="write the Markdown summary here")
     args = ap.parse_args(argv)
@@ -259,7 +262,8 @@ def report_card_main(argv: list[str] | None = None) -> int:
 
     card = run_report_card(scorer, docs, corpus_name=args.name or Path(args.human[0]).stem,
                            detector_version=args.detector_version,
-                           stability_sample=args.stability_sample, progress=prog)
+                           stability_sample=args.stability_sample, progress=prog,
+                           slice_by=tuple(args.slice_by))
     if args.json_out:
         Path(args.json_out).write_text(json.dumps(card, indent=2) + "\n", encoding="utf-8")
         print(f"wrote {args.json_out}", file=sys.stderr)
