@@ -136,6 +136,13 @@ def _strip_trailing(text: str) -> str:
     return "\n".join(line.rstrip() for line in t.split("\n")).strip("\n")
 
 
+def _french_spacing(text: str) -> str:
+    """A space before ; : ! ? — French typographic convention, and a common typing habit."""
+    if re.search(r"\S [;:!?]", text):
+        return re.sub(r"(\S) ([;:!?])", r"\1\2", text)
+    return re.sub(r"(?<=[^\s;:!?])([;:!?])(?=\s|$)", r" \1", text)
+
+
 _NULL_EDITS = (
     ("N1", "Curly quotes", "straight quotes and apostrophes become typographic ones", _curly),
     ("N2", "Straight quotes", "typographic quotes and apostrophes become straight ones", _straight),
@@ -152,6 +159,7 @@ _NULL_EDITS = (
     ("N9", "No blank lines between paragraphs", "paragraphs separated by a single newline",
      _no_blank_lines),
     ("N10", "Trailing whitespace stripped", "line endings normalised to LF", _strip_trailing),
+    ("N11", "Space before ; : ! ?", "French typographic spacing (or its removal)", _french_spacing),
 )
 
 

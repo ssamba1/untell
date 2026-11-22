@@ -15,6 +15,7 @@ importing this package stays cheap and dependency-free.
 
 from __future__ import annotations
 
+import contextvars
 import re
 from typing import Protocol, runtime_checkable
 
@@ -136,6 +137,13 @@ def normalise_whitespace(text: str) -> str:
     return _SPACE_BEFORE_PUNCT.sub(r"\1", out)
 
 
+# Audit switch: when set, `normalise_for_scoring` passes text through untouched, so a detector
+# sees exactly what a typical un-hardened deployment of the same model would. Used only by the
+# `raw:<detector>` scorer (untell/evidence/scorers.py) to measure what the normalisation protects
+# against; never set on any scoring path that produces a verdict for a user.
+RAW_INPUT: contextvars.ContextVar[bool] = contextvars.ContextVar("untell_raw_input", default=False)
+
+
 def normalise_for_scoring(text: str) -> str:
     """What every detector should see: invisible characters stripped, then whitespace normalised.
 
@@ -155,6 +163,8 @@ def normalise_for_scoring(text: str) -> str:
     second nearly-identical stripper is how a rule ends up applied in some places and missed in the
     rest. Imported lazily to keep importing this package cheap, matching `score_tells`.
     """
+    if RAW_INPUT.get():
+        return text
     from untell.attacks import scrub_hidden
 
     return normalise_whitespace(scrub_hidden(text))

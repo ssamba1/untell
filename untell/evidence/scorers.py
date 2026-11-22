@@ -11,6 +11,8 @@ those are not Python objects. So a scorer is resolved from a short spec string:
     run the command with the text on stdin; read a score from stdout — a bare number, or JSON
     with a ``score`` / ``ai`` / ``probability`` field. Wraps anything: a curl call, a vendor CLI,
     a browser script.
+``raw:<detector name>``
+    a local model without untell's input normalisation, as an un-hardened deployment runs it.
 ``manual:<file>``
     scores somebody recorded by hand (from a web UI, a Turnitin report, a screenshot), keyed by
     variant id: ``base``, ``N1`` … — CSV ``id,score[,flagged]`` or a JSON object. This is how an
@@ -90,6 +92,28 @@ def _local(tier: str, threshold: float | None) -> Scorer:
 def known_detector_names() -> list[str]:
     from untell.detectors.base import all_detectors
     return [d.name for d in all_detectors()]
+
+
+def _raw(name: str, threshold: float) -> Scorer:
+    """A local detector WITHOUT untell's input normalisation — the model as others deploy it.
+
+    untell strips invisible characters and normalises whitespace before its own detectors see
+    text, because those are measured shortcuts (one space before each full stop took hc3_roberta's
+    AUROC from 0.98 to 0.14). An audit of the MODEL, as it behaves when hosted elsewhere, needs it
+    without that protection; this scorer provides exactly that and nothing else.
+    """
+    from untell.detectors.base import RAW_INPUT
+
+    inner = _detector(name, threshold)
+
+    def run(text: str, key: str | None) -> Verdict:
+        token = RAW_INPUT.set(True)
+        try:
+            return inner._fn(text, key)
+        finally:
+            RAW_INPUT.reset(token)
+
+    return Scorer(f"raw:{name}", "detector", threshold, run, inner.version)
 
 
 def _detector(name: str, threshold: float) -> Scorer:
@@ -218,6 +242,8 @@ def resolve_scorer(spec: str, threshold: float | None = None) -> Scorer:
     thr = 0.5 if threshold is None else float(threshold)
     if spec == "local" or spec.startswith("local:"):
         return _local(spec.split(":", 1)[1] if ":" in spec else "full", threshold)
+    if spec.startswith("raw:"):
+        return _raw(spec[4:], thr)
     if spec.startswith("cmd:"):
         return _cmd(spec[4:], thr)
     if spec.startswith("manual:"):
