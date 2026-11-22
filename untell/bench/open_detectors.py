@@ -26,7 +26,7 @@ def slug(model: str) -> str:
 
 
 def audit(model: str, docs: list[dict], out: Path, corpus_name: str, stability_sample: int,
-          trailing_groups: set[str] | None) -> dict:
+          trailing_groups: set[str] | None, slice_by: tuple[str, ...] = ()) -> dict:
     out.mkdir(parents=True, exist_ok=True)
     sc = resolve_scorer(f"hf:{model}", 0.5)
 
@@ -35,7 +35,7 @@ def audit(model: str, docs: list[dict], out: Path, corpus_name: str, stability_s
             print(f"  {model}: card {i}/{n}", file=sys.stderr, flush=True)
 
     card = run_report_card(sc, docs, corpus_name=corpus_name, stability_sample=stability_sample,
-                           progress=prog)
+                           progress=prog, slice_by=slice_by)
     (out / f"{slug(model)}.json").write_text(json.dumps(card, separators=(",", ":")) + "\n",
                                              encoding="utf-8")
     (out / f"{slug(model)}.md").write_text(render_report_card_markdown(card), encoding="utf-8")
@@ -57,13 +57,16 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--out", required=True)
     ap.add_argument("--name", default="corpus")
     ap.add_argument("--stability-sample", type=int, default=15)
+    ap.add_argument("--slice-by", action="append", default=[],
+                    help="writer-metadata field to slice false positives by (repeatable)")
     ap.add_argument("--trailing-group", action="append",
                     help="groups to run the trailing-space test on (default: all)")
     args = ap.parse_args(argv)
     docs = load_corpus(args.corpus)
     for m in args.model:
         res = audit(m, docs, Path(args.out), args.name, args.stability_sample,
-                    set(args.trailing_group) if args.trailing_group else None)
+                    set(args.trailing_group) if args.trailing_group else None,
+                    tuple(args.slice_by))
         print(f"DONE {m} overall FPR {res['card']['false_positive_rate']['overall']['rate']:.3f}",
               flush=True)
     return 0
