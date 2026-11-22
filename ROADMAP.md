@@ -49,7 +49,7 @@ drifts from the plan it summarises is worse than none, because it is the part pe
 | 21 | Pangram adapter; audit tools over MCP and REST | ✅ done | — |
 | 22 | First report cards for commercial detectors | 🔜 open | **API keys** as repository secrets, and a check of each provider's terms of service |
 | 23 | Corpora where detectors are known to fail: non-native, student, short text | 🔜 open — 2023 baseline done from public data; current versions need fresh scoring | **partners with consented data** (writing centres, ESL programmes, integrity offices), and API keys to re-score |
-| 24 | Verify every `summary`-marked published rate against its primary source | 🔜 open | **network access** to the primary PDFs (epoch.ai and arXiv were unreachable from the build session) |
+| 24 | Verify every `summary`-marked published rate against its primary source | 🔜 open — Epoch and arXiv verified 2026-11-22 | **a person with a browser**: nber.org, turnitin.com and provost.wsu.edu refuse automated fetching (HTTP 403) |
 | 25 | First PyPI release | 🔜 open | **your PyPI account**: register the trusted publisher for `.github/workflows/release.yml`, then tag `v0.4.0` |
 
 Three things are ruled out rather than pending, each with the measurement that ruled it out: raw
@@ -448,9 +448,11 @@ al.'s public data, as report cards by writer population (non-native 52–76% fla
 
 ### 🔜 Verify every published rate against its primary source
 
-Several entries in [`published_rates.json`](untell/evidence/published_rates.json) are marked
-`summary` because the primary PDF could not be fetched from the build session. Each needs reading
-at source and re-marking `primary` or correcting.
+Epoch AI's figures and arXiv:2608.11256 were checked at source on 2026-11-22 and are marked
+`primary`; the arXiv paper also added pre-LLM baselines (0/306 for Pangram 3.2 and GPTZero) and a
+finding the market research had wrong — after one pass of Undetectable AI, Pangram missed 96.6% of
+AI rewrites. The NBER paper, Turnitin's blog and the WSU memo refuse automated fetching, so their
+entries say so and need checking by hand.
 
 ### 🔜 First PyPI release
 

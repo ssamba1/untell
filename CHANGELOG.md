@@ -11,6 +11,11 @@ All notable changes to this project are documented here. The format is based on
   the OpenAI RoBERTa detector, by writer population. They flag 52–76% of TOEFL essays by non-native
   writers against 0–12% of US 8th-graders' essays; untell reproduces the paper's 61% average
   (62.0%). Importer: `python -m untell.bench.liang2023 <clone>`; cards in `docs/observatory/liang-2023/`.
+- **Published rates verified at source.** Epoch AI (Pangram 0/495, GPTZero 0/495, Originality.ai
+  19/495) and arXiv:2608.11256 (Pangram 3.2 and GPTZero: 0/306 on pre-LLM abstracts, 14.9% and 8.9%
+  flag rates on 2023–25 ones, 96.6% and 96.1% missed after one humanizer pass) are now `primary`.
+  The evidence brief prefers source-checked figures; sources that refuse automated fetching (NBER,
+  Turnitin, the WSU memo) are labelled as unchecked, and the WSU figure is quoted as reported.
 - **`--writer non-native`** (`brief`, `flagmath`, MCP and REST): published rates carry a writer
   population, and a rate measured on one population is never applied to another.
 

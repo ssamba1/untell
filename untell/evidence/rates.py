@@ -40,13 +40,18 @@ def rates_for(detector: str) -> list[dict]:
 
 
 def best_fpr_estimate(detector: str, population: str = "general") -> dict | None:
-    """A conservative single FPR for Bayes arithmetic: the HIGHEST credible published figure.
+    """A conservative single FPR for Bayes arithmetic.
 
-    Conservative in the accused writer's favour on purpose — an evidence brief that picks the
-    detector's best day is advocacy for the accusation. Uses ``value`` when present, else
-    ``upper``; an observed zero becomes its 95% upper bound; skips metrics that are not false-positive rates.
+    Two rules, in order. Figures verified at their primary source (``checked == "primary"``) are
+    preferred over ones seen only in summaries or vendor claims; within whichever set is used, the
+    HIGHEST credible figure wins — conservative in the accused writer's favour on purpose, since a
+    brief that picks the detector's best day is advocacy for the accusation. An observed zero
+    becomes its 95% upper bound, and metrics that are not false-positive rates are skipped.
+    A rate measured on one population of writers is never applied to another.
     """
-    best = None
+    from .stats import rule_of_three_upper
+
+    candidates = []
     for e in rates_for(detector):
         if e.get("metric") != "false_positive_rate":
             continue
@@ -60,14 +65,15 @@ def best_fpr_estimate(detector: str, population: str = "general") -> dict | None
         elif v == 0.0:
             # An observed zero is not a zero rate: use its 95% upper bound instead.
             if e.get("n"):
-                from .stats import rule_of_three_upper
                 v = rule_of_three_upper(int(e["n"]))
             elif e.get("upper"):
                 v = e["upper"]
-        if v is None:
-            continue
-        if best is None or v > best["fpr"]:
-            best = {"fpr": float(v), "source": e["source"], "url": e["url"],
-                    "condition": e.get("condition"), "checked": e.get("checked"),
-                    "population": e.get("population", "general")}
-    return best
+        if v is not None:
+            candidates.append((float(v), e))
+    primary = [c for c in candidates if c[1].get("checked") == "primary"]
+    pool = primary or candidates
+    if not pool:
+        return None
+    v, e = max(pool, key=lambda c: c[0])
+    return {"fpr": v, "source": e["source"], "url": e["url"], "condition": e.get("condition"),
+            "checked": e.get("checked"), "population": e.get("population", "general")}

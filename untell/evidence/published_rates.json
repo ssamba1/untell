@@ -10,7 +10,7 @@
       "source": "Jabarian & Imas, 'Artificial Writing and Automated Detection', NBER Working Paper 34223 (2025)",
       "url": "https://www.nber.org/system/files/working_papers/w34223/w34223.pdf",
       "checked": "summary",
-      "note": "Reported as approximately zero; the only detector in that study to keep high recall with FPR capped at 0.5%.",
+      "note": "Reported as approximately zero; the only detector in that study to keep high recall with FPR capped at 0.5%. The publisher's site refuses automated fetching (HTTP 403), so this entry has not been checked against the primary source; verify by hand before quoting.",
       "population": "general"
     },
     {
@@ -22,7 +22,7 @@
       "source": "Jabarian & Imas, NBER Working Paper 34223 (2025)",
       "url": "https://www.nber.org/system/files/working_papers/w34223/w34223.pdf",
       "checked": "summary",
-      "note": "Under 1%; recall largely lost after humanizer processing in the same study.",
+      "note": "Under 1%; recall largely lost after humanizer processing in the same study. The publisher's site refuses automated fetching (HTTP 403), so this entry has not been checked against the primary source; verify by hand before quoting.",
       "population": "general"
     },
     {
@@ -34,62 +34,68 @@
       "source": "Jabarian & Imas, NBER Working Paper 34223 (2025)",
       "url": "https://www.nber.org/system/files/working_papers/w34223/w34223.pdf",
       "checked": "summary",
-      "population": "general"
+      "population": "general",
+      "note": "The publisher's site refuses automated fetching (HTTP 403), so this entry has not been checked against the primary source; verify by hand before quoting."
     },
     {
       "detector": "originality",
       "metric": "false_positive_rate",
       "value": 0.038,
       "n": 495,
-      "condition": "495 human-written passages",
+      "condition": "495 human-written passages; Epoch AI test, 2026",
       "source": "Epoch AI data insight (July 2026)",
       "url": "https://epoch.ai/data-insights/ai-detectors-false-negatives",
-      "checked": "summary",
-      "population": "general"
+      "checked": "primary",
+      "population": "general",
+      "note": "19 of 495; 90% CI 2.65-5.53%. Epoch reports all 19 were flags of writing that predates ChatGPT."
     },
     {
       "detector": "pangram",
       "metric": "false_positive_rate",
       "value": 0.0,
       "n": 495,
-      "condition": "495 human-written passages",
+      "condition": "495 human-written passages; Epoch AI test, 2026",
       "source": "Epoch AI data insight (July 2026)",
       "url": "https://epoch.ai/data-insights/ai-detectors-false-negatives",
-      "checked": "summary",
-      "population": "general"
+      "checked": "primary",
+      "population": "general",
+      "note": "0 of 495; 90% CI 0.00-0.54%."
     },
     {
       "detector": "gptzero",
       "metric": "false_positive_rate",
       "value": 0.0,
       "n": 495,
-      "condition": "495 human-written passages",
+      "condition": "495 human-written passages; Epoch AI test, 2026",
       "source": "Epoch AI data insight (July 2026)",
       "url": "https://epoch.ai/data-insights/ai-detectors-false-negatives",
-      "checked": "summary",
-      "population": "general"
+      "checked": "primary",
+      "population": "general",
+      "note": "0 of 495; 90% CI 0.00-0.54%."
     },
     {
       "detector": "pangram",
       "metric": "flag_rate_on_presumed_human",
       "value": 0.149,
-      "condition": "original academic abstracts (authors caution some may be AI-touched)",
-      "source": "arXiv 2608.11256 (2026)",
-      "url": "https://arxiv.org/pdf/2608.11256",
-      "checked": "summary",
-      "note": "Not a clean false-positive rate: provenance of the 'human' abstracts is uncertain.",
-      "population": "general"
+      "condition": "2023-2025 original academic abstracts (4 domains), tau=0.50; Pangram 3.2",
+      "source": "Karr, Khvatskii, Hua & Chawla, 'Why AI Detection Fails for Academic Integrity', arXiv:2608.11256 v3 (2026)",
+      "url": "https://arxiv.org/abs/2608.11256",
+      "checked": "primary",
+      "note": "A flag rate, not a confirmed false-positive rate: the authors note unobserved AI assistance is possible. Non-STEM rates were far above STEM (p<0.001).",
+      "population": "general",
+      "n": 336
     },
     {
       "detector": "gptzero",
       "metric": "flag_rate_on_presumed_human",
       "value": 0.089,
-      "condition": "original academic abstracts (authors caution some may be AI-touched)",
-      "source": "arXiv 2608.11256 (2026)",
-      "url": "https://arxiv.org/pdf/2608.11256",
-      "checked": "summary",
-      "note": "Not a clean false-positive rate: provenance of the 'human' abstracts is uncertain.",
-      "population": "general"
+      "condition": "2023-2025 original academic abstracts (4 domains), tau=0.50; Pangram 3.2",
+      "source": "Karr, Khvatskii, Hua & Chawla, 'Why AI Detection Fails for Academic Integrity', arXiv:2608.11256 v3 (2026)",
+      "url": "https://arxiv.org/abs/2608.11256",
+      "checked": "primary",
+      "note": "A flag rate, not a confirmed false-positive rate: the authors note unobserved AI assistance is possible. Non-STEM rates were far above STEM (p<0.001).",
+      "population": "general",
+      "n": 336
     },
     {
       "detector": "turnitin",
@@ -100,7 +106,7 @@
       "source": "Turnitin, 'Understanding false positives within our AI writing detection capabilities'",
       "url": "https://www.turnitin.com/blog/understanding-false-positives-within-our-ai-writing-detection-capabilities",
       "checked": "vendor",
-      "note": "Vendor claim; no independent 2026 false-positive study of Turnitin was found.",
+      "note": "Vendor claim; no independent 2026 false-positive study of Turnitin was found. The publisher's site refuses automated fetching (HTTP 403), so this entry has not been checked against the primary source; verify by hand before quoting.",
       "population": "general"
     },
     {
@@ -111,7 +117,8 @@
       "source": "WSU Provost's Office memo cancelling Turnitin AI detection (Feb 2026)",
       "url": "https://provost.wsu.edu/documents/2026/02/cancellation-of-turnitin-ai-detection-software_memo-to-instructors_provost-office_spring-2026.pdf",
       "checked": "summary",
-      "population": "general"
+      "population": "general",
+      "note": "The publisher's site refuses automated fetching (HTTP 403), so this entry has not been checked against the primary source; verify by hand before quoting."
     },
     {
       "detector": "open-source-roberta",
@@ -122,7 +129,8 @@
       "source": "Jabarian & Imas, NBER Working Paper 34223 (2025)",
       "url": "https://www.nber.org/system/files/working_papers/w34223/w34223.pdf",
       "checked": "summary",
-      "population": "general"
+      "population": "general",
+      "note": "The publisher's site refuses automated fetching (HTTP 403), so this entry has not been checked against the primary source; verify by hand before quoting."
     },
     {
       "detector": "multiple (7 detectors, 2023 versions)",
@@ -205,6 +213,52 @@
       "url": "https://github.com/ssamba1/untell/tree/main/docs/observatory/liang-2023",
       "checked": "primary",
       "note": "Same essays, same detectors: US 8th-grade essays were flagged at 0-5% (n=88). Describes the 2023 version only."
+    },
+    {
+      "detector": "pangram",
+      "metric": "false_positive_rate",
+      "value": 0.0,
+      "n": 306,
+      "population": "general",
+      "condition": "2013-2015 original academic abstracts (pre-LLM, 4 domains), tau=0.50; Pangram 3.2",
+      "source": "Karr, Khvatskii, Hua & Chawla, 'Why AI Detection Fails for Academic Integrity', arXiv:2608.11256 v3 (2026)",
+      "url": "https://arxiv.org/abs/2608.11256",
+      "checked": "primary",
+      "note": "Proxy false-positive rate (Table 2)."
+    },
+    {
+      "detector": "gptzero",
+      "metric": "false_positive_rate",
+      "value": 0.0,
+      "n": 306,
+      "population": "general",
+      "condition": "2013-2015 original academic abstracts (pre-LLM, 4 domains), tau=0.50",
+      "source": "Karr, Khvatskii, Hua & Chawla, 'Why AI Detection Fails for Academic Integrity', arXiv:2608.11256 v3 (2026)",
+      "url": "https://arxiv.org/abs/2608.11256",
+      "checked": "primary",
+      "note": "Proxy false-positive rate (Table 2)."
+    },
+    {
+      "detector": "pangram",
+      "metric": "miss_rate_after_humanizer",
+      "value": 0.966,
+      "population": "general",
+      "condition": "AI-rewritten 2023-2025 abstracts after one pass of Undetectable AI, tau=0.50; Pangram 3.2",
+      "source": "Karr, Khvatskii, Hua & Chawla, 'Why AI Detection Fails for Academic Integrity', arXiv:2608.11256 v3 (2026)",
+      "url": "https://arxiv.org/abs/2608.11256",
+      "checked": "primary",
+      "note": "Light 'refine abstract only' AI edits were flagged at 38-80% in the same study; humanized full rewrites were missed over 96% of the time."
+    },
+    {
+      "detector": "gptzero",
+      "metric": "miss_rate_after_humanizer",
+      "value": 0.961,
+      "population": "general",
+      "condition": "AI-rewritten 2023-2025 abstracts after one pass of Undetectable AI, tau=0.50",
+      "source": "Karr, Khvatskii, Hua & Chawla, 'Why AI Detection Fails for Academic Integrity', arXiv:2608.11256 v3 (2026)",
+      "url": "https://arxiv.org/abs/2608.11256",
+      "checked": "primary",
+      "note": "Light 'refine abstract only' AI edits were flagged at 38-80% in the same study; humanized full rewrites were missed over 96% of the time."
     }
   ]
 }

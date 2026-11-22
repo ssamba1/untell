@@ -42,7 +42,7 @@ QUESTIONS = (
 )
 
 CONTEXT = (
-    "Washington State University cancelled Turnitin's AI detection in February 2026, citing that "
+    "Washington State University reportedly cancelled Turnitin's AI detection in February 2026, citing that "
     "33% of its 2023–25 AI-misconduct cases were dismissed where the detector was the only "
     "evidence. Several other universities have disabled AI detection (Waterloo, Curtin, the "
     "University of New England)."

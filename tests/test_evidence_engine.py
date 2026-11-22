@@ -437,3 +437,10 @@ def test_the_brief_names_the_writer_population():
     b = build_brief(SAMPLE, "gptzero", writer="non-native", documents=4)
     assert b["bayes"]["writer_population"] == "non-native" and b["bayes"]["fpr"] > 0.5
     assert "Writer population: **non-native**" in render_markdown(b)
+
+
+def test_a_figure_checked_at_source_beats_one_seen_in_a_summary():
+    est = best_fpr_estimate("pangram")
+    assert est["checked"] == "primary"
+    # Turnitin has only its own vendor claim on file, so that is what is used, and labelled so.
+    assert best_fpr_estimate("turnitin")["checked"] == "vendor"

@@ -24,7 +24,7 @@ flag actually implies once the error rate and the base rate are counted.
 
 ## Why this exists
 
-Detector scores are being used to accuse people of misconduct. In February 2026 Washington State
+Detector scores are being used to accuse people of misconduct. As reported in February 2026, Washington State
 University cancelled Turnitin's AI detection after finding that a third of its AI-misconduct cases
 were dismissed when the detector was the only evidence
 ([memo](https://provost.wsu.edu/documents/2026/02/cancellation-of-turnitin-ai-detection-software_memo-to-instructors_provost-office_spring-2026.pdf)).
