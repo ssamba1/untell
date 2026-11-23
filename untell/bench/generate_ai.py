@@ -45,7 +45,7 @@ def main(argv: list[str] | None = None) -> int:
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
     tok = AutoTokenizer.from_pretrained(args.model)
-    model = AutoModelForCausalLM.from_pretrained(args.model, torch_dtype=torch.float32)
+    model = AutoModelForCausalLM.from_pretrained(args.model).float()
     model.eval()
     grades = ["6th", "8th", "10th", "11th", "12th"]
     rng = random.Random(args.seed)

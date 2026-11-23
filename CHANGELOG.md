@@ -54,6 +54,12 @@ All notable changes to this project are documented here. The format is based on
   population, and a rate measured on one population is never applied to another.
 
 ### Fixed
+- **`hf:` scorer ran bfloat16 models in bfloat16.** transformers 5 loads a model in its stored
+  dtype; `rasbt/ai-text-detector-modernbert` ships bfloat16, which rounds every probability to a
+  multiple of 1/256 (1,546 documents produced 340 distinct scores; over 5% of known-human text
+  scored exactly 1.0). The scorer now always computes in float32. ModernBERT's published card,
+  fitted threshold and modern-LLM recall are regenerated; the other four audited models store
+  float32 and are unaffected, as are untell's own detectors.
 - **`restore(lock(text))` capitalised a one-word lowercase name at a sentence start**
   ("untell's" → "Untell's") in a round trip where nothing was rewritten. Single-word lowercase spans
   are names locked for their casing and now keep it; multi-word spans ("the New York Times") are

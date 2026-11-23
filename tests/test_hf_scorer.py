@@ -38,3 +38,23 @@ def test_no_remote_code_is_ever_enabled():
 def test_the_spec_is_wired_into_the_resolver():
     from untell.evidence import scorers
     assert 'spec.startswith("hf:")' in inspect.getsource(scorers.resolve_scorer)
+
+
+def test_models_run_in_float32_even_when_shipped_in_bfloat16(monkeypatch):
+    """rasbt/ai-text-detector-modernbert ships bfloat16; run as stored, every probability is a
+    multiple of 1/256 (1,546 documents gave 340 distinct scores). The scorer must upcast."""
+    torch = pytest.importorskip("torch")
+    transformers = pytest.importorskip("transformers")
+    from untell.evidence import hf_scorer
+
+    class Tiny(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.lin = torch.nn.Linear(2, 2).to(torch.bfloat16)
+
+    monkeypatch.setattr(transformers.AutoTokenizer, "from_pretrained", staticmethod(lambda *a, **k: object()))
+    monkeypatch.setattr(transformers.AutoModelForSequenceClassification, "from_pretrained",
+                        staticmethod(lambda *a, **k: Tiny()))
+    spec = hf_scorer.KNOWN["rasbt/ai-text-detector-modernbert"]
+    loaded = hf_scorer._Loaded("rasbt/ai-text-detector-modernbert", spec)
+    assert next(loaded.model.parameters()).dtype == torch.float32

@@ -87,10 +87,15 @@ class _Loaded:
                 {k[len("model."):]: v for k, v in state.items() if k.startswith("model.")})
             self.head.load_state_dict(
                 {k[len("classifier."):]: v for k, v in state.items() if k.startswith("classifier.")})
-            self.backbone.eval()
-            self.head.eval()
+            self.backbone.float().eval()
+            self.head.float().eval()
         else:
-            self.model = AutoModelForSequenceClassification.from_pretrained(model_id)
+            # Always compute in float32. transformers 5 loads a model in the dtype its config
+            # declares, and rasbt/ai-text-detector-modernbert ships bfloat16, whose 8-bit mantissa
+            # rounds every probability to a multiple of 1/256: MEASURED, 1,546 documents produced
+            # 340 distinct scores, and more than 5% of known-human text scored exactly 1.0. That is
+            # the storage format talking, not the detector — transformers 4 upcast by default.
+            self.model = AutoModelForSequenceClassification.from_pretrained(model_id).float()
             self.model.eval()
 
     def score(self, text: str) -> float:
