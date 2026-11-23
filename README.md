@@ -16,7 +16,7 @@ flag actually implies once the error rate and the base rate are counted.
 [![Zero-dependency core](https://img.shields.io/badge/core-zero--dependency-brightgreen.svg)](#install)
 [![Live site](https://img.shields.io/badge/site-ssamba1.github.io%2Funtell-2ea44f.svg)](https://ssamba1.github.io/untell/)
 
-**[Evidence kit in your browser](https://ssamba1.github.io/untell/brief.html)** · [Auditing guide](docs/auditing.md) · [Observatory](docs/observatory/README.md) · [Measurement log](docs/free-ceiling-measured.md) · [Full reference](docs/reference.md)
+**[Evidence kit in your browser](https://ssamba1.github.io/untell/brief.html)** · [**Report: what a verdict is worth (Nov 2026)**](docs/report-2026-11.md) · [Auditing guide](docs/auditing.md) · [Observatory](docs/observatory/README.md) · [Measurement log](docs/free-ceiling-measured.md) · [Full reference](docs/reference.md)
 
 </div>
 
