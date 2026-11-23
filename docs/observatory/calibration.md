@@ -13,7 +13,7 @@ new table and the cut differ. v1 (technical prose only) and v2 are kept below as
 
 ModernBERT was added because the [modern-essay recall check](modern-llm.md) found it was the only
 audited open detector that caught a 2024 model's essays without flagging TOEFL writers. Those Qwen
-essays chose it, so they are not a clean test of v3; the SmolLM2 essays below are.
+essays chose it, so they are not a clean test of v3; essays from a second 2024 model are.
 
 ## Method
 
@@ -60,7 +60,6 @@ move verdicts on identical words.
 | GPT-3 college essays, evasion-prompted | AI | 27/31 (87.1%) | 0/31 (0.0%) | 0/31 (0.0%) | 16/31 (51.6%) |
 | GPT-3 CS224N abstracts, evasion-prompted | AI | 117/145 (80.7%) | 20/145 (13.8%) | 20/145 (13.8%) | 18/145 (12.4%) |
 | Qwen2.5-1.5B essays, 2024 (chose ModernBERT; not clean) | AI | – | – | 9/60 (15.0%) | 28/60 (46.7%) |
-| SMOL_ROW
 
 AI recall across all GPT-3 text: old 90.9%, v1 45.5%, v2 44.9%, **v3 46.9%**. AUROC of the
 calibrated aggregate on the Liang corpus: v1 0.762, v2 0.779, **v3 0.832**.
