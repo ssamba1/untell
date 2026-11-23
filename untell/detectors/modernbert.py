@@ -2,9 +2,10 @@
 
 ``rasbt/ai-text-detector-modernbert`` — ModernBERT-base (~150M parameters) fine-tuned on
 ``rasbt/human-vs-ai-50k``; Apache-2.0. Added because it was the one detector in the open-detector
-audit that generalised to a 2024 model's essays without accusing non-native writers: at its
-default 0.5 it caught 67% of Qwen2.5 essays (OpenAI's RoBERTa: 0%) while flagging none of 91
-TOEFL essays (docs/observatory/modern-llm.md, open-detectors.md).
+audit that generalised to a 2024 model's essays without accusing non-native writers
+(docs/observatory/modern-llm.md, open-detectors.md). In calibration v3 it raised recall on those
+essays from 15% to 47% while lowering held-out false flags on TOEFL essays from 19.8% to 15.4%
+(docs/observatory/calibration.md).
 
 Run the way its ``detector-config.json`` says: up to 8,192 tokens per forward, logits divided by
 the published temperature 1.5662 before the softmax, P(AI) = class 1. Always in float32 — the

@@ -9,12 +9,12 @@ JSON the skill (Claude) reads as feedback:
       "max": 0.71,          # the proxy the loop drives below threshold (multi-detector evasion)
       "mean": 0.71,
       "threshold": 0.30,          # what the rewrite LOOP drives toward
-      "verdict_rule": "max",      # or "calibrated-v2" on the full tier (see below)
+      "verdict_rule": "max",      # or "calibrated-v3" on the full tier (see below)
       "verdict_threshold": 0.45,  # the calibrated bar `flagged` is decided on
       "flagged": true       # max >= verdict_threshold => report this to the user
     }
 
-On the full tier at the default threshold, ``verdict_rule`` is ``"calibrated-v2"``: ``flagged`` is
+On the full tier at the default threshold, ``verdict_rule`` is ``"calibrated-v3"``: ``flagged`` is
 then ``verdict_score >= verdict_threshold``, both on a per-detector human-percentile scale fitted on
 held-out pre-2022 text (see ``calibrated_verdict``), while ``max`` stays the raw loop objective.
 
@@ -328,30 +328,40 @@ _STDLIB_PERPLEXITY_VERDICT_THRESHOLD = 0.45
 # 1.000 to pre-2022 human technical prose: the max was decided by whichever member was most
 # miscalibrated for the register.
 #
-# Calibration v2 (untell/detectors/calibration_full_v2.json) maps each detector's score to its
+# Calibration v3 (untell/detectors/calibration_full_v3.json) maps each detector's score to its
 # mid-rank percentile among 868 pre-2022 human documents (268 from five software projects' docs,
 # 600 PERSUADE 2.0 student essays, half by English learners), and flags when the highest percentile
-# reaches the fit's 95th percentile. Evaluated UNTOUCHED on held-out corpora
-# (docs/observatory/calibration.md):
+# reaches the fit's 95th percentile. v3 is v2 plus ModernBERT (`modernbert`), fitted the same way
+# on the same documents. Evaluated UNTOUCHED on held-out corpora (docs/observatory/calibration.md):
 #
-#     human false positives   PEPs 65% -> 0%   CS224N 42% -> 0%   US 8th grade 41% -> 0%
-#                             US college 61% -> 7%   TOEFL non-native 92% -> 20%
-#                             PERSUADE held-out: English learners 52% -> 2.5%, others 65% -> 6.8%
-#     AI recall (GPT-3)       91% -> 45%
+#                             old max rule   v2       v3
+#     human false positives   PEPs 65%       0%       0%
+#                             CS224N 42%     0%       0%
+#                             US 8th grade   41%      0%       0%
+#                             US college 61% 7.1%     7.1%
+#                             TOEFL 92%      19.8%    15.4%
+#                             PERSUADE held-out English learners 52% / 2.5% / 1.5%,
+#                                               others 65% / 6.8% / 5.8%
+#     AI recall               GPT-3 91% / 44.9% / 46.9%; a 2024 open model's essays 15% (v2) -> 47%
 #
-# Fewer false accusations at half the recall; TOEFL writers are still flagged most. It applies only to the default threshold: a caller who passes their own
-# threshold is asking about the raw max, and gets the old rule.
-_CALIBRATION_FILE = Path(__file__).resolve().parents[1] / "detectors" / "calibration_full_v2.json"
+# TOEFL writers are still flagged most. If ModernBERT cannot load, the other five tables still
+# apply against v3's cut (0.9851 vs v2's 0.9826), which only makes the verdict slightly stricter.
+# It applies only to the default threshold: a caller who passes their own threshold is asking about
+# the raw max, and gets the old rule.
+_CALIBRATION_VERSION = "v3"
+_CALIBRATION_FILE = (Path(__file__).resolve().parents[1] / "detectors"
+                     / f"calibration_full_{_CALIBRATION_VERSION}.json")
 _CALIBRATION_CACHE: dict = {}
 
 
 def _calibration() -> dict | None:
-    if "v2" not in _CALIBRATION_CACHE:
+    v = _CALIBRATION_VERSION
+    if v not in _CALIBRATION_CACHE:
         try:
-            _CALIBRATION_CACHE["v2"] = json.loads(_CALIBRATION_FILE.read_text(encoding="utf-8"))
+            _CALIBRATION_CACHE[v] = json.loads(_CALIBRATION_FILE.read_text(encoding="utf-8"))
         except Exception:  # a missing table falls back to the old rule, never crashes scoring
-            _CALIBRATION_CACHE["v2"] = None
-    return _CALIBRATION_CACHE["v2"]
+            _CALIBRATION_CACHE[v] = None
+    return _CALIBRATION_CACHE[v]
 
 
 def calibrated_verdict(scores: dict, modes: dict, threshold: float) -> tuple[float, float] | None:
@@ -960,7 +970,7 @@ def _score_with_detectors_uncached(
     if cv is not None:
         # `verdict_score` is on the calibrated percentile scale, and so is `verdict_threshold`
         # here; `max` stays the raw score the loop optimises.
-        result["verdict_rule"] = "calibrated-v2"
+        result["verdict_rule"] = f"calibrated-{_CALIBRATION_VERSION}"
         result["verdict_score"] = round(cv[0], 4)
         result["verdict_threshold"] = round(cv[1], 4)
         result["flagged"] = cv[0] >= cv[1]

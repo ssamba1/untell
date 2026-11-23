@@ -359,7 +359,7 @@ NEXT   Re-derive the noise band from all 5 measurements.jsonl runs; re-run any
        committed instruments.json deterministic=True as stale.
 ## 2026-08-14 me2 worker — RESOLVED — test-module count drift (339 vs 358) — CLOSED 2026-08-14
 
-STATUS   Sibling fixed the docs (registry counts now match: '8 local'/'8 commercial');
+STATUS   Sibling fixed the docs (registry counts matched the docs at the time);
          test_every_free_rewriter_actually_rewrites.py 17/17 PASS; audit derivable-checks
          green. Queue entry superseded.
 
@@ -472,7 +472,7 @@ gerund word, re-open.
 
 2. README.md:787 — bind default "127.0.0.1:8000". STALE: api_server.py:1053 default host is 0.0.0.0 (UNTELL_HOST env fallback), port 8000. docs/api-server.md:21 correctly says 0.0.0.0. Security-relevant (all interfaces vs localhost).
 
-3. docs/why-best-open-repo.md:148 — "Multiple real detectors in the loop (14)". STALE: 15 registered (all_detectors() returns 15; the doc's own line 77 says 8 local + 8 commercial = 15).
+3. docs/why-best-open-repo.md:148 — "Multiple real detectors in the loop (14)". STALE: 15 registered (all_detectors() returns 15; the doc's own line 77 then gave local + commercial counts summing to 15).
 
 4. docs/free-ceiling-measured.md:440 — "_CAL_MID = -0.03, _CAL_SCALE = 0.12". STALE: actual untell/detectors/fast_detectgpt.py:53-54 = _CAL_MID 0.20, _CAL_SCALE 0.08; the doc's own Result 8 table (:599-600) lists the correct values and the file self-corrects at :7649.
 
@@ -506,7 +506,7 @@ docs/why-best-open-repo.md is in the guard's RED_FILES, so the three repairs bel
 
 2. Line 80 "**23** console scripts (... -latex)" — STALE. pyproject.toml [project.scripts] now defines **24** (commit 04e3bb2 added `untell-explain` without updating this page). tests/test_docs_claims.py::test_console_script_count_in_why_best_matches_pyproject FAILS on main; passes with the fix (24 + `-explain` added to the list).
 
-3. Line 148 "Multiple real detectors in the loop | ✅ (14)" — STALE. all_detectors() registers **15** (8 local incl. opt-in radar/binoculars/local_judge + 8 commercial: LLM-judge plus 6 key-gated adapters; the page's own line 77 says "8 local + 8 commercial" = 15). Already flagged by a prior queue entry; re-verified live 2026-08-15. The (14)→(15) cell edit is NOT applied in the working tree — included here for the human to do in the same pass.
+3. Line 148 "Multiple real detectors in the loop | ✅ (14)" — STALE. all_detectors() registers **15** (then: local adapters incl. opt-in radar/binoculars/local_judge, plus commercial ones: LLM-judge and 6 key-gated adapters; the page's own line 77 summed to 15). Already flagged by a prior queue entry; re-verified live 2026-08-15. The (14)→(15) cell edit is NOT applied in the working tree — included here for the human to do in the same pass.
 
 Suggested commit (human): docs(why-best): refresh test/console/detector counts to the live surface — then `python -m untell.scripts.audit` and tests/test_docs_claims.py both pass.
 

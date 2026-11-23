@@ -393,6 +393,7 @@ def all_detectors() -> list[Detector]:
     from .llm_judge import LLMJudgeDetector
     from .local_judge import LocalJudgeDetector
     from .mage import MageDetector
+    from .modernbert import ModernBertDetector
     from .perplexity_burstiness import PerplexityBurstinessDetector
     from .radar import RadarDetector
     from .roberta_openai import RobertaOpenAIDetector
@@ -403,6 +404,7 @@ def all_detectors() -> list[Detector]:
         HC3RobertaDetector(),
         MageDetector(),
         FastDetectGPTDetector(),
+        ModernBertDetector(),  # full tier; Apache-2.0; part of calibration v3
         RadarDetector(),  # opt-in (UNTELL_ENABLE_RADAR=1); robust-to-paraphrase, non-commercial
         BinocularsDetector(),
         LocalJudgeDetector(),  # open LLM as a detector (full/heavy tier); no API key

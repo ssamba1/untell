@@ -15,7 +15,7 @@ def test_strip_markdown_removes_scaffolding_but_keeps_words():
 def test_page_reports_every_detector_with_counts():
     out = {"n": 4, "provenance": {"model": "m", "temperature": 0.8, "prompts": 2},
            "detectors": {
-               "untell (calibrated-v2)": {"recall": {"as generated": _rate(1, 4),
+               "untell (calibrated-v3)": {"recall": {"as generated": _rate(1, 4),
                                                      "markdown stripped": _rate(0, 4)}},
                "org/det": {"threshold": 0.91, "recall_default": {"as generated": _rate(4, 4),
                                                                   "markdown stripped": _rate(3, 4)},
@@ -26,4 +26,5 @@ def test_page_reports_every_detector_with_counts():
     assert "25% (1/4" in md and "0% (0/4" in md
     assert "org/det | 0.5 (default) | 100% (4/4" in md
     assert "0.9100 (fitted)" in md and "0.850" in md
+    assert "untell full tier (calibrated-v3)" in md
     assert "do not edit by hand" in md

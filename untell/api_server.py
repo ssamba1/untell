@@ -739,12 +739,12 @@ _SCORE_RESPONSES = _obj(
         "verdict_rule": {
             **_STR,
             "description": "how `flagged` was decided: 'max' (max >= verdict_threshold) or "
-                           "'calibrated-v2' (full tier, default threshold: verdict_score >= "
+                           "'calibrated-v3' (full tier, default threshold: verdict_score >= "
                            "verdict_threshold on a held-out human-percentile scale)",
         },
         "verdict_score": {
             **_NUM,
-            "description": "present only under 'calibrated-v2': the highest per-detector "
+            "description": "present only under 'calibrated-v3': the highest per-detector "
                            "percentile among pre-2022 human text",
         },
         "warning": {**_STR, "description": "present only when the effective tier was downgraded"},

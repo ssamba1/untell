@@ -82,6 +82,7 @@ ROSTER = {
     ("hc3_roberta", "full"),
     ("mage", "full"),
     ("fast_detectgpt", "full"),
+    ("modernbert", "full"),
     ("radar", "full"),
     ("binoculars", "heavy"),
     ("local_judge", "heavy"),

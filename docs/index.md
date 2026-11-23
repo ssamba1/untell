@@ -20,7 +20,7 @@ The rewrite loop is the instrument, not the product: score, edit under a meaning
 | Capability | What it does |
 |---|---|
 | **Evidence brief** (`untell brief`) | stability under edits that change no words, cited published error rates, Bayes on the flag, per-person false-flag risk — for one verdict on one document |
-| **Any detector** | ✅ 8 local + 8 commercial adapters, `cmd:` for anything scriptable, `manual:` for scores recorded from a web UI (Turnitin) |
+| **Any detector** | ✅ 9 local + 8 commercial adapters, `cmd:` for anything scriptable, `manual:` for scores recorded from a web UI (Turnitin) |
 | **Report cards** (`untell report-card`) | false-positive rate by writer group and length with 95% intervals, per-writer rollups, recall at capped FPR |
 | **Drift** (`untell drift`) | compares two report cards and flags silent model changes |
 | **Human by timestamp** (`untell capsule`) | a human corpus from git history before 2022-11-30 |

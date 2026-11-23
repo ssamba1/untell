@@ -809,7 +809,7 @@ For broader cross-detector benchmarking, [IMGTB](https://github.com/kinit-sk/IMG
 untell/            # THE SKILL (this dir is what you install)
   SKILL.md           # trigger + loop procedure + rewrite rubric
   scripts/           # cli (unified `untell`) · score · tells · preserve · quality · sentences · run · verify
-  detectors/         # base protocol + tiered adapters (8 local + 8 commercial incl. LLM-as-judge and Pangram)
+  detectors/         # base protocol + tiered adapters (9 local + 8 commercial incl. LLM-as-judge and Pangram)
   rewriter/          # optional rewriters: hosted (Anthropic/OpenAI) · surgical (no-key) · local LoRA policy
   attacks/           # surgical substitution · homoglyph · scrub · back-translation
   references/         # thresholds.md · prompt-rubric.md · ai-tells.md

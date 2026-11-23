@@ -69,9 +69,11 @@ def render_markdown(out: dict) -> str:
              "looks.", "",
              "| detector | threshold | recall, as generated | recall, Markdown stripped | "
              "AUROC vs PERSUADE human (stripped) |", "|---|---|---|---|---:|"]
-    u = out["detectors"].get("untell (calibrated-v2)")
-    if u:
-        lines.append(f"| untell full tier (calibrated-v2) | 5% fit FPR | {_pct(u['recall']['as generated'])} "
+    ukey = next((k for k in out["detectors"] if k.startswith("untell (")), None)
+    if ukey:
+        u = out["detectors"][ukey]
+        lines.append(f"| untell full tier ({ukey[len('untell ('):-1]}) | 5% fit FPR | "
+                     f"{_pct(u['recall']['as generated'])} "
                      f"| {_pct(u['recall']['markdown stripped'])} | – |")
     for model, e in out["detectors"].items():
         if model.startswith("untell"):
@@ -124,14 +126,19 @@ def main(argv: list[str] | None = None) -> int:
     per_doc = [{"id": d["id"], "prompt_name": (d.get("meta") or {}).get("prompt_name"),
                 "words": len(d["text"].split()), "scores": {}} for d in docs]
     res = {}
+    rules: set = set()
     for name, texts in variants.items():
         results = [score_text(t, tier="full") for t in texts]
+        rules |= {r.get("verdict_rule") for r in results}
+        # Named by the rule that actually decided `flagged`, so a page can never credit one
+        # calibration with another's numbers.
+        ukey = f"untell ({'/'.join(sorted(map(str, rules)))})"
         for row, r in zip(per_doc, results):
-            row["scores"].setdefault("untell (calibrated-v2)", {})[name] = {
+            row["scores"].setdefault(ukey, {})[name] = {
                 "flagged": bool(r["flagged"]), "verdict_score": r.get("verdict_score")}
         flags = [r["flagged"] for r in results]
         res[name] = _rate(sum(flags), len(flags))
-    out["detectors"]["untell (calibrated-v2)"] = {"recall": res}
+    out["detectors"][ukey] = {"recall": res}
     print("untell", {k: round(v["rate"], 3) for k, v in res.items()}, flush=True)
 
     for model, th in thresholds.items():
