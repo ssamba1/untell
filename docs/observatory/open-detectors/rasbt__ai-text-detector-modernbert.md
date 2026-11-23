@@ -1,6 +1,6 @@
 # Report card: hf:rasbt/ai-text-detector-modernbert
 
-*2026-11-22T22:47:23+00:00 · untell 0.4.0 · detector version not recorded · threshold 0.5*
+*2026-11-23T19:15:53+00:00 · untell 0.4.0 · detector version not recorded · threshold 0.5*
 
 Corpus **liang2023+persuade-eval** — 1194 human, 352 AI documents (0 unscored) · fingerprint `1b95c5d1b67e55c0…`
 
@@ -48,8 +48,8 @@ Projected for honest writers at 1.21% per document (upper end of the 95% CI on t
 ## Detection (AI documents)
 
 - AUROC: 0.944
-- recall at the shipped threshold: 20.5% (72/352; 95% CI 16.6–25.0%)
-- recall with false positives capped at 0.5%: 15.6%
+- recall at the shipped threshold: 21.0% (74/352; 95% CI 17.1–25.6%)
+- recall with false positives capped at 0.5%: 15.9%
 - recall with false positives capped at 1.0%: 26.4%
-- recall with false positives capped at 5.0%: 57.4%
+- recall with false positives capped at 5.0%: 58.0%
 
