@@ -5,8 +5,11 @@ scaffolding (headings, bold, bullets) stripped, which is what a submitted essay 
 untell's calibrated verdict and each audited open detector, and reports recall at the default and
 the recommended threshold, plus AUROC against the held-out PERSUADE human essays (same prompts).
 
-    python -m untell.bench.modern_recall modern-ai.jsonl --human-scores perdet_all.json \\
+    python -m untell.bench.modern_recall modern-ai.jsonl \\
         --cards docs/observatory/open-detectors --out docs/observatory/modern-llm.json
+
+Human scores for AUROC come from the PERSUADE rows of each detector's report card. Per-essay
+scores are written alongside the summary so every number can be re-derived.
 """
 
 from __future__ import annotations
@@ -52,11 +55,18 @@ def main(argv: list[str] | None = None) -> int:
 
     from untell.scripts.score import score_text
 
+    per_doc = [{"id": d["id"], "prompt_name": (d.get("meta") or {}).get("prompt_name"),
+                "words": len(d["text"].split()), "scores": {}} for d in docs]
     res = {}
     for name, texts in variants.items():
-        flags = [score_text(t, tier="full")["flagged"] for t in texts]
+        results = [score_text(t, tier="full") for t in texts]
+        for row, r in zip(per_doc, results):
+            row["scores"].setdefault("untell (calibrated-v2)", {})[name] = {
+                "flagged": bool(r["flagged"]), "verdict_score": r.get("verdict_score")}
+        flags = [r["flagged"] for r in results]
         res[name] = _rate(sum(flags), len(flags))
     out["detectors"]["untell (calibrated-v2)"] = {"recall": res}
+    print("untell", {k: round(v["rate"], 3) for k, v in res.items()}, flush=True)
 
     for model, th in thresholds.items():
         card = json.loads((cards / (model.replace("/", "__") + ".json")).read_text(encoding="utf-8"))
@@ -67,11 +77,14 @@ def main(argv: list[str] | None = None) -> int:
                  "auroc_vs_persuade_human": {}}
         for name, texts in variants.items():
             scores = [sc.verdict(t).score for t in texts]
+            for row, x in zip(per_doc, scores):
+                row["scores"].setdefault(model, {})[name] = x
             entry["recall_default"][name] = _rate(sum(s >= 0.5 for s in scores), len(scores))
             entry["recall_recommended"][name] = _rate(sum(s >= th["threshold"] for s in scores), len(scores))
             entry["auroc_vs_persuade_human"][name] = auroc(scores, human)
         out["detectors"][model] = entry
         print(model, {k: round(v["rate"], 3) for k, v in entry["recall_default"].items()}, flush=True)
+    out["documents"] = per_doc
     Path(args.out).write_text(json.dumps(out, indent=1) + "\n", encoding="utf-8")
     return 0
 
