@@ -109,6 +109,11 @@ human texts and 352 GPT-3 texts: [leaderboard](open-detectors.md) (generated fro
   human text — and catches 20.5% of GPT-3 text at its default.
 - **Typography still moves them.** Formatting-only edits flip Desklib's verdict on 8.5% of variants;
   one trailing space clears 22 of Fakespot's 62 TOEFL flags.
+- **No threshold fixes it.** Fitting each detector's threshold to 5% false positives on 868
+  pre-2022 human documents does not carry over: on held-out text Desklib drops from 15.5% to 7.5%
+  overall but still flags 36% of TOEFL essays, Fakespot barely moves (64%), and the lenient
+  detectors' lowered thresholds push their TOEFL rate to 26–44%. A threshold has to be measured on
+  writing like the writer's — which is what `untell report-card` on your own corpus is for.
 - **Group gaps are detector-specific.** Among US students, Fakespot flags White writers (7.7%) more
   than Black writers (1.8%); Desklib the reverse (3.9% vs 6.2%).
 

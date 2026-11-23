@@ -26,7 +26,7 @@ def _pct_plain(x: float | None) -> str:
 def build(folder: Path) -> str:
     cards = []
     for p in sorted(folder.glob("*.json")):
-        if p.name.endswith(".trailing-space.json"):
+        if p.name.endswith(".trailing-space.json") or p.name == "thresholds.json":
             continue
         card = json.loads(p.read_text(encoding="utf-8"))
         ts_path = p.with_name(p.stem + ".trailing-space.json")

@@ -32,4 +32,16 @@ Each detector run as its Hugging Face model card says (`hf:<model>`: raw text, t
 | `openai-community/roberta-large-openai-detector` | 0.0% (0/3) | 2.4% (2/84) | 0.9% (1/112) | 1.7% (6/351) | 0.0% (0/17) | 0.4% (1/233) |
 | `rasbt/ai-text-detector-modernbert` | 0.0% (0/3) | 2.4% (2/84) | 0.9% (1/112) | 0.6% (2/351) | 0.0% (0/17) | 0.4% (1/233) |
 
+## Recommended thresholds (≤ 5% false positives on the fit corpus)
+
+Each threshold is fitted on 868 pre-2022 human documents (calibration v2's fit corpus) and evaluated, untouched, on the held-out corpora above ([`thresholds.json`](open-detectors/thresholds.json), from `untell/bench/thresholds.py`).
+
+| detector | default 0.5 | recommended | human false positives | TOEFL | AI recall |
+|---|---:|---:|---:|---:|---:|
+| `fakespot-ai/roberta-base-ai-text-detection-v1` | 0.5 | 0.5381 | 21.4% (255/1194) → **20.9% (249/1194)** | 65.9% (60/91) → **63.7% (58/91)** | 99.7% (351/352) → 99.7% (351/352) |
+| `rasbt/ai-text-detector-modernbert` | 0.5 | 0.9961 | 0.6% (7/1194) → **0.3% (4/1194)** | 0.0% (0/91) → **0.0% (0/91)** | 20.5% (72/352) → 11.9% (42/352) |
+| `openai-community/roberta-large-openai-detector` | 0.5 | 0.1372 | 2.8% (33/1194) → **6.1% (73/1194)** | 15.4% (14/91) → **26.4% (24/91)** | 16.2% (57/352) → 35.2% (124/352) |
+| `PirateXX/AI-Content-Detector` | 0.5 | 0.0188 | 2.0% (24/1194) → **6.8% (81/1194)** | 19.8% (18/91) → **44.0% (40/91)** | 8.8% (31/352) → 25.6% (90/352) |
+| `desklib/ai-text-detector-v1.01` | 0.5 | 0.8206 | 15.5% (185/1194) → **7.5% (89/1194)** | 52.7% (48/91) → **36.3% (33/91)** | 98.0% (345/352) → 93.5% (329/352) |
+
 Rates on the 'all human' column pool corpora of different sizes and registers; read the per-corpus columns. 'Flags cleared' counts texts flagged as written and not flagged once one space is appended (identical words). Card details, including 95% intervals for every rate, are in each detector's `.md` card.

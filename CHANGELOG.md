@@ -15,7 +15,9 @@ All notable changes to this project are documented here. The format is based on
   (`docs/observatory/open-detectors.md`): five of the most-installed Hugging Face detectors audited
   on 1,194 pre-2022 human texts (sliced by English-learner status and race) and 352 GPT-3 texts.
   Desklib and Fakespot (AUROC 0.984) flag 53% / 66% of TOEFL essays at their defaults; ModernBERT
-  flags none and catches 20% of AI text.
+  flags none and catches 20% of AI text. Recommended thresholds fitted to 5% false positives on
+  calibration v2's fit corpus (`untell/bench/thresholds.py`) do not transfer: Desklib 15.5% → 7.5%
+  overall but still 36% on TOEFL; Fakespot 64%.
 - **Calibrated full-tier verdict (v1).** Each local detector's score is mapped to its percentile
   among 268 held-out pre-2022 human documents, and the verdict flags when the highest percentile
   reaches the fit's 5% cut. Evaluated untouched on held-out corpora: TOEFL essays 92% → 23%
