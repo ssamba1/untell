@@ -39,6 +39,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--max-new-tokens", type=int, default=600)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--out", required=True)
+    ap.add_argument("--resume", action="store_true",
+                    help="keep essays already in --out and generate only the missing ones (same seeds)")
     args = ap.parse_args(argv)
 
     import torch
@@ -49,11 +51,22 @@ def main(argv: list[str] | None = None) -> int:
     model.eval()
     grades = ["6th", "8th", "10th", "11th", "12th"]
     rng = random.Random(args.seed)
-    with open(args.out, "w", encoding="utf-8") as fh:
+    done: set[str] = set()
+    if args.resume:
+        try:
+            with open(args.out, encoding="utf-8") as fh:
+                done = {json.loads(line)["id"] for line in fh if line.strip()}
+        except FileNotFoundError:
+            pass
+    with open(args.out, "a" if args.resume else "w", encoding="utf-8") as fh:
         for name, assignment in sorted(assignments(args.csv).items()):
             for i in range(args.per_prompt):
                 grade = rng.choice(grades)
                 seed = rng.randrange(1 << 30)
+                # Every draw is taken before the skip, so a resumed run gives each essay the seed
+                # an uninterrupted run would have.
+                if f"modern:{name}:{i}" in done:
+                    continue
                 torch.manual_seed(seed)
                 msgs = [{"role": "user", "content":
                          f"You are a {grade}-grade student in the United States. Write an essay "

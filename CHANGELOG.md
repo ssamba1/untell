@@ -54,6 +54,9 @@ All notable changes to this project are documented here. The format is based on
   population, and a rate measured on one population is never applied to another.
 
 ### Fixed
+
+- `generate_ai --resume`: an interrupted run keeps the essays it already wrote and generates only the
+  missing ones, with the seeds an uninterrupted run would have given them (tested both ways).
 - **`hf:` scorer ran bfloat16 models in bfloat16.** transformers 5 loads a model in its stored
   dtype; `rasbt/ai-text-detector-modernbert` ships bfloat16, which rounds every probability to a
   multiple of 1/256 (1,546 documents produced 340 distinct scores; over 5% of known-human text
