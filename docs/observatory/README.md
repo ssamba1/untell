@@ -117,6 +117,13 @@ human texts and 352 GPT-3 texts: [leaderboard](open-detectors.md) (generated fro
 - **Group gaps are detector-specific.** Among US students, Fakespot flags White writers (7.7%) more
   than Black writers (1.8%); Desklib the reverse (3.9% vs 6.2%).
 
+## Recall on modern LLM essays
+
+[modern-llm.md](modern-llm.md): 60 essays by Qwen2.5-1.5B-Instruct on the PERSUADE assignments,
+scored by untell and the five open detectors. Desklib and Fakespot catch all 60; ModernBERT 67%
+with no TOEFL essay flagged; untell's calibrated verdict 15%; OpenAI RoBERTa none. The essays are
+published ([modern-llm-essays.jsonl](modern-llm-essays.jsonl)) with each one's seed.
+
 ## One trailing space
 
 On short text, a single trailing space reversed every "AI" verdict `hc3_roberta` gave in this

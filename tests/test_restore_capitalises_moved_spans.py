@@ -58,6 +58,8 @@ class TestLeftAloneWhenCaseIsLoadBearing:
             "e.g. the report",  # abbreviation with dots
             "3 sites",  # starts with a digit
             "Smith (2020)",  # already capitalised
+            "untell",  # a one-word name whose lowercase is deliberate
+            "npm",
         ],
     )
     def test_span_is_written_back_verbatim(self, span: str) -> None:
@@ -76,6 +78,8 @@ def test_an_untouched_round_trip_is_the_identity() -> None:
         "There are many lists published by various outlets, and the New York Times is just one.",
         "Smith (2020) reported 42 kg across 1,250 samples, per doi:10.1000/xyz and page 7.",
         "The trial ran for 12 weeks. Jones (2021) confirmed it at 97 percent agreement.",
+        # A deliberately lowercase name opening a sentence, recurring so it is locked as a name.
+        "Desklib caught 60 of 60 essays. untell caught 9 of 60, and untell flagged 20% of TOEFL.",
     ]:
         masked, mapping = lock(text)
         assert restore(masked, mapping) == text

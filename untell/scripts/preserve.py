@@ -1245,6 +1245,13 @@ def restore(masked: str, mapping: dict[str, str]) -> str:
         # the capital — restore cannot tell the two apart, so dates keep their author's casing.
         if _MONTH_OR_WEEKDAY_START.match(span):
             return m.group(0)
+        # A span that is ONE lowercase word is a name locked for its casing — "untell", "npm",
+        # "pandas" — not a phrase that happened to start with "the". MEASURED on this repo's own
+        # report: "...TOEFL essays. untell's calibrated verdict..." round-tripped to "Untell's",
+        # editing a document in which nothing was rewritten. Only multi-word spans ("the New York
+        # Times") are the case the capital pass exists for.
+        if span.isalpha() and span.islower():
+            return m.group(0)
         # The "." of "1." terminates a list marker, not a sentence.
         line_start = m.string.rfind("\n", 0, m.start()) + 1
         if _LIST_MARKER_ONLY.match(m.string[line_start:m.start()]):

@@ -40,6 +40,14 @@ def _rate(k: int, n: int) -> dict:
     return {"k": k, "n": n, "rate": k / n if n else None, "ci95": [lo, hi]}
 
 
+def corpus_traits(texts: list[str]) -> dict:
+    """What a reader needs to judge the AI sample: length, cut-off endings, Markdown use."""
+    words = sorted(len(t.split()) for t in texts)
+    return {"median_words": words[len(words) // 2] if words else None,
+            "ends_mid_sentence": sum(not t.rstrip().endswith((".", "!", "?", '"', "\u201d")) for t in texts),
+            "with_markdown": sum(bool(re.search(r"^#|\*\*|^\s*[-*] ", t, re.M)) for t in texts)}
+
+
 def _pct(r: dict) -> str:
     if r["rate"] is None:
         return "–"
@@ -77,7 +85,18 @@ def render_markdown(out: dict) -> str:
     lines += ["", "Recall is the share of these AI essays flagged. Compare with each detector's "
               "false-positive rates on human writing in the [open-detector leaderboard]"
               "(open-detectors.md) and [calibration](calibration.md): a recall figure means "
-              "nothing without the false-flag rate paid for it.", ""]
+              "nothing without the false-flag rate paid for it.", "",
+              "## Caveats", "",
+              "- One small open model (1.5B parameters). Frontier chat models write differently; "
+              "this measures whether a detector generalises past its training text, not how it "
+              "does on any particular commercial model.",
+              f"- Median essay length {prov.get('median_words', '?')} words; "
+              f"{prov.get('ends_mid_sentence', '?')} of {out['n']} essays hit the generation cap and "
+              "end mid-sentence.",
+              f"- {prov.get('with_markdown', '?')} of {out['n']} used Markdown headings, bold or "
+              "bullets; the stripped column removes them.",
+              "- AUROC compares these essays with student essays on the same prompts; it can be "
+              "inflated by differences in polish that have nothing to do with authorship.", ""]
     return "\n".join(lines)
 
 
@@ -96,7 +115,8 @@ def main(argv: list[str] | None = None) -> int:
     out: dict = {"n": len(docs),
                  "provenance": {"model": first.get("model"), "temperature": first.get("temperature"),
                                 "top_p": first.get("top_p"),
-                                "prompts": len({(d.get("meta") or {}).get("prompt_name") for d in docs})},
+                                "prompts": len({(d.get("meta") or {}).get("prompt_name") for d in docs}),
+                                **corpus_traits([d["text"] for d in docs])},
                  "detectors": {}}
 
     from untell.scripts.score import score_text
