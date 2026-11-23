@@ -79,6 +79,22 @@ def build(folder: Path) -> str:
             by = c["false_positive_rate"].get("by_meta", {}).get("race_ethnicity", {})
             L.append(f"| `{c['detector']['name'].removeprefix('hf:')}` | "
                      + " | ".join(_pct(by.get(r)) for r in races) + " |")
+    tpath = folder / "thresholds.json"
+    if tpath.exists():
+        th = json.loads(tpath.read_text(encoding="utf-8"))
+        L += ["", f"## Recommended thresholds (≤ {100 * th['target_fpr']:.0f}% false positives on the fit corpus)", "",
+              f"Each threshold is fitted on {th['fit_corpus']} and evaluated, untouched, on the held-out "
+              "corpora above ([`thresholds.json`](open-detectors/thresholds.json), from "
+              "`untell/bench/thresholds.py`).", "",
+              "| detector | default 0.5 | recommended | human false positives | TOEFL | AI recall |",
+              "|---|---:|---:|---:|---:|---:|"]
+        for model, m in th["models"].items():
+            h = m["held_out"]
+            toefl = h["groups"].get("toefl-non-native", {})
+            L.append(f"| `{model}` | 0.5 | {m['threshold']:.4f} | "
+                     f"{_pct(h['human']['default'])} → **{_pct(h['human']['recommended'])}** | "
+                     f"{_pct(toefl.get('default'))} → **{_pct(toefl.get('recommended'))}** | "
+                     f"{_pct(h['ai_recall']['default'])} → {_pct(h['ai_recall']['recommended'])} |")
     L += ["", "Rates on the 'all human' column pool corpora of different sizes and registers; read the "
           "per-corpus columns. 'Flags cleared' counts texts flagged as written and not flagged once one "
           "space is appended (identical words). Card details, including 95% intervals for every rate, "
