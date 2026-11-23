@@ -1,0 +1,80 @@
+"""Recall on modern LLM essays, against topic-matched human essays.
+
+Scores the essays from ``untell.bench.generate_ai`` twice — as generated, and with Markdown
+scaffolding (headings, bold, bullets) stripped, which is what a submitted essay looks like — with
+untell's calibrated verdict and each audited open detector, and reports recall at the default and
+the recommended threshold, plus AUROC against the held-out PERSUADE human essays (same prompts).
+
+    python -m untell.bench.modern_recall modern-ai.jsonl --human-scores perdet_all.json \\
+        --cards docs/observatory/open-detectors --out docs/observatory/modern-llm.json
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import re
+from pathlib import Path
+
+from untell.evidence.corpus import load_corpus
+from untell.evidence.scorers import resolve_scorer
+from untell.evidence.stats import auroc, wilson_interval
+
+_MD = [(re.compile(r"^\s{0,3}#{1,6}\s*.*$", re.M), ""),          # headings dropped
+       (re.compile(r"\*\*(.+?)\*\*|__(.+?)__"), r"\1\2"),          # bold
+       (re.compile(r"^\s*[-*+]\s+", re.M), ""),                     # bullet markers
+       (re.compile(r"\n{3,}"), "\n\n")]
+
+
+def strip_markdown(text: str) -> str:
+    for pat, rep in _MD:
+        text = pat.sub(rep, text)
+    return text.strip()
+
+
+def _rate(k: int, n: int) -> dict:
+    lo, hi = wilson_interval(k, n) if n else (None, None)
+    return {"k": k, "n": n, "rate": k / n if n else None, "ci95": [lo, hi]}
+
+
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(prog="python -m untell.bench.modern_recall", description=__doc__.split("\n\n")[0])
+    ap.add_argument("essays")
+    ap.add_argument("--cards", required=True, help="open-detector cards folder (with thresholds.json)")
+    ap.add_argument("--out", required=True)
+    args = ap.parse_args(argv)
+    docs = load_corpus(args.essays, label="ai")
+    cards = Path(args.cards)
+    thresholds = json.loads((cards / "thresholds.json").read_text(encoding="utf-8"))["models"]
+    variants = {"as generated": [d["text"] for d in docs],
+                "markdown stripped": [strip_markdown(d["text"]) for d in docs]}
+    out: dict = {"n": len(docs), "detectors": {}}
+
+    from untell.scripts.score import score_text
+
+    res = {}
+    for name, texts in variants.items():
+        flags = [score_text(t, tier="full")["flagged"] for t in texts]
+        res[name] = _rate(sum(flags), len(flags))
+    out["detectors"]["untell (calibrated-v2)"] = {"recall": res}
+
+    for model, th in thresholds.items():
+        card = json.loads((cards / (model.replace("/", "__") + ".json")).read_text(encoding="utf-8"))
+        human = [r["score"] for r in card["documents"]
+                 if r["label"] == "human" and r["group"] in ("ell", "non-ell") and r["score"] is not None]
+        sc = resolve_scorer(f"hf:{model}", 0.5)
+        entry = {"threshold": th["threshold"], "recall_default": {}, "recall_recommended": {},
+                 "auroc_vs_persuade_human": {}}
+        for name, texts in variants.items():
+            scores = [sc.verdict(t).score for t in texts]
+            entry["recall_default"][name] = _rate(sum(s >= 0.5 for s in scores), len(scores))
+            entry["recall_recommended"][name] = _rate(sum(s >= th["threshold"] for s in scores), len(scores))
+            entry["auroc_vs_persuade_human"][name] = auroc(scores, human)
+        out["detectors"][model] = entry
+        print(model, {k: round(v["rate"], 3) for k, v in entry["recall_default"].items()}, flush=True)
+    Path(args.out).write_text(json.dumps(out, indent=1) + "\n", encoding="utf-8")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
