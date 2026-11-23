@@ -58,3 +58,12 @@ def test_models_run_in_float32_even_when_shipped_in_bfloat16(monkeypatch):
     spec = hf_scorer.KNOWN["rasbt/ai-text-detector-modernbert"]
     loaded = hf_scorer._Loaded("rasbt/ai-text-detector-modernbert", spec)
     assert next(loaded.model.parameters()).dtype == torch.float32
+
+
+def test_modernbert_is_run_with_its_published_inference_settings():
+    """Its detector-config.json says 8,192 tokens and temperature 1.5662; at 512 tokens the audit
+    read only the opening ~380 words of every longer document."""
+    spec = H.KNOWN["rasbt/ai-text-detector-modernbert"]
+    assert spec.max_length == 8192
+    assert abs(spec.temperature - 1.566228609277514) < 1e-12
+    assert all(m.temperature == 1.0 for k, m in H.KNOWN.items() if k != "rasbt/ai-text-detector-modernbert")

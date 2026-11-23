@@ -20,7 +20,7 @@ Each detector run as its Hugging Face model card says (`hf:<model>`: raw text, t
 | `desklib/ai-text-detector-v1.01` | 0.984 | 98.0% (345/352) | 75.6% | 8.5% (5/59) | 0 of 48 | 0 of 145 |
 | `fakespot-ai/roberta-base-ai-text-detection-v1` | 0.984 | 99.7% (351/352) | 72.2% | 0.0% (0/59) | 22 of 62 | 0 of 145 |
 | `openai-community/roberta-large-openai-detector` | 0.770 | 16.2% (57/352) | 4.8% | 0.0% (0/59) | 2 of 14 | 3 of 43 |
-| `rasbt/ai-text-detector-modernbert` | 0.944 | 20.5% (72/352) | 26.4% | 0.0% (0/59) | — | 2 of 7 |
+| `rasbt/ai-text-detector-modernbert` | 0.944 | 21.0% (74/352) | 26.4% | 0.0% (0/59) | — | 2 of 7 |
 
 ## By race (PERSUADE held-out half, US students)
 
@@ -39,9 +39,9 @@ Each threshold is fitted on 868 pre-2022 human documents (calibration v2's fit c
 | detector | default 0.5 | recommended | human false positives | TOEFL | AI recall |
 |---|---:|---:|---:|---:|---:|
 | `fakespot-ai/roberta-base-ai-text-detection-v1` | 0.5 | 0.5381 | 21.4% (255/1194) → **20.9% (249/1194)** | 65.9% (60/91) → **63.7% (58/91)** | 99.7% (351/352) → 99.7% (351/352) |
-| `rasbt/ai-text-detector-modernbert` | 0.5 | 0.9961 | 0.6% (7/1194) → **0.3% (4/1194)** | 0.0% (0/91) → **0.0% (0/91)** | 20.5% (72/352) → 11.9% (42/352) |
 | `openai-community/roberta-large-openai-detector` | 0.5 | 0.1372 | 2.8% (33/1194) → **6.1% (73/1194)** | 15.4% (14/91) → **26.4% (24/91)** | 16.2% (57/352) → 35.2% (124/352) |
 | `PirateXX/AI-Content-Detector` | 0.5 | 0.0188 | 2.0% (24/1194) → **6.8% (81/1194)** | 19.8% (18/91) → **44.0% (40/91)** | 8.8% (31/352) → 25.6% (90/352) |
 | `desklib/ai-text-detector-v1.01` | 0.5 | 0.8206 | 15.5% (185/1194) → **7.5% (89/1194)** | 52.7% (48/91) → **36.3% (33/91)** | 98.0% (345/352) → 93.5% (329/352) |
+| `rasbt/ai-text-detector-modernbert` | 0.5 | 0.9979 | 0.6% (7/1194) → **0.3% (4/1194)** | 0.0% (0/91) → **0.0% (0/91)** | 21.0% (74/352) → 12.8% (45/352) |
 
 Rates on the 'all human' column pool corpora of different sizes and registers; read the per-corpus columns. 'Flags cleared' counts texts flagged as written and not flagged once one space is appended (identical words). Card details, including 95% intervals for every rate, are in each detector's `.md` card.

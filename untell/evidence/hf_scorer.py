@@ -28,6 +28,7 @@ class HFModel:
     arch: str = "seqcls"  # "seqcls" | "desklib"
     max_length: int = 512
     note: str = ""
+    temperature: float = 1.0  # logits are divided by this before softmax, when the card says so
 
 
 # Checked 2026-11-22 against each model's config.json id2label or its model card.
@@ -35,7 +36,12 @@ KNOWN: dict[str, HFModel] = {
     "desklib/ai-text-detector-v1.01": HFModel(1, "desklib", 768,
                                               "card: sigmoid of one logit = P(AI); max_length 768"),
     "fakespot-ai/roberta-base-ai-text-detection-v1": HFModel(1, note="config: 0 Human, 1 AI"),
-    "rasbt/ai-text-detector-modernbert": HFModel(1, note="config: 0 HUMAN, 1 AI"),
+    # Its detector-config.json (checked 2026-11-23): max_length 8192, temperature scaling at
+    # 1.566228609277514. Audited until then at 512 tokens with no temperature, which read only
+    # the opening ~380 words of a longer document.
+    "rasbt/ai-text-detector-modernbert": HFModel(
+        1, max_length=8192, temperature=1.566228609277514,
+        note="config: 0 HUMAN, 1 AI; detector-config.json: max_length 8192, temperature 1.5662"),
     "PirateXX/AI-Content-Detector": HFModel(0, note="card: Label_0 represents Fake"),
     "openai-community/roberta-large-openai-detector": HFModel(
         0, note="same convention as roberta-base-openai-detector, whose config says 0 Fake"),
@@ -107,7 +113,7 @@ class _Loaded:
                 mask = enc["attention_mask"].unsqueeze(-1).float()
                 pooled = (hidden * mask).sum(1) / mask.sum(1).clamp(min=1e-9)
                 return float(torch.sigmoid(self.head(pooled)).item())
-            probs = torch.softmax(self.model(**enc).logits, dim=-1)[0]
+            probs = torch.softmax(self.model(**enc).logits / self.spec.temperature, dim=-1)[0]
             return float(probs[self.spec.ai_index].item())
 
 
