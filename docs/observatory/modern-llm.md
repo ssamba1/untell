@@ -22,7 +22,7 @@ Recall is the share of these AI essays flagged. Compare with each detector's fal
 
 ## Caveats
 
-- One small open model (1.5B parameters). Frontier chat models write differently; this measures whether a detector generalises past its training text, not how it does on any particular commercial model.
+- One small open model (`Qwen/Qwen2.5-1.5B-Instruct`). Frontier chat models write differently; this measures whether a detector generalises past its training text, not how it does on any particular commercial model.
 - Median essay length 444 words; 33 of 60 essays hit the generation cap and end mid-sentence.
 - 19 of 60 used Markdown headings, bold or bullets; the stripped column removes them.
 - AUROC compares these essays with student essays on the same prompts; it can be inflated by differences in polish that have nothing to do with authorship.

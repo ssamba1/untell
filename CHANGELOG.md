@@ -20,6 +20,11 @@ All notable changes to this project are documented here. The format is based on
   essays on the 15 PERSUADE prompts. Desklib and Fakespot 60/60, ModernBERT 77% (0% TOEFL flagged),
   untell calibrated v3 47% (v2: 15%), PirateXX 2%, OpenAI RoBERTa 0%. Essays published with
   seeds; per-essay scores in `modern-llm.json`.
+- **SmolLM2 recall page** (`docs/observatory/modern-llm-smollm2.md`): 60 SmolLM2-1.7B-Instruct
+  essays on the same prompts, the clean test for calibration v3. untell v2 and v3 both 60/60 (not
+  discriminating), Desklib and Fakespot 60/60, OpenAI RoBERTa 90%, PirateXX 87%, ModernBERT 48%.
+  `modern_recall` now names the JSON it renders from and the generating model in the caveats
+  instead of hard-coding the Qwen page's.
 - **Calibration v2** replaces v1 as the full-tier verdict (`verdict_rule: "calibrated-v2"`): fitted on
   868 pre-2022 human documents — v1's 268 plus 600 PERSUADE 2.0 student essays, half by English
   learners. Held out: TOEFL 20% (v1 23%), US college 7% (11%), US 8th grade 0% (2.3%), PERSUADE

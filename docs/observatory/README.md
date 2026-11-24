@@ -124,6 +124,12 @@ scored by untell and the five open detectors. Desklib and Fakespot catch all 60;
 with no TOEFL essay flagged; untell's calibrated verdict 47% (v3; v2 caught 15%); OpenAI RoBERTa none. The essays are
 published ([modern-llm-essays.jsonl](modern-llm-essays.jsonl)) with each one's seed.
 
+[modern-llm-smollm2.md](modern-llm-smollm2.md): 60 essays by SmolLM2-1.7B-Instruct on the same
+assignments reverse much of that order. untell (v2 and v3), Desklib and Fakespot catch all 60;
+OpenAI RoBERTa 90% (none of Qwen's); PirateXX 87%; ModernBERT 48% (77% of Qwen's). A detector's
+recall on one model's essays says little about the next model's
+([essays](modern-llm-smollm2-essays.jsonl)).
+
 ## One trailing space
 
 On short text, a single trailing space reversed every "AI" verdict `hc3_roberta` gave in this

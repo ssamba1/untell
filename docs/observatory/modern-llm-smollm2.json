@@ -1,0 +1,2493 @@
+{
+ "n": 60,
+ "provenance": {
+  "model": "HuggingFaceTB/SmolLM2-1.7B-Instruct",
+  "temperature": 0.8,
+  "top_p": 0.95,
+  "prompts": 15,
+  "median_words": 393,
+  "ends_mid_sentence": 17,
+  "with_markdown": 0
+ },
+ "detectors": {
+  "untell (calibrated-v3)": {
+   "recall": {
+    "as generated": {
+     "k": 60,
+     "n": 60,
+     "rate": 1.0,
+     "ci95": [
+      0.93982814785791,
+      0.9999999999999998
+     ]
+    },
+    "markdown stripped": {
+     "k": 60,
+     "n": 60,
+     "rate": 1.0,
+     "ci95": [
+      0.93982814785791,
+      0.9999999999999998
+     ]
+    }
+   }
+  },
+  "fakespot-ai/roberta-base-ai-text-detection-v1": {
+   "threshold": 0.5380913019180299,
+   "recall_default": {
+    "as generated": {
+     "k": 60,
+     "n": 60,
+     "rate": 1.0,
+     "ci95": [
+      0.93982814785791,
+      0.9999999999999998
+     ]
+    },
+    "markdown stripped": {
+     "k": 60,
+     "n": 60,
+     "rate": 1.0,
+     "ci95": [
+      0.93982814785791,
+      0.9999999999999998
+     ]
+    }
+   },
+   "recall_recommended": {
+    "as generated": {
+     "k": 60,
+     "n": 60,
+     "rate": 1.0,
+     "ci95": [
+      0.93982814785791,
+      0.9999999999999998
+     ]
+    },
+    "markdown stripped": {
+     "k": 60,
+     "n": 60,
+     "rate": 1.0,
+     "ci95": [
+      0.93982814785791,
+      0.9999999999999998
+     ]
+    }
+   },
+   "auroc_vs_persuade_human": {
+    "as generated": 0.9998958333333333,
+    "markdown stripped": 0.9998958333333333
+   }
+  },
+  "openai-community/roberta-large-openai-detector": {
+   "threshold": 0.1372189670801163,
+   "recall_default": {
+    "as generated": {
+     "k": 54,
+     "n": 60,
+     "rate": 0.9,
+     "ci95": [
+      0.7985053527602123,
+      0.9533571655261158
+     ]
+    },
+    "markdown stripped": {
+     "k": 54,
+     "n": 60,
+     "rate": 0.9,
+     "ci95": [
+      0.7985053527602123,
+      0.9533571655261158
+     ]
+    }
+   },
+   "recall_recommended": {
+    "as generated": {
+     "k": 58,
+     "n": 60,
+     "rate": 0.9666666666666667,
+     "ci95": [
+      0.886362257256914,
+      0.9908106807438021
+     ]
+    },
+    "markdown stripped": {
+     "k": 58,
+     "n": 60,
+     "rate": 0.9666666666666667,
+     "ci95": [
+      0.886362257256914,
+      0.9908106807438021
+     ]
+    }
+   },
+   "auroc_vs_persuade_human": {
+    "as generated": 0.994125,
+    "markdown stripped": 0.994125
+   }
+  },
+  "PirateXX/AI-Content-Detector": {
+   "threshold": 0.018849931657314304,
+   "recall_default": {
+    "as generated": {
+     "k": 52,
+     "n": 60,
+     "rate": 0.8666666666666667,
+     "ci95": [
+      0.7583484032350039,
+      0.9308589051941303
+     ]
+    },
+    "markdown stripped": {
+     "k": 52,
+     "n": 60,
+     "rate": 0.8666666666666667,
+     "ci95": [
+      0.7583484032350039,
+      0.9308589051941303
+     ]
+    }
+   },
+   "recall_recommended": {
+    "as generated": {
+     "k": 60,
+     "n": 60,
+     "rate": 1.0,
+     "ci95": [
+      0.93982814785791,
+      0.9999999999999998
+     ]
+    },
+    "markdown stripped": {
+     "k": 60,
+     "n": 60,
+     "rate": 1.0,
+     "ci95": [
+      0.93982814785791,
+      0.9999999999999998
+     ]
+    }
+   },
+   "auroc_vs_persuade_human": {
+    "as generated": 0.9946875,
+    "markdown stripped": 0.9946875
+   }
+  },
+  "desklib/ai-text-detector-v1.01": {
+   "threshold": 0.8205608725547792,
+   "recall_default": {
+    "as generated": {
+     "k": 60,
+     "n": 60,
+     "rate": 1.0,
+     "ci95": [
+      0.93982814785791,
+      0.9999999999999998
+     ]
+    },
+    "markdown stripped": {
+     "k": 60,
+     "n": 60,
+     "rate": 1.0,
+     "ci95": [
+      0.93982814785791,
+      0.9999999999999998
+     ]
+    }
+   },
+   "recall_recommended": {
+    "as generated": {
+     "k": 60,
+     "n": 60,
+     "rate": 1.0,
+     "ci95": [
+      0.93982814785791,
+      0.9999999999999998
+     ]
+    },
+    "markdown stripped": {
+     "k": 60,
+     "n": 60,
+     "rate": 1.0,
+     "ci95": [
+      0.93982814785791,
+      0.9999999999999998
+     ]
+    }
+   },
+   "auroc_vs_persuade_human": {
+    "as generated": 1.0,
+    "markdown stripped": 1.0
+   }
+  },
+  "rasbt/ai-text-detector-modernbert": {
+   "threshold": 0.9931649565696717,
+   "recall_default": {
+    "as generated": {
+     "k": 29,
+     "n": 60,
+     "rate": 0.48333333333333334,
+     "ci95": [
+      0.36175049539732784,
+      0.6069218996740751
+     ]
+    },
+    "markdown stripped": {
+     "k": 29,
+     "n": 60,
+     "rate": 0.48333333333333334,
+     "ci95": [
+      0.36175049539732784,
+      0.6069218996740751
+     ]
+    }
+   },
+   "recall_recommended": {
+    "as generated": {
+     "k": 9,
+     "n": 60,
+     "rate": 0.15,
+     "ci95": [
+      0.08097440580167739,
+      0.2611458906977855
+     ]
+    },
+    "markdown stripped": {
+     "k": 9,
+     "n": 60,
+     "rate": 0.15,
+     "ci95": [
+      0.08097440580167739,
+      0.2611458906977855
+     ]
+    }
+   },
+   "auroc_vs_persuade_human": {
+    "as generated": 0.9367083333333334,
+    "markdown stripped": 0.9367083333333334
+   }
+  }
+ },
+ "documents": [
+  {
+   "id": "modern:\"A Cowboy Who Rode the Waves\":0",
+   "prompt_name": "\"A Cowboy Who Rode the Waves\"",
+   "words": 425,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 1.0
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 1.0
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9999427795410156,
+     "markdown stripped": 0.9999427795410156
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.853832483291626,
+     "markdown stripped": 0.853832483291626
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.9015794396400452,
+     "markdown stripped": 0.9015794396400452
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.9999933242797852,
+     "markdown stripped": 0.9999933242797852
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.9937514662742615,
+     "markdown stripped": 0.9937514662742615
+    }
+   }
+  },
+  {
+   "id": "modern:\"A Cowboy Who Rode the Waves\":1",
+   "prompt_name": "\"A Cowboy Who Rode the Waves\"",
+   "words": 411,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 1.0
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 1.0
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9999376535415649,
+     "markdown stripped": 0.9999376535415649
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.6331748366355896,
+     "markdown stripped": 0.6331748366355896
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.8122060894966125,
+     "markdown stripped": 0.8122060894966125
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.9999945163726807,
+     "markdown stripped": 0.9999945163726807
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.9885382652282715,
+     "markdown stripped": 0.9885382652282715
+    }
+   }
+  },
+  {
+   "id": "modern:\"A Cowboy Who Rode the Waves\":2",
+   "prompt_name": "\"A Cowboy Who Rode the Waves\"",
+   "words": 427,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 1.0
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 1.0
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9999362230300903,
+     "markdown stripped": 0.9999362230300903
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.9806835055351257,
+     "markdown stripped": 0.9806835055351257
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.8852032423019409,
+     "markdown stripped": 0.8852032423019409
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.9999939203262329,
+     "markdown stripped": 0.9999939203262329
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.9988279938697815,
+     "markdown stripped": 0.9988279938697815
+    }
+   }
+  },
+  {
+   "id": "modern:\"A Cowboy Who Rode the Waves\":3",
+   "prompt_name": "\"A Cowboy Who Rode the Waves\"",
+   "words": 366,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 1.0
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 1.0
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9999397993087769,
+     "markdown stripped": 0.9999397993087769
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.9310621023178101,
+     "markdown stripped": 0.9310621023178101
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.5274971127510071,
+     "markdown stripped": 0.5274971127510071
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.9999947547912598,
+     "markdown stripped": 0.9999947547912598
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.9951954483985901,
+     "markdown stripped": 0.9951954483985901
+    }
+   }
+  },
+  {
+   "id": "modern:Car-free cities:0",
+   "prompt_name": "Car-free cities",
+   "words": 402,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 1.0
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 1.0
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9999431371688843,
+     "markdown stripped": 0.9999431371688843
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.9921528697013855,
+     "markdown stripped": 0.9921528697013855
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.9835814237594604,
+     "markdown stripped": 0.9835814237594604
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.9999957084655762,
+     "markdown stripped": 0.9999957084655762
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.9358586072921753,
+     "markdown stripped": 0.9358586072921753
+    }
+   }
+  },
+  {
+   "id": "modern:Car-free cities:1",
+   "prompt_name": "Car-free cities",
+   "words": 541,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 1.0
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 1.0
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.999942421913147,
+     "markdown stripped": 0.999942421913147
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.9989774227142334,
+     "markdown stripped": 0.9989774227142334
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.9997585415840149,
+     "markdown stripped": 0.9997585415840149
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.9999922513961792,
+     "markdown stripped": 0.9999922513961792
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.4755040407180786,
+     "markdown stripped": 0.4755040407180786
+    }
+   }
+  },
+  {
+   "id": "modern:Car-free cities:2",
+   "prompt_name": "Car-free cities",
+   "words": 654,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 1.0
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 1.0
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9999420642852783,
+     "markdown stripped": 0.9999420642852783
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.9524360299110413,
+     "markdown stripped": 0.9524360299110413
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.9961221814155579,
+     "markdown stripped": 0.9961221814155579
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.9999942779541016,
+     "markdown stripped": 0.9999942779541016
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.6758915781974792,
+     "markdown stripped": 0.6758915781974792
+    }
+   }
+  },
+  {
+   "id": "modern:Car-free cities:3",
+   "prompt_name": "Car-free cities",
+   "words": 420,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 1.0
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 1.0
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9999456405639648,
+     "markdown stripped": 0.9999456405639648
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.948128879070282,
+     "markdown stripped": 0.948128879070282
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.8962529897689819,
+     "markdown stripped": 0.8962529897689819
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.9999945163726807,
+     "markdown stripped": 0.9999945163726807
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.9587388038635254,
+     "markdown stripped": 0.9587388038635254
+    }
+   }
+  },
+  {
+   "id": "modern:Cell phones at school:0",
+   "prompt_name": "Cell phones at school",
+   "words": 375,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 1.0
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 1.0
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9999313354492188,
+     "markdown stripped": 0.9999313354492188
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.9236461520195007,
+     "markdown stripped": 0.9236461520195007
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.9096688032150269,
+     "markdown stripped": 0.9096688032150269
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.9999914169311523,
+     "markdown stripped": 0.9999914169311523
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.0005424314877018332,
+     "markdown stripped": 0.0005424314877018332
+    }
+   }
+  },
+  {
+   "id": "modern:Cell phones at school:1",
+   "prompt_name": "Cell phones at school",
+   "words": 316,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 0.995
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 0.995
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9999384880065918,
+     "markdown stripped": 0.9999384880065918
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.2655249834060669,
+     "markdown stripped": 0.2655249834060669
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.45788273215293884,
+     "markdown stripped": 0.45788273215293884
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.9999938011169434,
+     "markdown stripped": 0.9999938011169434
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.0008205851190723479,
+     "markdown stripped": 0.0008205851190723479
+    }
+   }
+  },
+  {
+   "id": "modern:Cell phones at school:2",
+   "prompt_name": "Cell phones at school",
+   "words": 432,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 1.0
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 1.0
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9999282360076904,
+     "markdown stripped": 0.9999282360076904
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.9669556617736816,
+     "markdown stripped": 0.9669556617736816
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.9954617619514465,
+     "markdown stripped": 0.9954617619514465
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.9999923706054688,
+     "markdown stripped": 0.9999923706054688
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.0006018955609761178,
+     "markdown stripped": 0.0006018955609761178
+    }
+   }
+  },
+  {
+   "id": "modern:Cell phones at school:3",
+   "prompt_name": "Cell phones at school",
+   "words": 322,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 1.0
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 1.0
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9998884201049805,
+     "markdown stripped": 0.9998884201049805
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.9768276214599609,
+     "markdown stripped": 0.9768276214599609
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.9981622099876404,
+     "markdown stripped": 0.9981622099876404
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.9999744892120361,
+     "markdown stripped": 0.9999744892120361
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.0006274298648349941,
+     "markdown stripped": 0.0006274298648349941
+    }
+   }
+  },
+  {
+   "id": "modern:Community service:0",
+   "prompt_name": "Community service",
+   "words": 344,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 1.0
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 1.0
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9999407529830933,
+     "markdown stripped": 0.9999407529830933
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.45647934079170227,
+     "markdown stripped": 0.45647934079170227
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.22528402507305145,
+     "markdown stripped": 0.22528402507305145
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.999995231628418,
+     "markdown stripped": 0.999995231628418
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.06223135441541672,
+     "markdown stripped": 0.06223135441541672
+    }
+   }
+  },
+  {
+   "id": "modern:Community service:1",
+   "prompt_name": "Community service",
+   "words": 243,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 1.0
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 1.0
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9999381303787231,
+     "markdown stripped": 0.9999381303787231
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.9679023027420044,
+     "markdown stripped": 0.9679023027420044
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.6778222322463989,
+     "markdown stripped": 0.6778222322463989
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.999993085861206,
+     "markdown stripped": 0.999993085861206
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.0005783610395155847,
+     "markdown stripped": 0.0005783610395155847
+    }
+   }
+  },
+  {
+   "id": "modern:Community service:2",
+   "prompt_name": "Community service",
+   "words": 327,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 1.0
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 1.0
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9999376535415649,
+     "markdown stripped": 0.9999376535415649
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.8029900193214417,
+     "markdown stripped": 0.8029900193214417
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.1894225925207138,
+     "markdown stripped": 0.1894225925207138
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.9999926090240479,
+     "markdown stripped": 0.9999926090240479
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.0011433237232267857,
+     "markdown stripped": 0.0011433237232267857
+    }
+   }
+  },
+  {
+   "id": "modern:Community service:3",
+   "prompt_name": "Community service",
+   "words": 393,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 1.0
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 1.0
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.999940037727356,
+     "markdown stripped": 0.999940037727356
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.7718120217323303,
+     "markdown stripped": 0.7718120217323303
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.6718109846115112,
+     "markdown stripped": 0.6718109846115112
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.999991774559021,
+     "markdown stripped": 0.999991774559021
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.0020531571935862303,
+     "markdown stripped": 0.0020531571935862303
+    }
+   }
+  },
+  {
+   "id": "modern:Distance learning:0",
+   "prompt_name": "Distance learning",
+   "words": 234,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 0.995
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 0.995
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9999399185180664,
+     "markdown stripped": 0.9999399185180664
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.9140893220901489,
+     "markdown stripped": 0.9140893220901489
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.8356434106826782,
+     "markdown stripped": 0.8356434106826782
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.9999914169311523,
+     "markdown stripped": 0.9999914169311523
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.0033229489345103502,
+     "markdown stripped": 0.0033229489345103502
+    }
+   }
+  },
+  {
+   "id": "modern:Distance learning:1",
+   "prompt_name": "Distance learning",
+   "words": 405,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 1.0
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 1.0
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.999943733215332,
+     "markdown stripped": 0.999943733215332
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.8133375644683838,
+     "markdown stripped": 0.8133375644683838
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.4549695551395416,
+     "markdown stripped": 0.4549695551395416
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.9999938011169434,
+     "markdown stripped": 0.9999938011169434
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.006546765565872192,
+     "markdown stripped": 0.006546765565872192
+    }
+   }
+  },
+  {
+   "id": "modern:Distance learning:2",
+   "prompt_name": "Distance learning",
+   "words": 290,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 0.995
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 0.995
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9999409914016724,
+     "markdown stripped": 0.9999409914016724
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.5326619744300842,
+     "markdown stripped": 0.5326619744300842
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.09633330255746841,
+     "markdown stripped": 0.09633330255746841
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.9999946355819702,
+     "markdown stripped": 0.9999946355819702
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.9956067204475403,
+     "markdown stripped": 0.9956067204475403
+    }
+   }
+  },
+  {
+   "id": "modern:Distance learning:3",
+   "prompt_name": "Distance learning",
+   "words": 369,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 1.0
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 1.0
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9999449253082275,
+     "markdown stripped": 0.9999449253082275
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.9650381803512573,
+     "markdown stripped": 0.9650381803512573
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.9966703057289124,
+     "markdown stripped": 0.9966703057289124
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.9998750686645508,
+     "markdown stripped": 0.9998750686645508
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.0008146697073243558,
+     "markdown stripped": 0.0008146697073243558
+    }
+   }
+  },
+  {
+   "id": "modern:Does the electoral college work?:0",
+   "prompt_name": "Does the electoral college work?",
+   "words": 409,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 1.0
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 1.0
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9998792409896851,
+     "markdown stripped": 0.9998792409896851
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.7513411045074463,
+     "markdown stripped": 0.7513411045074463
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.8121625781059265,
+     "markdown stripped": 0.8121625781059265
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.9999939203262329,
+     "markdown stripped": 0.9999939203262329
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.7816735506057739,
+     "markdown stripped": 0.7816735506057739
+    }
+   }
+  },
+  {
+   "id": "modern:Does the electoral college work?:1",
+   "prompt_name": "Does the electoral college work?",
+   "words": 453,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 1.0
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 1.0
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9999324083328247,
+     "markdown stripped": 0.9999324083328247
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.9329254031181335,
+     "markdown stripped": 0.9329254031181335
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.9901633858680725,
+     "markdown stripped": 0.9901633858680725
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.999994158744812,
+     "markdown stripped": 0.999994158744812
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.005184580106288195,
+     "markdown stripped": 0.005184580106288195
+    }
+   }
+  },
+  {
+   "id": "modern:Does the electoral college work?:2",
+   "prompt_name": "Does the electoral college work?",
+   "words": 521,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 1.0
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 1.0
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9999103546142578,
+     "markdown stripped": 0.9999103546142578
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.242940291762352,
+     "markdown stripped": 0.242940291762352
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.995794415473938,
+     "markdown stripped": 0.995794415473938
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.9999922513961792,
+     "markdown stripped": 0.9999922513961792
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.009578624740242958,
+     "markdown stripped": 0.009578624740242958
+    }
+   }
+  },
+  {
+   "id": "modern:Does the electoral college work?:3",
+   "prompt_name": "Does the electoral college work?",
+   "words": 500,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 1.0
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 1.0
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9998866319656372,
+     "markdown stripped": 0.9998866319656372
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.9652737379074097,
+     "markdown stripped": 0.9652737379074097
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.901856005191803,
+     "markdown stripped": 0.901856005191803
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.9999945163726807,
+     "markdown stripped": 0.9999945163726807
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.02508907951414585,
+     "markdown stripped": 0.02508907951414585
+    }
+   }
+  },
+  {
+   "id": "modern:Driverless cars:0",
+   "prompt_name": "Driverless cars",
+   "words": 522,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 1.0
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 1.0
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9999397993087769,
+     "markdown stripped": 0.9999397993087769
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.9474100470542908,
+     "markdown stripped": 0.9474100470542908
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.8635082840919495,
+     "markdown stripped": 0.8635082840919495
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.999995231628418,
+     "markdown stripped": 0.999995231628418
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.0024258499033749104,
+     "markdown stripped": 0.0024258499033749104
+    }
+   }
+  },
+  {
+   "id": "modern:Driverless cars:1",
+   "prompt_name": "Driverless cars",
+   "words": 466,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 1.0
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 1.0
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9999371767044067,
+     "markdown stripped": 0.9999371767044067
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.9788261651992798,
+     "markdown stripped": 0.9788261651992798
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.9634939432144165,
+     "markdown stripped": 0.9634939432144165
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.9999960660934448,
+     "markdown stripped": 0.9999960660934448
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.27863478660583496,
+     "markdown stripped": 0.27863478660583496
+    }
+   }
+  },
+  {
+   "id": "modern:Driverless cars:2",
+   "prompt_name": "Driverless cars",
+   "words": 422,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 1.0
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 1.0
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9999467134475708,
+     "markdown stripped": 0.9999467134475708
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.8656073808670044,
+     "markdown stripped": 0.8656073808670044
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.523866593837738,
+     "markdown stripped": 0.523866593837738
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.9999953508377075,
+     "markdown stripped": 0.9999953508377075
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.997919499874115,
+     "markdown stripped": 0.997919499874115
+    }
+   }
+  },
+  {
+   "id": "modern:Driverless cars:3",
+   "prompt_name": "Driverless cars",
+   "words": 521,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 1.0
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 1.0
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9999343156814575,
+     "markdown stripped": 0.9999343156814575
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.983669638633728,
+     "markdown stripped": 0.983669638633728
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.9290925860404968,
+     "markdown stripped": 0.9290925860404968
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.9999955892562866,
+     "markdown stripped": 0.9999955892562866
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.0016231030458584428,
+     "markdown stripped": 0.0016231030458584428
+    }
+   }
+  },
+  {
+   "id": "modern:Exploring Venus:0",
+   "prompt_name": "Exploring Venus",
+   "words": 416,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 1.0
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 1.0
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9999420642852783,
+     "markdown stripped": 0.9999420642852783
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.7880150675773621,
+     "markdown stripped": 0.7880150675773621
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.7699956297874451,
+     "markdown stripped": 0.7699956297874451
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.9999947547912598,
+     "markdown stripped": 0.9999947547912598
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.32945236563682556,
+     "markdown stripped": 0.32945236563682556
+    }
+   }
+  },
+  {
+   "id": "modern:Exploring Venus:1",
+   "prompt_name": "Exploring Venus",
+   "words": 433,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 0.995
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 0.995
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9999383687973022,
+     "markdown stripped": 0.9999383687973022
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.6388071179389954,
+     "markdown stripped": 0.6388071179389954
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.8591795563697815,
+     "markdown stripped": 0.8591795563697815
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.9999954700469971,
+     "markdown stripped": 0.9999954700469971
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.9850366711616516,
+     "markdown stripped": 0.9850366711616516
+    }
+   }
+  },
+  {
+   "id": "modern:Exploring Venus:2",
+   "prompt_name": "Exploring Venus",
+   "words": 311,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 1.0
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 1.0
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9999352693557739,
+     "markdown stripped": 0.9999352693557739
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.9979389309883118,
+     "markdown stripped": 0.9979389309883118
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.9363832473754883,
+     "markdown stripped": 0.9363832473754883
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.9999920129776001,
+     "markdown stripped": 0.9999920129776001
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.06329400092363358,
+     "markdown stripped": 0.06329400092363358
+    }
+   }
+  },
+  {
+   "id": "modern:Exploring Venus:3",
+   "prompt_name": "Exploring Venus",
+   "words": 245,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 1.0
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 1.0
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9999433755874634,
+     "markdown stripped": 0.9999433755874634
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.9839982986450195,
+     "markdown stripped": 0.9839982986450195
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.9828207492828369,
+     "markdown stripped": 0.9828207492828369
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.9999935626983643,
+     "markdown stripped": 0.9999935626983643
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.993918776512146,
+     "markdown stripped": 0.993918776512146
+    }
+   }
+  },
+  {
+   "id": "modern:Facial action coding system:0",
+   "prompt_name": "Facial action coding system",
+   "words": 425,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 1.0
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 1.0
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9999440908432007,
+     "markdown stripped": 0.9999440908432007
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.9834145903587341,
+     "markdown stripped": 0.9834145903587341
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.9644208550453186,
+     "markdown stripped": 0.9644208550453186
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.999994158744812,
+     "markdown stripped": 0.999994158744812
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.5905892252922058,
+     "markdown stripped": 0.5905892252922058
+    }
+   }
+  },
+  {
+   "id": "modern:Facial action coding system:1",
+   "prompt_name": "Facial action coding system",
+   "words": 519,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 1.0
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 1.0
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9999469518661499,
+     "markdown stripped": 0.9999469518661499
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.8974320888519287,
+     "markdown stripped": 0.8974320888519287
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.6207783818244934,
+     "markdown stripped": 0.6207783818244934
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.9999948740005493,
+     "markdown stripped": 0.9999948740005493
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.858623743057251,
+     "markdown stripped": 0.858623743057251
+    }
+   }
+  },
+  {
+   "id": "modern:Facial action coding system:2",
+   "prompt_name": "Facial action coding system",
+   "words": 304,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 1.0
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 1.0
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9999423027038574,
+     "markdown stripped": 0.9999423027038574
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.983325719833374,
+     "markdown stripped": 0.983325719833374
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.9975817203521729,
+     "markdown stripped": 0.9975817203521729
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.9999876022338867,
+     "markdown stripped": 0.9999876022338867
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.9419211149215698,
+     "markdown stripped": 0.9419211149215698
+    }
+   }
+  },
+  {
+   "id": "modern:Facial action coding system:3",
+   "prompt_name": "Facial action coding system",
+   "words": 483,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 1.0
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 1.0
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9999395608901978,
+     "markdown stripped": 0.9999395608901978
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.9644269943237305,
+     "markdown stripped": 0.9644269943237305
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.7623710036277771,
+     "markdown stripped": 0.7623710036277771
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.9999934434890747,
+     "markdown stripped": 0.9999934434890747
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.9865694046020508,
+     "markdown stripped": 0.9865694046020508
+    }
+   }
+  },
+  {
+   "id": "modern:Grades for extracurricular activities:0",
+   "prompt_name": "Grades for extracurricular activities",
+   "words": 273,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 1.0
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 1.0
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9999343156814575,
+     "markdown stripped": 0.9999343156814575
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.9962577819824219,
+     "markdown stripped": 0.9962577819824219
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.9988954067230225,
+     "markdown stripped": 0.9988954067230225
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.999990701675415,
+     "markdown stripped": 0.999990701675415
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.0006666946574114263,
+     "markdown stripped": 0.0006666946574114263
+    }
+   }
+  },
+  {
+   "id": "modern:Grades for extracurricular activities:1",
+   "prompt_name": "Grades for extracurricular activities",
+   "words": 308,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 1.0
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 1.0
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9999357461929321,
+     "markdown stripped": 0.9999357461929321
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.10035938769578934,
+     "markdown stripped": 0.10035938769578934
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.5834085941314697,
+     "markdown stripped": 0.5834085941314697
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.999993085861206,
+     "markdown stripped": 0.999993085861206
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.0005711910198442638,
+     "markdown stripped": 0.0005711910198442638
+    }
+   }
+  },
+  {
+   "id": "modern:Grades for extracurricular activities:2",
+   "prompt_name": "Grades for extracurricular activities",
+   "words": 364,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 1.0
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 1.0
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9999328851699829,
+     "markdown stripped": 0.9999328851699829
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.8976031541824341,
+     "markdown stripped": 0.8976031541824341
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.9548068046569824,
+     "markdown stripped": 0.9548068046569824
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.9999933242797852,
+     "markdown stripped": 0.9999933242797852
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.0017857763450592756,
+     "markdown stripped": 0.0017857763450592756
+    }
+   }
+  },
+  {
+   "id": "modern:Grades for extracurricular activities:3",
+   "prompt_name": "Grades for extracurricular activities",
+   "words": 325,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 1.0
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 1.0
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9999442100524902,
+     "markdown stripped": 0.9999442100524902
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.9176077842712402,
+     "markdown stripped": 0.9176077842712402
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.8620598912239075,
+     "markdown stripped": 0.8620598912239075
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.9999946355819702,
+     "markdown stripped": 0.9999946355819702
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.0022256337106227875,
+     "markdown stripped": 0.0022256337106227875
+    }
+   }
+  },
+  {
+   "id": "modern:Mandatory extracurricular activities:0",
+   "prompt_name": "Mandatory extracurricular activities",
+   "words": 440,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 1.0
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 1.0
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9999420642852783,
+     "markdown stripped": 0.9999420642852783
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.9286725521087646,
+     "markdown stripped": 0.9286725521087646
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.9972512125968933,
+     "markdown stripped": 0.9972512125968933
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.9999908208847046,
+     "markdown stripped": 0.9999908208847046
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.9449734687805176,
+     "markdown stripped": 0.9449734687805176
+    }
+   }
+  },
+  {
+   "id": "modern:Mandatory extracurricular activities:1",
+   "prompt_name": "Mandatory extracurricular activities",
+   "words": 410,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 1.0
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 1.0
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9999386072158813,
+     "markdown stripped": 0.9999386072158813
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.8844900727272034,
+     "markdown stripped": 0.8844900727272034
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.9989107847213745,
+     "markdown stripped": 0.9989107847213745
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.9999926090240479,
+     "markdown stripped": 0.9999926090240479
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.8058326840400696,
+     "markdown stripped": 0.8058326840400696
+    }
+   }
+  },
+  {
+   "id": "modern:Mandatory extracurricular activities:2",
+   "prompt_name": "Mandatory extracurricular activities",
+   "words": 392,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 1.0
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 1.0
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9999470710754395,
+     "markdown stripped": 0.9999470710754395
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.9530203342437744,
+     "markdown stripped": 0.9530203342437744
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.9794690608978271,
+     "markdown stripped": 0.9794690608978271
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.9999932050704956,
+     "markdown stripped": 0.9999932050704956
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.9729159474372864,
+     "markdown stripped": 0.9729159474372864
+    }
+   }
+  },
+  {
+   "id": "modern:Mandatory extracurricular activities:3",
+   "prompt_name": "Mandatory extracurricular activities",
+   "words": 310,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 1.0
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 1.0
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9999375343322754,
+     "markdown stripped": 0.9999375343322754
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.953406572341919,
+     "markdown stripped": 0.953406572341919
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.9755265116691589,
+     "markdown stripped": 0.9755265116691589
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.9999871253967285,
+     "markdown stripped": 0.9999871253967285
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.629859983921051,
+     "markdown stripped": 0.629859983921051
+    }
+   }
+  },
+  {
+   "id": "modern:Phones and driving:0",
+   "prompt_name": "Phones and driving",
+   "words": 388,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 1.0
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 1.0
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9999468326568604,
+     "markdown stripped": 0.9999468326568604
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.9302639961242676,
+     "markdown stripped": 0.9302639961242676
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.9840710163116455,
+     "markdown stripped": 0.9840710163116455
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.999995231628418,
+     "markdown stripped": 0.999995231628418
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.9767043590545654,
+     "markdown stripped": 0.9767043590545654
+    }
+   }
+  },
+  {
+   "id": "modern:Phones and driving:1",
+   "prompt_name": "Phones and driving",
+   "words": 367,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 1.0
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 1.0
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9999376535415649,
+     "markdown stripped": 0.9999376535415649
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.7867447733879089,
+     "markdown stripped": 0.7867447733879089
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.9643122553825378,
+     "markdown stripped": 0.9643122553825378
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.9999630451202393,
+     "markdown stripped": 0.9999630451202393
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.9777379035949707,
+     "markdown stripped": 0.9777379035949707
+    }
+   }
+  },
+  {
+   "id": "modern:Phones and driving:2",
+   "prompt_name": "Phones and driving",
+   "words": 392,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 1.0
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 1.0
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9999384880065918,
+     "markdown stripped": 0.9999384880065918
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.8155564665794373,
+     "markdown stripped": 0.8155564665794373
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.9643754363059998,
+     "markdown stripped": 0.9643754363059998
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.9999855756759644,
+     "markdown stripped": 0.9999855756759644
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.009057198651134968,
+     "markdown stripped": 0.009057198651134968
+    }
+   }
+  },
+  {
+   "id": "modern:Phones and driving:3",
+   "prompt_name": "Phones and driving",
+   "words": 393,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 1.0
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 1.0
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9999380111694336,
+     "markdown stripped": 0.9999380111694336
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.9986974596977234,
+     "markdown stripped": 0.9986974596977234
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.9997941851615906,
+     "markdown stripped": 0.9997941851615906
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.999976396560669,
+     "markdown stripped": 0.999976396560669
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.08935796469449997,
+     "markdown stripped": 0.08935796469449997
+    }
+   }
+  },
+  {
+   "id": "modern:Seeking multiple opinions:0",
+   "prompt_name": "Seeking multiple opinions",
+   "words": 275,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 1.0
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 1.0
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9999403953552246,
+     "markdown stripped": 0.9999403953552246
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.9986131191253662,
+     "markdown stripped": 0.9986131191253662
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.9748347401618958,
+     "markdown stripped": 0.9748347401618958
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.999990701675415,
+     "markdown stripped": 0.999990701675415
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.8231360912322998,
+     "markdown stripped": 0.8231360912322998
+    }
+   }
+  },
+  {
+   "id": "modern:Seeking multiple opinions:1",
+   "prompt_name": "Seeking multiple opinions",
+   "words": 341,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 1.0
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 1.0
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9999455213546753,
+     "markdown stripped": 0.9999455213546753
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.9812931418418884,
+     "markdown stripped": 0.9812931418418884
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.3239959180355072,
+     "markdown stripped": 0.3239959180355072
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.9999710321426392,
+     "markdown stripped": 0.9999710321426392
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.0016965491231530905,
+     "markdown stripped": 0.0016965491231530905
+    }
+   }
+  },
+  {
+   "id": "modern:Seeking multiple opinions:2",
+   "prompt_name": "Seeking multiple opinions",
+   "words": 371,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 1.0
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 1.0
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.999945878982544,
+     "markdown stripped": 0.999945878982544
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.9299213886260986,
+     "markdown stripped": 0.9299213886260986
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.9969397783279419,
+     "markdown stripped": 0.9969397783279419
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.9999833106994629,
+     "markdown stripped": 0.9999833106994629
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.1868046671152115,
+     "markdown stripped": 0.1868046671152115
+    }
+   }
+  },
+  {
+   "id": "modern:Seeking multiple opinions:3",
+   "prompt_name": "Seeking multiple opinions",
+   "words": 222,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 1.0
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 1.0
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9999395608901978,
+     "markdown stripped": 0.9999395608901978
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.981162965297699,
+     "markdown stripped": 0.981162965297699
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.8686750531196594,
+     "markdown stripped": 0.8686750531196594
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.9999908208847046,
+     "markdown stripped": 0.9999908208847046
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.995820164680481,
+     "markdown stripped": 0.995820164680481
+    }
+   }
+  },
+  {
+   "id": "modern:Summer projects:0",
+   "prompt_name": "Summer projects",
+   "words": 320,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 0.99
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 0.99
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9999446868896484,
+     "markdown stripped": 0.9999446868896484
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.033507656306028366,
+     "markdown stripped": 0.033507656306028366
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.3847624361515045,
+     "markdown stripped": 0.3847624361515045
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.9999908208847046,
+     "markdown stripped": 0.9999908208847046
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.9978451728820801,
+     "markdown stripped": 0.9978451728820801
+    }
+   }
+  },
+  {
+   "id": "modern:Summer projects:1",
+   "prompt_name": "Summer projects",
+   "words": 266,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 0.99
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 0.99
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9999445676803589,
+     "markdown stripped": 0.9999445676803589
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.17176149785518646,
+     "markdown stripped": 0.17176149785518646
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.03598317131400108,
+     "markdown stripped": 0.03598317131400108
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.9999938011169434,
+     "markdown stripped": 0.9999938011169434
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.9979933500289917,
+     "markdown stripped": 0.9979933500289917
+    }
+   }
+  },
+  {
+   "id": "modern:Summer projects:2",
+   "prompt_name": "Summer projects",
+   "words": 476,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 1.0
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 1.0
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9999417066574097,
+     "markdown stripped": 0.9999417066574097
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.9036946296691895,
+     "markdown stripped": 0.9036946296691895
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.9762557148933411,
+     "markdown stripped": 0.9762557148933411
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.9999898672103882,
+     "markdown stripped": 0.9999898672103882
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.9730365872383118,
+     "markdown stripped": 0.9730365872383118
+    }
+   }
+  },
+  {
+   "id": "modern:Summer projects:3",
+   "prompt_name": "Summer projects",
+   "words": 378,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 1.0
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 1.0
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9999455213546753,
+     "markdown stripped": 0.9999455213546753
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.7730618119239807,
+     "markdown stripped": 0.7730618119239807
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.9688489437103271,
+     "markdown stripped": 0.9688489437103271
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.9999926090240479,
+     "markdown stripped": 0.9999926090240479
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.9575492143630981,
+     "markdown stripped": 0.9575492143630981
+    }
+   }
+  },
+  {
+   "id": "modern:The Face on Mars:0",
+   "prompt_name": "The Face on Mars",
+   "words": 443,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 1.0
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 1.0
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9998551607131958,
+     "markdown stripped": 0.9998551607131958
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.9558781385421753,
+     "markdown stripped": 0.9558781385421753
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.9651166796684265,
+     "markdown stripped": 0.9651166796684265
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.9999960660934448,
+     "markdown stripped": 0.9999960660934448
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.0067312223836779594,
+     "markdown stripped": 0.0067312223836779594
+    }
+   }
+  },
+  {
+   "id": "modern:The Face on Mars:1",
+   "prompt_name": "The Face on Mars",
+   "words": 513,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 1.0
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 1.0
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9999369382858276,
+     "markdown stripped": 0.9999369382858276
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.9961836934089661,
+     "markdown stripped": 0.9961836934089661
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.998315691947937,
+     "markdown stripped": 0.998315691947937
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.999994158744812,
+     "markdown stripped": 0.999994158744812
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.9465303421020508,
+     "markdown stripped": 0.9465303421020508
+    }
+   }
+  },
+  {
+   "id": "modern:The Face on Mars:2",
+   "prompt_name": "The Face on Mars",
+   "words": 506,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 0.995
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 0.995
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9999330043792725,
+     "markdown stripped": 0.9999330043792725
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.9804911613464355,
+     "markdown stripped": 0.9804911613464355
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.9743144512176514,
+     "markdown stripped": 0.9743144512176514
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.9999948740005493,
+     "markdown stripped": 0.9999948740005493
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.0062648276798427105,
+     "markdown stripped": 0.0062648276798427105
+    }
+   }
+  },
+  {
+   "id": "modern:The Face on Mars:3",
+   "prompt_name": "The Face on Mars",
+   "words": 362,
+   "scores": {
+    "untell (calibrated-v3)": {
+     "as generated": {
+      "flagged": true,
+      "verdict_score": 0.995
+     },
+     "markdown stripped": {
+      "flagged": true,
+      "verdict_score": 0.995
+     }
+    },
+    "fakespot-ai/roberta-base-ai-text-detection-v1": {
+     "as generated": 0.9998867511749268,
+     "markdown stripped": 0.9998867511749268
+    },
+    "openai-community/roberta-large-openai-detector": {
+     "as generated": 0.9858412742614746,
+     "markdown stripped": 0.9858412742614746
+    },
+    "PirateXX/AI-Content-Detector": {
+     "as generated": 0.8579264879226685,
+     "markdown stripped": 0.8579264879226685
+    },
+    "desklib/ai-text-detector-v1.01": {
+     "as generated": 0.9999935626983643,
+     "markdown stripped": 0.9999935626983643
+    },
+    "rasbt/ai-text-detector-modernbert": {
+     "as generated": 0.0011106679448857903,
+     "markdown stripped": 0.0011106679448857903
+    }
+   }
+  }
+ ]
+}
