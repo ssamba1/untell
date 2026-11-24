@@ -6,17 +6,17 @@
 
 | detector | threshold | recall, as generated | recall, Markdown stripped | AUROC vs PERSUADE human (stripped) |
 |---|---|---|---|---:|
-| untell full tier (calibrated-v2) | 5% fit FPR | 15% (9/60; 95% CI 8–26%) | 17% (10/60; 95% CI 9–28%) | – |
+| untell full tier (calibrated-v3) | 5% fit FPR | 47% (28/60; 95% CI 35–59%) | 50% (30/60; 95% CI 38–62%) | – |
 | fakespot-ai/roberta-base-ai-text-detection-v1 | 0.5 (default) | 100% (60/60; 95% CI 94–100%) | 100% (60/60; 95% CI 94–100%) | 1.000 |
 | fakespot-ai/roberta-base-ai-text-detection-v1 | 0.5381 (fitted) | 100% (60/60; 95% CI 94–100%) | 100% (60/60; 95% CI 94–100%) |  |
-| rasbt/ai-text-detector-modernbert | 0.5 (default) | 67% (40/60; 95% CI 54–77%) | 68% (41/60; 95% CI 56–79%) | 0.988 |
-| rasbt/ai-text-detector-modernbert | 0.9961 (fitted) | 43% (26/60; 95% CI 32–56%) | 45% (27/60; 95% CI 33–58%) |  |
 | openai-community/roberta-large-openai-detector | 0.5 (default) | 0% (0/60; 95% CI 0–6%) | 0% (0/60; 95% CI 0–6%) | 0.468 |
 | openai-community/roberta-large-openai-detector | 0.1372 (fitted) | 2% (1/60; 95% CI 0–9%) | 2% (1/60; 95% CI 0–9%) |  |
 | PirateXX/AI-Content-Detector | 0.5 (default) | 2% (1/60; 95% CI 0–9%) | 2% (1/60; 95% CI 0–9%) | 0.760 |
 | PirateXX/AI-Content-Detector | 0.0188 (fitted) | 8% (5/60; 95% CI 4–18%) | 8% (5/60; 95% CI 4–18%) |  |
 | desklib/ai-text-detector-v1.01 | 0.5 (default) | 100% (60/60; 95% CI 94–100%) | 100% (60/60; 95% CI 94–100%) | 1.000 |
 | desklib/ai-text-detector-v1.01 | 0.8206 (fitted) | 100% (60/60; 95% CI 94–100%) | 100% (60/60; 95% CI 94–100%) |  |
+| rasbt/ai-text-detector-modernbert | 0.5 (default) | 77% (46/60; 95% CI 65–86%) | 78% (47/60; 95% CI 66–87%) | 0.991 |
+| rasbt/ai-text-detector-modernbert | 0.9932 (fitted) | 48% (29/60; 95% CI 36–61%) | 52% (31/60; 95% CI 39–64%) |  |
 
 Recall is the share of these AI essays flagged. Compare with each detector's false-positive rates on human writing in the [open-detector leaderboard](open-detectors.md) and [calibration](calibration.md): a recall figure means nothing without the false-flag rate paid for it.
 

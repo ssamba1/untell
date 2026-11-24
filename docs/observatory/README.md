@@ -120,8 +120,8 @@ human texts and 352 GPT-3 texts: [leaderboard](open-detectors.md) (generated fro
 ## Recall on modern LLM essays
 
 [modern-llm.md](modern-llm.md): 60 essays by Qwen2.5-1.5B-Instruct on the PERSUADE assignments,
-scored by untell and the five open detectors. Desklib and Fakespot catch all 60; ModernBERT 67%
-with no TOEFL essay flagged; untell's calibrated verdict 15%; OpenAI RoBERTa none. The essays are
+scored by untell and the five open detectors. Desklib and Fakespot catch all 60; ModernBERT 77%
+with no TOEFL essay flagged; untell's calibrated verdict 47% (v3; v2 caught 15%); OpenAI RoBERTa none. The essays are
 published ([modern-llm-essays.jsonl](modern-llm-essays.jsonl)) with each one's seed.
 
 ## One trailing space
