@@ -105,8 +105,8 @@ human texts and 352 GPT-3 texts: [leaderboard](open-detectors.md) (generated fro
 - **The best separators have the worst defaults.** Desklib (the most downloaded, and RAID's leader)
   and Fakespot both reach AUROC 0.984, yet at their default 0.5 Desklib flags 52.7% of TOEFL essays
   and 51% of Stanford students' abstracts, and Fakespot flags 65.9% and 100%.
-- **The careful ones barely detect.** ModernBERT (rasbt) flags 0 of 91 TOEFL essays and 0.6% of all
-  human text — and catches 20.5% of GPT-3 text at its default.
+- **The careful ones barely detect.** ModernBERT (rasbt) flags 0 of 91 TOEFL essays and 1.0% of all
+  human text — and catches 21.0% of GPT-3 text at its default.
 - **Typography still moves them.** Formatting-only edits flip Desklib's verdict on 8.5% of variants;
   one trailing space clears 22 of Fakespot's 62 TOEFL flags.
 - **No threshold fixes it.** Fitting each detector's threshold to 5% false positives on 868

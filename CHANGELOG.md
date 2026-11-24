@@ -72,6 +72,11 @@ All notable changes to this project are documented here. The format is based on
   scored exactly 1.0). The scorer now always computes in float32. ModernBERT's published card,
   fitted threshold and modern-LLM recall are regenerated; the other four audited models store
   float32 and are unaffected, as are untell's own detectors.
+- **ModernBERT was not audited the way its model card says.** Its `detector-config.json` sets an
+  8,192-token limit and temperature 1.5662; the audit used the 512-token default and no temperature,
+  so it read only the opening ~380 words of a longer document. The `hf:` registry now carries both
+  settings, and the card is regenerated: AUROC 0.929 (was 0.944), human false positives 1.0% (0.6%),
+  TOEFL 0/91 (0/91), GPT-3 recall at 0.5 21.0% (21.0%).
 - **`restore(lock(text))` capitalised a one-word lowercase name at a sentence start**
   ("untell's" → "Untell's") in a round trip where nothing was rewritten. Single-word lowercase spans
   are names locked for their casing and now keep it; multi-word spans ("the New York Times") are
