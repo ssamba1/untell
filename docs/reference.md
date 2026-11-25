@@ -850,6 +850,7 @@ without a row here.
 | `UNTELL_CORS_ORIGINS` | comma-separated origins the REST server allows with credentials; unset = any origin may call, credentials NOT allowed (the spec-legal wildcard) |
 | `UNTELL_BROWSER_SITES` | comma-separated free web detectors for `--browser` |
 | `UNTELL_LITE_NO_TORCH` | force the pure-stdlib lite path even when torch is installed. The two paths differ by 11.5x in false positives, so this is how you pin which one you are measuring |
+| `UNTELL_DEBUG` | set to any value to get the full Python traceback from the evidence commands (`brief`, `stability`, `variants`, `flagmath`, `report-card`, `drift`, `capsule`) instead of their one-line message for a missing or unreadable input file |
 | `UNTELL_SELECT` | what best-of-N ranks candidates on: `max` (default, the shipped objective), `mean`, or `dropout` (rank on a random 60% subset of the tier, resampled each iteration, so a candidate cannot win by exploiting a member absent from the subset that judged it). Anything else falls back to `max`. Read per call, so a sweep needs no reload |
 | `UNTELL_DISABLE_MAGE` | skip the MAGE detector (large download) |
 | `UNTELL_ENABLE_RADAR` | opt into the RADAR detector in the benchmark |

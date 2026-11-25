@@ -52,8 +52,48 @@ def _tiers(s: str) -> tuple[str, ...]:
     return t
 
 
+def _user_errors(fn):
+    """A missing or unreadable input file is the user's mistake: one line and exit 2, no traceback.
+
+    MEASURED before this: `untell brief --file nope.txt`, `report-card --human nope.jsonl`,
+    `drift a.json b.json`, `variants`/`stability --file` all ended in a FileNotFoundError
+    traceback. UNTELL_DEBUG=1 re-raises, for when the traceback is what you want.
+    """
+    import functools
+    import os
+
+    prog = "untell-" + fn.__name__.removesuffix("_main").replace("_", "-")
+
+    @functools.wraps(fn)
+    def wrapper(argv: list[str] | None = None) -> int:
+        try:
+            return fn(argv)
+        except OSError as exc:
+            if os.environ.get("UNTELL_DEBUG"):
+                raise
+            where = f": {exc.filename}" if getattr(exc, "filename", None) else ""
+            print(f"{prog}: error: {exc.strerror or exc}{where}", file=sys.stderr)
+            return 2
+
+    return wrapper
+
+
+_RUNNABLE_PREFIXES = ("local", "hf:", "raw:", "cmd:", "manual:")
+
+
+def _scorer_or_exit(ap: argparse.ArgumentParser, spec: str, threshold: float | None):
+    """resolve_scorer, but an unknown or unavailable detector is a usage error, not a traceback."""
+    from .scorers import resolve_scorer
+
+    try:
+        return resolve_scorer(spec, threshold)
+    except (ValueError, RuntimeError, OSError) as exc:
+        ap.error(str(exc))
+
+
 # --- brief -----------------------------------------------------------------------------------------
 
+@_user_errors
 def brief_main(argv: list[str] | None = None) -> int:
     from .brief import build_brief, render_html, render_markdown
     from .scorers import resolve_scorer
@@ -90,8 +130,23 @@ def brief_main(argv: list[str] | None = None) -> int:
     name = args.name or args.detector or "unspecified"
     stability = None
     if args.detector:
-        scorer = resolve_scorer(args.detector, args.threshold)
-        stability = measure_stability(text, scorer, tiers=args.tiers).to_dict()
+        try:
+            scorer = resolve_scorer(args.detector, args.threshold)
+        except (ValueError, RuntimeError, OSError) as exc:
+            if args.detector.strip().startswith(_RUNNABLE_PREFIXES):
+                ap.error(str(exc))
+            # A detector untell cannot run from here (Turnitin has no API; a commercial one
+            # without its key). The brief is still worth having from the score the user
+            # reports and the published rates, so build it without the stability test instead
+            # of failing with a traceback on the commonest first command.
+            why = ("not a detector untell can call" if isinstance(exc, ValueError) else str(exc))
+            print(f"untell brief: cannot run {args.detector!r} from here ({why}).\n"
+                  "  Building the brief from published rates and --score/--flagged only. To test\n"
+                  "  whether the verdict survives formatting-only edits, run `untell variants` on\n"
+                  "  the document, score each variant in that detector, then pass\n"
+                  f"  --detector manual:scores.csv --name {args.detector}", file=sys.stderr)
+        else:
+            stability = measure_stability(text, scorer, tiers=args.tiers).to_dict()
     b = build_brief(
         text, name, detector_version=args.detector_version, stability=stability,
         observed_score=args.score,
@@ -105,8 +160,8 @@ def brief_main(argv: list[str] | None = None) -> int:
 
 # --- stability --------------------------------------------------------------------------------------
 
+@_user_errors
 def stability_main(argv: list[str] | None = None) -> int:
-    from .scorers import resolve_scorer
     from .stability import measure_stability
 
     ap = argparse.ArgumentParser(
@@ -120,7 +175,7 @@ def stability_main(argv: list[str] | None = None) -> int:
     ap.add_argument("--tiers", type=_tiers, default=("null", "light"))
     ap.add_argument("--json", action="store_true", help="print the full JSON result")
     args = ap.parse_args(argv)
-    res = measure_stability(_read_text(ap, args), resolve_scorer(args.detector, args.threshold),
+    res = measure_stability(_read_text(ap, args), _scorer_or_exit(ap, args.detector, args.threshold),
                             tiers=args.tiers).to_dict()
     if args.json:
         print(json.dumps(res, indent=2))
@@ -142,6 +197,7 @@ def stability_main(argv: list[str] | None = None) -> int:
 
 # --- variants ---------------------------------------------------------------------------------------
 
+@_user_errors
 def variants_main(argv: list[str] | None = None) -> int:
     from .perturb import all_variants
 
@@ -174,6 +230,7 @@ def variants_main(argv: list[str] | None = None) -> int:
 
 # --- flagmath ---------------------------------------------------------------------------------------
 
+@_user_errors
 def flagmath_main(argv: list[str] | None = None) -> int:
     from . import stats as S
     from .rates import best_fpr_estimate
@@ -200,6 +257,9 @@ def flagmath_main(argv: list[str] | None = None) -> int:
             fpr, source = est["fpr"], est["source"]
     if fpr is None:
         ap.error("need --fpr, or a --detector with a published rate on file")
+    for flag, v in (("--fpr", fpr), ("--tpr", args.tpr)):
+        if not 0.0 <= v <= 1.0:
+            ap.error(f"{flag} is a rate between 0 and 1 (e.g. 0.02 for 2%), got {v}")
     priors = args.prior or [0.01, 0.05, 0.10, 0.25, 0.50]
     out = {
         "fpr": fpr, "fpr_source": source, "tpr_assumed": args.tpr,
@@ -225,10 +285,10 @@ def flagmath_main(argv: list[str] | None = None) -> int:
 
 # --- report card / drift / capsule ------------------------------------------------------------------
 
+@_user_errors
 def report_card_main(argv: list[str] | None = None) -> int:
     from .corpus import load_corpus
     from .report_card import render_report_card_markdown, run_report_card
-    from .scorers import resolve_scorer
 
     ap = argparse.ArgumentParser(
         prog="untell-report-card",
@@ -254,7 +314,7 @@ def report_card_main(argv: list[str] | None = None) -> int:
         docs += load_corpus(p, label="human")
     for p in args.ai:
         docs += load_corpus(p, label="ai")
-    scorer = resolve_scorer(args.detector, args.threshold)
+    scorer = _scorer_or_exit(ap, args.detector, args.threshold)
 
     def prog(i: int, n: int) -> None:
         if i == n or i % 10 == 0:
@@ -271,6 +331,7 @@ def report_card_main(argv: list[str] | None = None) -> int:
     return 0
 
 
+@_user_errors
 def drift_main(argv: list[str] | None = None) -> int:
     from .report_card import drift
 
@@ -299,6 +360,7 @@ def drift_main(argv: list[str] | None = None) -> int:
     return 1 if d["significant"] else 0
 
 
+@_user_errors
 def capsule_main(argv: list[str] | None = None) -> int:
     from .corpus import CHATGPT_RELEASE, git_time_capsule
 
@@ -314,6 +376,12 @@ def capsule_main(argv: list[str] | None = None) -> int:
     ap.add_argument("--limit", type=int, help="max documents per repository")
     ap.add_argument("--out", "-o", default="capsule.jsonl")
     args = ap.parse_args(argv)
+    import subprocess
+
+    for repo in args.repo:
+        if subprocess.run(["git", "-C", repo, "rev-parse", "--git-dir"],
+                          capture_output=True).returncode != 0:
+            ap.error(f"not a git repository: {repo}")
     n = 0
     with open(args.out, "w", encoding="utf-8") as fh:
         for repo in args.repo:

@@ -40,6 +40,12 @@ untell brief --file essay.txt --detector manual:kit/scores.csv --name turnitin -
 look up the detector's published error rates. The browser kit (`docs/brief.html`) does the same
 thing offline.
 
+With only the score the detector reported, and no time to score the variants yet,
+`untell brief --file essay.txt --detector turnitin --score 0.82 --flagged yes` still builds the
+brief from the published rates and the Bayes arithmetic; the stability section says it was not
+run. A brief never shows untell's own detector as if it were the one named: when the two differ
+(`--detector local --name turnitin`), section 1 says the scores are untell's.
+
 **Reading the result.**
 
 - *Null* variants contain exactly the same words in the same order — checked mechanically, and a
@@ -122,3 +128,6 @@ endpoints (`POST /brief`, `/stability`, `/variants`) on the REST server. On thos
 prompt-injected model run commands or read files — and recorded scores are passed inline as
 `scores={"base": 0.91, "N1": 0.12, …}` instead. The REST server refuses commercial detectors
 unless the operator sets `UNTELL_API_ALLOW_COMMERCIAL=1`, because each call spends their credit.
+`brief` also takes the verdict as the detector reported it (`score`, `flagged`); with a `name` and
+neither `detector` nor `scores`, it skips the stability test rather than running untell's own
+detector in the named one's place.

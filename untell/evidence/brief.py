@@ -104,10 +104,18 @@ def build_brief(
             "p_at_least_one_false_flag": _stats.p_any_false_flag(fpr_used, max(1, documents)),
         }
 
-    if observed_score is None and stability:
-        observed_score = stability.get("base", {}).get("score")
-    if observed_flagged is None and stability:
-        observed_flagged = stability.get("base", {}).get("flagged")
+    scored_by = ((stability or {}).get("scorer") or {})
+    # untell's own ensemble standing in for the named detector: its scores test whether *untell*
+    # is stable on this document, which says nothing about the named detector's verdict. Before
+    # this, `brief --name turnitin --detector local` (and the API/MCP default) printed untell's
+    # score as "Score: 0.176 — clear" under "Detector: Turnitin".
+    substitute = (scored_by.get("kind") == "local"
+                  and not (detector or "").strip().lower().startswith(("local", "untell")))
+    if not substitute:
+        if observed_score is None and stability:
+            observed_score = stability.get("base", {}).get("score")
+        if observed_flagged is None and stability:
+            observed_flagged = stability.get("base", {}).get("flagged")
 
     return {
         "kind": "untell.evidence_brief",
@@ -123,6 +131,8 @@ def build_brief(
         },
         "observed": {"score": observed_score, "flagged": observed_flagged},
         "stability": stability,
+        "stability_scored_by": {"name": scored_by.get("name"), "kind": scored_by.get("kind"),
+                                "is_the_named_detector": not substitute} if stability else None,
         "published_rates": published,
         "bayes": bayes,
         "questions": list(QUESTIONS),
@@ -172,8 +182,19 @@ def render_markdown(b: dict) -> str:
     L.append("## 1. Does the verdict survive edits that cannot change authorship?")
     L.append("")
     if st:
+        sb = b.get("stability_scored_by") or {}
+        if sb and not sb.get("is_the_named_detector", True):
+            L.append(f"> **These scores are untell's own detector (`{sb.get('name')}`), not "
+                     f"{b['detector']['name']}'s.** They show whether untell's verdict is stable on "
+                     f"this document, not whether {b['detector']['name']}'s is. To test "
+                     f"{b['detector']['name']}, score each variant in it (`untell variants`) and pass "
+                     "the scores.")
+            L.append("")
         L.append(f"> {st['summary'].get('finding', '')}")
         L.append("")
+        if sb.get("name"):
+            L.append(f"Scored by: `{sb['name']}`.")
+            L.append("")
         L.append("| id | edit | tier | chars changed | score | verdict |")
         L.append("|---|---|---|---:|---:|---|")
         for r in st["variants"]:
@@ -303,7 +324,15 @@ def render_html(b: dict) -> str:
     st = b.get("stability")
     P.append("<h2>1. Does the verdict survive edits that cannot change authorship?</h2>")
     if st:
+        sb = b.get("stability_scored_by") or {}
+        if sb and not sb.get("is_the_named_detector", True):
+            P.append(f"<p class='finding'><b>These scores are untell's own detector "
+                     f"({e(sb.get('name'))}), not {e(b['detector']['name'])}'s.</b> They show whether "
+                     f"untell's verdict is stable on this document, not whether "
+                     f"{e(b['detector']['name'])}'s is.</p>")
         P.append(f"<p class='finding'>{e(st['summary'].get('finding', ''))}</p>")
+        if sb.get("name"):
+            P.append(f"<p class='meta'>Scored by: {e(sb['name'])}</p>")
         P.append("<table><thead><tr><th>id</th><th>edit</th><th>tier</th><th>chars</th><th>score</th>"
                  "<th>verdict</th></tr></thead><tbody>")
         bf = st["base"].get("flagged")

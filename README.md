@@ -121,6 +121,13 @@ pip install -e ".[commercial]"   # + HTTP clients for GPTZero, Pangram, Original
 pip install -e ".[full]"         # + untell's own local detector ensemble (torch, CPU is fine)
 ```
 
+Without a clone, `pip install "untell @ git+https://github.com/ssamba1/untell"` installs the same
+package. The REST API also ships as an image (lite tier, 267 MB, health-checked):
+
+```bash
+docker build -t untell . && docker run -p 8000:8000 -e UNTELL_API_KEY=change-me untell
+```
+
 `pip install untell` lands with the first PyPI release. Commercial detectors read their keys from
 the environment (`GPTZERO_API_KEY`, `PANGRAM_API_KEY`, `ORIGINALITY_API_KEY`, …; full list in the
 [reference](docs/reference.md)).

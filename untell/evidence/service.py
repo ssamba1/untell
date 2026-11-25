@@ -97,8 +97,18 @@ def brief_payload(text: str, detector: str | None = None, name: str | None = Non
                   threshold: float | None = None, scores: dict | None = None,
                   documents: int = 1, fpr: float | None = None, tpr: float = 0.9,
                   detector_version: str | None = None, allow_commercial: bool = False,
-                  writer: str = "general") -> dict:
-    stab = stability_payload(text, detector, threshold, scores, allow_commercial=allow_commercial)
-    return build_brief(text, name or detector or "recorded-scores", stability=stab,
+                  writer: str = "general", score: float | None = None,
+                  flagged: bool | None = None) -> dict:
+    # Naming a detector without a way to run it (no `detector`, no `scores`) used to fall back to
+    # untell's lite detector, so a brief headed "Turnitin" showed untell's stability table and
+    # untell's score. With only a name, there is nothing of that detector's to test: skip the
+    # stability section and build from the reported score and the published rates.
+    if name and not detector and not scores:
+        stab = None
+    else:
+        stab = stability_payload(text, detector, threshold, scores,
+                                 allow_commercial=allow_commercial)
+    label = name or detector or ("recorded-scores" if scores else "local:lite")
+    return build_brief(text, label, stability=stab, observed_score=score, observed_flagged=flagged,
                        documents=max(1, int(documents)), fpr=fpr, tpr=tpr,
                        detector_version=detector_version, writer=writer)

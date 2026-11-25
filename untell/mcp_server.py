@@ -578,17 +578,21 @@ def _server():
             return {"error": str(exc)}
 
     @server.tool()
-    def brief(text: str, detector: str = "local:lite", name: str | None = None,
+    def brief(text: str, detector: str | None = None, name: str | None = None,
               documents: int = 1, scores: dict | None = None, fpr: float | None = None,
               detector_version: str | None = None, format: str = "markdown",
-              writer: str = "general") -> dict:
+              writer: str = "general", score: float | None = None,
+              flagged: bool | None = None) -> dict:
         """Evidence brief for one detector verdict: stability test on the document, the
         detector's published error rates (cited), P(AI | flagged) by Bayes, and the per-person
         false-flag risk for someone who submitted `documents` documents. Measures the detector,
         not the writer; never includes the document text (only its SHA-256).
 
-        `name` is the detector to look up published rates for (e.g. 'turnitin') when the scores
-        came from `scores`. `format`: markdown | json | html.
+        `name` is the detector to look up published rates for (e.g. 'turnitin'). With `name`
+        alone (no `detector`, no `scores`) the stability test is skipped rather than run on
+        untell's own detector; pass the detector's reported `score` / `flagged` for the header.
+        `detector` omitted with no `name` uses untell's lite detector. `format`: markdown |
+        json | html.
         """
         from untell.evidence.brief import render_html, render_markdown
         from untell.evidence.service import RefusedSpec, brief_payload
@@ -601,7 +605,7 @@ def _server():
         try:
             b = brief_payload(text, detector, name, scores=scores, documents=documents, fpr=fpr,
                               detector_version=detector_version, allow_commercial=True,
-                              writer=writer)
+                              writer=writer, score=score, flagged=flagged)
         except RefusedSpec as exc:
             return {"error": str(exc)}
         if format == "json":

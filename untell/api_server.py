@@ -488,6 +488,10 @@ class BriefRequest(StabilityRequest):
     detector_version: str | None = None
     # Which published rates apply: "general", or a population such as "non-native".
     writer: str = Field("general", max_length=40)
+    # The verdict under review as the detector reported it (e.g. a Turnitin score, which no API
+    # can re-run). Without them a name-only brief has no score in its header.
+    score: _Probability | None = None
+    flagged: bool | None = None
 
 
 class SentencesRequest(_Request):
@@ -835,6 +839,9 @@ _BRIEF_RESPONSES = _obj(
         "kind": _STR, "schema": _INT, "generated_at": _STR, "untell_version": _STR,
         "detector": {"type": "object"}, "document": {"type": "object"},
         "observed": {"type": "object"}, "stability": {"type": ["object", "null"]},
+        "stability_scored_by": {"type": ["object", "null"], "description":
+                                "who produced the stability scores; is_the_named_detector is false "
+                                "when untell's own detector stood in for the one named"},
         "published_rates": {"type": "array", "items": {"type": "object"}},
         "bayes": {"type": "object"}, "questions": {"type": "array", "items": _STR},
         "context": _STR, "disclaimer": _STR,
@@ -1242,7 +1249,8 @@ async def brief(body: BriefRequest):
         return await _offload(
             brief_payload, body.text, body.detector, body.name, body.threshold, body.scores,
             body.documents, body.fpr, body.tpr, body.detector_version,
-            allow_commercial=http_allows_commercial(), writer=body.writer)
+            allow_commercial=http_allows_commercial(), writer=body.writer,
+            score=body.score, flagged=body.flagged)
     except RefusedSpec as exc:
         return _refused(exc)
 
