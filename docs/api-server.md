@@ -193,7 +193,7 @@ FROM python:3.11-slim
 RUN pip install "untell[server]"
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
-  CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)" || exit 1
+  CMD python -c "import urllib.request as u; u.build_opener(u.ProxyHandler({})).open('http://127.0.0.1:8000/health', timeout=3)" || exit 1
 CMD ["sh", "-c", "exec untell-server --host 0.0.0.0 --port 8000"]
 ```
 
@@ -202,7 +202,8 @@ tier, matching the Dockerfile's `ENV UNTELL_TIER="lite"` — the container answe
 pulling a model stack.
 
 `/health` is exempt from auth and rate limiting, so a probe can never 401 or 429 itself into a
-restart loop. The default bind is `127.0.0.1`, which is unreachable from outside a container —
+restart loop. The probe also ignores `HTTP_PROXY`: run behind a proxy, a plain `urlopen` sends
+the loopback request to the proxy and the container never turns healthy. The default bind is `127.0.0.1`, which is unreachable from outside a container —
 pass `--host 0.0.0.0` (as above) when the container must answer on the network.
 
 ### Production

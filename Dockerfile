@@ -31,7 +31,11 @@ EXPOSE 8000
 # stdlib — `curl` is not in python:3.11-slim and this image installs only ca-certificates. The
 # server refuses to accept connections until lifespan's detector warm-up completes, so a probe
 # either gets no connection (startup; covered by --start-period) or a fast answer.
-HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)" || exit 1
+#
+# The probe opens with an empty ProxyHandler: urllib otherwise honours HTTP_PROXY, so a container
+# run with a corporate proxy in its environment sent its own loopback probe to the proxy, got a
+# 405, and was marked unhealthy forever — a restart loop for a server that was answering fine.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 CMD python -c "import urllib.request as u; u.build_opener(u.ProxyHandler({})).open('http://127.0.0.1:8000/health', timeout=3)" || exit 1
 
 # Empty means NO AUTH, not "a key is configured". The server treats unset and empty the same
 # way and serves every endpoint openly — verified: 200 without a header when this is "" or

@@ -5,6 +5,12 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+- **Docker healthcheck fixed behind proxies.** The image's HEALTHCHECK used `urlopen`, which
+  honours `HTTP_PROXY`; a container run with a proxy in its environment probed its own loopback
+  address through the proxy, got 405, and stayed unhealthy (an orchestrator restart loop). The
+  probe now opens with an empty `ProxyHandler`. Found by the first live build of the image: 267 MB,
+  every endpoint 200 with the key and 401 without, `healthy` with the proxy set after the fix.
+
 ### Added
 - **Calibration v3** replaces v2 as the full-tier verdict (`verdict_rule: "calibrated-v3"`): v2 plus
   a sixth detector, `modernbert` (`rasbt/ai-text-detector-modernbert`, Apache-2.0, now registered on

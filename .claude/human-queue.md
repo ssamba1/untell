@@ -1988,6 +1988,14 @@ SAW    No Docker daemon available in this environment. 9/9 static checks pass (m
        stdlib healthcheck, build context correctness).
 WHY    Cannot claim a passing image from a static read.
 NEXT   Human runs the build + healthcheck on a machine with a daemon; #50 tracks it.
+UPDATE 2026-11-25: built and run live (Docker 29.10, daemon started in a cloud container; build
+       given the sandbox proxy's CA through `--build-context`, Dockerfile itself unchanged for that).
+       Image 267 MB; /health 200; /score 401 without key, 200 with it; /tells /scrub /sentences
+       /brief /stability /variants /openapi.json all 200. Found and fixed one real bug: with
+       HTTP_PROXY in the container's environment the HEALTHCHECK's urlopen sent the loopback
+       probe to the proxy (405) and the container never turned healthy. Probe now uses an empty
+       ProxyHandler; rebuilt image reports `healthy` with the proxy set. #50 can be closed by a
+       maintainer.
 
 WHAT   Named-signal rewrite rubric (#3, commit 590c115) is shipped but UNMEASURED, and reaches only
        users with an API key (#46).

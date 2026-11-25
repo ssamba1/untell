@@ -92,6 +92,18 @@ def test_the_healthcheck_timing_suits_a_ttl_cached_cheap_endpoint() -> None:
     assert "urllib" in line, "the probe must use stdlib urllib (curl is not in python:3.11-slim)"
 
 
+def test_the_healthcheck_ignores_proxy_environment() -> None:
+    """The loopback probe must bypass HTTP_PROXY, or a proxied deployment is never healthy.
+
+    `urlopen` honours HTTP_PROXY, so a container started with a corporate proxy in its
+    environment sent its own probe of 127.0.0.1 to the proxy, which answered 405; every probe
+    failed and orchestrators restarted a server that was serving fine. Measured by running the
+    built image with HTTP_PROXY set: probe 405 before, 200 with an empty ProxyHandler.
+    """
+    line = _healthcheck_line()
+    assert "ProxyHandler({})" in line, f"HEALTHCHECK probe would go through HTTP_PROXY: {line!r}"
+
+
 # --- .dockerignore must not strip the wheel's inputs -------------------------
 # The builder stage is `COPY . .` then `python -m build`, so the build context IS the sdist
 # input. It shipped ignoring `eval/`, `training/` and every `*.md`; the first made the build
