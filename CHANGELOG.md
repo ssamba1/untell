@@ -73,6 +73,18 @@ All notable changes to this project are documented here. The format is based on
 
 ### Fixed
 
+- **The local-policy rewriter's install hint named the wrong extra.** With several packages
+  missing it always said `pip install 'untell[full,train]'`, so the base-only rewriter (no adapter,
+  no peft) told users to install the training stack (trl, peft, bitsandbytes). It now names only
+  the extras the missing packages come from: `untell[full]` for base-only, `untell[full,train]`
+  with an adapter.
+- **The lite CI tier had been failing unseen.** Fail-fast cancelled its jobs on a Python setup
+  error, hiding 100+ failures. Rebuilt in a venv identical to the job: the pure-python extras
+  (`rich`, `docs`) are now installed there; tests that measure a model-backed path declare
+  `@pytest.mark.needs(...)`; tests that already fake their model now fake its imports too, so they
+  run in lite instead of skipping; one order-dependent test was fixed; and
+  `references/thresholds.md` now names the `token_overlap` method the lite tier reports.
+
 - **A brief no longer shows untell's scores under another detector's name.** `POST /brief` and
   the MCP `brief` tool, called with `name: "turnitin"` and no scores, ran untell's lite detector
   for the stability test and copied its score into the header, so a brief headed "Detector:
