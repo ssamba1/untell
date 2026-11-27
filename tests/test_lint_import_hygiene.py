@@ -21,6 +21,8 @@ import sys
 import textwrap
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parent.parent
 CHECKER = ROOT / "scripts" / "check_annotations.py"
 VERIFIER = ROOT / "scripts" / "verify_console_scripts.py"
@@ -54,6 +56,10 @@ def test_every_console_scripts_entry_resolves() -> None:
     assert "entry points resolve cleanly" in proc.stdout
 
 
+@pytest.mark.skipif(sys.version_info < (3, 10), reason=(
+    "the checker resolves annotations with typing.get_type_hints, which cannot evaluate PEP 604 "
+    "`X | None` strings before 3.10; the 3.11/3.12 jobs run it. The one runtime consumer that "
+    "does evaluate them, pydantic in the REST server, gets eval_type_backport on 3.9"))
 def test_annotations_checker_passes_on_clean_tree() -> None:
     proc = _run(CHECKER)
     assert proc.returncode == 0, proc.stdout + proc.stderr

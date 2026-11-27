@@ -108,8 +108,9 @@ def test_no_step_script_shadows_a_stdlib_module():
     """
     import sys
 
-    stdlib = set(getattr(sys, "stdlib_module_names", ()))
-    assert stdlib, "sys.stdlib_module_names unavailable — this guard needs Python 3.10+"
+    if not hasattr(sys, "stdlib_module_names"):
+        pytest.skip("sys.stdlib_module_names is Python 3.10+; the 3.11/3.12 jobs run this guard")
+    stdlib = set(sys.stdlib_module_names)
 
     offenders = [p.name for p in SCRIPTS.glob("*.py") if p.stem in stdlib]
     assert not offenders, (
@@ -121,6 +122,9 @@ def test_no_step_script_shadows_a_stdlib_module():
 def test_stdlib_shadowing_guard_would_actually_fire():
     """Guard the guard: prove the check recognises a known stdlib name."""
     import sys
+
+    if not hasattr(sys, "stdlib_module_names"):
+        pytest.skip("sys.stdlib_module_names is Python 3.10+")
 
     stdlib = set(getattr(sys, "stdlib_module_names", ()))
     assert {"numbers", "json", "types", "string"} <= stdlib

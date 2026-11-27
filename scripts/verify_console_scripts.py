@@ -6,18 +6,32 @@ Exits 0 only if every entry point's module imports and its callable attribute ex
 from __future__ import annotations
 
 import importlib
+import re
 import sys
 from pathlib import Path
-
-import tomllib
 
 ROOT = Path(__file__).resolve().parent.parent
 
 
+def _scripts() -> dict[str, str]:
+    """[project.scripts] from pyproject.toml.
+
+    tomllib is stdlib only from Python 3.11, and the package supports 3.9, where this script died
+    on its first import. On older Pythons read the one flat table it needs: `name = "mod:fn"`
+    lines between `[project.scripts]` and the next table header.
+    """
+    text = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    try:
+        import tomllib
+    except ImportError:
+        section = re.search(r"^\[project\.scripts\]\s*$(.*?)(?=^\[)", text, re.M | re.S)
+        lines = section.group(1) if section else ""
+        return dict(re.findall(r'^\s*([A-Za-z0-9_.-]+)\s*=\s*"([^"]+)"', lines, re.M))
+    return tomllib.loads(text)["project"]["scripts"]
+
+
 def main() -> int:
-    with (ROOT / "pyproject.toml").open("rb") as f:
-        pyproject = tomllib.load(f)
-    scripts = pyproject["project"]["scripts"]
+    scripts = _scripts()
     failures = []
     for name, target in sorted(scripts.items()):
         module_name, _, attr = target.partition(":")

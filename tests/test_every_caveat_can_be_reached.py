@@ -148,3 +148,59 @@ def test_preserve_says_when_it_has_no_ner(warnings_from) -> None:
     # failed in the lite tier, where an earlier test had already triggered the warning).
     out = warnings_from([("untell.scripts.preserve", "_WARNED_NO_NER")], mod._warn_no_ner)
     assert out.strip()
+
+
+def test_preserve_says_spacy_itself_is_missing(warnings_from) -> None:
+    """The base install has no spaCy: it must not be told to `spacy download` a model.
+
+    It used to get "spaCy is installed but the 'en_core_web_sm' model is not" and a download
+    command that fails without spaCy, because the cheap model check ran first and assumed spaCy.
+    """
+    import untell.scripts.preserve as mod
+
+    out = warnings_from([("untell.scripts.preserve", "_WARNED_NO_SPACY")], mod._warn_no_spacy)
+    assert "spaCy is not installed" in out
+    assert "untell[full]" in out
+
+
+
+@pytest.mark.parametrize("spacy_present, expected", [
+    (False, "_warn_no_spacy"),
+    (True, "_warn_no_ner"),
+])
+def test_the_missing_piece_picks_the_message(monkeypatch, spacy_present, expected) -> None:
+    """No spaCy -> the install hint; spaCy without its model -> the download hint."""
+    import importlib.util
+
+    import untell.scripts.preserve as mod
+
+    called: list[str] = []
+    monkeypatch.setattr(mod, "_warn_no_spacy", lambda: called.append("_warn_no_spacy"))
+    monkeypatch.setattr(mod, "_warn_no_ner", lambda: called.append("_warn_no_ner"))
+    monkeypatch.delenv("UNTELL_LITE_NO_TORCH", raising=False)
+    real_find_spec = importlib.util.find_spec
+
+    def find_spec(name, *args, **kwargs):
+        if name == "en_core_web_sm":
+            return None
+        if name == "spacy":
+            return object() if spacy_present else None
+        return real_find_spec(name, *args, **kwargs)
+
+    monkeypatch.setattr(importlib.util, "find_spec", find_spec)
+    # The loaded pipeline is cached on the function, and results are cached by text: start from
+    # "never loaded", use a text no other test passes, and put the cached pipeline back after.
+    sentinel = object()
+    saved = getattr(mod._spacy_entity_spans, "_nlp", sentinel)
+    if saved is not sentinel:
+        del mod._spacy_entity_spans._nlp
+    try:
+        text = f"Ada Lovelace met Charles Babbage in London ({expected})."
+        assert mod._spacy_entity_spans(text) == []
+        assert called == [expected]
+    finally:
+        if saved is sentinel:
+            if hasattr(mod._spacy_entity_spans, "_nlp"):
+                del mod._spacy_entity_spans._nlp
+        else:
+            mod._spacy_entity_spans._nlp = saved

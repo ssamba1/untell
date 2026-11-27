@@ -73,6 +73,13 @@ All notable changes to this project are documented here. The format is based on
 
 ### Fixed
 
+- **Every base install was told spaCy was installed when it was not.** The cheap model check ran
+  before any spaCy check, so a zero-dependency install warned "spaCy is installed but the
+  'en_core_web_sm' model is not" and suggested `python -m spacy download`, which fails without
+  spaCy. It now says spaCy is missing and gives `pip install 'untell[full]'` first.
+- `scripts/verify_console_scripts.py` died on Python 3.9 and 3.10 (`import tomllib`); it reads
+  `[project.scripts]` without tomllib there.
+
 - **The REST server did not import on Python 3.9**, which the package declares it supports.
   pydantic evaluates the request models' `X | None` annotations at runtime, which 3.9 cannot do;
   the `server` extra now pulls `eval_type_backport` on Python < 3.10. `untell.training.reward`

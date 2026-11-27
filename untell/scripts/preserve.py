@@ -837,6 +837,21 @@ def _warn_no_ner() -> None:
         _WARNED_NO_NER = True
 
 
+_WARNED_NO_SPACY = False
+
+
+def _warn_no_spacy() -> None:
+    """Say once that named-entity locking is off because spaCy itself is not installed."""
+    global _WARNED_NO_SPACY
+    if not _WARNED_NO_SPACY:
+        logger.warning(
+            "spaCy is not installed, so NAMED ENTITIES (people, organisations, places) are NOT "
+            "being locked — only citations, numbers, quotes and URLs are. Enable it with: "
+            "pip install 'untell[full]' && python -m spacy download en_core_web_sm"
+        )
+        _WARNED_NO_SPACY = True
+
+
 def _warn_no_ner_env() -> None:
     """Say once that UNTELL_LITE_NO_TORCH=1 skips the NER pass.
 
@@ -944,7 +959,13 @@ def _spacy_entity_spans_impl(text: str) -> list[tuple[int, int]]:
         import importlib.util
 
         if importlib.util.find_spec("en_core_web_sm") is None:
-            _warn_no_ner()
+            # Two different gaps with two different fixes. The base install has no spaCy at all,
+            # and it was told "spaCy is installed but the model is not" plus a `spacy download`
+            # command that fails there. Both checks are path lookups, so this stays cheap.
+            if importlib.util.find_spec("spacy") is None:
+                _warn_no_spacy()
+            else:
+                _warn_no_ner()
             _spacy_entity_spans._nlp = None  # type: ignore[attr-defined]
             return []
         try:
