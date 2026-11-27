@@ -1,5 +1,10 @@
-"""A resumed generation run must keep finished essays and give the rest the seeds it would have had."""
+"""A resumed generation run must keep finished essays and give the rest the seeds it would have had.
 
+Both `torch` and `transformers` are faked in `sys.modules`, so this runs on the lite tier too:
+`generate_ai.main` only needs `manual_seed`, `no_grad`, and a 2-D id batch it can slice.
+"""
+
+import contextlib
 import csv
 import json
 import sys
@@ -8,15 +13,39 @@ import types
 from untell.bench import generate_ai
 
 
-class _Enc(dict):
-    def __init__(self):
-        import torch
+class _Ids:
+    """A (1, n) id batch: just enough of a tensor for `.shape[1]` and `gen[0, start:]`."""
 
-        super().__init__(input_ids=torch.zeros((1, 3), dtype=torch.long))
+    def __init__(self, row):
+        self.row = list(row)
+        self.shape = (1, len(self.row))
+
+    def __getitem__(self, key):
+        if isinstance(key, tuple):
+            batch, cols = key
+            assert batch == 0
+            return self.row[cols]
+        assert key == 0
+        return self.row
+
+
+def _fake_torch(monkeypatch):
+    state = {"seed": 0}
+
+    def manual_seed(seed):
+        state["seed"] = int(seed)
+
+    mod = types.SimpleNamespace(
+        manual_seed=manual_seed,
+        initial_seed=lambda: state["seed"],
+        no_grad=contextlib.nullcontext,
+    )
+    monkeypatch.setitem(sys.modules, "torch", mod)
+    return mod
 
 
 def _fake_transformers(monkeypatch, calls):
-    import torch
+    torch = _fake_torch(monkeypatch)
 
     class Tok:
         @classmethod
@@ -24,7 +53,7 @@ def _fake_transformers(monkeypatch, calls):
             return cls()
 
         def apply_chat_template(self, *a, **k):
-            return _Enc()
+            return {"input_ids": _Ids([0, 0, 0])}
 
         def decode(self, ids, skip_special_tokens=True):
             return f"essay seed={int(ids[0])}"
@@ -43,7 +72,7 @@ def _fake_transformers(monkeypatch, calls):
         def generate(self, input_ids, **k):
             seed = torch.initial_seed()
             calls.append(seed)
-            return torch.cat([input_ids, torch.tensor([[seed % 1000]])], dim=1)
+            return _Ids(input_ids.row + [seed % 1000])
 
     mod = types.SimpleNamespace(AutoTokenizer=Tok, AutoModelForCausalLM=Model)
     monkeypatch.setitem(sys.modules, "transformers", mod)

@@ -984,6 +984,7 @@ class TestTheScoreResponseIsSafeToConsume:
         values = [v for v in body["detectors"].values() if v is not None]
         assert max(values) == pytest.approx(body["max"], abs=0.05)
 
+    @pytest.mark.needs("torch", "transformers")  # hc3_roberta.available()
     def test_the_failure_is_still_reported_somewhere(self):
         """Moving the message must not lose it — a silently-dropped detector is worse than an
         awkwardly-typed one."""
@@ -1004,6 +1005,7 @@ class TestTheScoreResponseIsSafeToConsume:
         ).json()
         assert "detector_errors" not in body
 
+    @pytest.mark.needs("torch", "transformers")  # hc3_roberta.available()
     def test_the_internal_convention_is_untouched(self):
         """The sidecar stays inside `detectors` for library callers — this is a boundary fix, not a
         change to the internal contract that run.py, verify.py and reward.py all depend on."""

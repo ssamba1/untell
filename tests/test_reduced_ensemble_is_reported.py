@@ -31,6 +31,11 @@ import pytest
 
 from untell.scripts.score import score_text
 
+# Every test here needs a multi-member ensemble with roberta_openai in it, and the members are
+# model-backed: without torch + transformers `load_detectors("full")` is the stdlib detector alone,
+# which cannot be "partially reduced".
+pytestmark = pytest.mark.needs("torch", "transformers")
+
 
 @pytest.fixture(autouse=True)
 def _torch_path(monkeypatch):

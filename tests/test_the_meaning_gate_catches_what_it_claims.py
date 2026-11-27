@@ -118,12 +118,23 @@ def _admits(candidate: str) -> bool:
     return meaning_preserved(SOURCE, candidate, similarity(SOURCE, candidate), SIM_BAR)
 
 
-@pytest.mark.parametrize("name", sorted(CAUGHT))
+# The cases only the NLI half decides. An antonym ("reduced" -> "increased") keeps the negation
+# count, so `polarity_kept` passes it and only contradiction sees the inversion; a register change
+# is admitted only under the relaxed similarity bar the NLI path uses, never under the strict one.
+_NEEDS_NLI = {"polarity flipped", "register change"}
+
+
+def _cases(table: dict[str, str]) -> list:
+    nli = pytest.mark.needs("torch", "transformers")
+    return [pytest.param(n, marks=nli) if n in _NEEDS_NLI else n for n in sorted(table)]
+
+
+@pytest.mark.parametrize("name", _cases(CAUGHT))
 def test_a_meaning_break_is_vetoed(name: str) -> None:
     assert not _admits(CAUGHT[name]), name
 
 
-@pytest.mark.parametrize("name", sorted(FAITHFUL))
+@pytest.mark.parametrize("name", _cases(FAITHFUL))
 def test_a_faithful_rewrite_is_admitted(name: str) -> None:
     """Guards the guard. A gate that vetoed everything would satisfy every assertion above while
     making the loop unable to adopt anything — which is the failure mode the similarity-only gate

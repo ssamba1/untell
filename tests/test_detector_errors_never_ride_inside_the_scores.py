@@ -57,13 +57,19 @@ def _quiet(caplog):
 @pytest.fixture
 def _broken_models(monkeypatch):
     real = score_module.load_detectors
-    monkeypatch.setattr(
-        score_module,
-        "load_detectors",
-        lambda tier: [
+
+    def _load(tier):
+        detectors = [
             d if d.name == "perplexity_burstiness" else _Boom(d.name) for d in real(tier)
-        ],
-    )
+        ]
+        # Without the optional ML stack `load_detectors` returns only the stdlib detector, so
+        # there would be nothing to break. The failure path under test is the same whatever
+        # detector raises, so stand one in rather than skip the lite tier.
+        if not any(isinstance(d, _Boom) for d in detectors):
+            detectors.append(_Boom("hc3_roberta"))
+        return detectors
+
+    monkeypatch.setattr(score_module, "load_detectors", _load)
 
 
 def _assert_clean(scores: dict, errors: dict | None) -> None:

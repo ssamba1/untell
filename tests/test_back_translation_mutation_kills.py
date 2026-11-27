@@ -8,12 +8,43 @@ call-site contract (`truncation=True`, `padding=True`, `num_beams=4`,
 `skip_special_tokens=True`) — the guarantees the module's own docstrings make about not
 silently discarding text.
 
+`torch`, `transformers` and `sentencepiece` are faked in `sys.modules` too (`_fake_model_stack`),
+so these run on the lite tier: `available()` only probes the imports, `_translate` only uses
+`torch.no_grad`, and `_pipe`'s load branch only touches the two Marian classes.
+
 Mutation names match `python .claude/mutate.py untell/attacks/back_translation.py --list`.
 """
 
 from __future__ import annotations
 
+import contextlib
+import sys
+import types
+
+import pytest
+
 from untell.attacks.back_translation import BackTranslator
+
+
+@pytest.fixture(autouse=True)
+def _fake_model_stack(monkeypatch):
+    """Stand-in modules for the model stack, identical whether or not the real one is installed."""
+
+    class _Unloadable:
+        @classmethod
+        def from_pretrained(cls, *a, **k):
+            raise AssertionError("tests must not load a real Marian model")
+
+    fakes = {
+        "torch": types.SimpleNamespace(no_grad=contextlib.nullcontext),
+        "transformers": types.SimpleNamespace(
+            MarianTokenizer=type("MarianTokenizer", (_Unloadable,), {}),
+            MarianMTModel=type("MarianMTModel", (_Unloadable,), {}),
+        ),
+        "sentencepiece": types.SimpleNamespace(),
+    }
+    for name, mod in fakes.items():
+        monkeypatch.setitem(sys.modules, name, mod)
 
 
 class _FakeTok:
@@ -61,7 +92,7 @@ class TestAvailability:
     def test_back_translate_runs_the_round_trip(self, monkeypatch):
         # back_translation.py:35  constant: False -> True   (import-failure branch)
         # back_translation.py:36  constant: True -> False   (success branch)
-        # The dependencies are importable here, so `available()` is True and the round
+        # The (faked) dependencies are importable here, so `available()` is True and the round
         # trip must actually happen; either mutation makes `back_translate` no-op.
         bt, tok, _ = _bt_with_fakes()
         assert bt.back_translate("Hello world") == "fake-translation"

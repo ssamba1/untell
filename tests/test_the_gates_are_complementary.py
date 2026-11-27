@@ -80,11 +80,13 @@ def test_a_faithful_rewrite_passes_every_gate() -> None:
             "The framework improves efficiency across the whole corpus.",
             lambda a, b: not certainty_kept(a, b),
         ),
-        (
+        pytest.param(
             "a swapped role",
             "The compiler optimises the parser during every build cycle.",
             "The parser optimises the compiler during every build cycle.",
             lambda a, b: role_swap(a, b),
+            # role_swap is None (unknown) without the parser model, by design.
+            marks=pytest.mark.needs("en_core_web_sm"),
         ),
     ],
     ids=lambda x: str(x)[:18],
@@ -97,6 +99,7 @@ def test_similarity_alone_would_let_it_through(name: str, a: str, b: str, gate) 
     assert gate(a, b), f"{name}: the gate built for this defect did not catch it"
 
 
+@pytest.mark.needs("torch", "transformers")
 def test_polarity_and_contradiction_both_catch_a_negation() -> None:
     """The one class two gates cover. Recorded rather than trimmed: an inversion is the most
     damaging edit a rewriter can make, and redundancy there is the intended design."""

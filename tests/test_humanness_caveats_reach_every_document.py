@@ -119,6 +119,9 @@ def test_an_unreadable_script_still_gets_the_language_caveat_not_the_empty_one()
     assert not any("the text is empty" in c for c in caveats)
 
 
+# "Clean full-tier" needs the full tier to actually run: without the model stack `tier="full"`
+# degrades to the stdlib path, and the weak-path caveat it then carries is correct.
+@pytest.mark.needs("torch", "transformers")
 def test_a_qualified_number_says_so_and_an_unqualified_one_stays_quiet():
     """An empty list has to mean something, or the channel is noise.
 

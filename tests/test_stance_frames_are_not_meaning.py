@@ -78,12 +78,18 @@ def test_the_pattern_does_not_match_ordinary_prose() -> None:
         assert not STANCE_FRAME_RE.search(text), text
 
 
+# The NLI path relaxes the similarity bar to 0.30; the stdlib fallback keeps 0.76, which token
+# overlap (0.706 here: the frame's words are a real share of a short sentence) does not reach.
+@pytest.mark.needs("torch", "transformers")
 @pytest.mark.parametrize("text", DELETED_FRAMES, ids=lambda t: t[:24])
 def test_removing_a_frame_survives_the_meaning_gate(text: str) -> None:
     bare = "The cache is cleared on restart."
     assert meaning_preserved(text, bare, similarity(text, bare), 0.76), text
 
 
+# Only the predicate-argument veto sees a role swap (token overlap is 1.0), and `meaning_preserved`
+# consults it on the NLI path only.
+@pytest.mark.needs("torch", "transformers", "en_core_web_sm")
 def test_a_role_swap_inside_a_frame_is_still_caught() -> None:
     """The leak direction, and the reason the exemption is the deleted set rather than every
     cliché. Stripping the frame must not strip what it introduces."""

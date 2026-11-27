@@ -114,6 +114,16 @@ def test_the_deletion_survives_the_meaning_gate(closer: str) -> None:
     text = f"{BODY} {closer}"
     out = _strip_meta_closers(text)
     assert passes(text, out), similarity(text, out)
+
+
+# 0.95 is an embedding measurement (0.981-0.997 above). Token overlap scores the same deletion
+# 0.90-0.91 because every dropped word counts, and `passes` already judged it against that
+# backend's own bar in the test above.
+@pytest.mark.needs("sentence_transformers")
+@pytest.mark.parametrize("closer", SCAFFOLDING, ids=lambda c: c[:22])
+def test_the_deletion_barely_moves_embedding_similarity(closer: str) -> None:
+    text = f"{BODY} {closer}"
+    out = _strip_meta_closers(text)
     assert similarity(text, out) >= 0.95
 
 
