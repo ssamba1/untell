@@ -239,6 +239,10 @@ def test_minimal_valid_invocation_slow(script):
 
 def _assert_minimal(script: str) -> None:
     spec = MINIMAL[script]
+    if script == "untell-mcp":
+        # Serving needs the optional `mcp` extra, which the full-tier CI job does not install;
+        # without it the contract is the one-line install hint, covered in test_mcp_missing_extra.
+        pytest.importorskip("mcp")
     argv = _make_files(script, list(spec["argv"]))
     target = _console_scripts()[script]
     timeout = 420 if spec.get("slow") else 60

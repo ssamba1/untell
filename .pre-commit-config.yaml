@@ -1,11 +1,17 @@
 # See https://pre-commit.com for docs
+#
+# Probe scripts and their recorded evidence are kept byte-for-byte as they ran (the same policy
+# that exempts them from ruff, .claude/probes/RUFF-POLICY.md), so the hygiene hooks skip them.
+exclude: ^\.claude/probes/
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.9.0
     hooks:
       - id: ruff
         args: [--fix]
-      - id: ruff-format
+      # No ruff-format: the codebase has never been ruff-formatted (it would rewrite 821 files),
+      # so the hook failed on every run and CI's pre-commit job was permanently red. Style is
+      # gated by `ruff check` in the dedicated CI job instead.
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.6.0
@@ -14,7 +20,11 @@ repos:
       - id: end-of-file-fixer
       - id: check-json
       - id: check-yaml
+        # mkdocs.yml uses !!python/name tags (pymdownx slugify), which a safe load rejects.
+        args: [--unsafe]
       - id: check-added-large-files
       - id: check-merge-conflict
       - id: mixed-line-ending
         args: [--fix=lf]
+        # .ps1 is CRLF by .gitattributes; the Liang et al. score CSVs keep their upstream bytes.
+        exclude: (\.ps1$|^docs/observatory/liang-2023/scores/)

@@ -240,6 +240,10 @@ def test_first_line_arrives_before_process_exits() -> None:
     )
     proc.stdin.write(THREE_PARA.encode("utf-8"))
     proc.stdin.close()
+    # communicate() flushes proc.stdin before reading; on Python 3.11 that raises
+    # "flush of closed file" for a pipe closed by hand (CI full tier, 2026-11-25). Dropping the
+    # handle tells communicate() there is nothing left to send.
+    proc.stdin = None
 
     # Block until the first complete line (the first block's result) arrives.
     first_line_bytes = proc.stdout.readline()

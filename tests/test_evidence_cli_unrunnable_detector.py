@@ -50,7 +50,12 @@ def test_stability_reports_an_unknown_detector_as_a_usage_error(capsys) -> None:
 # --- ordinary user errors: one line, exit 2, no traceback ------------------------------------
 
 from untell.evidence.cli import (  # noqa: E402
-    capsule_main, drift_main, flagmath_main, report_card_main, variants_main)
+    capsule_main,
+    drift_main,
+    flagmath_main,
+    report_card_main,
+    variants_main,
+)
 
 
 @pytest.mark.parametrize("main, argv", [

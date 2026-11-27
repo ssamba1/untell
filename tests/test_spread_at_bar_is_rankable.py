@@ -20,4 +20,3 @@ def test_exactly_min_sentences_proceed_to_spread():
     # count guard must NOT short-circuit; the spread decides (unrankable).
     rows = [{"ai": 0.5}, {"ai": 0.5245}, {"ai": 0.549}]
     assert _targeting_is_unrankable(rows) is True
-

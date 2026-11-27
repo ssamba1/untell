@@ -30,4 +30,3 @@ Projected for honest writers at 4.58% per document (upper end of the 95% CI on t
 - variant-level flip rate: 0.0% (0/69; 95% CI 0.0–5.3%)
 - documents with at least one flip: 0.0% (0/10; 95% CI 0.0–27.8%)
 - median score spread across a document's variants: 0.006
-

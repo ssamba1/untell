@@ -52,4 +52,3 @@ Projected for honest writers at 3.86% per document (upper end of the 95% CI on t
 - recall with false positives capped at 0.5%: 0.9%
 - recall with false positives capped at 1.0%: 4.8%
 - recall with false positives capped at 5.0%: 31.2%
-

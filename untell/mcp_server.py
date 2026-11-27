@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import sys
 
 # Free, no-key rewriter backends selectable via the ``rewriter`` arg; anything else (e.g. "auto")
 # routes to a hosted/local-policy backend via prefer=None.
@@ -680,6 +681,14 @@ def main(argv: list[str] | None = None) -> int:
         print("\n".join(_TOOL_NAMES))
         return 0
     logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
+    try:
+        import mcp  # noqa: F401  (the optional dependency this command needs)
+    except ImportError:
+        # Without the extra this died with a ModuleNotFoundError traceback, which reads as a
+        # broken install rather than a missing optional piece.
+        print("untell-mcp: the MCP server needs the 'mcp' package: pip install \"untell[mcp]\"",
+              file=sys.stderr)
+        return 2
     _server().run()
     return 0
 

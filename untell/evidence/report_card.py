@@ -281,4 +281,6 @@ def render_report_card_markdown(c: dict) -> str:
             rec = "n/a" if r["recall"] is None else f"{100 * r['recall']:.1f}%"
             L.append(f"- recall with false positives capped at {100 * r['max_fpr']:.1f}%: {rec}")
         L.append("")
-    return "\n".join(L) + "\n"
+    # Exactly one final newline: L ends with a blank entry, and the old `join + "\n"` left two,
+    # which the end-of-file-fixer hook rewrote on every generated card.
+    return "\n".join(L).rstrip("\n") + "\n"

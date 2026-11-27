@@ -5,35 +5,6 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
-- **A brief no longer shows untell's scores under another detector's name.** `POST /brief` and
-  the MCP `brief` tool, called with `name: "turnitin"` and no scores, ran untell's lite detector
-  for the stability test and copied its score into the header, so a brief headed "Detector:
-  Turnitin" read "Score: 0.176 — clear" for a document Turnitin had flagged. A name alone now skips
-  the stability section; `score` / `flagged` carry the reported verdict (new on REST and MCP, as
-  the CLI already had). When untell's own detector does stand in (`--detector local --name
-  turnitin`), section 1 says so, the header is not backfilled, and the JSON carries
-  `stability_scored_by` with `is_the_named_detector: false`. The MCP tool's `detector` default is
-  now unset rather than `local:lite`.
-
-- **Evidence commands no longer crash on ordinary user errors.** `untell brief --detector turnitin
-  --score 0.82` — the commonest first command, since Turnitin has no API — died with a ValueError
-  traceback; it now builds the brief from the reported score and Turnitin's published rates and
-  says how to run the stability test by hand (`untell variants`, then `--detector manual:...`).
-  A commercial detector without its key behaves the same way. `stability` and `report-card` turn
-  an unknown or unavailable detector into a one-line usage error; a missing input file in any of
-  the seven evidence commands is one line and exit 2 (`UNTELL_DEBUG=1` restores the traceback);
-  `flagmath` rejects `--fpr 2` (a percentage typed as a rate) instead of raising; `capsule` names a
-  path that is not a git repository instead of printing git's CalledProcessError.
-
-- **Docker healthcheck fixed behind proxies.** The image's HEALTHCHECK used `urlopen`, which
-  honours `HTTP_PROXY`; a container run with a proxy in its environment probed its own loopback
-  address through the proxy, got 405, and stayed unhealthy (an orchestrator restart loop). The
-  probe now opens with an empty `ProxyHandler`. Found by the first live build of the image: 267 MB,
-  every endpoint 200 with the key and 401 without, `healthy` with the proxy set after the fix.
-  CI's docker job now runs a second container with an (unreachable) proxy and an API key and
-  requires Docker's own `healthy` verdict plus a 401 without the key; verified locally to fail on
-  the old probe (`unhealthy`) and pass on the fix (healthy in ~6s).
-
 ### Added
 - **Calibration v3** replaces v2 as the full-tier verdict (`verdict_rule: "calibrated-v3"`): v2 plus
   a sixth detector, `modernbert` (`rasbt/ai-text-detector-modernbert`, Apache-2.0, now registered on
@@ -97,6 +68,35 @@ All notable changes to this project are documented here. The format is based on
   population, and a rate measured on one population is never applied to another.
 
 ### Fixed
+
+- **A brief no longer shows untell's scores under another detector's name.** `POST /brief` and
+  the MCP `brief` tool, called with `name: "turnitin"` and no scores, ran untell's lite detector
+  for the stability test and copied its score into the header, so a brief headed "Detector:
+  Turnitin" read "Score: 0.176 — clear" for a document Turnitin had flagged. A name alone now skips
+  the stability section; `score` / `flagged` carry the reported verdict (new on REST and MCP, as
+  the CLI already had). When untell's own detector does stand in (`--detector local --name
+  turnitin`), section 1 says so, the header is not backfilled, and the JSON carries
+  `stability_scored_by` with `is_the_named_detector: false`. The MCP tool's `detector` default is
+  now unset rather than `local:lite`.
+
+- **Evidence commands no longer crash on ordinary user errors.** `untell brief --detector turnitin
+  --score 0.82` — the commonest first command, since Turnitin has no API — died with a ValueError
+  traceback; it now builds the brief from the reported score and Turnitin's published rates and
+  says how to run the stability test by hand (`untell variants`, then `--detector manual:...`).
+  A commercial detector without its key behaves the same way. `stability` and `report-card` turn
+  an unknown or unavailable detector into a one-line usage error; a missing input file in any of
+  the seven evidence commands is one line and exit 2 (`UNTELL_DEBUG=1` restores the traceback);
+  `flagmath` rejects `--fpr 2` (a percentage typed as a rate) instead of raising; `capsule` names a
+  path that is not a git repository instead of printing git's CalledProcessError.
+
+- **Docker healthcheck fixed behind proxies.** The image's HEALTHCHECK used `urlopen`, which
+  honours `HTTP_PROXY`; a container run with a proxy in its environment probed its own loopback
+  address through the proxy, got 405, and stayed unhealthy (an orchestrator restart loop). The
+  probe now opens with an empty `ProxyHandler`. Found by the first live build of the image: 267 MB,
+  every endpoint 200 with the key and 401 without, `healthy` with the proxy set after the fix.
+  CI's docker job now runs a second container with an (unreachable) proxy and an API key and
+  requires Docker's own `healthy` verdict plus a 401 without the key; verified locally to fail on
+  the old probe (`unhealthy`) and pass on the fix (healthy in ~6s).
 
 - `generate_ai --resume`: an interrupted run keeps the essays it already wrote and generates only the
   missing ones, with the seeds an uninterrupted run would have given them (tested both ways).
