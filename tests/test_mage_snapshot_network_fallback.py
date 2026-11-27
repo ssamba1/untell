@@ -12,15 +12,38 @@ a fully-cached detector for the whole process. ``_snapshot_dir()`` retries
 cache-only on transport-class errors and only goes dead when nothing is on
 disk (issue #28).
 """
+import importlib.util
 import json
 import os
 import ssl
+import sys
 import tempfile
+import types
 from unittest.mock import patch
 
 import pytest
 
 import untell.detectors.mage as mage
+
+_STUBBED = {
+    "huggingface_hub": ("snapshot_download",),
+    "transformers": ("AutoTokenizer", "AutoModelForSequenceClassification"),
+    # score() imports torch before _load(); an empty module is enough to reach the patched load.
+    "torch": (),
+}
+
+
+@pytest.fixture(autouse=True)
+def _stand_in_for_an_absent_ml_stack(monkeypatch):
+    """Every heavy dependency here is patched out, so the test needs none of them installed — but
+    `patch("pkg.attr")` must import `pkg` first. Where a package is absent (the lite install), give
+    it an empty module carrying the attributes the test replaces; where it is present, leave it."""
+    for name, attrs in _STUBBED.items():
+        if importlib.util.find_spec(name) is None:
+            mod = types.ModuleType(name)
+            for attr in attrs:
+                setattr(mod, attr, None)
+            monkeypatch.setitem(sys.modules, name, mod)
 
 
 class _StubTok:

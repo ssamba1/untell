@@ -6,6 +6,10 @@ abstain. Label-resolution is only reachable through a live model load.
 
 from __future__ import annotations
 
+import importlib.util
+import sys
+import types
+
 from untell.detectors.mage import MageDetector
 
 
@@ -16,6 +20,11 @@ class TestAvailableEnvGate:
 
     def test_enabled_without_env(self, monkeypatch) -> None:
         monkeypatch.delenv("UNTELL_DISABLE_MAGE", raising=False)
+        # `available()` also requires torch + transformers to import. This guards the env gate, so
+        # stand in empty modules where the real ones are absent rather than depend on them.
+        for name in ("torch", "transformers"):
+            if importlib.util.find_spec(name) is None:
+                monkeypatch.setitem(sys.modules, name, types.ModuleType(name))
         assert MageDetector().available() is True
 
 

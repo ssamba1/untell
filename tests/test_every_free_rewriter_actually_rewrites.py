@@ -33,6 +33,17 @@ SCORE = {"tier": "lite", "max": 0.9, "detectors": {"perplexity_burstiness": 0.9}
 # `max` is an alias the surfaces accept, not a distinct backend, so it is not swept for output.
 SWEPT = sorted(_FREE_REWRITERS - {"max"})
 
+# "Free" means no API key, not no dependencies: these two are model-backed and need the `.[full]`
+# extra (the MCP surface says so when they are unavailable). The packages are exactly what each
+# backend's own `available()` probes, so the lite tier skips them instead of failing.
+_NEEDS = {
+    "mt_pivot": ("torch", "transformers", "sentencepiece"),
+    "t5_paraphrase": ("torch", "transformers"),
+}
+SWEPT_PARAMS = [
+    pytest.param(n, marks=pytest.mark.needs(*_NEEDS[n])) if n in _NEEDS else n for n in SWEPT
+]
+
 
 @pytest.fixture(autouse=True)
 def _stdlib(monkeypatch):
@@ -47,14 +58,14 @@ def test_the_swept_list_matches_what_the_surfaces_advertise():
     )
 
 
-@pytest.mark.parametrize("name", SWEPT)
+@pytest.mark.parametrize("name", SWEPT_PARAMS)
 def test_the_rewriter_resolves_and_is_available(name: str):
     rewriter = get_rewriter(prefer=name)
     assert rewriter is not None, f"{name} is advertised as free and does not resolve"
     assert rewriter.available(), f"{name} resolves but reports unavailable"
 
 
-@pytest.mark.parametrize("name", SWEPT)
+@pytest.mark.parametrize("name", SWEPT_PARAMS)
 def test_the_rewriter_changes_the_text(name: str):
     rewriter = get_rewriter(prefer=name)
     if rewriter is None or not rewriter.available():

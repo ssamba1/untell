@@ -64,4 +64,7 @@ def test_empty_analysis_is_not_a_veto(monkeypatch) -> None:
         return (("verb", "give", ("subj",), ("obj",)),), ()
 
     monkeypatch.setattr(r, "_analyse", fake_analyse)
+    # `_analyse` is faked, so the parser is never used — but `role_swap` returns None (unknown)
+    # before reaching the guard when `_load()` finds no model, as on an install without spaCy.
+    monkeypatch.setattr(r, "_load", lambda: object())
     assert r.role_swap("a", "b") is False

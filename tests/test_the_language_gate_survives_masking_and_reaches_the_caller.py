@@ -119,6 +119,10 @@ def test_masked_text_can_still_fall_under_the_word_floor(name: str) -> None:
     assert words < len(NON_ENGLISH[name].split()), "locking should reduce the word count"
 
 
+# Every span the German and Spanish fixtures lock is a spaCy NER entity ("Kohlenstoffgehalt des
+# Bodens", "El estudio"); no regex lock fires on them. Without the model nothing is masked at all,
+# and the two tests above skip or take their unmasked branch accordingly.
+@pytest.mark.needs("en_core_web_sm")
 def test_at_least_one_fixture_actually_gets_masked() -> None:
     """Guards both tests above. French locks nothing, so if every fixture behaved like French
     neither would be exercising masking at all."""

@@ -50,6 +50,7 @@ def test_off_topic_rewrite_is_still_hard_gated(monkeypatch):
     assert r.humanness_reward(orig, off_topic) == -1.0
 
 
+@pytest.mark.needs("torch", "transformers")  # admitted only by the NLI path
 def test_faithful_paraphrase_the_loop_accepts_is_not_gated(monkeypatch):
     """The reward's meaning gate must agree with the deployed loop's.
 

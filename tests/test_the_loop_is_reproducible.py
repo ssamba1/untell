@@ -90,6 +90,11 @@ def test_one_text_does_not_change_the_next() -> None:
     assert alone == after, "processing one text changed what the next produced on the same instance"
 
 
+# The gpt2 scoring path this test pins needs the model stack. Without it (CI lite) the stdlib
+# scorer drives targeting, the token-overlap meaning gate refuses every composite candidate on
+# this 24-word text, and the loop returns the input with a warning saying exactly that — correct
+# behaviour, but not the property this guard checks.
+@pytest.mark.needs("torch", "transformers")
 def test_the_rewrite_actually_did_something(monkeypatch) -> None:
     """Guards every test above: three identical no-ops are also 'reproducible'."""
     # Pin the torch/gpt2 scoring path explicitly (issue #18). Under UNTELL_LITE_NO_TORCH=1

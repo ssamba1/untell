@@ -47,7 +47,17 @@ def _quiet(caplog):
     caplog.set_level(logging.CRITICAL)
 
 
-def test_the_mode_reports_a_missing_parser(monkeypatch) -> None:
+@pytest.fixture
+def nli_present(monkeypatch):
+    """Stand in for an installed NLI stack. The tests that use this pin the ROLE half going
+    missing while NLI runs; without it, an install lacking torch/transformers (the lite tier)
+    reports "similarity-only (NLI unavailable)" first and the parser branch is never reached."""
+    import untell.scripts.entailment as entailment
+
+    monkeypatch.setattr(entailment, "available", lambda: True)
+
+
+def test_the_mode_reports_a_missing_parser(monkeypatch, nli_present) -> None:
     monkeypatch.setattr(roles, "_load", lambda: None)
     assert _meaning_gate_mode(True) == "nli (no role check)"
 
@@ -80,7 +90,7 @@ def test_availability_is_not_inferred_from_a_none_verdict() -> None:
     assert parser_available() is True
 
 
-def test_the_three_values_are_ordered_by_what_is_running(monkeypatch) -> None:
+def test_the_three_values_are_ordered_by_what_is_running(monkeypatch, nli_present) -> None:
     """The vocabulary is a ladder, and its rungs must stay distinct — two of them collapsing into
     one is exactly the bug this file exists for."""
     monkeypatch.setattr(roles, "_load", lambda: None)

@@ -8,6 +8,11 @@ need a live model or are decode/kwargs constants — annotated in survivors.md.
 
 from __future__ import annotations
 
+import contextlib
+import importlib.util
+import sys
+import types
+
 import pytest
 
 from untell.detectors.local_judge import LocalJudgeDetector
@@ -20,14 +25,15 @@ class _FakeTok:
         return "fake-input"
 
     def __call__(self, *a, **k):
-        import numpy as np
-
         class _Enc(dict):
             def to(self, *a, **k):
                 return self
 
+        class _Ids:  # score() reads only `.shape[1]`; no numpy needed to stand in for a tensor
+            shape = (1, 3)
+
         enc = _Enc()
-        enc["input_ids"] = np.array([[1, 2, 3]])
+        enc["input_ids"] = _Ids()
         return enc
 
     def decode(self, ids, **k):
@@ -78,6 +84,14 @@ class TestPercentageBoundary:
     def test_exactly_two_point_zero_is_percent(self, monkeypatch) -> None:
         d = LocalJudgeDetector()
         monkeypatch.setenv("UNTELL_ENABLE_LOCAL_JUDGE", "1")
+        # available() needs torch + transformers to import and score() calls torch.no_grad(). The
+        # model is faked, so on the lite install stand in minimal modules instead of skipping.
+        if importlib.util.find_spec("torch") is None:
+            monkeypatch.setitem(
+                sys.modules, "torch", types.SimpleNamespace(no_grad=contextlib.nullcontext)
+            )
+        if importlib.util.find_spec("transformers") is None:
+            monkeypatch.setitem(sys.modules, "transformers", types.ModuleType("transformers"))
         monkeypatch.setattr(LocalJudgeDetector, "_load", lambda self: (_FakeTok(), _FakeModel()))
         # _NUM finds "2.0"; val=2.0 >= 2.0 -> divide by 100 -> 0.02
         result = d.score("some text to judge")

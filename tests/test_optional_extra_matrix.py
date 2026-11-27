@@ -31,15 +31,24 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 
+# The peft and sacremoses rows block ONE dep and expect the rest of the model stack to be
+# present: "peft is the only thing missing" and "mt_pivot is available anyway". On a tier
+# without that stack (CI lite) the premise is false — the message correctly names torch and
+# transformers too, and mt_pivot is correctly unavailable — so those rows need the stack.
+# (The multi-missing message is pinned in tests/test_local_policy_optional_dep_guard.py.)
+_PEFT_PREMISE = pytest.mark.needs("torch", "transformers")
+_MTPIVOT_PREMISE = pytest.mark.needs("torch", "transformers", "sentencepiece")
+
 # (blocked dep, surface, expected exit code, expected message fragment)
 rows = [
     # peft — the known case, fixed at wave 5 / issue #34. CLI exit 2 + reason.
-    pytest.param("peft", "peft_cli", 2, "untell[train]", marks=pytest.mark.slow),
-    pytest.param("peft", "peft_unavailable_reason", 0, "needs the 'peft' package"),
+    pytest.param("peft", "peft_cli", 2, "untell[train]", marks=[pytest.mark.slow, _PEFT_PREMISE]),
+    pytest.param("peft", "peft_unavailable_reason", 0, "needs the 'peft' package",
+                 marks=_PEFT_PREMISE),
     # sacremoses — transitive transformers-level need of the Marian/T5 tokenizer;
     # mt_pivot's availability must survive without it (transformers warns, untell
     # does not crash).
-    pytest.param("sacremoses", "sacremoses_mtpivot", 0, "available: True"),
+    pytest.param("sacremoses", "sacremoses_mtpivot", 0, "available: True", marks=_MTPIVOT_PREMISE),
     # nltk — word_importance falls back to the built-in synonym map.
     pytest.param("nltk", "nltk_synonyms", 0, "kick off"),
     # torch — full-tier scoring honestly degrades to lite (never a traceback).

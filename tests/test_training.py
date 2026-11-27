@@ -87,6 +87,7 @@ def test_distill_drops_flagged_or_low_similarity(monkeypatch):
     assert distill("builtin", n=3, tier="lite")["kept"] == 0
 
 
+@pytest.mark.needs("torch", "transformers")  # admitted only by the NLI path
 def test_distill_keeps_a_faithful_paraphrase_the_loop_admits(monkeypatch):
     """The distillation filter must agree with the deployed loop's meaning gate.
 

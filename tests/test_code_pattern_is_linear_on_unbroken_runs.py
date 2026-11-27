@@ -85,7 +85,14 @@ def test_symbol_soup_skips_ner_without_loading_the_model(monkeypatch):
                 assert preserve._spacy_entity_spans(blob) == []
         finally:
             preserve._spacy_entity_spans_cached.cache_clear()
-    # context exit restores _nlp without touching the fixture's env delenv
+
+
+@pytest.mark.needs("en_core_web_sm")
+def test_prose_still_reaches_ner():
+    """Guards the guard above: the degenerate-input skip must not swallow ordinary prose. Needs the
+    model itself, since without it every input yields no entities and this would prove nothing."""
+    import untell.scripts.preserve as preserve
+
     spans = preserve._spacy_entity_spans("Alice met Bob in Paris on Monday. " * 5)
     assert len(spans) > 0, "prose must still yield entities"
 

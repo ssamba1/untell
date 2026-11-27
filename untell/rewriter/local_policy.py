@@ -308,9 +308,15 @@ class LocalPolicyRewriter:
                 f"installed: {hint}"
             )
         names = ", ".join(f"'{module}'" for module, _ in missing)
+        # Name only the extras the missing packages come from: a base-only rewriter missing
+        # torch+transformers needs `full`, and telling it to install `train` (trl, peft,
+        # bitsandbytes...) as well was wrong. Order and de-duplication follow _MISSING_DEP_HINTS.
+        extras = list(dict.fromkeys(
+            hint.rsplit("[", 1)[1].split("]", 1)[0] for _, hint in missing
+        ))
         return (
             f"the local-policy rewriter needs the {names} packages, none of which are "
-            f"installed: pip install 'untell[full,train]'"
+            f"installed: pip install 'untell[{','.join(extras)}]'"
         )
 
     def available(self) -> bool:

@@ -57,6 +57,7 @@ def _at_end(pad: str, sentence: str) -> str:
 class TestPositionDoesNotDecideTheVerdict:
     """A boolean gate must return the same answer wherever the edit sits."""
 
+    @pytest.mark.needs("en_core_web_sm")  # role_swap is None (unknown) without the parser
     @pytest.mark.parametrize("reps", REPETITIONS)
     def test_roles_catches_a_swap_anywhere(self, reps):
         pad = FILLER * reps

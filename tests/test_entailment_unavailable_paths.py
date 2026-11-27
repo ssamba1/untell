@@ -4,7 +4,10 @@ mechanical meaning-gate rejections that fire before any model is consulted."""
 
 from __future__ import annotations
 
+import importlib.util
 import logging
+import sys
+import types
 
 import pytest
 
@@ -25,6 +28,19 @@ def fresh_nli(monkeypatch):
     monkeypatch.delenv("UNTELL_LITE_NO_TORCH", raising=False)
 
 
+@pytest.fixture
+def nli_importable(monkeypatch):
+    """Make `available()`'s import probe succeed without the real stack.
+
+    The tests using this replace `_pair_probs`, so no model is ever loaded; they only need to get
+    past the torch/transformers import check, which the lite tier (no model stack) otherwise fails.
+    Stub modules are inserted only when the real package is absent, never over a real one.
+    """
+    for name in ("torch", "transformers"):
+        if name not in sys.modules and importlib.util.find_spec(name) is None:
+            monkeypatch.setitem(sys.modules, name, types.ModuleType(name))
+
+
 def test_available_refuses_when_disabled_by_env(fresh_nli, monkeypatch) -> None:
     monkeypatch.setenv("UNTELL_DISABLE_NLI", "1")
     assert entailment.available() is False
@@ -42,7 +58,7 @@ def test_available_is_false_once_dead(fresh_nli, monkeypatch) -> None:
     assert entailment.available() is False
 
 
-def test_contradiction_resolves_labels_with_a_warmup_call(fresh_nli, monkeypatch) -> None:
+def test_contradiction_resolves_labels_with_a_warmup_call(fresh_nli, nli_importable, monkeypatch) -> None:
     """With label_idx unresolved, one forward pass runs to discover the label order.
 
     The pass's result is discarded when the labels still cannot be resolved — the
@@ -56,7 +72,7 @@ def test_contradiction_resolves_labels_with_a_warmup_call(fresh_nli, monkeypatch
     assert len(calls) == 1
 
 
-def test_entailment_resolves_labels_with_a_warmup_call(fresh_nli, monkeypatch) -> None:
+def test_entailment_resolves_labels_with_a_warmup_call(fresh_nli, nli_importable, monkeypatch) -> None:
     calls: list[tuple[str, str]] = []
     monkeypatch.setattr(
         entailment, "_pair_probs", lambda a, b: calls.append((a, b)) or [0.1, 0.2, 0.7]
@@ -66,7 +82,7 @@ def test_entailment_resolves_labels_with_a_warmup_call(fresh_nli, monkeypatch) -
 
 
 def test_a_raising_model_disables_the_veto_and_says_so_once(
-    fresh_nli, monkeypatch, caplog
+    fresh_nli, nli_importable, monkeypatch, caplog
 ) -> None:
     def boom(a, b):
         raise RuntimeError("model exploded")

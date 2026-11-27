@@ -13,6 +13,7 @@ distinguish — recorded as unkillable in survivors.md.
 from __future__ import annotations
 
 import contextlib
+import importlib.util
 import io
 
 from untell.scripts import cli
@@ -26,6 +27,14 @@ class TestTorchNotice:
 
     def test_notice_prints_without_the_opt_out(self, monkeypatch) -> None:
         monkeypatch.delenv("UNTELL_LITE_NO_TORCH", raising=False)
+        # The notice is also gated on torch being findable (survivor :131). This test is about the
+        # env-var gate, so make torch findable instead of depending on it being installed.
+        real_find_spec = importlib.util.find_spec
+        monkeypatch.setattr(
+            importlib.util,
+            "find_spec",
+            lambda name, *a, **k: object() if name == "torch" else real_find_spec(name, *a, **k),
+        )
         monkeypatch.setattr(cli, "_run_check", lambda *a, **k: 0)
         buf = io.StringIO()
         with contextlib.redirect_stderr(buf):

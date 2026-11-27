@@ -78,6 +78,9 @@ def test_the_calibrated_cut_is_the_one_applied():
     assert row["verdict_threshold"] == scored["verdict_threshold"]
 
 
+# The HC3 corpus is fetched with huggingface_hub; without it `load_pairs` returns [] and the loop
+# below has nothing to find.
+@pytest.mark.needs("huggingface_hub")
 def test_a_text_between_the_two_cuts_now_passes():
     """The band this fix is about: above the loop's target, below the calibrated verdict.
 
