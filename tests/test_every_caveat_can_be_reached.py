@@ -144,5 +144,7 @@ def test_the_loop_says_when_a_voice_sample_is_too_short(warnings_from) -> None:
 def test_preserve_says_when_it_has_no_ner(warnings_from) -> None:
     import untell.scripts.preserve as mod
 
-    out = warnings_from([], mod._warn_no_ner)
+    # The flag is once-per-process: without resetting it this passed or failed by test order (it
+    # failed in the lite tier, where an earlier test had already triggered the warning).
+    out = warnings_from([("untell.scripts.preserve", "_WARNED_NO_NER")], mod._warn_no_ner)
     assert out.strip()

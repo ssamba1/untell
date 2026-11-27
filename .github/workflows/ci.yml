@@ -29,10 +29,13 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install (lite tier + dev tools; mcp is pure-python, no models)
+      # rich and docs (python-docx, pypdf) are pure-python optional extras with no models; without
+      # them ~40 tests of the rich renderer and the .docx/.pdf readers failed here unseen while
+      # fail-fast cancelled this job. Model-backed tests declare @pytest.mark.needs(...) instead.
+      - name: Install (lite tier + dev tools; pure-python extras only, no models)
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[dev,mcp]"
+          pip install -e ".[dev,mcp,rich,docs]"
 
       # This job and `full` below are not the same suite run twice: they are the two SCORING PATHS.
       #

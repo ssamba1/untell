@@ -153,6 +153,28 @@ def _no_commercial_keys(monkeypatch):
         monkeypatch.delenv(name, raising=False)
 
 
+def _importable(name: str) -> bool:
+    import importlib.util
+
+    try:
+        return importlib.util.find_spec(name) is not None
+    except (ImportError, ValueError):
+        return False
+
+
+def pytest_runtest_setup(item):
+    """Skip a test marked ``@pytest.mark.needs("spacy", ...)`` when a named package is absent.
+
+    The lite CI job installs no model stack, and fail-fast had been cancelling it, so 100+ tests
+    that silently assumed torch/transformers/spaCy were failing there unseen. A test that measures
+    a model-backed path declares what it needs; the full tier still runs it.
+    """
+    for mark in item.iter_markers(name="needs"):
+        missing = [m for m in mark.args if not _importable(m)]
+        if missing:
+            pytest.skip(f"needs {', '.join(missing)} (an optional extra this environment lacks)")
+
+
 def pytest_configure(config):
     """Register the ``soak`` marker used by tests/test_server_soak.py.
 
@@ -160,6 +182,10 @@ def pytest_configure(config):
     (touching it demands a queue entry) and a one-line marker registration in the
     suite's own conftest achieves the same without an unknown-marker warning.
     """
+    config.addinivalue_line(
+        "markers",
+        "needs(*packages): skip unless every named package is importable (optional extras)",
+    )
     config.addinivalue_line(
         "markers",
         "soak: long-running server soak (500 sequential + 50 parallel REST calls "
