@@ -359,9 +359,35 @@ jobs:
           curl -fsS -X POST http://127.0.0.1:8000/tells             -H 'content-type: application/json'             -d '{"text":"Moreover, the framework leverages robust methodologies at scale."}'             | tee /tmp/tells.json
           python -c "import json,sys; d=json.load(open('/tmp/tells.json')); assert d['tells']>0, d; print('tells:',d['tells'])"
 
+      # Answering a curl from the host is not the same as passing the image's own HEALTHCHECK.
+      # The probe used plain urlopen, which honours HTTP_PROXY: run with a proxy in its
+      # environment, the container sent its loopback probe to the proxy and never turned healthy
+      # (found by the first live build, 2026-11-25). Run it the way a proxied, keyed deployment
+      # would — the proxy below is deliberately unreachable — and require Docker's verdict.
+      - name: The healthcheck passes behind a proxy, and auth is enforced
+        run: |
+          docker run -d --name untell-hc -p 8001:8000 \
+            -e HTTP_PROXY=http://127.0.0.1:9 -e HTTPS_PROXY=http://127.0.0.1:9 \
+            -e UNTELL_API_KEY=ci-key --health-interval=2s --health-start-period=5s untell:ci
+          for i in $(seq 1 60); do
+            st=$(docker inspect --format '{{.State.Health.Status}}' untell-hc)
+            [ "$st" = healthy ] && { echo "healthy after ~${i}s"; break; }
+            if [ "$i" = "60" ]; then
+              echo "container never became healthy (status: $st)" >&2
+              docker inspect --format '{{json .State.Health}}' untell-hc >&2
+              exit 1
+            fi
+            sleep 1
+          done
+          code=$(curl -s -o /dev/null -w '%{http_code}' -X POST http://127.0.0.1:8001/tells \
+            -H 'content-type: application/json' -d '{"text":"hello there"}')
+          [ "$code" = 401 ] || { echo "expected 401 without the key, got $code" >&2; exit 1; }
+          curl -fsS -X POST http://127.0.0.1:8001/tells -H 'X-API-Key: ci-key' \
+            -H 'content-type: application/json' -d '{"text":"hello there"}' >/dev/null
+
       - name: Stop the container
         if: always()
-        run: docker rm -f untell-ci || true
+        run: docker rm -f untell-ci untell-hc || true
 
   pre-commit:
     name: pre-commit hooks

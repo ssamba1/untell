@@ -30,6 +30,9 @@ All notable changes to this project are documented here. The format is based on
   address through the proxy, got 405, and stayed unhealthy (an orchestrator restart loop). The
   probe now opens with an empty `ProxyHandler`. Found by the first live build of the image: 267 MB,
   every endpoint 200 with the key and 401 without, `healthy` with the proxy set after the fix.
+  CI's docker job now runs a second container with an (unreachable) proxy and an API key and
+  requires Docker's own `healthy` verdict plus a 401 without the key; verified locally to fail on
+  the old probe (`unhealthy`) and pass on the fix (healthy in ~6s).
 
 ### Added
 - **Calibration v3** replaces v2 as the full-tier verdict (`verdict_rule: "calibrated-v3"`): v2 plus
