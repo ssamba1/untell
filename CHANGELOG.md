@@ -25,6 +25,10 @@ All notable changes to this project are documented here. The format is based on
   discriminating), Desklib and Fakespot 60/60, OpenAI RoBERTa 90%, PirateXX 87%, ModernBERT 48%.
   `modern_recall` now names the JSON it renders from and the generating model in the caveats
   instead of hard-coding the Qwen page's.
+- **OLMo-2 recall page** (`docs/observatory/modern-llm-olmo2.md`): 60 OLMo-2-0425-1B-Instruct
+  essays (2025, a third model family) on the same prompts. untell v3 33/60, v2 32/60 — the second
+  clean test, and again not discriminating; Desklib and Fakespot 60/60, ModernBERT 52%, PirateXX
+  3%, OpenAI RoBERTa 2% (90% on SmolLM2). 46 of 60 essays hit the 600-token cap.
 - **Calibration v2** replaces v1 as the full-tier verdict (`verdict_rule: "calibrated-v2"`): fitted on
   868 pre-2022 human documents — v1's 268 plus 600 PERSUADE 2.0 student essays, half by English
   learners. Held out: TOEFL 20% (v1 23%), US college 7% (11%), US 8th grade 0% (2.3%), PERSUADE

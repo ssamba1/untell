@@ -130,6 +130,11 @@ OpenAI RoBERTa 90% (none of Qwen's); PirateXX 87%; ModernBERT 48% (77% of Qwen's
 recall on one model's essays says little about the next model's
 ([essays](modern-llm-smollm2-essays.jsonl)).
 
+[modern-llm-olmo2.md](modern-llm-olmo2.md): a third model, OLMo-2-1B-Instruct (2025), flips it
+again. Desklib and Fakespot 60/60; untell 55% (v2 53%); ModernBERT 52%; PirateXX 3% and OpenAI
+RoBERTa 2% — the two that caught 87–90% of SmolLM2's essays
+([essays](modern-llm-olmo2-essays.jsonl)).
+
 ## One trailing space
 
 On short text, a single trailing space reversed every "AI" verdict `hc3_roberta` gave in this

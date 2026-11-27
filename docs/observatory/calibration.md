@@ -14,7 +14,8 @@ new table and the cut differ. v1 (technical prose only) and v2 are kept below as
 ModernBERT was added because the [modern-essay recall check](modern-llm.md) found it was the only
 audited open detector that caught a 2024 model's essays without flagging TOEFL writers. Those Qwen
 essays chose it, so they are not a clean test of v3. Essays from a second 2024 model, SmolLM2, are
-clean but did not separate the versions: v2 and v3 both caught all 60.
+clean but did not separate the versions: v2 and v3 both caught all 60. A third, OLMo-2 (2025),
+not used in any choice either: v2 32/60, v3 33/60 — one essay apart.
 
 ## Method
 
@@ -62,6 +63,7 @@ move verdicts on identical words.
 | GPT-3 CS224N abstracts, evasion-prompted | AI | 117/145 (80.7%) | 20/145 (13.8%) | 20/145 (13.8%) | 18/145 (12.4%) |
 | Qwen2.5-1.5B essays, 2024 (chose ModernBERT; not clean) | AI | – | – | 9/60 (15.0%) | 28/60 (46.7%) |
 | SmolLM2-1.7B essays, 2024 (clean; [results](modern-llm-smollm2.md)) | AI | – | – | 60/60 (100.0%) | 60/60 (100.0%); 95% CI 94.0–100% |
+| OLMo-2-1B essays, 2025 (clean; [results](modern-llm-olmo2.md)) | AI | – | – | 32/60 (53.3%) | 33/60 (55.0%); 95% CI 42–67% |
 
 AI recall across all GPT-3 text: old 90.9%, v1 45.5%, v2 44.9%, **v3 46.9%**. AUROC of the
 calibrated aggregate on the Liang corpus: v1 0.762, v2 0.779, **v3 0.832**.
@@ -103,7 +105,8 @@ are omitted.
 - **Still about half the recall on GPT-3 text** (46.9%), but v3 is the first version to catch
   evasion-prompted GPT-3 essays (16 of 31, against none for v1 and v2), and it catches about three
   times as many of a 2024 open model's essays as v2. On a second 2024 model's essays, the clean
-  test, v2 and v3 both caught all 60, so v3 lost nothing there but its gain is not confirmed.
+  test, v2 and v3 both caught all 60, and on a third (OLMo-2) they differ by one essay (32 vs 33
+  of 60). v3 has not lost recall on either clean test, and has not shown a gain on either.
 - **TOEFL writers are still flagged most (15.4%).** ModernBERT lowered it from v2's 19.8%, and the
   intervals still overlap. TOEFL essays by adult learners are a different population from anything
   in the fit, so a verdict from these models on a non-native writer remains weak evidence.
