@@ -103,7 +103,7 @@ untell drift cards/pangram-2026-05.json cards/pangram-2026-11.json
 `drift` checks that the corpus fingerprints match, flags any metric whose 95% intervals do not
 overlap, and lists every document whose verdict changed. It exits 1 when something changed
 significantly, so it can gate a CI job. The repository's own
-[observatory workflow](../.github/workflows/observatory.yml) does this monthly for every
+[observatory workflow](https://github.com/ssamba1/untell/blob/main/.github/workflows/observatory.yml) does this monthly for every
 detector with a configured key.
 
 ## 4. Things to check before you publish
@@ -116,7 +116,7 @@ detector with a configured key.
   reports; for the others, note what the vendor says on the day.
 - **Thresholds.** Commercial adapters flag at `--threshold` (default 0.5) on the score the API
   returns. If the vendor's interface flags at a different level, pass it, and say which you used.
-- **Published figures.** [`published_rates.json`](../untell/evidence/published_rates.json) marks
+- **Published figures.** [`published_rates.json`](https://github.com/ssamba1/untell/blob/main/untell/evidence/published_rates.json) marks
   each entry `primary` (read in the source), `summary` (seen in a secondary report) or `vendor`
   (the detector's own claim). Quote them with that label.
 

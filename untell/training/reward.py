@@ -13,6 +13,8 @@ Pure-python over the chosen detector + semantic similarity, so it is testable on
 GPU (the surrogate path needs `.[train]` + a trained surrogate dir).
 """
 
+from __future__ import annotations
+
 import os
 import re
 

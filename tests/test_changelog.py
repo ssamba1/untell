@@ -149,7 +149,7 @@ def test_the_shipped_version_appears_in_the_changelog() -> None:
     import pathlib
     import re
 
-    import tomllib
+    tomllib = pytest.importorskip("tomllib")  # stdlib from 3.11; the 3.9 job skips these pyproject checks, 3.11/3.12 run them
 
     version = tomllib.loads(pathlib.Path("pyproject.toml").read_text(encoding="utf-8"))["project"][
         "version"
@@ -178,7 +178,7 @@ def test_shipped_version_section_names_its_headline_features() -> None:
     import pathlib
     import re
 
-    import tomllib
+    tomllib = pytest.importorskip("tomllib")  # stdlib from 3.11; the 3.9 job skips these pyproject checks, 3.11/3.12 run them
 
     version = tomllib.loads(
         pathlib.Path("pyproject.toml").read_text(encoding="utf-8")

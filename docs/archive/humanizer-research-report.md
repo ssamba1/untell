@@ -3,7 +3,7 @@
 > what their verdicts are worth — and this document is kept for the record and because other
 > pages cite it. Its build thesis (detector-feedback evasion) is not the project's goal; the
 > project's own measurements found the loop's gains do not transfer to detectors it has not
-> optimised against. See [the README](../../README.md) for what untell is for now.
+> optimised against. See [the README](https://github.com/ssamba1/untell/blob/main/README.md) for what untell is for now.
 
 # Building a Superior AI-Text Humanizer — Research Synthesis
 

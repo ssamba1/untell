@@ -1,6 +1,6 @@
 > **This is the full reference manual** — every command, flag, tier and measurement, moved here
 > from the README on 2026-11-21 when the README was cut down to what untell is for. Nothing was
-> removed. Start with the [README](../README.md); come here for detail.
+> removed. Start with the [README](https://github.com/ssamba1/untell/blob/main/README.md); come here for detail.
 
 <div align="center">
 
@@ -14,11 +14,11 @@ A **detector-in-the-loop measurement harness**, shipped as a **Claude Code skill
 Free. Open source. Its headline result is a negative one, and it says so.
 
 [![CI](https://github.com/ssamba1/untell/actions/workflows/ci.yml/badge.svg)](https://github.com/ssamba1/untell/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](../LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/ssamba1/untell/blob/main/LICENSE)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/)
 [![Claude Code skill](https://img.shields.io/badge/Claude%20Code-skill-8A2BE2.svg)](#-quick-start)
 [![Zero-dependency lite tier](https://img.shields.io/badge/install-zero--dependency-brightgreen.svg)](#tiers)
-[![PRs welcome](https://img.shields.io/badge/PRs-welcome-orange.svg)](../CONTRIBUTING.md)
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-orange.svg)](https://github.com/ssamba1/untell/blob/main/CONTRIBUTING.md)
 [![Live site](https://img.shields.io/badge/site-ssamba1.github.io%2Funtell-2ea44f.svg)](https://ssamba1.github.io/untell/)
 [![good first issues](https://img.shields.io/github/issues/ssamba1/untell/good%20first%20issue.svg?label=good%20first%20issues&color=7057ff)](https://github.com/ssamba1/untell/labels/good%20first%20issue)
 
@@ -721,7 +721,7 @@ The `--browser` path drives a real headless browser through a free web checker a
 **ZeroGPT ships built-in** (confirmed working live). Most other free detectors are now bot-gated
 (reCAPTCHA / login-redirect / iframe widgets) — see [docs/free-detector-probes.md](free-detector-probes.md).
 Add your own site with **zero code** — it's just CSS selectors in a JSON file
-([examples/browser_sites.example.json](../examples/browser_sites.example.json)).
+([examples/browser_sites.example.json](https://github.com/ssamba1/untell/blob/main/examples/browser_sites.example.json)).
 
 > ⚠️ Browser checking is **slow, fragile, and ToS-caveated** — for occasional checks on your own text, not
 > the hot loop. The reliable multi-detector path is the key-gated commercial tier.
@@ -829,8 +829,8 @@ pytest -q
 
 CI runs a **lite** matrix (ruff + pytest, no downloads) across Python 3.9/3.11/3.12 **and** a **full-tier**
 job (Ubuntu, CPU torch + `.[full,eval]`) that loads the real RoBERTa / Fast-DetectGPT / GPT-2 detectors and
-runs the torch-gated tests. See **[CONTRIBUTING.md](../CONTRIBUTING.md)** to get involved and
-**[ROADMAP.md](../ROADMAP.md)** for what's next (the GPU RL-against-ensemble moat).
+runs the torch-gated tests. See **[CONTRIBUTING.md](https://github.com/ssamba1/untell/blob/main/CONTRIBUTING.md)** to get involved and
+**[ROADMAP.md](https://github.com/ssamba1/untell/blob/main/ROADMAP.md)** for what's next (the GPU RL-against-ensemble moat).
 
 ---
 
@@ -910,12 +910,12 @@ whatever tier the server it talks to is running — it does not score in the bro
 ## Contributing
 
 PRs, detector adapters, and new free-checker selectors are welcome — see
-**[CONTRIBUTING.md](../CONTRIBUTING.md)**, the **[good first issues](https://github.com/ssamba1/untell/issues)**,
-and our **[Code of Conduct](../CODE_OF_CONDUCT.md)**. Found a security issue? See **[SECURITY.md](../SECURITY.md)**.
+**[CONTRIBUTING.md](https://github.com/ssamba1/untell/blob/main/CONTRIBUTING.md)**, the **[good first issues](https://github.com/ssamba1/untell/issues)**,
+and our **[Code of Conduct](https://github.com/ssamba1/untell/blob/main/CODE_OF_CONDUCT.md)**. Found a security issue? See **[SECURITY.md](https://github.com/ssamba1/untell/blob/main/SECURITY.md)**.
 
 If this saved you from a false AI flag — or you just think it's the most honest humanizer on GitHub —
 a ⭐ helps others find it.
 
 ## License
 
-[MIT](../LICENSE). Free to use, modify, and distribute.
+[MIT](https://github.com/ssamba1/untell/blob/main/LICENSE). Free to use, modify, and distribute.

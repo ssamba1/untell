@@ -46,9 +46,20 @@ LONG = " ".join([AI_PARAGRAPH] * 4)
 def client_app(monkeypatch):
     monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
     monkeypatch.delenv("UNTELL_API_KEY", raising=False)
-    from untell.api_server import app
+    import untell.api_server as server
 
-    return app
+    # The real rewrite's duration depends on the runner: CI's 3.11 job finished it in 0.45s, under
+    # the 0.5s this test needs to prove anything. A fixed second of BLOCKING work (time.sleep,
+    # not asyncio.sleep) on top of the real call makes the window deterministic, and it blocks
+    # the event loop exactly as a slow rewrite would if the endpoint stopped offloading it.
+    real = server.untell_text
+
+    def slow_untell_text(*args, **kwargs):
+        time.sleep(1.0)
+        return real(*args, **kwargs)
+
+    monkeypatch.setattr(server, "untell_text", slow_untell_text)
+    return server.app
 
 
 async def _run_probe(app, payload: dict) -> tuple[int, int, float]:

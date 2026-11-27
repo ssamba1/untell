@@ -10,7 +10,9 @@ from __future__ import annotations
 import pathlib
 import re
 
-import tomllib
+import pytest
+
+tomllib = pytest.importorskip("tomllib")  # stdlib from 3.11; the 3.9 job skips these pyproject checks, 3.11/3.12 run them
 
 
 def _scripts() -> set[str]:

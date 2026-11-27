@@ -185,7 +185,7 @@ schemes, so a client generated from it knows to send one.
 
 ### Docker
 
-The repo ships a [Dockerfile](../Dockerfile) that builds the wheel from source and installs the
+The repo ships a [Dockerfile](https://github.com/ssamba1/untell/blob/main/Dockerfile) that builds the wheel from source and installs the
 `server` extra; the image health-checks `/health` and binds all interfaces:
 
 ```dockerfile

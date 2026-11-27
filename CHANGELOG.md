@@ -73,6 +73,16 @@ All notable changes to this project are documented here. The format is based on
 
 ### Fixed
 
+- **The REST server did not import on Python 3.9**, which the package declares it supports.
+  pydantic evaluates the request models' `X | None` annotations at runtime, which 3.9 cannot do;
+  the `server` extra now pulls `eval_type_backport` on Python < 3.10. `untell.training.reward`
+  (and so `rl_humanizer`) failed the same way and now defers its annotations. Found the first
+  time the 3.9 CI job reached the test step; checked by importing every module under 3.9.
+- **Docs links to repository files resolve on the published site.** 23 links from `docs/` to
+  source files, workflows and top-level `README`/`CONTRIBUTING`/... were relative paths outside
+  the docs tree, broken on the mkdocs site (and failing `mkdocs build --strict` in CI). They are
+  now GitHub links, which work on both.
+
 - **The local-policy rewriter's install hint named the wrong extra.** With several packages
   missing it always said `pip install 'untell[full,train]'`, so the base-only rewriter (no adapter,
   no peft) told users to install the training stack (trl, peft, bitsandbytes). It now names only

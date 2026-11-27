@@ -11,7 +11,7 @@ is a git timestamp, and compared run to run for silent model changes.
 that could have written them was available, so the "human" label rests on a date, not on trust.
 
 The text is not stored here. The manifest names the commit and paths, the
-[workflow](../../.github/workflows/observatory.yml) rebuilds the corpus from git on every run, and
+[workflow](https://github.com/ssamba1/untell/blob/main/.github/workflows/observatory.yml) rebuilds the corpus from git on every run, and
 each report card records a SHA-256 fingerprint of the corpus, so a reader can confirm a card was
 measured on the same documents.
 
@@ -39,7 +39,7 @@ reported next to it.
 data, the score seven detectors gave every essay in early 2023
 ([MIT licence](https://github.com/Weixin-Liang/ChatGPT-Detector-Bias)). untell imports those
 recorded scores through its `manual:` scorer and runs a report card per detector
-([`untell/bench/liang2023.py`](../../untell/bench/liang2023.py)). False-positive rate on human essays,
+([`untell/bench/liang2023.py`](https://github.com/ssamba1/untell/blob/main/untell/bench/liang2023.py)). False-positive rate on human essays,
 flagged at score ≥ 0.5, with 95% intervals:
 
 | detector | toefl-non-native | us-8th-grade | us-college-admissions | stanford-cs224n-abstracts | AUROC |
@@ -91,7 +91,7 @@ and flags non-native writers at more than twice the rate of US students. The pre
 figure (5 of 30 HC3 forum answers, 17%) described one corpus. Taking the maximum of five detectors
 against a 0.30 bar makes the most trigger-happy member decide every verdict. This card is why the
 evidence tools never use untell's own verdict as a stand-in for a commercial detector, and why
-recalibrating it is on the [roadmap](../../ROADMAP.md).
+recalibrating it is on the [roadmap](https://github.com/ssamba1/untell/blob/main/ROADMAP.md).
 
 **Fixed the same day** — see [calibration.md](calibration.md): refitted on 868 held-out pre-2022 human documents (technical prose and PERSUADE student essays), the verdict now flags 20% of TOEFL essays, 0% of US 8th-grade essays, 2.5% of PERSUADE's English learners and 0% of PEPs, at the cost of AI recall falling from 91% to 45%. With line wrapping and quote style normalised, formatting-only edits flipped 0 of 55 variants (was 6 of 55). Cards for the v1 verdict (v2's numbers are in calibration.md):
 [Liang](untell-local-full/2026-11-22-liang2023-calibrated.md) ·

@@ -28,16 +28,16 @@ not used in any choice either: v2 32/60, v3 33/60 — one essay apart.
   pallets/flask, psf/requests, git/git and django/django (`untell capsule --limit 70`).
 - **Fit corpus, v2:** the same 268, plus 600 essays from the FIT half of PERSUADE 2.0 (US students,
   grades 6–12, written 2010–2020, CC BY 4.0): 300 by English learners and 300 not. The halves are
-  assigned by a hash of the essay id ([`untell/bench/persuade.py`](../../untell/bench/persuade.py)),
+  assigned by a hash of the essay id ([`untell/bench/persuade.py`](https://github.com/ssamba1/untell/blob/main/untell/bench/persuade.py)),
   so no evaluation essay was ever in the fit.
 - **Fit corpus, v3:** v2's 868, with ModernBERT scored on each exactly as untell's `modernbert`
   detector scores at runtime (float32, its card's 8,192-token limit and temperature 1.5662,
   normalised input).
 - **Evaluation:** every cut applied, unchanged, to corpora neither fit saw — including the TOEFL
   essays, which come from a different learner population than PERSUADE's.
-- **Code and data:** [`untell/bench/calibrate_full.py`](../../untell/bench/calibrate_full.py);
-  shipped table [`untell/detectors/calibration_full_v3.json`](../../untell/detectors/calibration_full_v3.json)
-  (v2's: [`calibration_full_v2.json`](../../untell/detectors/calibration_full_v2.json));
+- **Code and data:** [`untell/bench/calibrate_full.py`](https://github.com/ssamba1/untell/blob/main/untell/bench/calibrate_full.py);
+  shipped table [`untell/detectors/calibration_full_v3.json`](https://github.com/ssamba1/untell/blob/main/untell/detectors/calibration_full_v3.json)
+  (v2's: [`calibration_full_v2.json`](https://github.com/ssamba1/untell/blob/main/untell/detectors/calibration_full_v2.json));
   evaluations [`calibration-v1-evaluation.json`](calibration-v1-evaluation.json) (v1's fit, scored
   before the line-wrapping fix) [`calibration-v2-evaluation.json`](calibration-v2-evaluation.json) and
   [`calibration-v3-evaluation.json`](calibration-v3-evaluation.json) (its `old` column includes
